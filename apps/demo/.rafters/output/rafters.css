@@ -328,6 +328,8 @@
   --motion-keyframe-slide-out-to-right: from { transform: translateX(0); } to { transform: translateX(100%); };
   --motion-keyframe-scale-in: from { transform: scale(var(--rafters-extent-pop)); opacity: 0; } to { transform: scale(1); opacity: 1; };
   --motion-keyframe-scale-out: from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; };
+  --motion-keyframe-grow-in: from { transform: scaleY(0); } to { transform: scaleY(1); };
+  --motion-keyframe-grow-in-x: from { transform: scaleX(0); } to { transform: scaleX(1); };
   --motion-keyframe-spin: from { transform: rotate(0deg); } to { transform: rotate(360deg); };
   --motion-keyframe-ping: 75%, 100% { transform: scale(1.7); opacity: 0; };
   --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.48; };
@@ -350,24 +352,48 @@
   --motion-animation-pulse: pulse 2s var(--rafters-ease-standard) infinite;
   --motion-animation-bounce: bounce 1s var(--rafters-ease-standard) infinite;
   --motion-animation-caret-blink: caret-blink 1.25s var(--rafters-ease-enter) infinite;
-  --motion-fade-in: 150ms cubic-bezier(0, 0, 0.2, 1);
-  --motion-fade-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-slide-in: 350ms cubic-bezier(0, 0, 0.2, 1);
-  --motion-slide-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-scale-in: 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-fade-in: var(--rafters-duration-fast) var(--rafters-ease-enter);
+  --motion-fade-out: var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --motion-slide-in: var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --motion-slide-out: var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --motion-scale-in: var(--rafters-duration-normal) var(--rafters-ease-spring-snappy);
 
-  --duration-instant: var(--rafters-duration-instant);
-  --duration-micro: var(--rafters-duration-micro);
-  --duration-fast: var(--rafters-duration-fast);
-  --duration-moderate: var(--rafters-duration-moderate);
-  --duration-normal: var(--rafters-duration-normal);
-  --duration-slow: var(--rafters-duration-slow);
+  --transition-duration-instant: var(--rafters-duration-instant);
+  --transition-duration-micro: var(--rafters-duration-micro);
+  --transition-duration-fast: var(--rafters-duration-fast);
+  --transition-duration-moderate: var(--rafters-duration-moderate);
+  --transition-duration-normal: var(--rafters-duration-normal);
+  --transition-duration-slow: var(--rafters-duration-slow);
   --ease-standard: var(--rafters-ease-standard);
   --ease-enter: var(--rafters-ease-enter);
   --ease-exit: var(--rafters-ease-exit);
   --ease-linear: var(--rafters-ease-linear);
   --ease-spring-smooth: var(--rafters-ease-spring-smooth);
   --ease-spring-snappy: var(--rafters-ease-spring-snappy);
+  --transition-delay-hover-intent: var(--rafters-delay-hover-intent);
+  --transition-delay-linger: var(--rafters-delay-linger);
+  --transition-delay-choreo-step: var(--rafters-delay-choreo-step);
+  --transition-delay-stagger-step: var(--rafters-delay-stagger-step);
+  --transition-delay-skip: var(--rafters-delay-skip);
+
+  /* Motion assignments -- one key per distinct (shape, tier, curve) */
+  --animate-scale-in-normal-enter: scale-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-scale-out-moderate-exit: scale-out var(--rafters-duration-moderate) var(--rafters-ease-exit);
+  --animate-fade-in-normal-enter: fade-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-fade-out-moderate-exit: fade-out var(--rafters-duration-moderate) var(--rafters-ease-exit);
+  --animate-fade-in-normal-spring-smooth: fade-in var(--rafters-duration-normal) var(--rafters-ease-spring-smooth);
+  --animate-scale-in-moderate-enter: scale-in var(--rafters-duration-moderate) var(--rafters-ease-enter);
+  --animate-scale-out-fast-exit: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --animate-fade-in-moderate-enter: fade-in var(--rafters-duration-moderate) var(--rafters-ease-enter);
+  --animate-fade-out-fast-exit: fade-out var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --animate-fade-in-moderate-standard: fade-in var(--rafters-duration-moderate) var(--rafters-ease-standard);
+  --animate-fade-in-fast-standard: fade-in var(--rafters-duration-fast) var(--rafters-ease-standard);
+  --animate-grow-in-normal-enter: grow-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-grow-in-x-normal-enter: grow-in-x var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-fade-out-fast-standard: fade-out var(--rafters-duration-fast) var(--rafters-ease-standard);
+  --animate-pulse-shimmer: pulse var(--rafters-period-shimmer) infinite;
+  --animate-spin-spin: spin var(--rafters-period-spin) infinite;
+  --animate-caret-blink-blink: caret-blink var(--rafters-period-blink) infinite;
 
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -404,23 +430,6 @@
   --focus-outline-subtle: calc(var(--focus-ring-width) * 0.5) solid var(--ring);
   --focus-offset-subtle: var(--focus-ring-width);
 
-  --animate-fade-in: fade-in var(--rafters-duration-fast) var(--rafters-ease-enter);
-  --animate-fade-out: fade-out var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-in-from-top: slide-in-from-top var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-bottom: slide-in-from-bottom var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-left: slide-in-from-left var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-right: slide-in-from-right var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-out-to-top: slide-out-to-top var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-bottom: slide-out-to-bottom var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-left: slide-out-to-left var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-right: slide-out-to-right var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-scale-in: scale-in var(--rafters-duration-normal) var(--rafters-ease-spring-snappy);
-  --animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-spin: spin 1s var(--rafters-ease-linear) infinite;
-  --animate-ping: ping 1s var(--rafters-ease-enter) infinite;
-  --animate-pulse: pulse 2s var(--rafters-ease-standard) infinite;
-  --animate-bounce: bounce 1s var(--rafters-ease-standard) infinite;
-  --animate-caret-blink: caret-blink 1.25s var(--rafters-ease-enter) infinite;
 }
 
 @theme inline {
@@ -1520,6 +1529,14 @@
   from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; }
 }
 
+@keyframes grow-in {
+  from { transform: scaleY(0); } to { transform: scaleY(1); }
+}
+
+@keyframes grow-in-x {
+  from { transform: scaleX(0); } to { transform: scaleX(1); }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); } to { transform: rotate(360deg); }
 }
@@ -1538,6 +1555,23 @@
 
 @keyframes caret-blink {
   0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }
+}
+
+/* Reduced motion is law: every duration and delay is zero, loops are not. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rafters-duration-instant: 0ms;
+    --rafters-duration-micro: 0ms;
+    --rafters-duration-fast: 0ms;
+    --rafters-duration-moderate: 0ms;
+    --rafters-duration-normal: 0ms;
+    --rafters-duration-slow: 0ms;
+    --rafters-delay-hover-intent: 0ms;
+    --rafters-delay-linger: 0ms;
+    --rafters-delay-choreo-step: 0ms;
+    --rafters-delay-stagger-step: 0ms;
+    --rafters-delay-skip: 0ms;
+  }
 }
 
 @theme inline {
@@ -1679,91 +1713,7 @@
   z-index: var(--depth-max);
 }
 
-/* The five motion namespaces -- one utility per member */
-@utility duration-instant {
-  transition-duration: var(--rafters-duration-instant);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-micro {
-  transition-duration: var(--rafters-duration-micro);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-fast {
-  transition-duration: var(--rafters-duration-fast);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-moderate {
-  transition-duration: var(--rafters-duration-moderate);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-normal {
-  transition-duration: var(--rafters-duration-normal);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-slow {
-  transition-duration: var(--rafters-duration-slow);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility ease-standard {
-  transition-timing-function: var(--rafters-ease-standard);
-}
-@utility ease-enter {
-  transition-timing-function: var(--rafters-ease-enter);
-}
-@utility ease-exit {
-  transition-timing-function: var(--rafters-ease-exit);
-}
-@utility ease-linear {
-  transition-timing-function: var(--rafters-ease-linear);
-}
-@utility ease-spring-smooth {
-  transition-timing-function: var(--rafters-ease-spring-smooth);
-}
-@utility ease-spring-snappy {
-  transition-timing-function: var(--rafters-ease-spring-snappy);
-}
-@utility delay-hover-intent {
-  transition-delay: var(--rafters-delay-hover-intent);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-linger {
-  transition-delay: var(--rafters-delay-linger);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-choreo-step {
-  transition-delay: var(--rafters-delay-choreo-step);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-stagger-step {
-  transition-delay: var(--rafters-delay-stagger-step);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-skip {
-  transition-delay: var(--rafters-delay-skip);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
+/* Motion namespaces Tailwind has no theme key for */
 @utility extent-pop {
   --rafters-consumed-extent: var(--rafters-extent-pop);
 }
@@ -1789,34 +1739,34 @@
 /* Semantic motion utilities -- transition longhand per token */
 @utility motion-hover {
   transition-property: color, background-color, border-color;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--rafters-duration-fast);
+  transition-timing-function: var(--rafters-ease-standard);
 }
 @utility motion-focus {
   transition-property: box-shadow, outline-color;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-linear);
+  transition-duration: var(--rafters-duration-micro);
+  transition-timing-function: var(--rafters-ease-linear);
 }
 @utility motion-press {
   transition-property: transform, color, background-color;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-spring-snappy);
+  transition-duration: var(--rafters-duration-micro);
+  transition-timing-function: var(--rafters-ease-spring-snappy);
   @media (prefers-reduced-motion: reduce) {
     transition-property: color, background-color;
   }
 }
 @utility motion-toggle {
   transition-property: color, background-color, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-standard);
   @media (prefers-reduced-motion: reduce) {
     transition-property: color, background-color;
   }
 }
 @utility motion-dropdown-in {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 100ms;
@@ -1824,8 +1774,8 @@
 }
 @utility motion-dropdown-out {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-fast);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 100ms;
@@ -1833,8 +1783,8 @@
 }
 @utility motion-modal-in {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 150ms;
@@ -1842,8 +1792,8 @@
 }
 @utility motion-modal-out {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 150ms;
@@ -1851,8 +1801,8 @@
 }
 @utility motion-sheet-in {
   transition-property: transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 250ms;
@@ -1860,8 +1810,8 @@
 }
 @utility motion-sheet-out {
   transition-property: transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 250ms;
@@ -1869,78 +1819,42 @@
 }
 @utility motion-expand {
   transition-property: grid-template-rows, opacity;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
   }
 }
 @utility motion-collapse {
   transition-property: grid-template-rows, opacity;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
   }
 }
 @utility motion-page {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 200ms;
   }
 }
 
-/* Motion cells -- one utility per animated (component, part, transition) */
-@utility animate-dialog-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-normal);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+/* Grid track lists -- named, because classy skips arbitrary track lists */
+@utility grid-cols-menu-row {
+  grid-template-columns: auto auto 1fr auto; /* indicator, icon, label, end */
 }
-@utility animate-dialog-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-start {
+  grid-template-columns: auto 1fr; /* start icon, field */
 }
-@utility animate-popover-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-end {
+  grid-template-columns: 1fr auto; /* field, end icon */
 }
-@utility animate-popover-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-fast);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
-}
-@utility animate-dropdown-menu-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
-}
-@utility animate-dropdown-menu-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-fast);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-both {
+  grid-template-columns: auto 1fr auto; /* start icon, field, end icon */
 }
 
 @layer base {

@@ -50,8 +50,8 @@ import { EASING_CURVES, MOTION_DURATION_SCALE } from './types.js';
  *
  * Every one of these lookups previously did `if (!def) continue`, which drops the
  * token and lets the build stay green. The reference survives elsewhere: the
- * semantic path writes `motion-duration-<name>` into `dependsOn` and the exporter
- * emits `var(--duration-<name>)` unconditionally, so a typo produced syntactically
+ * semantic path writes `rafters-duration-<name>` into `dependsOn` and the exporter
+ * emits `var(--rafters-duration-<name>)` unconditionally, so a typo produced syntactically
  * valid CSS that resolves to nothing -- no throw, no warning, no failing test, and
  * an element that simply does not animate.
  *
@@ -187,101 +187,12 @@ export function generateMotionTokens(
     },
   });
 
-  // Generate duration tokens. Each tier is a perceptual RANGE the designer picks
-  // within (docs/MOTION.md), NOT a constant and NOT a ratio progression. The
-  // emitted value is the tier's default -- what ships at neutral intent, until a
-  // designer moves it.
-  //
-  // The bounds are NOT emitted onto the token: they are system data, identical in
-  // every install and invariant per project, so serializing them into every
-  // consumer's token JSON would be storing a constant. Studio reads them from
-  // DEFAULT_DURATION_DEFINITIONS to clamp its picker. Only the human-readable
-  // range appears here, in `mathRelationship` and `description`.
-  for (const scale of MOTION_DURATION_SCALE) {
-    const def = durationDefs[scale];
-    if (!def) continue;
-    const scaleIndex = MOTION_DURATION_SCALE.indexOf(scale);
-    // The band supplies the window; the intent picks a point inside it. This is
-    // the link that makes an intent change move motion -- without it the tier
-    // emits a constant and every downstream reference inherits the constant.
-    // At the neutral intent this returns each tier's shipped default, so the
-    // emitted system is unchanged until someone chooses a different intent.
-    const durationMs = deriveDuration(scale, intent, durationDefs);
-    const [rangeMin, rangeMax] = def.range;
-    const bandNote = def.band ? ` Band: ${def.band}.` : '';
-    const rangeNote = rangeMin === rangeMax ? ' Fixed.' : ` Range: ${rangeMin}-${rangeMax}ms.`;
-
-    tokens.push({
-      name: `motion-duration-${scale}`,
-      value: `${durationMs}ms`,
-      category: 'motion',
-      namespace: 'motion',
-      semanticMeaning: `${def.meaning}${bandNote}`,
-      usageContext: def.contexts,
-      scalePosition: scaleIndex,
-      motionIntent: def.motionIntent,
-      motionDuration: durationMs,
-      mathRelationship: def.band
-        ? `${durationMs}ms within ${rangeMin}-${rangeMax}ms (perceptual: ${def.band})`
-        : `${durationMs}ms (fixed)`,
-      dependsOn: [],
-      description: `Duration ${scale}: ${durationMs}ms.${rangeNote}${bandNote} ${def.meaning}`,
-      generatedAt: timestamp,
-      containerQueryAware: false,
-      reducedMotionAware: true,
-      userOverride: null,
-      usagePatterns: {
-        do:
-          scale === 'instant'
-            ? ['Use for prefers-reduced-motion', 'Use for disabled animations']
-            : scale === 'micro' || scale === 'fast'
-              ? ['Use for acknowledgment feedback (hover, focus, press)']
-              : ['Use for communicative transitions where the user must track the change'],
-        never: ['Ignore prefers-reduced-motion', 'Use slow animations for frequent actions'],
-      },
-    });
-  }
-
-  // Generate easing tokens
-  for (const curve of EASING_CURVES) {
-    const def = easingDefs[curve];
-    if (!def) continue;
-
-    tokens.push({
-      name: `motion-easing-${curve}`,
-      value: def.css,
-      category: 'motion',
-      namespace: 'motion',
-      semanticMeaning: def.meaning,
-      usageContext: def.contexts,
-      easingCurve: def.curve,
-      easingName: curve,
-      description: `Easing ${curve}: ${def.css}. ${def.meaning}`,
-      generatedAt: timestamp,
-      containerQueryAware: false,
-      reducedMotionAware: true,
-      userOverride: null,
-      usagePatterns: {
-        do:
-          curve === 'linear'
-            ? ['Use for progress and loading, where the system is working not interacting']
-            : curve === 'enter'
-              ? ['Use for anything entering the viewport']
-              : curve === 'exit'
-                ? ['Use for anything leaving the viewport']
-                : ['Match the curve register to the interaction feel'],
-        never: [
-          'Use exit for entering (arrives reluctantly)',
-          'Use linear for interactive spatial transitions (reads as mechanical)',
-        ],
-      },
-    });
-  }
-
   // THE FIVE NAMESPACES, as --rafters-* system leaves.
   //
-  // duration and ease read the SAME definitions the tier tokens above read, so
-  // there is exactly one moderate and one standard curve in the system. delay,
+  // duration and ease are the ONLY duration and curve tokens in the system, so
+  // there is exactly one moderate and one standard curve. Each duration leaf is
+  // derived from its band and the intent (deriveDuration), so an intent change
+  // moves every reference built on it. delay,
   // extent and period arrive as their own leaf tables because nothing derives
   // them -- a delay is a relationship, an extent is a geometry, a period is a
   // loop, and none of the three is a function of a perceptual band.
@@ -408,11 +319,10 @@ export function generateMotionTokens(
         `animation "${name}"`,
       );
       durationValue = `${durationDef.default}ms`;
-      // The namespace LEAF, not `--motion-duration-*`. Nothing has ever declared
-      // `--motion-duration-*` in either emission path, so every animation value
-      // built on it carried a dangling var(): `animation: scale-out  ;` parses,
-      // computes to a zero duration, and the animation silently never runs --
-      // the failure mode reflection 019fb063 names. The leaves (`--rafters-
+      // The namespace LEAF, `--rafters-duration-*`. A reference to a name no
+      // emission path declares is a dangling var(): `animation: scale-out  ;`
+      // parses, computes to a zero duration, and the animation silently never
+      // runs -- the failure mode reflection 019fb063 names. The leaves (`--rafters-
       // duration-*`, `--rafters-ease-*`) are declared by generateMotionNamespaceVars.
       durationRef = `var(--rafters-duration-${anim.duration.tier})`;
       durationDependency = [`rafters-duration-${anim.duration.tier}`];
@@ -568,12 +478,7 @@ export function generateMotionTokens(
   // Composite presets -- retained for backwards compatibility; the semantic
   // motion tokens are the current expression of the same idea.
   for (const [name, comp] of Object.entries(compositePresets)) {
-    const durationDef = requireDef(
-      durationDefs,
-      comp.durationTier,
-      'duration tier',
-      `composite preset "${name}"`,
-    );
+    requireDef(durationDefs, comp.durationTier, 'duration tier', `composite preset "${name}"`);
     const easingDef = requireDef(
       easingDefs,
       comp.curve,
@@ -581,11 +486,19 @@ export function generateMotionTokens(
       `composite preset "${name}"`,
     );
 
-    const durationMs = durationDef.default;
+    // The CSS value REFERENCES the leaves, so retuning a leaf moves the preset.
+    // motionDuration is metadata; it reports what the leaf resolves to here.
+    const tier = MOTION_DURATION_SCALE.find((scale) => scale === comp.durationTier);
+    if (tier === undefined) {
+      throw new Error(
+        `motion generator: composite preset "${name}" names duration tier "${comp.durationTier}", which is not on the duration scale (${MOTION_DURATION_SCALE.join(', ')}).`,
+      );
+    }
+    const durationMs = deriveDuration(tier, intent, durationDefs);
 
     tokens.push({
       name,
-      value: `${durationMs}ms ${easingDef.css}`,
+      value: `var(--rafters-duration-${comp.durationTier}) var(--rafters-ease-${comp.curve})`,
       category: 'motion',
       namespace: 'motion',
       semanticMeaning: comp.meaning,
@@ -593,7 +506,7 @@ export function generateMotionTokens(
       motionDuration: durationMs,
       easingCurve: easingDef.curve,
       easingName: comp.curve as (typeof EASING_CURVES)[number],
-      dependsOn: [`motion-duration-${comp.durationTier}`, `motion-easing-${comp.curve}`],
+      dependsOn: [`rafters-duration-${comp.durationTier}`, `rafters-ease-${comp.curve}`],
       description: `${comp.meaning}. Combines ${comp.durationTier} duration with ${comp.curve} easing.`,
       generatedAt: timestamp,
       containerQueryAware: false,
@@ -641,7 +554,7 @@ export function generateMotionTokens(
             ? 'exit'
             : 'transition',
       generateUtilityClass: true,
-      dependsOn: [`motion-duration-${durationTier}`, `motion-easing-${curve}`],
+      dependsOn: [`rafters-duration-${durationTier}`, `rafters-ease-${curve}`],
       description: `Semantic motion motion-${name}: ${mapping.properties.join(', ')} over ${durationTier} with ${curve}. ${mapping.sizeReasoning}`,
       generatedAt: timestamp,
       containerQueryAware: false,

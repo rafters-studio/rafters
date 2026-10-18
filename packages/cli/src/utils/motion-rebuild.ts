@@ -153,7 +153,8 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
  * namespaces all come out of the motion matrix, and nobody hand-authors one.
  * A file written by an older rafters therefore holds tokens the current
  * generator no longer emits: 0.2.3 cells keyed on `durationTier` instead of
- * `duration.kind`, `motion-easing-*` names retired since. Reloading those
+ * `duration.kind`, duration and easing names other than the `rafters-duration-*`
+ * and `rafters-ease-*` leaves, which are retired. Reloading those
  * fails either TokenSchema validation or the Tailwind exporter, which is what
  * made `--rebuild` and post-install regen unusable on every pre-0.3.0
  * project (#2208).

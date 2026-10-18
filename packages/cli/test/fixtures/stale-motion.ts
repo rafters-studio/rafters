@@ -5,15 +5,19 @@
  * post-install regen -- because the defect is one defect and the fixture that
  * reproduces it must be one fixture.
  *
- * Four tokens, one per way a stale motion file breaks the current CLI:
+ * Five tokens, one per way a stale motion file breaks the current CLI:
  *   1. a cell whose value predates `duration.kind` (0.2.3 wrote `durationTier`,
  *      which the Tailwind exporter reads as `duration.kind null` and throws on);
  *   2. an easing whose name has since been retired from the enum, which fails
  *      TokenSchema on load, before the exporter is ever reached;
- *   3. a still-current easing carrying a designer override, which must survive;
+ *   3. a still-current easing leaf carrying a designer override, which must
+ *      survive;
  *   4. a 0.2.3-shaped cell that ALSO carries a designer override -- the carry
  *      path's own way of reintroducing (1), by writing the stale value back
- *      over a correctly regenerated cell.
+ *      over a correctly regenerated cell;
+ *   5. a duration tier under its retired pre-#2746 name, carrying a designer
+ *      override. The name is deleted, not renamed: the token and its override
+ *      are dropped, and the `rafters-duration-*` leaf is regenerated as is.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -40,12 +44,10 @@ export const STALE_MOTION_FILE = {
       userOverride: null,
     },
     {
-      name: 'motion-easing-standard',
+      name: 'rafters-ease-standard',
       value: 'cubic-bezier(0.2, 0, 0, 1)',
       category: 'motion',
       namespace: 'motion',
-      easingName: 'standard',
-      easingCurve: [0.2, 0, 0, 1],
       userOverride: {
         previousValue: 'cubic-bezier(0.4, 0, 0.2, 1)',
         reason: 'Brand curve settles harder than the system default',
@@ -67,14 +69,28 @@ export const STALE_MOTION_FILE = {
         kind: 'designer',
       },
     },
+    {
+      name: 'motion-duration-fast',
+      value: '200ms',
+      category: 'motion',
+      namespace: 'motion',
+      userOverride: {
+        previousValue: '150ms',
+        reason: 'Hover acknowledgment read as twitchy',
+        kind: 'designer',
+      },
+    },
   ],
 };
 
-/** The still-current easing whose designer override must survive a rebuild. */
+/** The still-current easing leaf whose designer override must survive a rebuild. */
 export const CARRIED_EASING = STALE_MOTION_FILE.tokens[2];
 
 /** The 0.2.3-shaped cell whose override must NOT drag its stale value back. */
 export const STALE_OVERRIDDEN_CELL = STALE_MOTION_FILE.tokens[3];
+
+/** The retired duration name whose token and override are dropped, not renamed. */
+export const RETIRED_DURATION = STALE_MOTION_FILE.tokens[4];
 
 export type StoredToken = { name: string; value: string; userOverride: unknown };
 

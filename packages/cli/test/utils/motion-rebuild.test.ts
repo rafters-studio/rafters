@@ -1,7 +1,29 @@
-import { generateNamespaces } from '@rafters/design-tokens';
-import { describe, expect, it } from 'vitest';
-import { isCarryableMotionValue } from '../../src/utils/motion-rebuild.js';
-import { STALE_OVERRIDDEN_CELL } from '../fixtures/stale-motion.js';
+import { mkdirSync } from 'node:fs';
+import {
+  contrastPlugin,
+  generateNamespaces,
+  invertPlugin,
+  mirrorPlugin,
+  scalePlugin,
+  statePlugin,
+} from '@rafters/design-tokens';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  isCarryableMotionValue,
+  regenerateMotionNamespace,
+} from '../../src/utils/motion-rebuild.js';
+import { cleanupFixture, createFixture } from '../fixtures/projects.js';
+import {
+  CARRIED_EASING,
+  findToken,
+  RETIRED_DURATION,
+  readNamespaceTokens,
+  STALE_OVERRIDDEN_CELL,
+  seedStaleMotion,
+  tokensDir,
+} from '../fixtures/stale-motion.js';
+
+const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 /**
  * The carry gate is a SECOND declaration of the cell value shape -- the first
@@ -59,9 +81,53 @@ describe('isCarryableMotionValue (#2208)', () => {
   it('leaves every non-cell motion token carryable', () => {
     // Easings, durations, periods, keyframes and the semantic namespaces carry
     // plain strings with no composite shape to go stale.
-    expect(isCarryableMotionValue('motion-easing-standard', 'cubic-bezier(0.2, 0, 0, 1)')).toBe(
+    expect(isCarryableMotionValue('rafters-ease-standard', 'cubic-bezier(0.2, 0, 0, 1)')).toBe(
       true,
     );
-    expect(isCarryableMotionValue('motion-duration-normal', '200ms')).toBe(true);
+    expect(isCarryableMotionValue('rafters-duration-normal', '200ms')).toBe(true);
+  });
+});
+
+describe('regenerateMotionNamespace: one duration and easing set (#2746)', () => {
+  let projectDir = '';
+
+  beforeEach(async () => {
+    projectDir = await createFixture('vite-no-shadcn');
+    mkdirSync(tokensDir(projectDir), { recursive: true });
+    seedStaleMotion(projectDir);
+  });
+
+  afterEach(async () => {
+    await cleanupFixture(projectDir);
+    projectDir = '';
+  });
+
+  it('loads a stored file holding retired motion-duration-* / motion-easing-* tokens', () => {
+    expect(() => regenerateMotionNamespace(tokensDir(projectDir), PLUGINS)).not.toThrow();
+  });
+
+  it('drops a retired duration name and its override; the rafters-* leaf is regenerated', () => {
+    regenerateMotionNamespace(tokensDir(projectDir), PLUGINS);
+
+    const rebuilt = readNamespaceTokens(projectDir, 'motion');
+    expect(
+      rebuilt.filter((t) => /^motion-duration-(?!base$)|^motion-easing-/.test(t.name)),
+    ).toEqual([]);
+    expect(findToken(rebuilt, RETIRED_DURATION.name)).toBeUndefined();
+
+    const leaf = findToken(rebuilt, 'rafters-duration-fast');
+    const generated = generateNamespaces(['motion']).allTokens.find(
+      (t) => t.name === 'rafters-duration-fast',
+    );
+    expect(leaf?.value).toBe(generated?.value);
+    expect(leaf?.userOverride).toBeNull();
+  });
+
+  it('carries an override stored on a rafters-* leaf', () => {
+    regenerateMotionNamespace(tokensDir(projectDir), PLUGINS);
+
+    const leaf = findToken(readNamespaceTokens(projectDir, 'motion'), CARRIED_EASING.name);
+    expect(leaf?.value).toBe(CARRIED_EASING.value);
+    expect(leaf?.userOverride).toEqual(CARRIED_EASING.userOverride);
   });
 });
