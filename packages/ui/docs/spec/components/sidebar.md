@@ -99,13 +99,15 @@ React `SheetContent` surface. **They live on the `dialog` part, never on the
 panel** (corrected #2324, Decision 6, 2026-09-09): `role="dialog"` is not an
 allowed ARIA role on `<nav>` (axe `aria-allowed-role`; found by the #2222
 sweep, filed as #2338). WC/Astro render the panel (`<nav>`) INSIDE a `dialog`
-wrapper `<div>` (Astro: `sidebar.astro`'s own markup; WC: rendered by
-`<rafters-sidebar>` itself) -- the wrapper carries the dialog identity, the
-`<nav>` stays a `<nav>` on every viewport. The wrapper is optional in the score
-(`sidebar.parts.dialog.optional`), so a tree without it degrades to no dialog
-role rather than reintroducing it on the nav. On mobile in React the panel is
-not rendered at all (the overlay is the portaled Sheet), so the trigger drops
-its `aria-controls` there to avoid a dangling reference.
+wrapper `<div>` (Astro: `sidebar.astro`'s own markup; WC: authored by the
+consumer, since a WC light-DOM enhancer has no template of its own) -- the
+wrapper carries the dialog
+identity, the `<nav>` stays a `<nav>` on every viewport. The wrapper is
+optional in the score (`sidebar.parts.dialog.optional`) so hand-authored WC
+markup predating this fix degrades to no dialog role rather than reintroducing
+it on the nav. On mobile in React the panel is not rendered at all (the
+overlay is the portaled Sheet), so the trigger drops its `aria-controls` there
+to avoid a dangling reference.
 
 The trigger carries NO `aria-expanded`. The gesture moves whichever axis the
 viewport selects, so a single expanded value would misreport on the other

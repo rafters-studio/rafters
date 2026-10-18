@@ -109,7 +109,7 @@ popover carries); the conformance suite supplies `aria-label`.
 | `aria-describedby` links trigger to content while open | contract |
 | `role="dialog"` on content | contract — carried faithfully; the consumer names it (Radix's HoverCard leaves the content role-less, a deliberate divergence recorded here) |
 | collision-detected positioning (side/align/sideOffset/alignOffset, reposition on scroll/resize) | contract — composed from `collision-detector`, shared via `positionHoverCardContent`. `alignOffset` is not surfaced on the score config (matches tooltip; can be added when a consumer needs it) |
-| default trigger renders an anchor `<a>`; `asChild` swaps in the consumer's element | contract (anchor default) + framework affordance (`asChild`, React; the WC has no asChild -- its equivalent is slots, as button's is) |
+| default trigger renders an anchor `<a>`; `asChild` swaps in the consumer's element | contract (anchor default) + framework affordance (`asChild`, React) |
 | HoverCardPortal / `container` / `forceMount` | contract (shadcn drop-in base + rafters explicit-portal surface). `HoverCardPortal` mirrors `TooltipPortal`; nested content skips its automatic portal |
 | Escape dismiss (`onEscapeKeyDown` via the `escape-keydown` primitive) | contract — but dismissal is the score's `keymap` Escape dispatched directly by each client, not the `escape-keydown` primitive the oracle imported. keymap is the sanctioned direct-dismissal path (dialog + tooltip agree); the primitive import is the divergence |
 | always-mounted content when closed | superseded — content mounts on open (React) / hides off the open axis (WC/Astro); enter-only, exit gated on Presence |

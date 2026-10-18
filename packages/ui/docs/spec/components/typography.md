@@ -28,15 +28,9 @@ the resolver.
   (`List` aliases `Ul` for shadcn parity), plus a generic `Typography` with
   `as`/`variant`. A factory builds each named component (DRY construction, not a
   decision surface).
-- **Web Component**: the same named components as their own elements
-  (`<rafters-h1>`–`<rafters-h6>`, `<rafters-p>`, `<rafters-lead>`,
-  `<rafters-large>`, `<rafters-muted>`, `<rafters-small>`, `<rafters-code>`,
-  `<rafters-code-block>`, `<rafters-blockquote>`, `<rafters-mark>`,
-  `<rafters-abbr>`, `<rafters-ul>`/`<rafters-ol>`/`<rafters-li>`,
-  `<rafters-list>`), plus the generic `<rafters-typography variant="…">`. Each
-  is a RaftersElement rendering its tag inside a shadow root with a slot,
-  carrying the shared composed classes. Unknown `variant` falls back to `p` —
-  never throws.
+- **Web Component**: `<rafters-typography variant="…">` renders the variant's
+  tag inside a shadow root (RaftersElement), carrying the shared composed
+  classes. Unknown `variant` falls back to `p` — never throws.
 - **Astro**: exports the same named components (`H1`–`H6`, `P`, `Lead`,
   `Large`, `Muted`, `Small`, `Code`, `CodeBlock`, `Blockquote`, `Mark`,
   `Abbr`, `Ul`, `Ol`, `Li`, `List`) from the single `typography.astro` file
@@ -94,11 +88,11 @@ and (Spec 03 is gone) no effects. The score composes no primitives.
 | `as`-element → variant derivation (span→p, h5/h6→h4) | contract — moved onto the score as `variantForElement` |
 | h5/h6 as tags (no own variant scale) | ported as-is — h5/h6 render their tag with h4 classes |
 | generic `<Typography as … variant …>` | contract |
-| named per-tag components (H1…, P, Code, …) | contract — React factory; Astro exports the same named components from the single `typography.astro` file as hoisted `createComponent` exports (#2325); the WC registers one element per named component (`<rafters-h1>`, …) |
+| named per-tag components (H1…, P, Code, …) | contract — React factory; Astro exports the same named components from the single `typography.astro` file as hoisted `createComponent` exports (#2325) |
 | editable / contenteditable / `onChange` / `onEnter` / `onBackspaceAtStart` / placeholder | **stripped** — block-editor concern, belongs in a studio-layer wrapper (matches Container's editable strip). `Fill, not background. No editor props.` |
 | `InlineToolbar` / `SlashMenu` / `SelectionInfo` / inline-mark rich text | **stripped** — editor surface, not the text set |
 | `CodeBlock` `language` / `showLineNumbers` | dropped — syntax highlighting + gutter are a studio/highlighter concern; `CodeBlock` renders `pre > code` only |
-| `Lead`/`Large`/`Muted`/`Mark`/`Abbr` presentational variants | contract — exposed as named components in React, Astro and the WC; present in every framework's class vocabulary |
+| `Lead`/`Large`/`Muted`/`Mark`/`Abbr` presentational variants | contract — exposed as React named components; present in every framework's class vocabulary |
 
 ## WCAG obligations (author-owned)
 

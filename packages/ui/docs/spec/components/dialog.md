@@ -83,7 +83,7 @@ absence is honest. The guard moves into the adapter (wave 0-A).
 | modal prop (trap, lock, outside-dismiss gated on it) | contract |
 | Escape closes | contract (moved from document listener to content keymap) |
 | Trigger/Content/Header/Footer/Title/Description/Close surface | contract |
-| asChild on Trigger and Close | framework affordance (React); the WC uses slots, not `asChild` -- the consumer's content goes in the slot of `<rafters-dialog-trigger>` / `<rafters-dialog-close>` |
+| asChild on Trigger and Close | framework affordance (React) |
 | showCloseButton (default true) | contract; oracle's inside-portal default heuristic dropped |
 | always-set `aria-controls`/`aria-describedby` | defect-do-not-port — dangling references when target absent; replaced by registration + empty-id convention |
 | trigger pointerdown closes then click re-opens | defect-do-not-port — fixed via `exceptParts: ['trigger']` |

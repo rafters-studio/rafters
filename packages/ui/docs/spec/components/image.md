@@ -74,7 +74,7 @@ HTML spec for decorative images.
 - `keymap`: none. Image is not a widget; it takes no keyboard interaction.
 - `effects(state, config)`: `[]`. No focus-trap, roving, dismiss, or announce
   primitive — the load contract is a pure projection, driven by React's state
-  or read once by `bindImage` from the markup Astro server-renders or the WC renders.
+  or read once from server/author markup by `bindImage`.
 - Motion: **none** (docs/MOTION.md intent). The overlay is a static token surface — no
   spinner, no transition.
 

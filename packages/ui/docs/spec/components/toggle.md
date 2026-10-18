@@ -25,10 +25,10 @@ declaratively instead. One binding, three performances, zero drift.
 - **React** (`toggle.tsx`): thin controller over `createBehavior` + `useMemory`
   -- no `useBehavior`, no effect runner (toggle has no effects). Reads the aria
   projection declaratively and spreads it onto the `<button>`.
-- **WC** (`toggle.element.ts`): `<rafters-toggle>` renders its own real
-  `<button data-part="root">` (the view from `toggle.classes.ts`) so native
-  Enter/Space survive; `connectedCallback` defers the bind one microtask
-  (children may not be parsed yet) and hands that root to `bindToggle`.
+- **WC** (`toggle.element.ts`): a light-DOM enhancer. The author (or Astro)
+  provides a real inner `<button data-part="root">` so native Enter/Space
+  survive; `connectedCallback` defers the bind one microtask (children may not
+  be parsed yet) and hands the inner root to `bindToggle`.
 - **Astro** (`toggle.astro`): server-renders the `<button>` with the initial
   projection already applied (correct before JS), then a `<script>` hands each
   `button[data-part="root"]` to `bindToggle`.
@@ -174,7 +174,7 @@ The oracle ships a React target (`toggle.tsx`) and a WC target
 | `aria-pressed` + `data-state` on/off | contract | Preserved; the glue projects on/off, the fill rides `data-[state=on]`. |
 | Enter/Space activation | contract | Native `<button>`; the keymap asserts it on every binding. |
 | `asChild` (React polymorphism) | framework-affordance | A React-only slot affordance; button dropped it on the behavior-layer pattern, and toggle follows -- WC/Astro use slots, not `asChild`. |
-| Form association (WC `ElementInternals`, `setFormValue`, form reset/restore/disabled callbacks) | dropped | The WC is not form-associated: no ported `.element.ts` carries `ElementInternals`, and shadcn Toggle is not form-associated. Where form participation is needed it comes from a native control (see the old checkbox for the abandoned form-value axis). |
+| Form association (WC `ElementInternals`, `setFormValue`, form reset/restore/disabled callbacks) | dropped | The behavior-layer WC is a light-DOM enhancer, not a form-associated shadow element. No ported `.element.ts` carries `ElementInternals` -- even `input`, the most form-natural, is a plain enhancer -- and shadcn Toggle is not form-associated. Where form participation is needed it comes from a native light-DOM control the enhancer wraps (see the old checkbox for the abandoned form-value axis). |
 | `active:scale-[0.98]` | dropped | Arbitrary value against the semantic-classes-only rule; the `state-swap` fill transition covers the press feedback. |
 
 ## WCAG 2.1 AA obligations (minimum bar)
