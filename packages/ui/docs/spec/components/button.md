@@ -24,10 +24,11 @@ declaratively instead. One binding, three performances, zero drift.
 - **React** (`button.tsx`): thin controller over `createBehavior` + `useMemory`
   + `useBehaviorEffects` -- no `useBehavior`. Reads the aria projection
   declaratively and spreads it onto the `<button>`.
-- **WC** (`button.element.ts`): a light-DOM enhancer. The author (or Astro)
-  provides a real inner `<button data-part="root">` so native Enter/Space
-  survive; `connectedCallback` defers the bind one microtask (children may not
-  be parsed yet) and hands the inner root to `bindButton`.
+- **WC** (`button.element.ts`): renders its own inner
+  `<button data-part="root">` in light DOM, with the view from
+  `button.classes.ts`, so native Enter/Space survive; `connectedCallback` defers
+  the bind one microtask (children may not be parsed yet) and hands the inner
+  root to `bindButton`.
 - **Astro** (`button.astro`): server-renders the `<button>` with the initial
   projection already applied (correct before JS), then a `<script>` hands each
   `button[data-part="root"]` to `bindButton`.
@@ -51,7 +52,7 @@ truthy.
 2. **aria-manager coercion** (`bindButton`): the resolved projection is applied
    with `{ validate: false }`; author-input validation would flip `'false'`.
 3. **WC bind deferred one microtask** (`button.element.ts`):
-   `connectedCallback` can fire before the light-DOM inner button is parsed.
+   `connectedCallback` can fire before the host's children are parsed.
 
 ### The announce effect is edge-triggered
 
