@@ -3,11 +3,13 @@
  * (`buildFamily` over `DEFAULT_COLOR_SEEDS`), zinc included. #2669
  */
 
+import { oklchToCSS } from '@rafters/color-utils';
 import type { ColorValue } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { buildFamily } from '../src/generators/color.js';
 import { DEFAULT_COLOR_SEEDS } from '../src/generators/defaults.js';
 import { generateBaseSystem } from '../src/generators/index.js';
+import { COLOR_SCALE_POSITIONS } from '../src/generators/types.js';
 
 function familyTokens() {
   return generateBaseSystem().allTokens.filter(
@@ -48,12 +50,19 @@ describe('default colour families', () => {
     expect(value.accessibility?.apca).toBeDefined();
   });
 
-  it('per-position primitives carry the family scale', () => {
+  it("every family's per-position primitives equal the family scale at that position", () => {
     const system = generateBaseSystem();
-    const zinc = system.allTokens.find((t) => t.name === 'zinc');
-    const zinc600 = system.allTokens.find((t) => t.name === 'zinc-600');
-    if (!zinc || !zinc600) throw new Error('zinc tokens missing');
-    expect(zinc600.value).toBe('oklch(0.442 0 0)');
-    expect((zinc.value as ColorValue).scale).toHaveLength(11);
+    const byName = new Map(system.allTokens.map((t) => [t.name, t]));
+    for (const name of Object.keys(DEFAULT_COLOR_SEEDS)) {
+      const family = byName.get(name);
+      if (!family) throw new Error(`family ${name} missing`);
+      const scale = (family.value as ColorValue).scale;
+      expect(scale).toHaveLength(COLOR_SCALE_POSITIONS.length);
+      for (const [index, position] of COLOR_SCALE_POSITIONS.entries()) {
+        const step = scale[index];
+        if (!step) throw new Error(`${name} has no step at ${position}`);
+        expect(byName.get(`${name}-${position}`)?.value).toBe(oklchToCSS(step));
+      }
+    }
   });
 });
