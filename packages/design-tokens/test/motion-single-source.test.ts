@@ -79,17 +79,26 @@ describe('one motion duration and easing set (#2746)', () => {
     }
   });
 
-  it('points composite and semantic dependsOn at the rafters-* leaves', () => {
+  it('names in each composite and semantic dependsOn exactly the two leaves its CSS reads', () => {
     for (const name of COMPOSITES) {
       const token = tokens.find((t) => t.name === name);
-      expect(token?.dependsOn?.every((d) => /^rafters-(duration|ease)-/.test(d))).toBe(true);
-      expect(token?.dependsOn).toHaveLength(2);
+      const refs = [...String(token?.value).matchAll(/var\(--([a-z0-9-]+)\)/g)].map((m) => m[1]);
+      expect(refs, name).toHaveLength(2);
+      expect(token?.dependsOn, name).toEqual(refs);
     }
     const semantic = tokens.filter((t) => t.name.startsWith('motion-semantic-'));
     expect(semantic.length).toBeGreaterThan(0);
+    const utilities = css();
     for (const token of semantic) {
-      expect(token.dependsOn?.every((d) => /^rafters-(duration|ease)-/.test(d))).toBe(true);
-      expect(token.dependsOn).toHaveLength(2);
+      const spec = JSON.parse(String(token.value)) as { durationTier: string; curve: string };
+      const leaves = [`rafters-duration-${spec.durationTier}`, `rafters-ease-${spec.curve}`];
+      expect(token.dependsOn, token.name).toEqual(leaves);
+      // The @utility the exporter emits for this token reads those same two leaves.
+      const block = utilities.match(
+        new RegExp(`@utility ${token.name.replace('motion-semantic-', 'motion-')} \\{[^}]*`),
+      )?.[0];
+      expect(block, token.name).toBeDefined();
+      for (const leaf of leaves) expect(block, token.name).toContain(`var(--${leaf})`);
     }
   });
 

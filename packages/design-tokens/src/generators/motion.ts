@@ -223,8 +223,10 @@ export function generateMotionTokens(
   for (const curve of EASING_CURVES) {
     const def = easingDefs[curve];
     if (!def) continue;
-    tokens.push(
-      namespaceLeaf({
+    // The leaf carries its control points as well as the CSS string, so the DTCG
+    // exporter can type it cubicBezier -- these are the system's only curve tokens.
+    tokens.push({
+      ...namespaceLeaf({
         namespaceName: 'ease',
         member: curve,
         value: def.css,
@@ -234,7 +236,9 @@ export function generateMotionTokens(
         contexts: def.contexts,
         timestamp,
       }),
-    );
+      easingCurve: def.curve,
+      easingName: curve,
+    });
   }
 
   for (const [namespaceName, members] of [
@@ -478,7 +482,6 @@ export function generateMotionTokens(
   // Composite presets -- retained for backwards compatibility; the semantic
   // motion tokens are the current expression of the same idea.
   for (const [name, comp] of Object.entries(compositePresets)) {
-    requireDef(durationDefs, comp.durationTier, 'duration tier', `composite preset "${name}"`);
     const easingDef = requireDef(
       easingDefs,
       comp.curve,
@@ -488,10 +491,14 @@ export function generateMotionTokens(
 
     // The CSS value REFERENCES the leaves, so retuning a leaf moves the preset.
     // motionDuration is metadata; it reports what the leaf resolves to here.
+    // One check for the tier: it must be on the duration scale, because the scale
+    // is what the leaf loop emits, so a tier on it has a declared var() target.
+    // deriveDuration then reads its definition and throws if that is missing.
     const tier = MOTION_DURATION_SCALE.find((scale) => scale === comp.durationTier);
     if (tier === undefined) {
       throw new Error(
-        `motion generator: composite preset "${name}" names duration tier "${comp.durationTier}", which is not on the duration scale (${MOTION_DURATION_SCALE.join(', ')}).`,
+        `motion generator: composite preset "${name}" references unknown duration tier "${comp.durationTier}". ` +
+          `Known duration tiers: ${[...MOTION_DURATION_SCALE].sort().join(', ')}.`,
       );
     }
     const durationMs = deriveDuration(tier, intent, durationDefs);

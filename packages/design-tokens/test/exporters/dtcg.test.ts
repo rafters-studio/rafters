@@ -33,3 +33,17 @@ describe('toDTCG oklch formatting', () => {
     expect(dtcg).toContain('"oklch(0.6230830326348528 0.18801473450792203 259.8145285254815)"');
   });
 });
+
+describe('toDTCG motion curves (#2746)', () => {
+  it('types every rafters-ease-* leaf as cubicBezier with its control points', () => {
+    const tokens = generateBaseSystem({}).allTokens;
+    const dtcg: Record<string, unknown> = toDTCG(tokens, { nested: false });
+    const leaves = tokens.filter((t) => t.name.startsWith('rafters-ease-'));
+    expect(leaves).toHaveLength(6);
+    for (const leaf of leaves) {
+      expect(dtcg[leaf.name], leaf.name).toMatchObject({ $type: 'cubicBezier' });
+    }
+    expect(dtcg['rafters-ease-standard']).toMatchObject({ $value: [0.4, 0, 0.2, 1] });
+    expect(dtcg['rafters-ease-linear']).toMatchObject({ $value: [0, 0, 1, 1] });
+  });
+});

@@ -19,8 +19,8 @@ import type { ResolvedSystemConfig } from '../src/generators/types.js';
  *
  * Before this guard every lookup was `if (!def) continue`, which drops the token
  * and leaves the build green. The reference survived downstream regardless: the
- * semantic path writes `motion-duration-<name>` into `dependsOn` and the exporter
- * emits `var(--duration-<name>)` unconditionally. A typo therefore produced
+ * semantic path writes `rafters-duration-<name>` into `dependsOn` and the exporter
+ * emits `var(--rafters-duration-<name>)` unconditionally. A typo therefore produced
  * syntactically valid CSS that resolves to nothing -- the element simply does not
  * animate, and no test, lint or build step notices.
  *
