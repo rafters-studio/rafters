@@ -3301,8 +3301,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // ALERT - Critical alerts (semantic alias for destructive in alert context)
   // ============================================================================
   alert: {
-    light: { family: 'silver-bold-fire-truck', position: '600' },
-    dark: { family: 'silver-bold-fire-truck', position: '500' },
+    light: { family: 'destructive', position: '600' },
+    dark: { family: 'destructive', position: '500' },
     meaning: 'Critical alert states',
     contexts: ['critical-alerts', 'error-banners'],
     do: ['Use for critical system alerts'],
@@ -3531,8 +3531,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use for entered text'],
   },
   'input-invalid': {
-    light: { family: 'silver-bold-fire-truck', position: '500' },
-    dark: { family: 'silver-bold-fire-truck', position: '500' },
+    light: { family: 'destructive', position: '500' },
+    dark: { family: 'destructive', position: '500' },
     meaning: 'Invalid input border',
     contexts: ['invalid-inputs', 'validation-errors'],
     do: ['Use for invalid input borders'],
@@ -3547,8 +3547,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use for success messages'],
   },
   'input-valid': {
-    light: { family: 'silver-true-citrine', position: '500' },
-    dark: { family: 'silver-true-citrine', position: '500' },
+    light: { family: 'success', position: '500' },
+    dark: { family: 'success', position: '500' },
     meaning: 'Valid input border',
     contexts: ['valid-inputs', 'validation-success'],
     do: ['Use for valid input borders'],
@@ -3583,40 +3583,40 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use as primary color'],
   },
   'ring-primary': {
-    light: { family: 'neutral', position: '900' },
-    dark: { family: 'neutral', position: '50' },
+    light: { family: 'primary', position: '900' },
+    dark: { family: 'primary', position: '50' },
     meaning: 'Primary focus ring',
     contexts: ['primary-focus-ring'],
     do: ['Use for primary element focus rings'],
     never: ['Use for decorative rings'],
   },
   'ring-destructive': {
-    light: { family: 'silver-bold-fire-truck', position: '600' },
-    dark: { family: 'silver-bold-fire-truck', position: '400' },
+    light: { family: 'destructive', position: '600' },
+    dark: { family: 'destructive', position: '400' },
     meaning: 'Destructive focus ring',
     contexts: ['destructive-focus-ring'],
     do: ['Use for destructive element focus rings'],
     never: ['Use for non-destructive elements'],
   },
   'ring-success': {
-    light: { family: 'silver-true-citrine', position: '600' },
-    dark: { family: 'silver-true-citrine', position: '400' },
+    light: { family: 'success', position: '600' },
+    dark: { family: 'success', position: '400' },
     meaning: 'Success focus ring',
     contexts: ['success-focus-ring'],
     do: ['Use for success element focus rings'],
     never: ['Use for non-success elements'],
   },
   'ring-warning': {
-    light: { family: 'silver-true-honey', position: '600' },
-    dark: { family: 'silver-true-honey', position: '400' },
+    light: { family: 'warning', position: '600' },
+    dark: { family: 'warning', position: '400' },
     meaning: 'Warning focus ring',
     contexts: ['warning-focus-ring'],
     do: ['Use for warning element focus rings'],
     never: ['Use for non-warning elements'],
   },
   'ring-info': {
-    light: { family: 'silver-true-sky', position: '600' },
-    dark: { family: 'silver-true-sky', position: '400' },
+    light: { family: 'info', position: '600' },
+    dark: { family: 'info', position: '400' },
     meaning: 'Info focus ring',
     contexts: ['info-focus-ring'],
     do: ['Use for info element focus rings'],
@@ -3627,8 +3627,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // LINK TOKENS
   // ============================================================================
   link: {
-    light: { family: 'silver-true-sky', position: '700' },
-    dark: { family: 'silver-true-sky', position: '400' },
+    light: { family: 'info', position: '700' },
+    dark: { family: 'info', position: '400' },
     meaning: 'Link color',
     contexts: ['links', 'anchors'],
     do: ['Use for link text'],
@@ -3651,8 +3651,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use for hover states'],
   },
   'link-visited': {
-    light: { family: 'silver-true-violet', position: '700' },
-    dark: { family: 'silver-true-violet', position: '400' },
+    light: { family: 'highlight', position: '700' },
+    dark: { family: 'highlight', position: '400' },
     meaning: 'Visited link color',
     contexts: ['visited-links'],
     do: ['Use for visited links'],
@@ -3671,8 +3671,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
   // SELECTION TOKENS
   // ============================================================================
   selection: {
-    light: { family: 'silver-true-sky', position: '200' },
-    dark: { family: 'silver-true-sky', position: '800' },
+    light: { family: 'info', position: '200' },
+    dark: { family: 'info', position: '800' },
     meaning: 'Text selection background',
     contexts: ['text-selection'],
     do: ['Use for ::selection background'],
@@ -3707,16 +3707,16 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use outside sidebar context'],
   },
   'sidebar-muted': {
-    light: { family: 'neutral', position: '500' },
-    dark: { family: 'neutral', position: '400' },
+    light: { family: 'muted', position: '500' },
+    dark: { family: 'muted', position: '400' },
     meaning: 'Sidebar muted text',
     contexts: ['sidebar-secondary-text'],
     do: ['Use for secondary sidebar text'],
     never: ['Use for primary sidebar text'],
   },
   'sidebar-primary': {
-    light: { family: 'neutral', position: '900' },
-    dark: { family: 'neutral', position: '50' },
+    light: { family: 'primary', position: '900' },
+    dark: { family: 'primary', position: '50' },
     meaning: 'Sidebar primary accent',
     contexts: ['active-nav-item', 'selected-sidebar-item'],
     do: ['Use for active sidebar items'],
@@ -3747,8 +3747,8 @@ export const DEFAULT_SEMANTIC_COLOR_MAPPINGS: Record<string, SemanticColorMappin
     never: ['Use for hover states'],
   },
   'sidebar-accent': {
-    light: { family: 'neutral', position: '100' },
-    dark: { family: 'neutral', position: '800' },
+    light: { family: 'accent', position: '100' },
+    dark: { family: 'accent', position: '800' },
     meaning: 'Sidebar hover/accent state',
     contexts: ['sidebar-hover', 'sidebar-selected'],
     do: ['Use for sidebar hover states'],

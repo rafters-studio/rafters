@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- fix(design-tokens): **Alert, input validation, ring, link, selection and sidebar colours follow their role (#2743).** Fourteen semantic mappings named a palette (or `neutral`) instead of their role, so 60 light and dark steps never moved when a role's family changed. `alert`, `input-invalid` and `ring-destructive` now follow `destructive`; `input-valid` and `ring-success` follow `success`; `ring-warning` follows `warning`; `ring-info`, `link` and `selection` follow `info`; `link-visited` follows `highlight`; `ring-primary` and `sidebar-primary` follow `primary`; `sidebar-accent` follows `accent`; `sidebar-muted` follows `muted`. Each token's `dependsOn`, scale binding and description now name the role. At the default config every token resolves to the same palette step as before. `chart-1` to `chart-5` keep their palettes. Existing projects keep the palette names in their stored tokens until they regenerate with `rafters init --rebuild`.
+
 - fix(ui): **Escape closes a sheet from any focus inside it.** A keydown anywhere inside the content is now content-scoped in `bindSheet`, so Escape works when the focus trap lands on the close button (previously the keydown resolved the `close` part and the Escape keymap returned nothing).
 
 - fix(ui): **`bindGrid` reads `grid-role` as well as `data-grid-role`.**
