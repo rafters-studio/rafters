@@ -75,7 +75,7 @@ dispositions). It renders as a horizontal top-center pill, tuned for the default
 bottom edge; on the position-only top/left/right edges it is not re-oriented
 (intentional, not an oversight), since the drag gesture it advertises is deferred. In Astro the title renders as a `div[role="heading"][aria-level]`
 (not a raw `<h2 class>`) to satisfy the typography-component guard while keeping
-heading semantics; React and the WC light-DOM use a real `<h2>`.
+heading semantics; React and the WC (`<rafters-drawer-title>`) use a real `<h2>`.
 
 Empty-id convention (ratified 2026-07-08): a binding passes `''` as the PartId of
 a part it did not render; projections emit `undefined` for references to empty

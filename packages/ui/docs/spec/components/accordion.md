@@ -105,8 +105,9 @@ collapsed too. This deliberately diverges from the `disclosable` slice's
 DOM.
 
 Item-level `disabled` is expressed by natively disabling that header button (the
-React `disabled` prop, the Astro/author markup attribute), which also removes it
-from the tab order and from roving. The reducer sees only a value and cannot
+React and Astro `disabled` prop, the `disabled` attribute on
+`<rafters-accordion-item>`), which also removes it from the tab order and from
+roving. The reducer sees only a value and cannot
 know which sections the author disabled; accordion-level `disabled` is the gate
 it can express, via `canDispatch`.
 

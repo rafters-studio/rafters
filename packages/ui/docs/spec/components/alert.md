@@ -78,7 +78,7 @@ nothing to dispatch, gate, or execute.
 | `bg-*-subtle` paired with the SOLID `text-*-foreground` | defect-do-not-port -- the solid foreground is contrast-tuned against the solid fill, not the subtle one. Repointed to each variant's own `*-subtle-foreground` token |
 | `muted` variant (flat `bg-muted`/`text-muted-foreground`/`border-border`) | contract -- `muted` has no subtle tier in the registry, so it keeps its existing flat pairing rather than inventing one |
 | icon slot via `[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4`, description shift via `[&>svg+div]:-translate-y-0.5` | contract -- decorative icon positioning is a selector against a child SVG the consumer supplies, not an authored glyph (boundary 1: no invented icon, only layout for one the consumer brings) |
-| WC (`<rafters-alert>`, `variant` attribute only, title/description/action out of scope) | contract -- ported (#1806). The `variant` attribute and its silent fall-back to `default` on an unknown value carry over verbatim; the oracle's "subcomponents out of scope" limit does NOT, because the new tree gives every multi-region static named slot regions (card, empty) |
+| WC (`<rafters-alert>`, `variant` attribute only, title/description/action out of scope) | contract -- ported (#1806). The `variant` attribute and its silent fall-back to `default` on an unknown value carry over verbatim; the oracle's "subcomponents out of scope" limit does NOT: each sub-component is its own element named after the tsx sub-component (`<rafters-alert-title>`, `<rafters-alert-description>`, `<rafters-alert-action>`), each a RaftersElement (shadow + slot), the WC's parity surface |
 | Astro target | contract -- ported (#1805), extended under #2323 with the drop-in part files (`alert-title.astro`, `alert-description.astro`, `alert-action.astro`), matching card's model (`card.md`): each sub-component is an importable file, the parity surface. `alert.astro`'s named slots remain a convenience, rendered only when `Astro.slots.has` finds content |
 | Oracle's `classy(base, variant, className)` composition in the Astro/WC targets | framework-affordance -- replaced by the shared `alertClasses` projection, so all three performances read one function |
 | Oracle's hardcoded `role="alert"` attribute in the Astro/WC targets | framework-affordance -- replaced by painting `alert.aria({}, config, { root: '' })`, so the contract is stated once, in the score |
@@ -115,9 +115,9 @@ consequences a reader should know about:
    The convenience is a plain wrapper, not the parity surface: a consumer who
    wants the real heading composes `<AlertTitle>` instead, exactly as card's
    named-slot wrappers stay `div` regardless of the tag their matching part
-   file renders. WC records a different disposition, for a different reason:
-   its named slots are fixed (no runtime to check `Astro.slots.has` against),
-   so `<rafters-alert>`'s title region stays a `div` unconditionally.
+   file renders. The WC's parity surface is its sub-component elements: a
+   consumer who wants the real heading composes `<rafters-alert-title>`, which
+   renders the `h5` `AlertTitle` renders.
 2. **The `[&>svg]` icon positioning does not reach a slotted SVG in the Web
    Component.** In the shadow DOM the root's child is the `<slot>` element, not
    the assigned SVG, so the absolute-positioning selectors never match. React
@@ -140,10 +140,10 @@ performance (`alert.tsx`) and, as of #2323, the Astro performance
 `AlertAction`), with the same `variant` prop shape shadcn/this workspace's
 oracle already used. A consumer migrating a shadcn `<Alert
 variant="destructive">` tree needs no prop or import-path changes beyond the
-registry path, for either of those two performances. The Web Component
-(`<rafters-alert>`) does not carry importable sub-components -- its fixed
-named-slot regions are the honest cost of having no runtime (see the
-disposition table above), so it is not a drop-in on this surface.
+registry path. The Web Component matches the same surface as elements:
+`<rafters-alert>`, `<rafters-alert-title>`, `<rafters-alert-description>`,
+`<rafters-alert-action>`, each a RaftersElement (shadow + slot) painting the
+same class projection, with the same `variant` attribute on the root.
 
 ## WCAG 2.1 AA obligations
 

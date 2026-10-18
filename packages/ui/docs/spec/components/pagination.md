@@ -98,11 +98,18 @@ consumer composes inside" (boundary 5).
 ### Framework slot model
 
 React composes freely: the consumer nests the family by hand. The web component
-and Astro performances own only the nav landmark and expose a single default
-slot; the consumer composes plain semantic children (the `ul`/`li`/`a`/current
-marker) into it. The visual rhythm lives on those slotted children via the
-shared class strings in `pagination.classes.ts`, resolved from the compiled
-utility sheet -- so there is no shadow-scoped descendant CSS to maintain.
+carries the same family as its own elements -- `<rafters-pagination>`,
+`<rafters-pagination-content>`, `<rafters-pagination-item>`,
+`<rafters-pagination-link>`, `<rafters-pagination-previous>`,
+`<rafters-pagination-next>`, `<rafters-pagination-ellipsis>` -- each a
+RaftersElement (shadow + slot) painting the shared class strings in
+`pagination.classes.ts`; the link, previous and next elements take `isActive`,
+`disabled`, `size`, `href` and `label` as React does. The Astro performance
+owns only the nav landmark and exposes a single default slot; the consumer
+composes plain semantic children (the `ul`/`li`/`a`/current marker) into it.
+The visual rhythm lives on those slotted children via the shared class strings
+in `pagination.classes.ts`, resolved from the compiled utility sheet -- so
+there is no shadow-scoped descendant CSS to maintain.
 
 `PaginationEllipsis` renders its `span` via `React.createElement` rather than JSX
 -- the same raw-element disposition Card, Alert, and Breadcrumb record while the
@@ -147,7 +154,7 @@ native anchors (native focus + activation); button-style controls are native
 | `Pagination` nav[aria-label="Pagination"] landmark | contract |
 | `PaginationContent/Item/Link/Previous/Next/Ellipsis` family | contract (shadcn drop-in surface) |
 | `PaginationLink` anchor-or-button (onClick + no href -> button) | contract -- preserved verbatim |
-| `PaginationLink asChild` (mergeProps onto a router link) | contract -- preserved verbatim |
+| `PaginationLink asChild` (mergeProps onto a router link) | contract -- preserved verbatim; the WC has no asChild -- its equivalent is slots, as button's is |
 | `PaginationLink isActive` -> aria-current=page on a live link | contract -- the current page stays clickable |
 | `PaginationLink disabled` -> aria-disabled + native disabled + pointer-events-none | contract |
 | `PaginationLink size` default/sm/lg/icon presets | contract |

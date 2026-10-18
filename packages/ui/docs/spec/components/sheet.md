@@ -55,7 +55,8 @@ panel anchors to and, once motion tokens exist, the slide axis. It projects no
 ARIA, claims no key, and never enters a reducer, so it is NOT score state: it is
 a positional class variant. This preserves the shadcn surface, where `side` is a
 prop of `SheetContent` — the React performance keeps it there; the Astro
-performance takes it as a prop and the WC reads it from the authored class. The
+performance takes it as a prop and the WC as a `side` attribute on
+`<rafters-sheet-content>`. The
 matrix "states: open, side" line names the two axes of variation a sheet has;
 only `open` is a transitioning reducer state.
 
@@ -104,7 +105,7 @@ then, sheet is enter-only in the visual sense and correct at every state via
 | Escape closes | contract (moved from document listener to content keymap) |
 | Trigger/Content/Header/Footer/Title/Description/Close surface | contract |
 | `side` prop on Content (top/right/bottom/left, default right) | contract, re-expressed as a positional class variant (decoration), not score state |
-| asChild on Trigger and Close | framework affordance (React) |
+| asChild on Trigger and Close | framework affordance (React); the WC uses slots, not `asChild` -- the consumer's content goes in the slot of `<rafters-sheet-trigger>` / `<rafters-sheet-close>` |
 | showCloseButton (default true) | contract, faithful: the sheet oracle used `showCloseButton ?? true` and always rendered the close (including inside an explicit portal), matching shadcn. Kept exactly; dialog's `?? !isInsidePortal` divergence is NOT adopted here |
 | always-set `aria-controls`/`aria-describedby` | defect-do-not-port — dangling references when target absent; replaced by registration + empty-id convention |
 | trigger pointerdown closes then click re-opens | defect-do-not-port — fixed by sparing the trigger in the outside-dismiss |

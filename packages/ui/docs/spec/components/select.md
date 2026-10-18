@@ -128,7 +128,7 @@ Two optional props place decorative icons beside the value on the trigger and be
 | single-select value; `selectValue` fires onValueChange + closes | contract |
 | `setOpen(false)` clears the keyboard highlight | contract (the `close`/`select` reducers clear `highlighted`) |
 | controlled/uncontrolled value and open + callbacks | contract (effective-before vs intrinsic-after on both axes) |
-| Trigger/Value/Content/Item/Group/Label/Separator/Portal/Viewport/ScrollUp/DownButton/Icon surface | contract (React shadcn drop-in; each extra is a thin view wrapper) |
+| Trigger/Value/Content/Item/Group/Label/Separator/Portal/Viewport/ScrollUp/DownButton/Icon surface | contract (shadcn drop-in: React sub-components, and on the WC one custom element per sub-component — `<rafters-select-trigger>`, `<rafters-select-value>`, `<rafters-select-content>`, `<rafters-select-item>`, and so on; each extra is a thin view wrapper) |
 | `asChild` on Trigger/Content/Value/Item | framework affordance (React) |
 | chevron included in Trigger; checkmark indicator on selected option | contract |
 | typeahead type-to-search | contract (moved into the closed effect vocabulary as `typeahead`, executor wraps the existing primitive) |
