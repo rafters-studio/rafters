@@ -1,4 +1,4 @@
-import { POSITION_TO_INDEX, SCALE_POSITIONS } from '@rafters/color-utils';
+import { POSITION_TO_INDEX, rebakeAccessibility, SCALE_POSITIONS } from '@rafters/color-utils';
 import type { OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { importColorFamily } from '../../src/importers/color.js';
@@ -54,6 +54,17 @@ describe('importColorFamily', () => {
     expect(at500?.l).toBeCloseTo(SEED.l, 5);
     expect(at500?.c).toBeCloseTo(SEED.c, 5);
     expect(at500?.h).toBeCloseTo(SEED.h, 5);
+  });
+
+  it('re-derives accessibility from the pinned scale when the seed sits off the natural step', () => {
+    const seed: OKLCH = { l: 0.62, c: 0.14, h: 250, alpha: 1 };
+    const family = importColorFamily('empire', '400', seed)[0];
+    if (!family || typeof family.value === 'string' || 'family' in family.value) {
+      throw new Error('expected ColorValue family token');
+    }
+    const imported = family.value;
+    expect(imported.scale[4]).toEqual(seed);
+    expect(imported.accessibility).toEqual(rebakeAccessibility(imported).accessibility);
   });
 
   it('throws on an unknown seed position', () => {

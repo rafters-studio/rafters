@@ -11,11 +11,12 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
-import { SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
+import { SCALE_POSITIONS } from '@rafters/color-utils';
 import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
+  detectFamilySeeds,
   contrastPlugin,
   type DetectedFont,
   extractShadcnRoot,
@@ -34,7 +35,6 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
-import type { OKLCH } from '@rafters/shared';
 
 const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
@@ -1107,44 +1107,9 @@ export async function init(options: InitOptions): Promise<void> {
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
         if (themeDecls.length > 0) {
-          // Detect family seeds: group color-valued declarations by base
-          // name (Tailwind v4 source conventionally prefixes with `color-`;
-          // strip it). Track the position the designer authored at: prefer
-          // -500 if they wrote it (the canonical anchor when present);
-          // otherwise carry whatever position they actually wrote so the
-          // seed lands at the right index in the derived scale. Bare
-          // single-color decls (`--color-empire`) default to position 500.
-          // `buildColorValue` derives the rest of the scale around that
-          // anchor; the source's other declared positions are discarded.
-          const POSITION_SUFFIX = new RegExp(`^(.+)-(${SCALE_POSITIONS.join('|')})$`);
-          const familySeeds = new Map<
-            string,
-            { seed: OKLCH; seedPosition: (typeof SCALE_POSITIONS)[number] }
-          >();
-          for (const decl of themeDecls) {
-            // Tailwind v4 namespaces color tokens with `color-`. Gate on the
-            // prefix so a `--font-display: red` (named CSS color, parses as
-            // OKLCH) does not mint a font-display color family. Other
-            // namespaces (--font-*, --spacing-*, --radius-*, --shadow-*)
-            // have dedicated import paths and should not leak in here.
-            if (!decl.name.startsWith('color-')) continue;
-            const oklch = tryParseColor(decl.value);
-            if (oklch === null) continue;
-            const m = decl.name.match(POSITION_SUFFIX);
-            const baseName = ((m ? m[1] : decl.name) ?? decl.name).replace(/^color-/, '');
-            if (!baseName) continue;
-            // m[2] is one of SCALE_POSITIONS by construction (regex
-            // alternation), so the cast is sound when the match exists.
-            const seedPosition = (m?.[2] ?? '500') as (typeof SCALE_POSITIONS)[number];
-            const existing = familySeeds.get(baseName);
-            if (!existing || seedPosition === '500') {
-              familySeeds.set(baseName, { seed: oklch, seedPosition });
-            }
-          }
-          const families = Array.from(familySeeds, ([name, info]) => ({
-            name,
-            ...info,
-          }));
+          // One seed per detected family, at the position the designer
+          // authored it (see `detectFamilySeeds`).
+          const families = detectFamilySeeds(themeDecls);
           if (families.length > 0) {
             // Define every detected palette via `importColorFamily` --
             // returns the family Token + 11 per-position primitive Tokens,
@@ -1212,7 +1177,7 @@ export async function init(options: InitOptions): Promise<void> {
                       name: p,
                       value: p,
                     })),
-                    default: family.seedPosition,
+                    default: SCALE_POSITIONS.find((p) => p === family.seedPosition),
                   });
               registry.set(
                 role,

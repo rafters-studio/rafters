@@ -12,10 +12,7 @@
  */
 
 import type { Token } from '@rafters/shared';
-import type { ColorPaletteBase } from './defaults.js';
-
-// Re-export for convenience
-export type { ColorPaletteBase } from './defaults.js';
+import type { ColorSeedEntry } from './defaults.js';
 
 /**
  * Configuration for the base design system
@@ -63,8 +60,11 @@ export interface BaseSystemConfig {
 
   // === COLOR OVERRIDES ===
 
-  /** Custom color palette bases. If provided, replaces DEFAULT_COLOR_PALETTE_BASES */
-  colorPaletteBases?: Record<string, ColorPaletteBase>;
+  /**
+   * Custom colour family seeds. If provided, replaces the palette families in
+   * DEFAULT_COLOR_SEEDS (zinc stays unless a seed named `zinc` replaces it).
+   */
+  colorPaletteBases?: Record<string, ColorSeedEntry>;
 }
 
 /**

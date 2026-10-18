@@ -9,15 +9,14 @@
  * registry or exporters lives in the CLI's init flow, not here.
  */
 
-import type { Token } from '@rafters/shared';
+import type { ColorValue, Token } from '@rafters/shared';
 import { generateBreakpointTokens } from './breakpoint.js';
-import { buildColorScaleFromBase, generateColorTokens } from './color.js';
+import { buildFamily, generateColorTokens } from './color.js';
 import {
   DEFAULT_ANIMATION_DEFINITIONS,
-  type ColorPaletteBase,
-  type ColorScaleInput,
+  type ColorSeedEntry,
   DEFAULT_BREAKPOINTS,
-  DEFAULT_COLOR_SCALES,
+  DEFAULT_COLOR_SEEDS,
   DEFAULT_CONTAINER_BREAKPOINTS,
   DEFAULT_DELAY_NAMESPACE,
   DEFAULT_DEPTH_DEFINITIONS,
@@ -32,7 +31,6 @@ import {
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
   DEFAULT_PERIOD_NAMESPACE,
   DEFAULT_RADIUS_DEFINITIONS,
-  DEFAULT_SEMANTIC_COLOR_BASES,
   DEFAULT_SHADOW_BOUNDS,
   DEFAULT_SHADOW_DEFINITIONS,
   DEFAULT_SPACING_BOUNDS,
@@ -51,7 +49,7 @@ import { generateTypographyTokens } from './typography.js';
 import { generateTypographyCompositeTokens } from './typography-composite.js';
 
 export { generateBreakpointTokens } from './breakpoint.js';
-export { buildColorScaleFromBase, generateColorTokens } from './color.js';
+export { buildFamily, generateColorTokens } from './color.js';
 export * from './defaults.js';
 export { generateDepthTokens } from './depth.js';
 export { generateFocusTokens } from './focus.js';
@@ -84,16 +82,25 @@ interface GeneratorDef {
   generate: (config: ResolvedSystemConfig) => { namespace: string; tokens: Token[] };
 }
 
-function buildAllColorScales(customBases?: Record<string, ColorPaletteBase>): ColorScaleInput[] {
-  const bases = customBases ?? DEFAULT_SEMANTIC_COLOR_BASES;
-  const semanticScales = Object.entries(bases).map(([name, base]) =>
-    buildColorScaleFromBase(name, base),
-  );
-
-  return [...DEFAULT_COLOR_SCALES, ...semanticScales];
+/**
+ * Build every colour family from its seed. Custom seeds replace the default
+ * palette families; the default neutral (zinc) stays unless a custom seed
+ * of the same name replaces it.
+ */
+function buildAllColorScales(
+  customSeeds?: Record<string, ColorSeedEntry>,
+): Record<string, ColorValue> {
+  const seeds = customSeeds
+    ? { ...(DEFAULT_COLOR_SEEDS.zinc && { zinc: DEFAULT_COLOR_SEEDS.zinc }), ...customSeeds }
+    : DEFAULT_COLOR_SEEDS;
+  const families: Record<string, ColorValue> = {};
+  for (const [name, entry] of Object.entries(seeds)) {
+    families[name] = buildFamily(name, entry);
+  }
+  return families;
 }
 
-function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase>): GeneratorDef[] {
+function createGeneratorDefs(colorPaletteBases?: Record<string, ColorSeedEntry>): GeneratorDef[] {
   return [
     {
       name: 'color',
