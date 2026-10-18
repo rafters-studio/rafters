@@ -62,8 +62,9 @@ disclosure wiring; `aria-controls` follows the empty-id convention (ratified
 2026-07-08) -- projected only when the content id is real and the region is open,
 so an initially-closed collapsible never leaks a dangling reference. Native
 `disabled` on the trigger is set structurally by each performance (the React
-`disabled` prop, the Astro/author markup attribute); the score reads it into
-`config.disabled` for the gate.
+`disabled` prop, the Astro markup attribute, the `disabled` attribute on
+`<rafters-collapsible>`); the score reads it into `config.disabled` for the
+gate.
 
 ## Keyboard and effects
 

@@ -43,8 +43,9 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 placement is post-collision ephemeral DOM state (the roving-tabindex precedent),
 so the pure score never projects `data-side`/`data-align`. They are
 decorator/view options consumed by the positioning affordance and by the
-enter-animation slide variants — carried on `PopoverContent` props (React) or as
-attributes on the host element (WC/Astro).
+enter-animation slide variants — carried on `PopoverContent` props (React), as
+attributes on `<rafters-popover-content>` (WC), or as attributes on the host
+element (Astro).
 
 ## Parts and ARIA
 

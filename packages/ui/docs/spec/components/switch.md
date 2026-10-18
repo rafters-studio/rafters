@@ -67,8 +67,9 @@ suffices; the controlled consumer reads the intended value from the callback.
 | root | always | `role="switch"` (static, PartDecl), `aria-checked` (`true`/`false`, always present), `aria-required` (only when required), `data-state` (`checked`/`unchecked`) |
 | thumb | always | `aria-hidden="true"`, `data-state` (mirrors root, drives the CSS travel) |
 
-`role` is declared in the PartDecl and set once in the server/author markup
-(like button's static `type="button"`), never re-projected — it never changes.
+`role` is declared in the PartDecl and set once in the rendered markup (the
+server render, or the button `<rafters-switch>` renders) (like button's static
+`type="button"`), never re-projected — it never changes.
 `aria-checked` is always `'true'`/`'false'`; the `'false'` string is why the DOM
 bind applies the projection with `{validate:false}` (aria-manager would coerce
 `'false'` truthy — gotcha #2).
@@ -105,10 +106,10 @@ button's hard-disabled.
 | thumb travel + track color transition | contract (declared as `data-[state=checked]` CSS, not a swapped class string; durations/easing from tokens) |
 | `aria-hidden` decorative thumb | contract |
 | form-value axis: `name`/`value`/`required`, default `'on'`, omit-when-unchecked, `valueMissing` | contract — lives in the score as the pure `switchFormValue` projection |
-| WC ElementInternals form association (`formAssociated`, `attachInternals`, `setFormValue`, `setValidity`, `checkValidity`/`reportValidity`, `formReset`/`formDisabled`/`formStateRestore` callbacks) | framework-affordance — the behavior-layer WC is a thin light-DOM enhancer; the axis is exposed as pure data a form adapter reads, not rebuilt as a lifecycle machine in a decorator. Native submission via a bubble input is a future form adapter, tracked here |
-| WC `observedAttributes` + property setters + attribute reflection | framework-affordance — dropped; the light-DOM enhancer reads author/server markup and never owns attribute reflection |
+| WC ElementInternals form association (`formAssociated`, `attachInternals`, `setFormValue`, `setValidity`, `checkValidity`/`reportValidity`, `formReset`/`formDisabled`/`formStateRestore` callbacks) | framework-affordance — the axis is exposed as pure data a form adapter reads, not rebuilt as a lifecycle machine in the WC decorator. Native submission via a bubble input is a future form adapter, tracked here |
+| WC `observedAttributes` + property setters + attribute reflection | framework-affordance — dropped; the WC reads its config from its attributes at connect and never owns attribute reflection |
 | WC bubbling composed `change` event | contract (preserved in `bindSwitch`) |
-| structural `:host { display: inline-flex }` shadow shim | dropped — no shadow tree; the enhancer decorates author light DOM |
+| structural `:host { display: inline-flex }` shadow shim | dropped — the button the WC renders is the control; the host needs no display shim |
 
 ## Deltas from the oracle
 

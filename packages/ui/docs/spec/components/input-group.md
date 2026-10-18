@@ -140,8 +140,8 @@ Durations and easing come from tokens; the score declares no motion.
 | focus-within ring around the whole assembly | contract -- an ordinary class on the light-DOM root instead of a `:host(:focus-within)` rule |
 | `disabled` propagation to contained controls | contract, CORRECTED -- see below |
 | unconditional `child.disabled = disabled` | defect-do-not-port -- the oracle assigned `false` as readily as `true`, so an ENABLED group silently re-enabled a control the author had disabled individually. `isControlDisabled` makes propagation an OR |
-| `<rafters-input-group-addon>` custom element | dropped -- it existed so an affix could own a shadow root. In the light-DOM model an affix is a `<div data-part="addonStart">`; a second element with a lifecycle buys nothing |
-| shadow DOM, `::slotted()` normalisation, `:host` display shims, the rebuilt inner `.group` wrapper | dropped -- all were shadow-boundary workarounds. A light-DOM enhancer needs none of them (the same trade `field` made) |
+| `<rafters-input-group-addon>` custom element | contract, shadow root dropped -- `InputGroupAddon` is a sub-component, so the WC keeps it as its own element (`position`, `variant` attributes), projecting `data-part="addonStart"`/`"addonEnd"` and `data-position` from the score; `InputGroupInput` is likewise `<rafters-input-group-input>` |
+| shadow DOM, `::slotted()` normalisation, `:host` display shims, the rebuilt inner `.group` wrapper | dropped -- all were shadow-boundary workarounds. The group elements render their parts in the document tree and need none of them (the same trade `field` made) |
 | `bg-background` on the group | replaced -- `bg-transparent`, so the control inherits the surface it sits on (fill-never-background) |
 | `text-sm` on the small size | replaced -- `text-body-small`, the typography role token |
 | `form-value` primitive (issue: "add") | not ported -- it builds a hidden mirror input for controls that are NOT native form fields. The contained `<input>` is form-associated already, so a mirror would submit the field twice |
@@ -150,25 +150,24 @@ Durations and easing come from tokens; the score declares no motion.
 
 ## Deltas from the oracle
 
-1. **Light DOM, not shadow DOM.** The Web Component enhances author markup
-   rather than rendering a wrapper into a shadow root. This is what lets the
-   affixes be plain elements and the ring be a plain class.
-
-   The cost, stated plainly because it is the likeliest reviewer question: the
-   bind applies the ARIA/state projection and the disabled propagation, but it
-   does NOT paint classes. A hand-authored `<rafters-input-group>` is
-   behaviorally correct and visually unstyled unless the author also copies the
-   class strings (which is what `input-group.astro` server-renders, and what
-   the React performance paints). The oracle's shadow element DID apply its own
-   classes, so this is a real trade, not a wash: it buys the light-DOM
-   affixes, the plain `focus-within` ring, and one element instead of two. It
-   is the same trade `input` and `field` made -- decoration is the
-   performance's job, not the client's -- so the family stays consistent.
+1. **Light DOM, not shadow DOM.** `<rafters-input-group>`,
+   `<rafters-input-group-addon>` and `<rafters-input-group-input>` are named
+   after `InputGroup` / `InputGroupAddon` / `InputGroupInput` and take the same
+   props as attributes (`size`, `disabled`, `position`, `variant`). Each renders
+   its part in the document tree rather than into a shadow root, and paints the
+   class strings from `input-group.classes.ts` -- the same strings
+   `input-group.astro` server-renders and the React performance paints. The
+   group element calls `bindInputGroup` for the ARIA/state projection and the
+   disabled propagation, as Astro does. `<rafters-input-group-input>` renders a
+   native `<input>` in the document tree, so it stays form-associated and
+   labelable by `<Label>` or Field. The ring stays a plain `focus-within` class
+   on the root, not a `:host(:focus-within)` rule.
 2. **Fill is `bg-transparent`.** The group inherits the surface it sits on.
 3. **The propagation OR** (above) -- the one behavioral correction.
-4. **Bind-once.** Like input/field/radio-group, the client wires server/author
-   markup a single time. Re-toggling `disabled` or `data-invalid` at runtime is
-   React's declarative affordance, not a lifecycle this client re-observes.
+4. **Bind-once.** Like input/field/radio-group, the client wires the rendered
+   markup (Astro's server render, the WC's own render) a single time.
+   Re-toggling `disabled` or `data-invalid` at runtime is React's declarative
+   affordance, not a lifecycle this client re-observes.
 
 ## WCAG 2.1 AA obligations
 

@@ -63,9 +63,10 @@ card/alert disposition); under the flex row/column they lay out identically.
 ### Framework slot model
 
 React composes freely (`icon` and `description` are props, children are the
-label). The web component and Astro cannot nest arbitrary children into regions
-without a runtime, so they expose fixed named slots: `icon`, `description`, and
-the default slot for the label.
+label). The web component takes the same props as named slots: `icon`,
+`description`, and the default slot for the label. Astro cannot nest arbitrary
+children into regions without a runtime, so it exposes the same fixed named
+slots.
 
 ## Config, state, actions
 

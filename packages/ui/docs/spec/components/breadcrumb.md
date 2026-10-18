@@ -87,11 +87,16 @@ composes inside" (boundary 5).
 ### Framework slot model
 
 React composes freely: the consumer nests the family by hand. The web component
-and Astro performances own only the nav landmark and expose a single default
-slot; the consumer composes plain semantic children (the `ol`/`li`/`a`/current
-marker) into it. The visual rhythm lives on those slotted children via the
-shared class strings in `breadcrumb.classes.ts`, resolved from the compiled
-utility sheet -- so there is no shadow-scoped descendant CSS to maintain.
+composes the same family as its own elements (`<rafters-breadcrumb-list>`,
+`<rafters-breadcrumb-item>`, `<rafters-breadcrumb-link>`,
+`<rafters-breadcrumb-page>`, `<rafters-breadcrumb-separator>`,
+`<rafters-breadcrumb-ellipsis>`), each a pure static (shadow + slot) applying
+its class string from `breadcrumb.classes.ts`. The Astro performance owns only
+the nav landmark and exposes a single default slot; the consumer composes plain
+semantic children (the `ol`/`li`/`a`/current marker) into it. In Astro the
+visual rhythm lives on those slotted children via the shared class strings,
+resolved from the compiled utility sheet -- so there is no shadow-scoped
+descendant CSS to maintain.
 
 `BreadcrumbPage` and `BreadcrumbEllipsis` render their `span` nodes via
 `React.createElement` rather than JSX -- the same raw-element disposition Card
@@ -106,9 +111,9 @@ Two optional props place decorative icons around the label of a `BreadcrumbLink`
 | --- | --- | --- |
 | React | `startIcon: ReactNode` on `BreadcrumbLink` and `BreadcrumbPage` | `endIcon: ReactNode` on the same |
 | Astro | `<slot name="start-icon" />` of `breadcrumb-link.astro` and `breadcrumb-page.astro` | `<slot name="end-icon" />` of the same |
-| Web Component | child of the link or current page with `slot="start-icon"` | child of the link or current page with `slot="end-icon"` |
+| Web Component | child of `<rafters-breadcrumb-link>` or `<rafters-breadcrumb-page>` with `slot="start-icon"` | child of the same with `slot="end-icon"` |
 
-The Astro and Web Component performances own only the nav landmark, so Astro gains two small sub-components for the places an icon sits, and the Web Component wraps the slotted children of the consumer-composed link or current page.
+The Astro performance owns only the nav landmark, so it gains two small sub-components for the places an icon sits. In the Web Component the icon is a slotted child of `<rafters-breadcrumb-link>` or `<rafters-breadcrumb-page>`, which places it in its own shadow.
 
 ```html
 <a href="/" class="inline-grid grid-flow-col items-center gap-1.5 ...">

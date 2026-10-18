@@ -128,7 +128,7 @@ One optional prop places a decorative icon at the start of the input and at the 
 | --- | --- | --- |
 | React | `<Combobox.Input startIcon={node} />` | `<Combobox.Item startIcon={node} />` |
 | Astro | `<slot name="start-icon" />` | `<slot name="start-icon-{value}" />` |
-| Web Component | child of the host with `slot="start-icon"` | child of the option with `slot="start-icon"` |
+| Web Component | child of `<rafters-combobox-input>` with `slot="start-icon"` | child of `<rafters-combobox-item>` with `slot="start-icon"` |
 
 ```html
 <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>

@@ -132,7 +132,7 @@ bind and the React `useEffect`):
 
 | archetype | reference | shape |
 |---|---|---|
-| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`, styled by setting its CSS (`setUtilityCSS`), as any shadow-DOM WC sets its CSS. |
+| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`, styled by setting its CSS (`setUtilityCSS`), as any shadow-DOM WC sets its CSS; each sub-component (`CardTitle`) is its own `RaftersElement` (`<rafters-card-title>`). |
 | simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. Composes `sr-announcer` on the loading edge (one-shot). |
 | static + composed | `grid` | static except it composes `roving-focus` (2D, `{ columns }`) when `role=grid`. |
 | text-input | `input` | primary state is a **value**; `setValue` gated by disabled/readonly; native input owns caret/IME/selection -- do not re-implement. |
@@ -252,8 +252,16 @@ rest, and the split is recorded in the data:
   guard `aria-controls` has). Everything else keeps a stable id.
 - **Two WC shapes.** Behavior-carrying components implement the behavior as
   elegantly and simply as possible. Pure statics are **shadow +
-  slots** (`RaftersElement`) -- simpler, but they render every region, so
-  unfilled slots become empty padded space. Accepted cost of a no-bind static.
+  slots** (`RaftersElement`).
+- **WC sub-components are elements.** A component with a shadcn counterpart
+  reads like shadcn on the WC target too (00-boundaries, shadcn API
+  compatibility): each `x.tsx` sub-component is its own custom element, named
+  after it -- `SelectTrigger` is `<rafters-select-trigger>`, `CardTitle` is
+  `<rafters-card-title>` -- taking the same props as attributes. For a pure
+  static, each of those elements is its own `RaftersElement`. Current choice
+  (2026-10-17): this shape, because 00-boundaries says named slots alone are not
+  parity and the operator asked that every component except container, grid,
+  color-picker and editor read like shadcn as a drop-in replacement; revisable.
 - `card`/`alert` render raw heading/`<p>` via `createElement` because Typography
   H-tags do not exist yet -- a tracked disposition, not the pattern.
 

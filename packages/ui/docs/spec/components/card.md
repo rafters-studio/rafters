@@ -42,8 +42,11 @@ state, and runs no effects. There is therefore **nothing to bind**:
   slots through, semantic element chosen by `as`.
 - `card.astro` ships **no** `<script>` -- it is server-rendered markup with
   the shared class strings and named slots; there is nothing to hydrate.
-- `card.element.ts` performs **no** binding -- the web component renders the
-  surface markup with the shared classes and named slots, once.
+- `card.element.ts` performs **no** binding -- each part is its own
+  RaftersElement (`<rafters-card>`, `<rafters-card-header>`,
+  `<rafters-card-title>`, `<rafters-card-description>`, `<rafters-card-action>`,
+  `<rafters-card-content>`, `<rafters-card-footer>`): shadow + slot with the
+  shared classes, rendered once.
 
 The score is declared at all only so the conformance harness can assert the
 one real contract (the `root` part renders and projects no ARIA) identically
@@ -119,10 +122,11 @@ never collide -- composing sub-components yields the React tree with no phantom
 empty regions wrapped around it. That is a server-side check, not a
 `slotchange` listener: still no client JavaScript, still no bind.
 
-The web component cannot nest arbitrary children into regions without a
-runtime, so it keeps the fixed named slots and pays the honest cost: an
-unfilled region is empty space. Hiding it would require a `slotchange` listener
--- a bind -- which is precisely what a pure static must not carry.
+**The web component composes the same way.** Each sub-component is its own
+custom element named after the tsx part (`<rafters-card-header>`,
+`<rafters-card-title>`, ...), a RaftersElement (shadow + slot), so a WC tree is
+the React tree. Only the regions the consumer writes exist, so there is no
+empty region to hide and still no bind.
 
 ## Config, state, actions
 
@@ -233,8 +237,9 @@ gate, or execute -- which is precisely why it needs no client.
 
 shadcn v4's Card exports `Card`, `CardHeader`, `CardTitle`, `CardDescription`,
 `CardContent`, `CardFooter`, and `CardAction`. This port matches that surface:
-same names, same composition, same `data-slot` attributes, and in Astro the
-same importable per-part files. The dropped props
+same names, same composition, same `data-slot` attributes, in Astro the same
+importable per-part files, and in the web component the same per-part elements.
+The dropped props
 (`interactive`/`size`/editable) were oracle extensions, not part of shadcn's
 surface.
 
@@ -252,14 +257,14 @@ Two intentional differences, both stated here rather than discovered:
    Nothing a shadcn consumer wrote stops working.
 
    **Scope, precisely:** this holds where the COMPONENT owns the element -- the
-   React `CardTitle`/`CardDescription`, and the importable `card-title.astro`.
-   It does NOT describe `card.astro`'s named-slot regions or the web component's
-   `slotRegion` wrappers: those are class-carrying `div`s and the CONSUMER
-   supplies the element, so a named-slot card is only as accessible as the tag
-   passed into it (`<h3 slot="title">`). That is a property of the fixed-slot
-   model, not a divergence from it -- a bind-free static cannot rewrite a
-   slotted node's tag. Use the sub-component files when you want the element
-   guaranteed.
+   React `CardTitle`/`CardDescription`, the importable `card-title.astro`, and
+   the web component's `<rafters-card-title>`/`<rafters-card-description>`. It
+   does NOT describe `card.astro`'s named-slot regions: those are
+   class-carrying `div`s and the CONSUMER supplies the element, so a named-slot
+   card is only as accessible as the tag passed into it (`<h3 slot="title">`).
+   That is a property of the fixed-slot model, not a divergence from it -- a
+   bind-free static cannot rewrite a slotted node's tag. Use the sub-component
+   files when you want the element guaranteed.
 
 ## WCAG 2.2 AAA obligations
 
@@ -277,8 +282,8 @@ AAA underneath, and that is the whole value over shadcn itself.
   title is a navigable section heading rather than styled text. This is the
   divergence from shadcn's `div` and it is why the divergence is worth having.
   It is guaranteed by the component only where the component owns the element
-  (React, and `card-title.astro`); in `card.astro`'s named slots and in the web
-  component the consumer supplies the tag, so pass a real heading there.
+  (React, `card-title.astro`, and `<rafters-card-title>`); in `card.astro`'s
+  named slots the consumer supplies the tag, so pass a real heading there.
 - 1.4.6 Contrast (Enhanced) (AAA, 7:1): the default `bg-card` /
   `text-card-foreground` pairing clears it in both themes. Measured on a
   canonical near-zero-chroma neutral family through

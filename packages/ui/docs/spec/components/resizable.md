@@ -114,7 +114,9 @@ ring and the `data-dragging` colour swap apply instantly. Reinstate a
 Astro forbids a dynamic `slot name`, so per-panel content rides the `panels`
 prop data (`content?: string`), the same shape `navigation-menu.astro` uses for
 its structured items -- not N named slots. The React performance keeps the full
-compositional children API; the WC is a light-DOM enhancer over author markup.
+compositional children API, and the WC carries the same surface as its own
+elements (`<rafters-resizable-panel-group>`, `<rafters-resizable-panel>`,
+`<rafters-resizable-handle>`).
 
 ## WCAG 2.1 AA obligations
 

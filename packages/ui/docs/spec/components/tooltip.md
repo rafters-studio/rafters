@@ -89,7 +89,7 @@ honest. The tip itself is never focusable and never in the tab order.
 | Oracle feature | Disposition |
 | --- | --- |
 | controlled/uncontrolled + onOpenChange | contract |
-| TooltipProvider delay defaults (delayDuration/skipDelayDuration/disableHoverableContent) | contract (React affordance; WC/Astro read the same values off attributes) |
+| TooltipProvider delay defaults (delayDuration/skipDelayDuration/disableHoverableContent) | contract (React `TooltipProvider` and WC `<rafters-tooltip-provider>` carry the same defaults; Astro reads the same values off attributes) |
 | hover/focus open, leave/blur close, hover-open delay + skip-delay coordination | contract — moved from bespoke `setTimeout` refs into the shared `hover-delay` primitive |
 | hoverable content holds the tip open; `disableHoverableContent` opts out | contract |
 | `aria-describedby` links trigger to content while open | contract |

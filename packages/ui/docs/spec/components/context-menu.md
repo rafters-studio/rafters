@@ -121,7 +121,7 @@ One optional prop places a decorative icon at the start of an item: `startIcon`.
 - `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
 - The content and the submenu panel are grids on `grid-cols-menu-row` (indicator, icon, label, end). Each item, group and Astro submenu wrapper is `grid-cols-subgrid col-span-full`, with the indicator in column 1, the icon in column 2, the label (`data-part="label"`) in column 3, and the shortcut or chevron in column 4. Labels line up between items whether or not they carry an indicator or an icon, and the row mirrors on a `dir="rtl"` page. No physical direction class remains in `context-menu.classes.ts`.
 - Spacing is a margin on the cell with something after it (`me-2` on the indicator and the icon), not a gap, so an empty track leaves no stray space.
-- In React, a `ContextMenu.Shortcut` child stays outside the label part and takes the end column. In the Web Component the host wraps an item's loose text in the label part, and a `kbd` or svg child stays after it.
+- In React, a `ContextMenu.Shortcut` child stays outside the label part and takes the end column. In the Web Component, `<rafters-context-menu-item>` places its text in the label part, and a `<rafters-context-menu-shortcut>` child stays outside it and takes the end column.
 - Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 
 ## Keyboard and effects

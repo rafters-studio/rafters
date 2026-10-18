@@ -36,8 +36,9 @@ supplies structure), holds no state, and runs no effects. There is therefore
   children through.
 - `empty.astro` ships **no** `<script>` -- it is server-rendered markup with the
   shared class strings and named slots; there is nothing to hydrate.
-- `empty.element.ts` performs **no** binding -- the web component renders the
-  placeholder markup with the shared classes and named slots, once.
+- `empty.element.ts` performs **no** binding -- `<rafters-empty>` and each
+  sub-component element render their own part with the shared classes and a
+  default slot, once.
 
 The score is declared at all only so the conformance harness can assert the one
 real contract (the `root` part renders and projects no ARIA) identically across
@@ -62,18 +63,22 @@ projects" and "what the consumer composes inside."
 
 ### Framework slot model
 
-React composes freely: the consumer nests the sub-components by hand, so a
-title-only placeholder renders only the nodes it uses. The web component and
-Astro performances cannot nest arbitrary children into regions without a
-runtime, so they expose fixed named slots (`icon`, `title`, `description`,
-`action`) as direct children of the centered column, plus a default slot. The
-structure is flat -- unlike Card, there is no header region nesting -- so all
-four regions are siblings, matching React's flat composition.
+React and the web component compose freely: the consumer nests the
+sub-components by hand, so a title-only placeholder renders only the nodes it
+uses. Each web component sub-component is its own element named after the tsx
+sub-component (`<rafters-empty-icon>`, `<rafters-empty-title>`,
+`<rafters-empty-description>`, `<rafters-empty-action>`), a RaftersElement
+(shadow + slot) painting its part's classes; `<rafters-empty-title>` takes the
+same `as` (h1..h6, default h3). Astro cannot nest arbitrary children into
+regions without a runtime, so it exposes fixed named slots (`icon`, `title`,
+`description`, `action`) as direct children of the centered column, plus a
+default slot. The structure is flat -- unlike Card, there is no header region
+nesting -- so all four regions are siblings, matching React's flat composition.
 
-The one honest cost: a fixed slot region is always rendered, so an unfilled
-region is empty space. Hiding it would require a `slotchange` listener -- a bind
--- which is precisely what a pure static must not carry. Pre-rendered regions
-are the accepted price of a no-bind multi-region static.
+The one honest cost, in Astro: a fixed slot region is always rendered, so an
+unfilled region is empty space. Hiding it would require a `slotchange` listener
+-- a bind -- which is precisely what a pure static must not carry. Pre-rendered
+regions are the accepted price of a no-bind multi-region static.
 
 ## Config, state, actions
 
@@ -112,7 +117,7 @@ its own keyboard semantics.
 | Centered-column structure + muted sub-part classes | contract -- ported verbatim from `empty.classes.ts` |
 | `EmptyTitle` rendering a raw heading | contract -- Typography's H1-H6 do not exist in the new tree yet (matrix: typography, pending); repointing at a typography role component is a follow-up |
 | `EmptyTitle` hard-coded `<h3>` | contract, extended -- an optional `as` (h1..h6, default h3) is added so the heading takes its correct outline level; the default keeps oracle output byte-identical (see Deltas) |
-| Old WC's deferred `<rafters-empty-icon/title/description/action>` subcomponents | framework-affordance -- the sub-components are React/Astro composition and WC named-slot regions, not separate custom elements; the deferred sub-elements are not resurrected |
+| Old WC's deferred `<rafters-empty-icon/title/description/action>` subcomponents | contract -- each sub-component is its own custom element named after the tsx sub-component, a RaftersElement (shadow + slot); Astro keeps named-slot regions |
 | Old WC's parallel hand-written descendant CSS map | dropped -- it never applied to light-tree slotted children (shadow-scoped descendant rules do not cross the slot boundary); the shared utility classes on the region wrappers carry the rhythm instead |
 
 ## Deltas from the oracle
@@ -121,9 +126,8 @@ its own keyboard semantics.
    consumer can place the placeholder heading at the correct outline level
    without skipping levels. The default is byte-identical to the oracle's fixed
    `<h3>`.
-2. The web component renders four fixed named-slot regions
-   (`icon`/`title`/`description`/`action`) plus a default slot, superseding the
-   oracle's dropped descendant CSS map.
+2. Each web component sub-component element paints the shared utility classes
+   on its own part, superseding the oracle's dropped descendant CSS map.
 3. `EmptyTitle`/`EmptyDescription` render raw heading/paragraph tags (via
    `createElement`) because the new tree's Typography component does not exist
    yet -- the same disposition Card and Alert record.

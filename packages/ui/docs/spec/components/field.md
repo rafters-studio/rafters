@@ -37,9 +37,11 @@ control it locates so the harness and any re-query can find it.
   with the native `for` association (using the Label score's own decoration),
   and paints the required marker + disabled dim from `field.classes.ts`. No
   bind.
-- **WC** (`field.element.ts`): a light-DOM enhancer. The author supplies the
-  label / control / helper markup; the element defers one microtask (children
-  may not have parsed) and calls `bindField`.
+- **WC** (`field.element.ts`): `<rafters-field>`, taking the tsx props as
+  attributes (`label`, `description`, `error`, `required`, `disabled`). It
+  renders the label and helper/error with the shared classes around the
+  consumer's slotted control, defers one microtask (the control may not have
+  parsed), and calls the SAME `bindField`.
 - **Astro** (`field.astro`): SSR-renders label + `<slot/>` control +
   helper/error, then the `<script>` hands each instance to the SAME
   `bindField`. One score, three performances, zero drift.
@@ -116,7 +118,7 @@ host attributes. The semantics carried across; the shadow machinery did not.
 | `aria-invalid` on error, `aria-required` on required | contract -- the control ARIA projection |
 | `disabled` propagation to the control | contract -- native attribute + property (a decorator/client concern, not ARIA) |
 | required marker (`aria-hidden`), `role="alert"` on the error, description-hidden-while-error | contract -- markup/PartDecl role + the decorators' view rule |
-| shadow-DOM render (label/desc/error built from host attributes) | dropped -- field is now a light-DOM enhancer; the author/SSR supplies markup, the client only wires (per the authoring guide) |
+| shadow-DOM render (label/desc/error built from host attributes) | reworked -- the WC still builds label/description/error from its `label`/`description`/`error` attributes, beside the slotted control in the same tree, so the `for`/`id` association holds with no mirror; the client wires it (per the authoring guide) |
 | `aria-label` mirror onto the control (the shadow label could not cross the tree-scope boundary via `for`/`id`) | defect-do-not-port -- a shadow-boundary workaround; a light-DOM `for`/`id` association needs no mirror |
 | runtime attribute re-toggling on the WC (`error`/`disabled` observed, re-wired on change) | framework-affordance -- React re-renders declaratively; the light-DOM client binds once (input/radio-group parity) |
 | respecting an author-supplied `aria-describedby` on the control | dropped -- the field OWNS the control's validity/description wiring, so the score's projection is authoritative across all three performances (zero drift). Consumers extend description via the field's `description`, not a manual attribute |

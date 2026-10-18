@@ -174,7 +174,7 @@ callback gotcha).
 | root | always | `role="menubar"`, `aria-orientation="horizontal"`, `data-state` (open while any menu is) |
 | trigger (many) | always | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while its menu is open and the id is real), `data-state`; `data-value` names the menu |
 | content (many) | present, `inert` while closed (never `hidden`, so the exit can play), outside the bar | `role="menu"`, `aria-orientation="vertical"`, `aria-labelledby` (its trigger, only when the id is real), `data-state`; `data-value` |
-| item (many) | present | role is author markup (`menuitem` / `menuitemcheckbox` / `menuitemradio`); `data-roving-item`, `tabindex=-1`, `aria-disabled`/`data-disabled` when disabled; `aria-checked` + `data-state` on checkbox/radio items (consumer-controlled) |
+| item (many) | present | role (`menuitem` / `menuitemcheckbox` / `menuitemradio`) is set by the item part (React `Item`/`CheckboxItem`/`RadioItem`; WC `<rafters-menubar-item>`/`<rafters-menubar-checkbox-item>`/`<rafters-menubar-radio-item>`); `data-roving-item`, `tabindex=-1`, `aria-disabled`/`data-disabled` when disabled; `aria-checked` + `data-state` on checkbox/radio items (consumer-controlled) |
 
 The trigger and content projections are `menubar.instanceAria`
 (`menubarInstanceAria`), the generic many-part contract member. Empty-id
@@ -245,7 +245,7 @@ with no pose of its own.
 | one menu open at a time, closable | contract (`active` axis) |
 | Trigger / Content / Group / Label / Item / Separator / Shortcut surface + `Menubar.*` namespace | contract |
 | `MenubarMenu` identity from `useId` | contract; `value` is now an optional prop (the controlled `value` names menus), `useId` when omitted |
-| CheckboxItem / RadioGroup / RadioItem | contract (React); `checked`/`value` are consumer-controlled, not score state. In WC/Astro `aria-checked` is author markup the bind does not own |
+| CheckboxItem / RadioGroup / RadioItem | contract (React, and the WC as `<rafters-menubar-checkbox-item>` / `<rafters-menubar-radio-group>` / `<rafters-menubar-radio-item>`); `checked`/`value` are consumer-controlled, not score state. In Astro `aria-checked` is author markup the bind does not own |
 | Arrow Left/Right + Home/End across triggers, roving tabindex | contract (`createRovingFocus` on the bar) |
 | open menu follows focus across triggers | contract (`onNavigate` -> `open` while a menu is open) |
 | hover switches the open menu, never opens the first | contract (`follow`, on pointermove) |
@@ -261,10 +261,10 @@ with no pose of its own.
 | programmatic `setValue` without `onValueChange` | framework affordance -> React controlled `value` |
 | menus mounted inside the menubar | defect-do-not-port -- their menuitems joined the trigger rove, and `role="menu"` sat inside `role="menubar"`; the menus now live outside the bar |
 | `aria-controls` always set on triggers | defect-do-not-port -- dangling while closed; now only while open |
-| asChild on Trigger / Content | framework affordance (React); also on Item |
+| asChild on Trigger / Content | framework affordance (React); also on Item. The WC uses slots, not `asChild` -- the consumer's content goes in the slot of `<rafters-menubar-trigger>` / `<rafters-menubar-content>` / `<rafters-menubar-item>` |
 | Portal (`container`, `forceMount`) | framework affordance -> pass-through: Content already portals out of the bar |
 | `React.forwardRef` on every React part | dropped -- consistent with dropdown-menu, whose parts do not forward refs either; React 19 passes `ref` as a prop to function components, and the parts spread props onto their element |
-| seven slot-composed Astro parts (`menubar-menu`/`-trigger`/`-content`/`-item`/`-label`/`-separator`/`-shortcut.astro`) | reduced -- one data-driven `menubar.astro` taking `menus: { value, label, items: { label, disabled?, shortcut? }[] }[]`, the shape dropdown-menu.astro and navigation-menu.astro take. The Astro surface has no label, separator, group, checkbox or radio items; those remain React-only, as dropdown-menu's are |
+| seven slot-composed Astro parts (`menubar-menu`/`-trigger`/`-content`/`-item`/`-label`/`-separator`/`-shortcut.astro`) | reduced -- one data-driven `menubar.astro` taking `menus: { value, label, items: { label, disabled?, shortcut? }[] }[]`, the shape dropdown-menu.astro and navigation-menu.astro take. The Astro surface has no label, separator, group, checkbox or radio items; those stay off the Astro surface, as dropdown-menu's do; React and the WC carry them |
 | Content `loop` prop | dropped -- menus always wrap (dropdown-menu's trio) |
 | Sub / SubTrigger / SubContent (nested submenus with `setTimeout` hover) | dropped -- dropdown-menu, which each menu is, has no submenu (its doc drops it for the same reasons: no submenu axis in the issue, and the raw `setTimeout` is a forbidden half-solution). Building one here would be a menu reimplemented, which the issue rules out |
 | `animate-in`/`zoom`/`fade`/`slide` + `duration-100` + `motion-reduce:` classes | dropped -- #2292 names the matrix generics instead |
