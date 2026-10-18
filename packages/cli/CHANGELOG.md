@@ -4,6 +4,8 @@
 
 ### Features
 
+- feat(ui): **`<rafters-button>` is back, and `rafters add button` works again for Web Component projects.** The element renders the same light-DOM tree `button.tsx` renders (`<button data-part="root">`, the label, and the spinner and icon parts when present) with the classes from `button.classes.ts`, then binds it with `bindButton` one microtask after connecting. It takes `variant`, `size`, `type`, `disabled`, `loading`, `soft-disabled`, `toggle`, `default-pressed`, `loading-announcement` and `loaded-announcement` as attributes, and an attribute change repaints and re-projects. Children with `slot="start-icon"` or `slot="end-icon"` become the aria-hidden icon parts, and every other child is the label. `aria-label` and `aria-labelledby` move to the inner button. An icon size with no accessible name warns in development. Because the inner button is a real light-DOM `<button>`, `type="submit"` submits its form.
+
 - feat(ui): **The Web Component decorators are removed, to be rebuilt from the spec.** Every `*.element.ts` file and its tests are deleted, so `rafters add` errors for every component in a Web Component project, as it already did for the components #2499 deleted. The behavior primitives are untouched.
 
 ### Fixes
