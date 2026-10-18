@@ -72,7 +72,7 @@ declared part (boundary 5): it carries `data-slot="scroll-bar"` and a
 | ScrollArea with `orientation` (vertical/horizontal/both) | contract |
 | WebKit `::-webkit-scrollbar*` custom-scrollbar styling | contract (verbatim decoration) |
 | `overflow-*` orientation switch | contract |
-| `ScrollBar` decorative track + thumb, single-axis orientation | contract (React wrapper, and the WC `<rafters-scroll-bar>`, a RaftersElement painting the same literal classes; not a declared part) |
+| `ScrollBar` decorative track + thumb, single-axis orientation | contract (React wrapper; shadcn ships React only; not a declared part) |
 | `duration-150` / `w-2.5` / raw scrollbar sizing | contract (verbatim from the oracle's settled decoration; a designer pass may repoint at motion/spacing tokens, flagged, not an agent call) |
 | `motion-reduce:transition-none` on the ScrollBar transition | contract |
 | native keyboard scrolling / momentum / focus order | contract (left to the platform; the score adds nothing) |

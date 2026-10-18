@@ -50,12 +50,9 @@ explicitly **deferred** image-load coordination to a follow-up. So:
 - `avatar.behavior.ts` is the score plus `resolveAvatar`; there is no
   `bindAvatar`. A binding exists to run effects and apply projections
   imperatively; a static with an empty projection and no effects has neither.
-- `avatar.element.ts` performs no binding -- `<rafters-avatar>`,
-  `<rafters-avatar-image>` and `<rafters-avatar-fallback>` are each a
-  RaftersElement (shadow + slot) that renders its part once from its
-  attributes; `<rafters-avatar-image>` forwards `src` and `alt` to its `<img>`.
-  The caller declares the outcome via `status` on `<rafters-avatar>`, which
-  defaults it from the `src` of its `<rafters-avatar-image>`.
+- `avatar.element.ts` performs no binding -- the web component renders the
+  surface once from its attributes, and the caller declares the outcome via
+  `status` (defaulted from `src`).
 - `avatar.astro` ships no `<script>` -- server-rendered markup, caller-decides.
 - `avatar.tsx` alone owns the runtime transition, because retained-mode is the
   only surface that observes the live `load`/`error` events.
@@ -70,12 +67,9 @@ AvatarFallback  span, data-part="fallback"; initials/icon; delayMs flash guard
 
 The React surface is the shadcn/radix compound, preserved exactly:
 `Avatar` / `AvatarImage` / `AvatarFallback`, `onLoadingStatusChange`, `delayMs`.
-The WC keeps the compound as elements named after it: `<rafters-avatar>` /
-`<rafters-avatar-image>` / `<rafters-avatar-fallback>`. Neither DOM-native
-performance observes live load events, so `<rafters-avatar>` takes a `status`
-attribute (defaulted from its image element's `src`) and the fallback content
-is `<rafters-avatar-fallback>`'s default slot. Astro takes a `status` prop
-(defaulted from `src`) and a `fallback` slot/prop.
+The WC and Astro performances cannot observe live load events, so they take a
+`status` attribute/prop (defaulted from `src`) and a fallback `slot`/`fallback`
+prop.
 
 ## Config, state, actions
 

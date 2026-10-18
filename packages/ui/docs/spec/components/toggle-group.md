@@ -110,7 +110,7 @@ Each `item` takes two optional decorative icons around its label, in reading ord
 | --- | --- | --- |
 | React | `startIcon: ReactNode` on `ToggleGroup.Item` | `endIcon: ReactNode` on `ToggleGroup.Item` |
 | Astro | `<slot name="start-icon-{value}" />` | `<slot name="end-icon-{value}" />` |
-| Web Component | child of `<rafters-toggle-group-item>` marked `slot="start-icon"` | child of `<rafters-toggle-group-item>` marked `slot="end-icon"` |
+| Web Component | child of the item button with `slot="start-icon"` | child of the item button with `slot="end-icon"` |
 
 Astro renders its items from the `items` array, so a slot is named for the item it belongs to: the item with `value="bold"` takes `start-icon-bold` and `end-icon-bold`.
 
@@ -158,7 +158,7 @@ Astro renders its items from the `items` array, so a slot is named for the item 
 | arrow keys move focus ONLY, no select-follows-focus | contract — the toolbar pattern (this component's correct behavior, unlike radio-group which improved to arrow-selects) |
 | WC form-association via ElementInternals (`setFormValue`, `valueMissing`, CSV/FormData submission, `name`/`required` validity) | dropped — deferred to the `form-value` primitive, which does not yet exist (planned across the checkbox/switch/select family). `name`/`required` are preserved as an INERT surface (`data-name`, and `required` accepted on config) so the wiring exists when form-value lands. The old React tsx never rendered hidden inputs either; form participation was WC-only |
 | WC `input`/`change`/`rafters-toggle-group-change` events | dropped — same deferral; the selection contract is `onValueChange` (React) and the projected `aria-pressed`/`data-state` (all three) |
-| shadow-DOM `<rafters-toggle-group>` + `<rafters-toggle-group-item>` pair | contract, shadow root dropped — the pair stays, named after `ToggleGroup` / `ToggleGroupItem`; `<rafters-toggle-group>` renders the `role="group"` root and calls `bindToggleGroup` (as Astro does), and each `<rafters-toggle-group-item>` renders its `<button data-part="item">` in the document tree so roving and focus act on real document DOM |
+| shadow-DOM `<rafters-toggle-group>` + `<rafters-toggle-group-item>` pair | defect-do-not-port — replaced by a single light-DOM enhancer (`bindToggleGroup`), matching button/radio-group; the host provides the real `role="group"` markup with `<button data-part="item">` children so roving and focus act on real document DOM |
 | `createSelectionGroup` primitive for single/multiple state | framework-affordance — expressed instead as reducer state (`{ value, multiple }`), the behavior-layer equivalent, exactly as radio-group expresses its single-select state as reducer state rather than composing the primitive (no behavior-layer component composes `createSelectionGroup`) |
 
 ## Deltas from the oracle
@@ -168,9 +168,8 @@ Astro renders its items from the `items` array, so a slot is named for the item 
 2. Group-disabled is expressed by natively disabling items plus a `data-disabled`
    marker on the root, rather than `aria-disabled` on the group (invalid on
    `role="group"`).
-3. The element pair stays, without its shadow root: `<rafters-toggle-group>`
-   and `<rafters-toggle-group-item>` render the item buttons in the document
-   tree, so the buttons are the real focusable/roving targets.
+3. A single light-DOM enhancer replaces the shadow-DOM element pair; the item
+   buttons are the real focusable/roving targets.
 
 ## WCAG 2.1 AA obligations
 

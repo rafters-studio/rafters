@@ -66,7 +66,7 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 | root | always | `data-state` |
 | trigger | always | `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while the menu id is real and open), `data-state` |
 | content | present, hidden while closed | `role="menu"`, `aria-orientation="vertical"`, `aria-labelledby` (the trigger, only when its id is real), `data-state` |
-| item (many) | present | role is set by the item sub-component, not the part (`menuitem` on Item, `menuitemcheckbox` on CheckboxItem, `menuitemradio` on RadioItem); `data-roving-item`, `tabindex=-1`, `aria-disabled`/`data-disabled` when disabled; `aria-checked` + `data-state` on checkbox/radio items (consumer-controlled) |
+| item (many) | present | role is author markup (`menuitem` / `menuitemcheckbox` / `menuitemradio`); `data-roving-item`, `tabindex=-1`, `aria-disabled`/`data-disabled` when disabled; `aria-checked` + `data-state` on checkbox/radio items (consumer-controlled) |
 
 The `item` PartDecl carries NO `role`, so checkbox/radio variants keep their own
 role. Empty-id convention (ratified 2026-07-08): a binding passes `''` as the
@@ -127,14 +127,14 @@ from/to values and a presence adapter to keep the exiting node mounted.
 | --- | --- |
 | controlled/uncontrolled open + onOpenChange | contract (reducer over the disclosable cell; the oracle's second `createDisclosure` cell dropped) |
 | Trigger / Content / Group / Label / Item / Separator / Shortcut surface + `DropdownMenu.*` namespace | contract |
-| CheckboxItem / RadioGroup / RadioItem | contract on every target (the WC as `<rafters-dropdown-menu-checkbox-item>`, `<rafters-dropdown-menu-radio-group>`, `<rafters-dropdown-menu-radio-item>`); `checked`/`value` are consumer-controlled state, NOT a score axis |
+| CheckboxItem / RadioGroup / RadioItem | contract (React); `checked`/`value` are consumer-controlled state, NOT a score axis |
 | roving focus + typeahead across all three item roles | contract (composed directly via startDropdownMenuEffects; `data-roving-item` on every item so checkbox/radio roles rove too) |
 | Escape closes, focus returns to the trigger | contract (moved from a document listener to the content keymap) |
 | outside-pointerdown closes, sparing the trigger | contract (`onPointerDownOutside`, trigger spared) |
 | focus first item on open | contract |
 | Enter/Space activates a menu item | contract (div-as-button click path; state effect is the score's `close`) |
-| asChild on Trigger / Content / Item | framework affordance (React); the WC has no asChild -- its equivalent is slots, as button's is |
-| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); the WC checkbox/radio item elements take `checked`/`value` as React does; in Astro `aria-checked` is author markup the bind does not own |
+| asChild on Trigger / Content / Item | framework affordance (React) |
+| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); in WC/Astro `aria-checked` is author markup the bind does not own |
 | Sub / SubTrigger / SubContent (nested submenus) | dropped -- the issue's state model is "open, highlighted item" (no submenu-open axis); faithful submenu open-on-hover needs `hover-delay` (the issue adds no primitives) or the oracle's raw `setTimeout` (a forbidden half-solution); neither cited reference has submenus. Tracked for a later wave |
 | collision-aware positioning (computePosition on scroll/resize) | dropped -- positioning is not behavior state and not modelled here (same disposition select took); reduced positioning fidelity vs the old React-only path |
 | Portal (portals the content to `document.body`) | framework affordance -> pass-through: the menu lives in light DOM present-but-hidden, so there is no portal to open; the API is preserved |
