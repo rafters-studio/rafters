@@ -75,11 +75,11 @@ the issue's acceptance criteria.
 ## Framework parity note: the `decorative` attribute/prop split
 
 React and Astro expose `decorative` as a plain boolean prop defaulting to
-`true`. The Web Component reads its `decorative` attribute as that same
-boolean: ABSENT = decorative (the default); `decorative="false"` = semantic;
-any other present value = decorative. An attribute is a string and a prop is a
-boolean, so the WC maps the one string `"false"` to `false`; the meaning is
-the React prop's on every target (00-boundaries, shadcn API compatibility).
+`true`. The Web Component exposes it as a presence-based attribute, faithful
+to the oracle: ABSENT = decorative;
+PRESENT and not the literal `"false"` = semantic; `decorative="false"` keeps
+it decorative. This attribute/prop asymmetry is standard (an attribute is a
+string, a prop is a boolean) and is asserted in both conformance suites.
 
 ## Oracle dispositions (boundary 9)
 
@@ -88,7 +88,7 @@ the React prop's on every target (00-boundaries, shadcn API compatibility).
 | `orientation` (`horizontal \| vertical`, all three targets) | contract |
 | `decorative` (default true; role="none" vs role="separator" + aria-orientation) | contract -- the earned accessibility semantic, moved verbatim into the score's aria projection |
 | Base classes `shrink-0 bg-border` + orientation map (`h-px w-full` / `h-full w-px`) | contract, ported verbatim from the old separator |
-| WC presence-based `decorative` rule (absent/"false" = decorative; any other present value = semantic) | dropped -- it inverted the prop: `<rafters-separator decorative>` was semantic. The WC attribute now means what the React/Astro prop means (absent = decorative, `"false"` = semantic, any other value = decorative) |
+| WC presence-based `decorative` rule (absent/"false" = decorative; any other present value = semantic) | contract -- preserved as the WC attribute semantic, distinct from the React/Astro boolean prop |
 | `forwardRef<HTMLDivElement>` | contract -- separators are frequently placed by layout wrappers; ref forwarding is load-bearing |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `separator.tsx` as the recorded designer decision |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags | dropped from `separator.tsx` -- the four required tags are the registry's parsed surface; the extras were prose, recoverable from the oracle if a future pass wants them |
