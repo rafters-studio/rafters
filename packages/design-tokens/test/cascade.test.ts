@@ -1,8 +1,10 @@
-import type { ColorValue, Token } from '@rafters/shared';
+import { buildColorValue } from '@rafters/color-utils';
+import type { ColorReference, ColorValue, Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
   CircularDependencyError,
   contrastPlugin,
+  generateBaseSystem,
   invertPlugin,
   mirrorPlugin,
   scalePlugin,
@@ -376,5 +378,148 @@ describe('cascade integration', () => {
       r.set('surface', { family: 'accent', position: '500' }, { reason: 'remap' });
       expect(r.get('surface-border')?.value).toEqual(pinned);
     });
+  });
+});
+
+// #2743: semantic colour mappings that belong to a role name that role, so a
+// role change re-derives them.
+const ROLE_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin]; // the list init.ts registers
+const ROLES = [
+  'neutral',
+  'primary',
+  'secondary',
+  'accent',
+  'highlight',
+  'muted',
+  'success',
+  'warning',
+  'destructive',
+  'info',
+];
+const RELINKED = [
+  'alert',
+  'input-invalid',
+  'ring-destructive',
+  'input-valid',
+  'ring-success',
+  'ring-warning',
+  'ring-info',
+  'link',
+  'selection',
+  'link-visited',
+  'ring-primary',
+  'sidebar-primary',
+  'sidebar-accent',
+  'sidebar-muted',
+];
+const isRef = (v: unknown): v is ColorReference =>
+  typeof v === 'object' && v !== null && 'family' in v && 'position' in v;
+const position = (reg: TokenRegistry, name: string): string => {
+  const v: unknown = reg.get(name)?.value;
+  if (!isRef(v)) throw new Error(name);
+  return String(v.position);
+};
+// resolve a ColorReference through role names to its palette step
+const resolved = (reg: TokenRegistry, name: string): string => {
+  let v: unknown = reg.get(name)?.value;
+  for (let hop = 0; hop < 8 && isRef(v); hop++) {
+    const fam = reg.get(v.family);
+    if (fam?.namespace === 'color') return `${v.family}-${v.position}`;
+    const next: unknown = fam?.value;
+    if (!isRef(next)) break;
+    v = { family: next.family, position: v.position };
+  }
+  throw new Error(`unresolved ${name}`);
+};
+const newFamily = (reg: TokenRegistry, name: string, h: number) => {
+  const zinc = reg.get('zinc') as Token;
+  reg.define({
+    ...zinc,
+    name,
+    value: { ...buildColorValue({ l: 0.55, c: 0.15, h, alpha: 1 }), name },
+  });
+};
+
+describe('semantic colour roles', () => {
+  it('names the role in dependsOn and the binding', () => {
+    const tokens = generateBaseSystem().allTokens;
+    for (const name of RELINKED) {
+      const t = tokens.find((x) => x.name === name);
+      if (!t) throw new Error(`missing ${name}`);
+      const role = t.dependsOn?.[0];
+      expect(ROLES).toContain(role);
+      expect((t.binding?.input as { familyName?: string }).familyName).toBe(role);
+    }
+  });
+
+  it('keeps every default palette step', () => {
+    // fixture: the 14 tokens' resolved palette steps today (measured at c3c0a24b), light and dark
+    const TODAY: Record<string, string> = {
+      alert: 'silver-bold-fire-truck-600',
+      'alert--dark': 'silver-bold-fire-truck-500',
+      'input-invalid': 'silver-bold-fire-truck-500',
+      'input-invalid--dark': 'silver-bold-fire-truck-500',
+      'ring-destructive': 'silver-bold-fire-truck-600',
+      'ring-destructive--dark': 'silver-bold-fire-truck-400',
+      'input-valid': 'silver-true-citrine-500',
+      'input-valid--dark': 'silver-true-citrine-500',
+      'ring-success': 'silver-true-citrine-600',
+      'ring-success--dark': 'silver-true-citrine-400',
+      'ring-warning': 'silver-true-honey-600',
+      'ring-warning--dark': 'silver-true-honey-400',
+      'ring-info': 'silver-true-sky-600',
+      'ring-info--dark': 'silver-true-sky-400',
+      link: 'silver-true-sky-700',
+      'link--dark': 'silver-true-sky-400',
+      selection: 'silver-true-sky-200',
+      'selection--dark': 'silver-true-sky-800',
+      'link-visited': 'silver-true-violet-700',
+      'link-visited--dark': 'silver-true-violet-400',
+      'ring-primary': 'zinc-900',
+      'ring-primary--dark': 'zinc-50',
+      'sidebar-primary': 'zinc-900',
+      'sidebar-primary--dark': 'zinc-50',
+      'sidebar-accent': 'zinc-100',
+      'sidebar-accent--dark': 'zinc-800',
+      'sidebar-muted': 'zinc-500',
+      'sidebar-muted--dark': 'zinc-400',
+    };
+    const reg = new TokenRegistry(generateBaseSystem().allTokens, ROLE_PLUGINS);
+    for (const [name, step] of Object.entries(TODAY)) expect(resolved(reg, name)).toBe(step);
+  });
+
+  it('leaves only the charts unchanged when every role moves', () => {
+    const reg = new TokenRegistry(generateBaseSystem().allTokens, ROLE_PLUGINS);
+    const before = new Map(
+      [...reg.list()]
+        .filter((t) => t.namespace === 'semantic')
+        .map((t) => [t.name, JSON.stringify(t.value)]),
+    );
+    for (const [i, role] of ROLES.entries()) {
+      newFamily(reg, `test-${role}`, i * 36);
+      reg.set(role, { family: `test-${role}`, position: position(reg, role) }, { reason: 'test' });
+    }
+    const unchanged = [...before]
+      .filter(([n, v]) => JSON.stringify(reg.get(n)?.value) === v)
+      .map(([n]) => n.replace(/--dark$/, ''));
+    expect([...new Set(unchanged)].sort()).toEqual([
+      'chart-1',
+      'chart-2',
+      'chart-3',
+      'chart-4',
+      'chart-5',
+    ]);
+  });
+
+  it.each([
+    ['primary', ['ring-primary', 'sidebar-primary']],
+    ['accent', ['sidebar-accent']],
+    ['muted', ['sidebar-muted']],
+  ])('setting %s alone moves its tokens', (role, moved) => {
+    const reg = new TokenRegistry(generateBaseSystem().allTokens, ROLE_PLUGINS);
+    const before = new Map(moved.map((n) => [n, JSON.stringify(reg.get(n)?.value)]));
+    newFamily(reg, 'test-family', 200);
+    reg.set(role, { family: 'test-family', position: position(reg, role) }, { reason: 'test' });
+    for (const n of moved) expect(JSON.stringify(reg.get(n)?.value)).not.toBe(before.get(n));
   });
 });
