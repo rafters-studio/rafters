@@ -251,7 +251,10 @@ rest, and the split is recorded in the data:
   cross-ref sources (`aria-labelledby`/`describedby`, which lack the `open`
   guard `aria-controls` has). Everything else keeps a stable id.
 - **Two WC shapes.** Behavior-carrying components implement the behavior as
-  elegantly and simply as possible. Pure statics are **shadow +
+  elegantly and simply as possible, rendering their parts in **light DOM** (no
+  shadow root) -- the same tree `x.tsx` and `x.astro` produce, so native form
+  participation and ARIA id references work and the classes come from the
+  page's CSS. Pure statics are **shadow +
   slots** (`RaftersElement`) -- simpler, but they render every region, so
   unfilled slots become empty padded space. Accepted cost of a no-bind static.
 - `card`/`alert` render raw heading/`<p>` via `createElement` because Typography
