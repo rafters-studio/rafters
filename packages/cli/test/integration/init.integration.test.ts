@@ -457,9 +457,20 @@ describe('rafters init - source CSS sensing', () => {
     expect(tokensByName.has('imported-brand-republic')).toBe(true);
     expect(tokensByName.has('imported-brand-republic-600')).toBe(true);
 
-    // (2) Seed OKLCH preserved at position 600 for both.
-    expect(tokensByName.get('imported-brand-empire-600')?.value).toBe('oklch(0.4 0.2 240)');
-    expect(tokensByName.get('imported-brand-republic-600')?.value).toBe('oklch(0.5 0.2 200)');
+    // (2) The seed sits at position 600 for both, gamut-mapped: both typed
+    // seeds are outside sRGB, so each is stored as its closest sRGB colour
+    // (chroma drops, hue shifts a little) and the family records the typed
+    // seed in seedAdjusted with reason 'gamut' (#2672).
+    expect(tokensByName.get('imported-brand-empire-600')?.value).toBe('oklch(0.408 0.107 247)');
+    expect(tokensByName.get('imported-brand-republic-600')?.value).toBe('oklch(0.509 0.086 202)');
+    for (const [family, typed, stored] of [
+      ['imported-brand-empire', { l: 0.4, c: 0.2, h: 240 }, { l: 0.408, c: 0.107, h: 247 }],
+      ['imported-brand-republic', { l: 0.5, c: 0.2, h: 200 }, { l: 0.509, c: 0.086, h: 202 }],
+    ] as const) {
+      expect(tokensByName.get(family)?.value).toMatchObject({
+        seedAdjusted: { from: typed, to: stored, reason: 'gamut' },
+      });
+    }
 
     // (3) No rafters semantic was reseated -- `primary`, `background`, etc.
     // stay at their Phase A defaults. Designer assigns these brand colors
