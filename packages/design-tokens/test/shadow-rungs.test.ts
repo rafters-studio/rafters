@@ -1,5 +1,14 @@
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { generateBaseSystem, registryToTailwind, TokenRegistry } from '../src/index.js';
+import {
+  generateBaseSystem,
+  loadRegistryFromDir,
+  REGISTRY_PLUGINS,
+  registryToTailwind,
+  saveRegistryToDir,
+  TokenRegistry,
+} from '../src/index.js';
 import {
   contrastPlugin,
   invertPlugin,
@@ -166,5 +175,32 @@ describe('shadow rungs: every part', () => {
     const bound = [...reg.list()].filter((t) => t.binding?.plugin === 'shadow-rung');
     expect(bound).toHaveLength(Object.keys(TODAY_PART_RUNGS).length);
     for (const t of bound) expect(resolvedRem(reg, t.name)).toBe(resolvedRem(expected, t.name));
+  });
+});
+
+const TEST_TMP_ROOT = join(import.meta.dirname, '..', 'node_modules', '.test-tmp');
+
+describe('shadow rungs: persistence and the shared plugin list', () => {
+  it('exports one registry plugin list that carries shadowRungPlugin', () => {
+    expect(REGISTRY_PLUGINS).toContain(shadowRungPlugin);
+    expect(REGISTRY_PLUGINS.map((p) => p.name).sort()).toEqual(PLUGINS.map((p) => p.name).sort());
+  });
+
+  it('round-trips a shadow-rung binding through save and load', () => {
+    mkdirSync(TEST_TMP_ROOT, { recursive: true });
+    const dir = mkdtempSync(join(TEST_TMP_ROOT, 'shadow-rungs-'));
+    try {
+      const saved = new TokenRegistry(generateBaseSystem().allTokens, REGISTRY_PLUGINS);
+      saveRegistryToDir(dir, saved);
+      const loaded = loadRegistryFromDir(dir, REGISTRY_PLUGINS);
+      expect(loaded.get('shadow-md-blur')?.binding).toEqual(saved.get('shadow-md-blur')?.binding);
+      expect(loaded.get('shadow-md-blur')?.binding?.plugin).toBe('shadow-rung');
+      expect(loaded.get('shadow-md-blur')?.value).toBe('var(--rafters-shadow-rung-6)');
+      // the loaded binding still cascades
+      loaded.set('spacing-base', '0.3125rem', { reason: 'test' });
+      expect(resolvedRem(loaded, 'shadow-md-blur')).toBe('0.563rem');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
