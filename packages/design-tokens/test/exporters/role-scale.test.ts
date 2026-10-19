@@ -16,11 +16,19 @@ import {
   invertPlugin,
   mirrorPlugin,
   scalePlugin,
+  shadowRungPlugin,
   statePlugin,
 } from '../../src/plugins/index.js';
 import semanticColors from './fixtures/semantic-colors.json' with { type: 'json' };
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin]; // the list init.ts registers
+const PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+]; // the list init.ts registers
 
 // Resolve a custom property to its literal in light (:root + @theme) or dark (+ .dark).
 type Ctx = Map<string, string>;
