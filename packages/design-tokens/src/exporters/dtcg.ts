@@ -149,6 +149,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Format §7.2.3 violation, naming the loop from where it closes. */
+function circularError(chain: readonly string[], name: string): Error {
+  const loop = chain.includes(name) ? chain.slice(chain.indexOf(name)) : chain;
+  return new Error(`toDTCG: circular reference ${[...loop, name].join(' -> ')}`);
+}
+
+/** The payload keys a DTCG composite does not carry, kept under `$extensions.rafters`. */
+function extrasOf(
+  payload: Record<string, unknown>,
+  carried: readonly string[],
+): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(payload).filter(([k]) => !carried.includes(k)));
+}
+
 /** The path segments of a token name: split on `-`, empty segments dropped. */
 function segmentsOf(name: string): string[] {
   return name.split('-').filter(Boolean);
@@ -323,9 +337,7 @@ class DTCGBuilder {
       const token = this.tokens.get(current);
       if (!token || !isColorReference(token.value)) return current;
       const next = token.value.family;
-      if (chain.includes(next)) {
-        throw new Error(`toDTCG: circular reference ${[...chain, next].join(' -> ')}`);
-      }
+      if (chain.includes(next)) throw circularError(chain, next);
       chain.push(next);
       current = next;
     }
@@ -348,11 +360,7 @@ class DTCGBuilder {
   classify(name: string): Classified {
     const done = this.classified.get(name);
     if (done) return done;
-    if (this.classifying.includes(name)) {
-      throw new Error(
-        `toDTCG: circular reference ${[...this.classifying.slice(this.classifying.indexOf(name)), name].join(' -> ')}`,
-      );
-    }
+    if (this.classifying.includes(name)) throw circularError(this.classifying, name);
     this.classifying.push(name);
     let result: Classified;
     try {
@@ -378,11 +386,7 @@ class DTCGBuilder {
   /** The literal a token resolves to, following references. Throws Unresolved. */
   private literalOf(name: string): Literal {
     if (!this.has(name)) throw new Unresolved(name, true);
-    if (this.literalChain.includes(name)) {
-      throw new Error(
-        `toDTCG: circular reference ${[...this.literalChain.slice(this.literalChain.indexOf(name)), name].join(' -> ')}`,
-      );
-    }
+    if (this.literalChain.includes(name)) throw circularError(this.literalChain, name);
     this.literalChain.push(name);
     try {
       const c = this.classify(name);
@@ -602,10 +606,6 @@ class DTCGBuilder {
       return this.focusBorder(payload as Record<string, string>);
     }
     if (typeof payload.durationTier === 'string' && typeof payload.curve === 'string') {
-      const extras: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(payload)) {
-        if (k !== 'durationTier' && k !== 'curve') extras[k] = v;
-      }
       return {
         kind: 'token',
         type: 'transition',
@@ -614,7 +614,7 @@ class DTCGBuilder {
           delay: { value: 0, unit: 'ms' },
           timingFunction: new Ref(`rafters-ease-${payload.curve}`),
         },
-        extras,
+        extras: extrasOf(payload, ['durationTier', 'curve']),
       };
     }
     if (typeof payload.keyframe === 'string') {
@@ -642,10 +642,6 @@ class DTCGBuilder {
       const size = this.dimensionOf(fontSize.name);
       letterSpacing = { value: tidy(Number(em[1]) * size.value), unit: size.unit };
     }
-    const extras: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(p)) {
-      if (!TYPOGRAPHY_KEYS.includes(k)) extras[k] = v;
-    }
     return {
       kind: 'token',
       type: 'typography',
@@ -656,7 +652,7 @@ class DTCGBuilder {
         letterSpacing,
         lineHeight: new Ref(`line-height-${p.lineHeight}`),
       },
-      extras,
+      extras: extrasOf(p, TYPOGRAPHY_KEYS),
     };
   }
 
@@ -685,11 +681,12 @@ class DTCGBuilder {
         reason: `The focus ring "${JSON.stringify(p)}" has no width or style a DTCG border carries.`,
       };
     }
-    const extras: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(p)) {
-      if (k !== 'width' && k !== 'style' && k !== 'color') extras[k] = v;
-    }
-    return { kind: 'token', type: 'border', value: { color, width, style }, extras };
+    return {
+      kind: 'token',
+      type: 'border',
+      value: { color, width, style },
+      extras: extrasOf(p, ['width', 'style', 'color']),
+    };
   }
 
   /** Every Ref inside a classified value. */
@@ -802,11 +799,7 @@ class DTCGBuilder {
     const visit = (name: string): void => {
       const s = state.get(name);
       if (s === 'done') return;
-      if (s === 'visiting') {
-        throw new Error(
-          `toDTCG: circular reference ${[...stack.slice(stack.indexOf(name)), name].join(' -> ')}`,
-        );
-      }
+      if (s === 'visiting') throw circularError(stack, name);
       const c = this.classified.get(name);
       if (c?.kind !== 'token') {
         state.set(name, 'done');
