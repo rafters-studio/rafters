@@ -116,6 +116,11 @@ function standardFor(ratio: number): PairStandard {
   return 'none';
 }
 
+/** The highest WCAG standard (normal text) two colours meet, measured. */
+function standardOf(a: OKLCH, b: OKLCH): PairStandard {
+  return standardFor(calculateWCAGContrast(a, b));
+}
+
 function partnerForBase(pairs: PairMatrix | undefined, base: number): number | undefined {
   if (!pairs) return undefined;
   for (const [p1, p2] of pairs) {
@@ -275,16 +280,23 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     return calculateWCAGContrast(colorA, colorB);
   }
 
+  /** The colour a leg names, when this context holds that family. */
+  function colorOf(leg: PairLeg): OKLCH | undefined {
+    if (leg.family !== familyName && leg.family !== family.name) return undefined;
+    const index = POSITION_TO_INDEX[leg.position];
+    return index === undefined ? undefined : family.scale[index];
+  }
+
   /**
-   * The highest standard a pair's own two steps meet, measured. A leg in
-   * another family cannot be measured here, so it claims no standard.
+   * The highest standard a pair's own two steps meet, measured on the two
+   * colours the legs resolve to. A leg whose colour this context does not
+   * hold cannot be measured, so it claims no standard.
    */
   function measuredStandard(fromPosition: string, to: PairLeg): PairStandard {
-    if (to.family !== familyName) return 'none';
-    const fromIndex = POSITION_TO_INDEX[fromPosition];
-    const toIndex = POSITION_TO_INDEX[to.position];
-    if (fromIndex === undefined || toIndex === undefined) return 'none';
-    return standardFor(contrastOf(fromIndex, toIndex));
+    const fromColor = colorOf({ family: familyName, position: fromPosition });
+    const toColor = colorOf(to);
+    if (!fromColor || !toColor) return 'none';
+    return standardOf(fromColor, toColor);
   }
 
   function foregroundPair(from: string, level: 'AA' | 'AAA'): Pair {

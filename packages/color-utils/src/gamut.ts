@@ -164,17 +164,11 @@ export function ceilingForSeed(seed: OKLCH): GamutCeiling {
 }
 
 /**
- * The tier of a stored step. mapScaleToGamut leaves no step 'out'; a step that
- * still measures 'out' was never mapped, which is a bug in the caller.
+ * The tier of a step mapScaleToGamut returned. Every such step is inside its
+ * ceiling, which is at most Display P3, so a step outside sRGB is a P3 step.
  */
 export function storedTier(oklch: OKLCH): GamutCeiling {
-  const tier = getGamutTier(oklch);
-  if (tier === 'out') {
-    throw new Error(
-      `gamut: step oklch(${oklch.l} ${oklch.c} ${oklch.h}) is outside Display P3; map it before storing`,
-    );
-  }
-  return tier;
+  return isInSRGBGamut(oklch) ? 'srgb' : 'p3';
 }
 
 /**

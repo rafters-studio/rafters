@@ -72,8 +72,9 @@ describe('importColorFamily', () => {
     expect(imported.accessibility).toEqual(rebakeAccessibility(imported).accessibility);
   });
 
-  it('maps a P3 or out-of-gamut imported seed like every other step and records it (#2672)', () => {
-    const cases: { seed: OKLCH; tier: 'p3' | 'out' }[] = [
+  it('pins a P3 or out-of-gamut seed as typed, records its true tier, and no seedAdjusted (#2672)', () => {
+    const cases: { seed: OKLCH; tier: 'srgb' | 'p3' | 'out' }[] = [
+      { seed: SEED, tier: getGamutTier(SEED) },
       { seed: { l: 0.55, c: 0.12, h: 210, alpha: 1 }, tier: 'p3' },
       { seed: { l: 0.7, c: 0.35, h: 150, alpha: 1 }, tier: 'out' },
     ];
@@ -84,24 +85,13 @@ describe('importColorFamily', () => {
         throw new Error('expected ColorValue family token');
       }
       const imported = family.value;
-      const pinned = imported.scale[4];
-      if (!pinned) throw new Error('expected a 400 step');
-      expect(getGamutTier(pinned)).toBe('srgb');
-      expect(imported.gamut?.[4]).toBe(getGamutTier(pinned));
+      expect(imported.scale[4]).toEqual(seed);
+      expect(imported.gamut?.[4]).toBe(tier);
       for (const [i, step] of imported.scale.entries()) {
         expect(imported.gamut?.[i]).toBe(getGamutTier(step));
       }
-      expect(imported.seedAdjusted).toEqual({ from: seed, to: pinned, reason: 'gamut' });
+      expect(imported.seedAdjusted).toBeUndefined();
     }
-  });
-
-  it('records no seedAdjusted for an imported sRGB seed pinned as written', () => {
-    const family = importColorFamily('empire', '500', SEED)[0];
-    if (!family || typeof family.value === 'string' || 'family' in family.value) {
-      throw new Error('expected ColorValue family token');
-    }
-    expect(getGamutTier(SEED)).toBe('srgb');
-    expect(family.value.seedAdjusted).toBeUndefined();
   });
 
   it('throws on an unknown seed position', () => {

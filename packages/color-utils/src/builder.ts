@@ -23,7 +23,13 @@ import {
   getColorTemperature,
   isLightColor,
 } from './analysis.js';
-import { ceilingForSeed, mapScaleToGamut, storedTier, toGamutCeiling } from './gamut.js';
+import {
+  ceilingForSeed,
+  getGamutTier,
+  mapScaleToGamut,
+  storedTier,
+  toGamutCeiling,
+} from './gamut.js';
 import { boundSeedLightness, generateHarmony, generateOKLCHScale } from './harmony.js';
 import { roundOKLCH } from './conversion.js';
 import { generateColorName } from './naming/index.js';
@@ -86,11 +92,12 @@ export interface BuildColorValueOptions {
  */
 export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = {}): ColorValue {
   // The seed the family is built from: inside the lightness bounds first,
-  // then inside the family's gamut ceiling. A P3 or out-of-gamut seed is
-  // mapped like every other step. Either move is recorded below.
+  // then, for a P3 seed above the ceiling (P3 not allowed), mapped into sRGB
+  // before the scale is built. Every step, the seed's included, is then mapped
+  // into the ceiling. Any move of the seed is recorded below.
   const bounded = boundSeedLightness(oklch);
   const ceiling = ceilingForSeed(bounded);
-  const seed = toGamutCeiling(bounded, ceiling);
+  const seed = getGamutTier(bounded) === 'p3' ? toGamutCeiling(bounded, ceiling) : bounded;
 
   // Generate the 11-position scale and map every step into the ceiling
   const scaleRecord = generateOKLCHScale(seed);
@@ -118,12 +125,10 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
 
   // WCAG accessibility (pair matrices + on-white/on-black) via the shared
   // assembler, measured on the step the seed landed on (the same step
-  // rebakeAccessibility uses). APCA, builder-only, measures the same stored
-  // colour, so one accessibility object describes one colour.
-  const reference = landed ?? oklch;
-  const wcagAccessibility = assembleWcagAccessibility(scale, reference);
-  const apcaOnWhite = calculateAPCAContrast(reference, CONTRAST_WHITE);
-  const apcaOnBlack = calculateAPCAContrast(reference, CONTRAST_BLACK);
+  // rebakeAccessibility uses); APCA is layered on below, builder-only.
+  const wcagAccessibility = assembleWcagAccessibility(scale, landed ?? oklch);
+  const apcaOnWhite = calculateAPCAContrast(oklch, CONTRAST_WHITE);
+  const apcaOnBlack = calculateAPCAContrast(oklch, CONTRAST_BLACK);
 
   // Get color analysis
   const temperature = getColorTemperature(oklch);

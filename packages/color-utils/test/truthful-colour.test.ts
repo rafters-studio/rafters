@@ -82,5 +82,26 @@ it('labels AA requests, dark states, inversions and same-family references by me
     const hover = refSem.pair({ use: 'hover', from: '600' });
     expect(hover.tier).toBe('reference');
     expect(hover.standard).toBe(measured('600', '700'));
+
+    // A reference naming the family by its own name, under an alias, is measured.
+    const byOwnName = semanticFor(
+      { ...v, foregroundReferences: { auto: { family: v.name, position: '50' } } },
+      { name: 'alias' },
+    );
+    expect(byOwnName.pair({ use: 'foreground', from: '600' }).standard).toBe(measured('600', '50'));
+
+    // A reference into a family whose colour this context does not hold is 'none'.
+    const crossFamily = semanticFor(
+      {
+        ...v,
+        foregroundReferences: { auto: { family: 'zinc', position: '50' } },
+        stateReferences: { hover: { family: 'zinc', position: '700' } },
+      },
+      { name: 'fam' },
+    );
+    const crossFg = crossFamily.pair({ use: 'foreground', from: '600' });
+    expect(crossFg.to).toEqual({ family: 'zinc', position: '50' });
+    expect(crossFg.standard).toBe('none');
+    expect(crossFamily.pair({ use: 'hover', from: '600' }).standard).toBe('none');
   }
 });

@@ -417,8 +417,9 @@ export const ColorValueSchema = z.object({
   // Unique token ID for quick color lookups (e.g., "color-0.500-0.120-240.0")
   tokenId: z.string().optional(),
 
-  // The gamut each scale step sits in, index-aligned with `scale`
-  gamut: z.array(z.enum(['srgb', 'p3'])).optional(),
+  // The gamut each scale step sits in, index-aligned with `scale`. Generated
+  // steps are 'srgb' or 'p3'; only an imported seed pinned as typed can be 'out'.
+  gamut: z.array(z.enum(['srgb', 'p3', 'out'])).optional(),
   // Present when the family was built from a different seed than requested
   seedAdjusted: z
     .object({
