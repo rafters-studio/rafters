@@ -118,10 +118,12 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
 
   // WCAG accessibility (pair matrices + on-white/on-black) via the shared
   // assembler, measured on the step the seed landed on (the same step
-  // rebakeAccessibility uses); APCA is layered on below, builder-only.
-  const wcagAccessibility = assembleWcagAccessibility(scale, landed ?? oklch);
-  const apcaOnWhite = calculateAPCAContrast(oklch, CONTRAST_WHITE);
-  const apcaOnBlack = calculateAPCAContrast(oklch, CONTRAST_BLACK);
+  // rebakeAccessibility uses). APCA, builder-only, measures the same stored
+  // colour, so one accessibility object describes one colour.
+  const reference = landed ?? oklch;
+  const wcagAccessibility = assembleWcagAccessibility(scale, reference);
+  const apcaOnWhite = calculateAPCAContrast(reference, CONTRAST_WHITE);
+  const apcaOnBlack = calculateAPCAContrast(reference, CONTRAST_BLACK);
 
   // Get color analysis
   const temperature = getColorTemperature(oklch);

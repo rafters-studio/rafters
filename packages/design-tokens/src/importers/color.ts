@@ -22,6 +22,9 @@
 
 import {
   buildColorValue,
+  ceilingForSeed,
+  getGamutTier,
+  mapScaleToGamut,
   oklchToCSS,
   POSITION_TO_INDEX,
   rebakeAccessibility,
@@ -45,11 +48,31 @@ export function importColorFamily(name: string, seedPosition: string, seed: OKLC
   // override, the value the designer typed would land at whatever index
   // the progression chose (currently 600), and the position they DID
   // write would be a derived value they never picked.
+  // An imported P3 or out-of-gamut seed is mapped into the family's ceiling
+  // like every other step (#2672), so the pinned step is the stored colour,
+  // its tier is recorded, and seedAdjusted describes the pinned seed's move
+  // (not buildColorValue's 600 landing, which the pin replaces).
   // The pinned scale is no longer the one `buildColorValue` measured, so
   // color-utils re-derives the WCAG metadata from the stored scale.
+  const [pinned = seed] = mapScaleToGamut([seed], ceilingForSeed(seed));
   const scale = [...built.scale];
-  scale[seedIndex] = seed;
-  const value = rebakeAccessibility({ ...built, name, scale });
+  scale[seedIndex] = pinned;
+  // mapScaleToGamut never leaves a step 'out'; the guard only narrows the type.
+  const pinnedTier = getGamutTier(pinned);
+  const gamut = built.gamut?.map((tier, i) =>
+    i === seedIndex && pinnedTier !== 'out' ? pinnedTier : tier,
+  );
+  const { seedAdjusted: _landing, ...rest } = built;
+  const moved = pinned.l !== seed.l || pinned.c !== seed.c || pinned.h !== seed.h;
+  const value = rebakeAccessibility({
+    ...rest,
+    name,
+    scale,
+    gamut,
+    ...(moved && {
+      seedAdjusted: { from: { ...seed }, to: { ...pinned }, reason: 'gamut' as const },
+    }),
+  });
   const tokens: Token[] = [
     {
       name,

@@ -103,6 +103,28 @@ describe('buildColorValue', () => {
       }
       expect(kept).toBeGreaterThan(5);
     });
+
+    it('turns a mapped step by a hue difference within deltaEOK 0.02', () => {
+      // Seeds whose steps do move: the hue turn colorjs.io's clip makes is
+      // measured as the OKLab distance it costs at the stored chroma,
+      // 2 * c * sin(dh / 2), which stays inside the 0.02 JND.
+      let turned = 0;
+      for (const seed of [
+        { l: 0.55, c: 0.2, h: 0, alpha: 1 },
+        { l: 0.55, c: 0.2, h: 260, alpha: 1 },
+        { l: 0.55, c: 0.12, h: 90, alpha: 1 },
+      ]) {
+        const result = buildColorValue(seed);
+        const seedHue = result.scale[6]?.h ?? seed.h;
+        for (const color of result.scale) {
+          const dh = Math.abs(color.h - seedHue) % 360;
+          const turn = Math.min(dh, 360 - dh);
+          if (turn > 0) turned++;
+          expect(2 * color.c * Math.sin((turn * Math.PI) / 360)).toBeLessThanOrEqual(0.02);
+        }
+      }
+      expect(turned).toBeGreaterThan(0);
+    });
   });
 
   describe('harmonies', () => {

@@ -43,6 +43,7 @@ export {
 // Gamut
 export {
   ALLOW_P3,
+  ceilingForSeed,
   computeGamutBoundaries,
   type GamutBoundaryPoint,
   type GamutCeiling,
