@@ -50,7 +50,7 @@ describe('MCP describe/generate against an initialized project', () => {
     expect(result.isError).toBeFalsy();
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ id: 'button', kind: 'component' });
-  }, 30000);
+  });
 
   it('rafters_describe routes a natural-language question through the intent door', async () => {
     fixturePath = await createInitializedFixture('vite-no-shadcn');
@@ -61,7 +61,7 @@ describe('MCP describe/generate against an initialized project', () => {
     });
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ use: { id: 'modal' }, not: { id: 'alert' } });
-  }, 30000);
+  });
 
   it('rafters_generate resolves a direct component name and returns its verbatim snippet with open slots', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -121,7 +121,7 @@ describe('MCP describe/generate against an initialized project', () => {
       ],
       install: 'rafters add modal',
     });
-  }, 30000);
+  });
 
   it('names the component and the target when the resolved component has no facet for it', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -148,7 +148,7 @@ describe('MCP describe/generate against an initialized project', () => {
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('modal');
     expect(data.error).toContain('astro');
-  }, 30000);
+  });
 
   it('returns slots: [] when the resolved facet declares no content slots', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -180,7 +180,7 @@ describe('MCP describe/generate against an initialized project', () => {
       slots: [],
       install: 'rafters add button',
     });
-  }, 30000);
+  });
 
   it('deprecated rafters_component forwards by-id and is marked', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -189,7 +189,7 @@ describe('MCP describe/generate against an initialized project', () => {
     const result = await handler.handleToolCall('rafters_component', { name: 'button' });
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ id: 'button', deprecated: 'use rafters_describe instead' });
-  }, 30000);
+  });
 
   it('folds a primitive file on disk into the component set for presence, proving disk beats config', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -228,7 +228,7 @@ describe('MCP describe/generate against an initialized project', () => {
     // In config.installed, no file on disk: available. Proves presence is
     // measured from disk, not remembered from config.
     expect(byId.get('button')).toBe('available');
-  }, 30000);
+  });
 
   it('threads the workspace componentTarget through the dispatch into describe', async () => {
     fixturePath = await createInitializedFixture('nextjs-shadcn-v4');
@@ -282,7 +282,7 @@ describe('MCP describe/generate against an initialized project', () => {
         .content[0].text as string,
     );
     expect(variant).toMatchObject({ type: 'enum', values: ['solid', 'ghost'] });
-  }, 30000);
+  });
 });
 
 describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
@@ -306,7 +306,7 @@ describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
     expect(config.registryUrl).toBe('https://registry.example.test');
     expect(config.cssPath).toBe('src/styles/app.css');
     expect(config.framework).toBeDefined();
-  }, 30000);
+  });
 
   it('merges the exports field instead of overwriting it', async () => {
     fixturePath = await createInitializedFixture('vite-no-shadcn');
@@ -325,7 +325,7 @@ describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
     expect(afterExports.dtcg).toBe(true);
     expect(afterExports.tailwind).toBe(beforeExports.tailwind);
     expect(afterExports.typescript).toBe(beforeExports.typescript);
-  }, 30000);
+  });
 
   it('refuses to write a designer-owned field', async () => {
     fixturePath = await createInitializedFixture('vite-no-shadcn');
@@ -339,7 +339,7 @@ describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
 
     const after = await readConfig(fixturePath);
     expect(after.darkMode).toBe(before.darkMode);
-  }, 30000);
+  });
 });
 
 describe('MCP tools with null project root', () => {

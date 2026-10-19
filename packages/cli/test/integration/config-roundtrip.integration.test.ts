@@ -35,7 +35,7 @@ describe('config persistence', () => {
     expect(config2.componentsPath).toBe(config1.componentsPath);
     expect(config2.primitivesPath).toBe(config1.primitivesPath);
     expect(config2.source).toBe(config1.source);
-  }, 30000);
+  });
 
   it('preserves installed list across rebuild', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -57,7 +57,7 @@ describe('config persistence', () => {
 
     expect((rebuilt.installed as Record<string, string[]>).components).toEqual(['button', 'card']);
     expect((rebuilt.installed as Record<string, string[]>).primitives).toEqual(['classy']);
-  }, 30000);
+  });
 
   it('reset preserves framework detection but regenerates tokens', async () => {
     fixturePath = await createFixture('vite-shadcn-v4');
@@ -71,7 +71,7 @@ describe('config persistence', () => {
     const configAfter = await readConfig(fixturePath);
     expect(configAfter.framework).toBe('vite');
     expect(configAfter.componentsPath).toBe('src/components/ui');
-  }, 30000);
+  });
 
   it('config has correct shape with all required fields', async () => {
     fixturePath = await createFixture('nextjs-no-shadcn');
@@ -102,5 +102,5 @@ describe('config persistence', () => {
     expect(Array.isArray(installed.components)).toBe(true);
     expect(Array.isArray(installed.primitives)).toBe(true);
     expect(Array.isArray(installed.composites)).toBe(true);
-  }, 30000);
+  });
 });

@@ -9,6 +9,7 @@
 import { readdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { SCRIPT_FONTS } from '@rafters/design-tokens';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
 import { execCli, fixtureFileExists, readConfig, readFixtureFile } from './helpers.js';
@@ -51,7 +52,7 @@ describe('rafters init - fresh initialization', () => {
       composites: [],
       rules: [],
     });
-  }, 30000);
+  });
 
   it('initializes a Vite project with shadcn', async () => {
     fixturePath = await createFixture('vite-shadcn-v4');
@@ -63,7 +64,7 @@ describe('rafters init - fresh initialization', () => {
     expect(config.framework).toBe('vite');
     expect(config.source).toBe('shadcn');
     expect(config.componentsPath).toBe('src/components/ui');
-  }, 30000);
+  });
 
   it('initializes a Vite project without shadcn', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -74,7 +75,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('vite');
     expect(config.source).toBeUndefined();
-  }, 30000);
+  });
 
   it('initializes a Remix project with shadcn', async () => {
     fixturePath = await createFixture('remix-shadcn-v4');
@@ -85,7 +86,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('remix');
     expect(config.componentsPath).toBe('app/components/ui');
-  }, 30000);
+  });
 
   it('initializes an Astro project with shadcn', async () => {
     fixturePath = await createFixture('astro-shadcn-v4');
@@ -96,7 +97,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('astro');
     expect(config.componentsPath).toBe('src/components/ui');
-  }, 30000);
+  });
 
   it('rejects Tailwind v3 projects', async () => {
     fixturePath = await createFixture('tailwind-v3-error');
@@ -104,7 +105,7 @@ describe('rafters init - fresh initialization', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('Tailwind v3');
-  }, 30000);
+  });
 
   it('generates token namespace files', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -115,7 +116,7 @@ describe('rafters init - fresh initialization', () => {
 
     expect(files.length).toBeGreaterThan(0);
     expect(files.some((f) => f.endsWith('.rafters.json'))).toBe(true);
-  }, 30000);
+  });
 
   it('generates valid Tailwind CSS output', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -124,7 +125,7 @@ describe('rafters init - fresh initialization', () => {
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
     expect(css).toContain('@import "tailwindcss"');
     expect(css).toContain('--');
-  }, 30000);
+  });
 
   it('generates valid TypeScript output', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -132,7 +133,7 @@ describe('rafters init - fresh initialization', () => {
 
     const ts = await readFixtureFile(fixturePath, '.rafters/output/rafters.ts');
     expect(ts).toContain('export');
-  }, 30000);
+  });
 
   it('updates main CSS file with rafters import for non-shadcn projects', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -142,14 +143,14 @@ describe('rafters init - fresh initialization', () => {
     expect(css).toContain('.rafters/output/rafters.css');
     // Original tailwindcss import should be replaced
     expect(css).not.toContain('@import "tailwindcss"');
-  }, 30000);
+  });
 
   it('creates CSS backup when modifying main CSS', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
     await execCli(fixturePath, ['init']);
 
     expect(fixtureFileExists(fixturePath, 'src/index.backup.css')).toBe(true);
-  }, 30000);
+  });
 
   it('fails on second init without --rebuild flag', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -158,17 +159,16 @@ describe('rafters init - fresh initialization', () => {
     const result = await execCli(fixturePath, ['init']);
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('already exists');
-  }, 30000);
+  });
 
   it('installs the chosen writing systems and builds font-sans from them (#2742)', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
-    const result = await execCli(
-      fixturePath,
-      ['init', '--agent', '--scripts', 'Latn,Arab,Hebr,Jpan'],
-      {
-        timeoutMs: 120_000,
-      },
-    );
+    const result = await execCli(fixturePath, [
+      'init',
+      '--agent',
+      '--scripts',
+      'Latn,Arab,Hebr,Jpan',
+    ]);
     expect(result.exitCode).toBe(0);
 
     const packages = [
@@ -187,11 +187,25 @@ describe('rafters init - fresh initialization', () => {
     const dependencies =
       typeof pkg === 'object' && pkg !== null && 'dependencies' in pkg ? pkg.dependencies : {};
     expect(Object.keys(dependencies ?? {})).toEqual(expect.arrayContaining(packages));
+
+    // The stack names a family only if the installed package declares it.
+    for (const font of new Set(Object.values(SCRIPT_FONTS))) {
+      if (!packages.includes(font.package)) continue;
+      const packageCss = await readFixtureFile(
+        fixturePath,
+        join('node_modules', font.package, 'index.css'),
+      );
+      const families = new Set(
+        [...packageCss.matchAll(/font-family:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]),
+      );
+      expect(families).toEqual(new Set([font.family]));
+    }
+
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
     expect(css).toContain(
       "--font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
     );
-  }, 150000);
+  });
 });
 
 describe('rafters init --rebuild', () => {
@@ -209,7 +223,7 @@ describe('rafters init --rebuild', () => {
     // Outputs should still exist
     expect(fixtureFileExists(fixturePath, '.rafters/output/rafters.css')).toBe(true);
     expect(fixtureFileExists(fixturePath, '.rafters/output/rafters.ts')).toBe(true);
-  }, 30000);
+  });
 
   it('preserves existing config and installed components', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -225,7 +239,7 @@ describe('rafters init --rebuild', () => {
     const rebuiltConfig = await readConfig(fixturePath);
     expect(rebuiltConfig.framework).toBe(initialConfig.framework);
     expect(rebuiltConfig.source).toBe(initialConfig.source);
-  }, 30000);
+  });
 });
 
 describe('rafters init --reset', () => {
@@ -244,7 +258,7 @@ describe('rafters init --reset', () => {
     // Tokens should exist (regenerated from defaults)
     const resetFiles = readdirSync(tokensDir);
     expect(resetFiles.length).toBeGreaterThan(0);
-  }, 30000);
+  });
 
   it('fails when .rafters does not exist', async () => {
     fixturePath = await createFixture('nextjs-no-shadcn');
@@ -252,7 +266,7 @@ describe('rafters init --reset', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('Nothing to reset');
-  }, 30000);
+  });
 });
 
 describe('rafters init - source CSS sensing', () => {
@@ -293,7 +307,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(byNamespace.typography).toBe(1);
     expect(sensed?.namespacesPresent).toEqual(['color', 'semantic', 'typography', 'radius']);
     expect(sensed?.unclassifiedCount).toBe(1); // some-internal: 42
-  }, 30000);
+  });
 
   it('imports each accepted shadcn semantic via define + set in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -425,7 +439,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(radius?.userOverride).toMatchObject({
       reason: expect.stringContaining('imported from --radius'),
     });
-  }, 30000);
+  });
 
   it('imports typography declarations via direct registry.set on matching tokens', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -467,7 +481,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(fontSans?.userOverride).toMatchObject({
       reason: expect.stringContaining('imported from --font-sans'),
     });
-  }, 30000);
+  });
 
   it('imports non-shadcn-semantic colors as primitive families without reseating semantics', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -548,7 +562,7 @@ describe('rafters init - source CSS sensing', () => {
     // TODO: imported non-semantic families should appear in CSS output.
     // Broken since PR #1618 (zinc rename). Tracked as #1619.
     void _css;
-  }, 30000);
+  });
 
   it('imports --spacing-base from source as the system baseSpacingUnit pre-generation', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -606,7 +620,7 @@ describe('rafters init - source CSS sensing', () => {
     const typoRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
     const typo = JSON.parse(typoRaw) as { tokens: Array<{ name: string; value: unknown }> };
     expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1rem');
-  }, 30000);
+  });
 
   it('imports --radius from source as baseRadiusOverride pre-generation', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -639,7 +653,7 @@ describe('rafters init - source CSS sensing', () => {
     // Per-corner tokens cascade via var() ref to the (now reseated) base.
     const radiusTl = radius.tokens.find((t) => t.name === 'radius-tl');
     expect(radiusTl?.value).toBe('var(--rafters-radius-base)');
-  }, 30000);
+  });
 
   it('imports font-size + focus-ring bases pre-generation; motion is intentionally left alone', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -692,7 +706,7 @@ describe('rafters init - source CSS sensing', () => {
     const motionRaw = await readFixtureFile(fixturePath, '.rafters/tokens/motion.rafters.json');
     const motion = JSON.parse(motionRaw) as { tokens: Array<{ name: string; value: unknown }> };
     expect(motion.tokens.find((t) => t.name === 'motion-duration-base')?.value).toBe('150ms');
-  }, 30000);
+  });
 
   it('skips spacing-base detection when source declares no --spacing-base', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -712,7 +726,7 @@ describe('rafters init - source CSS sensing', () => {
     const spacing = JSON.parse(spacingRaw) as { tokens: Array<{ name: string; value: unknown }> };
     const spacingBase = spacing.tokens.find((t) => t.name === 'spacing-base');
     expect(spacingBase?.value).toBe('0.25rem'); // 4px default
-  }, 30000);
+  });
 
   it('runs the typography font role-walk over detected font families in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -768,7 +782,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(byName.get('font-heading')?.userOverride).toMatchObject({
       reason: expect.stringContaining('assigned Inter as font-heading'),
     });
-  }, 30000);
+  });
 
   it('preserves a non-canonical --font-* declaration as its own typography token', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -816,7 +830,7 @@ describe('rafters init - source CSS sensing', () => {
     };
     const aurabesh = tokens.tokens.find((t) => t.name === 'font-aurabesh');
     expect(aurabesh?.value).toBe('"Aurabesh", sans-serif');
-  }, 30000);
+  });
 
   it('skips sensing when source CSS has no :root declarations', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -831,7 +845,7 @@ describe('rafters init - source CSS sensing', () => {
 
     const sensed = events.find((e) => e.event === 'init:import_sensed');
     expect(sensed).toBeUndefined();
-  }, 30000);
+  });
 });
 
 describe('rafters init - framework detection across all types', () => {
@@ -851,6 +865,6 @@ describe('rafters init - framework detection across all types', () => {
 
       const config = await readConfig(fixturePath);
       expect(config.framework).toBe(expected);
-    }, 30000);
+    });
   }
 });

@@ -15,7 +15,8 @@ import { createFixture, type FixtureType } from '../fixtures/projects.js';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const CLI_BIN = join(__dirname, '../../dist/index.js');
 
-const EXEC_TIMEOUT_MS = 25_000;
+// A fresh init installs the writing systems' fonts (#2742), so every init pays for a package install.
+const EXEC_TIMEOUT_MS = 120_000;
 
 interface CommandResult {
   exitCode: number;
