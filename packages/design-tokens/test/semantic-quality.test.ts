@@ -7,7 +7,7 @@
 import { calculateWCAGContrast } from '@rafters/color-utils';
 import type { ColorReference, ColorValue, OKLCH, Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
-import { generateBaseSystem, TokenRegistry } from '../src/index.js';
+import { generateBaseSystem, TokenRegistry, tokensToTailwind } from '../src/index.js';
 import { REGISTRY_PLUGINS } from '../src/plugins/index.js';
 
 const PLUGINS = REGISTRY_PLUGINS;
@@ -204,6 +204,18 @@ describe('semantic selection follows the designer (#2668)', () => {
     const onCard = step('primary-ring');
     reg.set('background', { family: 'neutral', position: '900' }, { reason: 'test' });
     expect(step('primary-ring')).toBe(onCard);
+  });
+
+  it('the plain token list stores the neutral role for the fallback foregrounds, and its CSS rides neutral', () => {
+    const all = generateBaseSystem().allTokens;
+    const css = tokensToTailwind(all);
+    for (const name of ['alert-foreground', 'destructive-foreground', 'success-foreground']) {
+      const token = all.find((t) => t.name === name);
+      const value: unknown = token?.value;
+      if (!isRef(value)) throw new Error(name);
+      expect(value.family, name).toBe('neutral');
+      expect(css).toContain(`--rafters-${name}: var(--rafters-neutral-${value.position});`);
+    }
   });
 
   it('a foreground that falls back stores the neutral role and moves when neutral does', () => {
