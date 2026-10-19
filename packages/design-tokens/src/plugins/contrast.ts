@@ -40,6 +40,17 @@ export const contrastPlugin = definePlugin<ContrastInput, ColorReference>({
       level: input.level,
       ...(fallback ? { fallback: fallback.family } : {}),
     });
-    return { family: pair.to.family, position: pair.to.position };
+    // A step taken from the fallback is stored as the fallback role (neutral),
+    // not its palette, so the foreground follows that role.
+    const role = input.fallback;
+    const fromFallback =
+      role !== undefined &&
+      fallback !== null &&
+      pair.to.family === fallback.family.name &&
+      pair.to.family !== resolved.family.name;
+    return {
+      family: fromFallback && role !== undefined ? role : pair.to.family,
+      position: pair.to.position,
+    };
   },
 });

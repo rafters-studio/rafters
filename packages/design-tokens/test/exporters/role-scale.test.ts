@@ -123,30 +123,36 @@ describe('role scale: ownership', () => {
       .map((m) => ({ name: m[1] ?? '', value: m[2] ?? '' }))
       .filter((d) => !roleStep.test(d.name));
     const onPalette = semantic.filter((d) => !/^var\(--rafters-[a-z]+-\d+\)$/.test(d.value));
-    // The charts keep their palettes. The three foregrounds are #2668's neutral fallback: no
-    // step of their own role meets AA, so the contrast plugin names the neutral's palette step.
     expect([...new Set(onPalette.map((d) => d.name))].sort()).toEqual([
-      'alert-foreground',
       'chart-1',
       'chart-2',
       'chart-3',
       'chart-4',
       'chart-5',
-      'destructive-foreground',
-      'success-foreground',
     ]);
-    expect(semantic.length - onPalette.length).toBe(401); // 404 less the three light fallback foregrounds
+    expect(semantic.length - onPalette.length).toBe(404);
   });
 
   it('a change to neutral moves the roles that hang off it and no others', () => {
     const moved = movedBySwap(css, 'neutral');
-    expect(moved).toHaveLength(127);
+    expect(moved).toHaveLength(130);
     for (const u of ['--color-primary', '--color-secondary', '--color-accent', '--color-muted']) {
       expect(moved).toContain(u);
     }
+    // #2668: a foreground whose own role has no AA pair falls back to the neutral role and
+    // rides its step, so it moves with neutral.
+    const fallbacks = [
+      '--color-alert-foreground',
+      '--color-destructive-foreground',
+      '--color-success-foreground',
+    ];
+    for (const u of fallbacks) expect(moved).toContain(u);
     for (const role of ['destructive', 'success', 'warning', 'info', 'highlight']) {
       expect(
-        moved.filter((u) => u === `--color-${role}` || u.startsWith(`--color-${role}-`)),
+        moved.filter(
+          (u) =>
+            !fallbacks.includes(u) && (u === `--color-${role}` || u.startsWith(`--color-${role}-`)),
+        ),
       ).toEqual([]);
     }
   });
