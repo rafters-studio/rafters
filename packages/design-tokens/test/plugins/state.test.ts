@@ -76,12 +76,14 @@ describe('statePlugin', () => {
     expect(g.get('primary-disabled')).toEqual({ family: 'accent', position: '300' });
   });
 
-  it('clamps ladder steps at the top boundary', () => {
+  it('reflects ladder steps at the top boundary instead of collapsing onto the base (#2668)', () => {
     const g = new TokenGraph([statePlugin]);
     seedFamily(g, 'accent', { accessibility: fullLadderAccessibility });
     g.seed('primary', { family: 'accent', position: '950' });
     g.bind('primary-hover', 'state', { from: 'primary', stateType: 'hover' });
-    expect(g.get('primary-hover')).toEqual({ family: 'accent', position: '950' });
+    g.bind('primary-active', 'state', { from: 'primary', stateType: 'active' });
+    expect(g.get('primary-hover')).toEqual({ family: 'accent', position: '900' });
+    expect(g.get('primary-active')).toEqual({ family: 'accent', position: '800' });
   });
 
   it('cascade: state recomputes when parent remaps to a different family', () => {
