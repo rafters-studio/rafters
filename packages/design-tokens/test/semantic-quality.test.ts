@@ -8,15 +8,9 @@ import { calculateWCAGContrast } from '@rafters/color-utils';
 import type { ColorReference, ColorValue, OKLCH, Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { generateBaseSystem, TokenRegistry } from '../src/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  scalePlugin,
-  statePlugin,
-} from '../src/plugins/index.js';
+import { REGISTRY_PLUGINS } from '../src/plugins/index.js';
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const PLUGINS = REGISTRY_PLUGINS;
 const POS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
 const isRef = (v: unknown): v is ColorReference =>
   typeof v === 'object' && v !== null && 'family' in v && 'position' in v;

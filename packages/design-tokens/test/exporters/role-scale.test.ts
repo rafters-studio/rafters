@@ -123,14 +123,19 @@ describe('role scale: ownership', () => {
       .map((m) => ({ name: m[1] ?? '', value: m[2] ?? '' }))
       .filter((d) => !roleStep.test(d.name));
     const onPalette = semantic.filter((d) => !/^var\(--rafters-[a-z]+-\d+\)$/.test(d.value));
+    // The charts keep their palettes. The three foregrounds are #2668's neutral fallback: no
+    // step of their own role meets AA, so the contrast plugin names the neutral's palette step.
     expect([...new Set(onPalette.map((d) => d.name))].sort()).toEqual([
+      'alert-foreground',
       'chart-1',
       'chart-2',
       'chart-3',
       'chart-4',
       'chart-5',
+      'destructive-foreground',
+      'success-foreground',
     ]);
-    expect(semantic.length - onPalette.length).toBe(404);
+    expect(semantic.length - onPalette.length).toBe(401); // 404 less the three light fallback foregrounds
   });
 
   it('a change to neutral moves the roles that hang off it and no others', () => {
