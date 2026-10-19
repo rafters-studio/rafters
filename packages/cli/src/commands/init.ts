@@ -26,6 +26,7 @@ import {
   importColorFamily,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   loadRegistryFromDir,
   regenerateOutputs,
   resolveContentSources,
@@ -36,7 +37,14 @@ import {
   TokenRegistry,
 } from '@rafters/design-tokens';
 
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const REGISTRY_PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+];
 
 import {
   type ComponentTarget,

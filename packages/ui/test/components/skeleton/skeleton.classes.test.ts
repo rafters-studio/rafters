@@ -7,6 +7,7 @@ import {
   generateBaseSystem,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -89,6 +90,7 @@ describe('skeleton classes', () => {
         statePlugin,
         invertPlugin,
         mirrorPlugin,
+        shadowRungPlugin,
       ]);
       css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
     } finally {

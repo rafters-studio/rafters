@@ -32,6 +32,8 @@ export interface TailwindExportOptions {
 }
 
 const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
+/** Shadow rung leaves (#2648): emitted as --rafters-shadow-rung-<i>, referenced by parts. */
+const SHADOW_RUNG = /^shadow-rung-\d+$/;
 
 /**
  * THE FIVE MOTION NAMESPACES (ruling 019fc49f, issue #1991).
@@ -123,7 +125,7 @@ function motionNamespaceParts(name: string): { namespace: MotionNamespace; membe
 
 /** Check if a shadow token name is a decomposed part rather than a composite */
 function isShadowDecomposedPart(name: string): boolean {
-  return SHADOW_PART_SUFFIX.test(name);
+  return SHADOW_PART_SUFFIX.test(name) || SHADOW_RUNG.test(name);
 }
 
 /** Check if a breakpoint token is a media query condition, not a dimension */
@@ -466,9 +468,12 @@ function generateThemeBlock(groups: GroupedTokens): string {
         // Decomposed parts: --rafters-* only, no Tailwind utility
         lines.push(`  --rafters-${token.name}: ${value};`);
       } else {
-        // Composites: --shadow-* for Tailwind utility generation
+        // Composites: --shadow-* for Tailwind utility generation.
+        // shadow-base-unit references the spacing base, so rewrite to the
+        // @theme name as the spacing tokens do.
         const key = token.name.replace(/^shadow-/, '');
-        lines.push(`  --shadow-${key}: ${value};`);
+        const themeValue = value.replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)');
+        lines.push(`  --shadow-${key}: ${themeValue};`);
       }
     }
     lines.push('');

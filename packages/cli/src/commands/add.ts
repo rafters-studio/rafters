@@ -12,6 +12,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   loadRegistryFromDir,
   regenerateOutputs,
   resolveContentSources,
@@ -46,7 +47,14 @@ export interface AddOptions {
   agent?: boolean;
 }
 
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const REGISTRY_PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+];
 
 /**
  * Regenerate the output artifacts after an install/update changes the installed

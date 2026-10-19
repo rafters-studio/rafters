@@ -5,6 +5,7 @@ import {
   generateNamespaces,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   scalePlugin,
   statePlugin,
 } from '@rafters/design-tokens';
@@ -25,7 +26,14 @@ import {
   tokensDir,
 } from '../fixtures/stale-motion.js';
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+];
 
 /**
  * The carry gate is a SECOND declaration of the cell value shape -- the first

@@ -7,6 +7,7 @@ import {
   generateBaseSystem,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -383,7 +384,14 @@ describe('cascade integration', () => {
 
 // #2743: semantic colour mappings that belong to a role name that role, so a
 // role change re-derives them.
-const ROLE_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin]; // the list init.ts registers
+const ROLE_PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+]; // the list init.ts registers
 const ROLES = [
   'neutral',
   'primary',

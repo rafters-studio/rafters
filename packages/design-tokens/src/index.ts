@@ -66,6 +66,7 @@ export {
   invertPlugin,
   mirrorPlugin,
   scalePlugin,
+  shadowRungPlugin,
   statePlugin,
 } from './plugins/index.js';
 export {

@@ -12,11 +12,19 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   scalePlugin,
   statePlugin,
 } from '../src/plugins/index.js';
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const PLUGINS = [
+  scalePlugin,
+  contrastPlugin,
+  statePlugin,
+  invertPlugin,
+  mirrorPlugin,
+  shadowRungPlugin,
+];
 
 const COMPOSITES = [
   'motion-fade-in',

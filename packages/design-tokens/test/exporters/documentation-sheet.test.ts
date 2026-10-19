@@ -20,6 +20,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   registryToDocumentation,
   scalePlugin,
   statePlugin,
@@ -48,6 +49,7 @@ function baseRegistry(): TokenRegistry {
     statePlugin,
     invertPlugin,
     mirrorPlugin,
+    shadowRungPlugin,
   ]);
 }
 

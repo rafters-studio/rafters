@@ -56,21 +56,55 @@ function scalePx(multiplier: number, baseSpacing: number, scale: number[]): numb
 }
 
 /**
- * Compute resolved shadow part values from a definition.
- * Returns the raw CSS values for each decomposed property.
+ * The index of the rung a non-zero weight lands on. The generator and the
+ * `shadow-rung` plugin both pick through here, so a part re-picked by the
+ * cascade lands where a fresh generation at the same base would put it.
+ * `nearestRung` returns a member of the scale, so the index is always inside it.
+ */
+export function shadowRungIndex(
+  multiplier: number,
+  baseSpacing: number,
+  scale: readonly number[],
+): number {
+  return scale.indexOf(nearestRung(multiplier * baseSpacing, scale));
+}
+
+/** The CSS reference a part on rung `index` carries. */
+export function shadowRungRef(index: number): string {
+  return `var(--rafters-shadow-rung-${index})`;
+}
+
+const GEOMETRY_PARTS = {
+  'offset-y': 'yOffset',
+  blur: 'blur',
+  spread: 'spread',
+} as const satisfies Record<string, keyof ShadowDef>;
+
+type ShadowPart = (typeof SHADOW_PARTS)[number];
+
+/**
+ * Compute the shadow part values from a definition. A non-zero geometry part
+ * names its rung (and carries the multiplier the cascade re-picks it from);
+ * `offset-x`, zero parts and colour stay literal.
  */
 function resolveShadowParts(
   def: ShadowDef,
   baseSpacing: number,
   scale: number[],
-): Record<(typeof SHADOW_PARTS)[number], string> {
+): Record<ShadowPart, { value: string; multiplier?: number; rung?: number }> {
+  const geometry = (key: keyof typeof GEOMETRY_PARTS) => {
+    const multiplier = def[GEOMETRY_PARTS[key]];
+    if (multiplier === 0) return { value: '0rem' };
+    const rung = shadowRungIndex(multiplier, baseSpacing, scale);
+    return { value: shadowRungRef(rung), multiplier, rung };
+  };
   return {
     // Shadows are vertical-only by design (material elevation model)
-    'offset-x': '0rem',
-    'offset-y': pxToRem(scalePx(def.yOffset, baseSpacing, scale)),
-    blur: pxToRem(scalePx(def.blur, baseSpacing, scale)),
-    spread: pxToRem(scalePx(def.spread, baseSpacing, scale)),
-    color: `rgb(0 0 0 / ${def.opacity})`,
+    'offset-x': { value: '0rem' },
+    'offset-y': geometry('offset-y'),
+    blur: geometry('blur'),
+    spread: geometry('spread'),
+    color: { value: `rgb(0 0 0 / ${def.opacity})` },
   };
 }
 
@@ -111,23 +145,44 @@ export function generateShadowTokens(
   const ratioVal = ratioValue(resolveRatio(progressionRatio));
   const geometry = shadowScale(ratioVal, bounds);
 
-  // Shadow reference token - use rem
-  const baseSpacingRem = baseSpacingUnit / 16;
-
+  // Shadow reference token -- references the spacing base in CSS, as the
+  // spacing tokens do, rather than copying its value.
   tokens.push({
     name: 'shadow-base-unit',
-    value: `${baseSpacingRem}rem`,
+    value: 'var(--rafters-spacing-base)',
     category: 'shadow',
     namespace: 'shadow',
     semanticMeaning: 'Base unit for shadow calculations - tied to spacing for consistency',
     usageContext: ['calculation-reference'],
     progressionSystem: progressionRatio as 'minor-third',
     dependsOn: ['spacing-base'],
-    description: `Shadows derive from spacing base (${baseSpacingRem}rem) for visual consistency.`,
+    description: 'Shadows derive from the spacing base for visual consistency.',
     generatedAt: timestamp,
     containerQueryAware: false,
     userOverride: null,
   });
+
+  // The rung scale: one literal leaf per whole-pixel rung. Parts name a rung
+  // by reference, so retuning a rung moves every part on it. CSS cannot snap
+  // a value to the nearest rung; the registry picks the rung (shadow-rung
+  // plugin) and the CSS carries the link.
+  for (const [i, px] of geometry.entries()) {
+    tokens.push({
+      name: `shadow-rung-${i}`,
+      value: pxToRem(px),
+      category: 'shadow',
+      namespace: 'shadow',
+      semanticMeaning: `Shadow geometry rung ${i} (${px}px)`,
+      usageContext: ['calculation-reference'],
+      scalePosition: i,
+      progressionSystem: progressionRatio as 'minor-third',
+      dependsOn: [],
+      description: `Shadow rung ${i}: ${px}px on the shadow progression. Every shadow part on this rung references it.`,
+      generatedAt: timestamp,
+      containerQueryAware: false,
+      userOverride: null,
+    });
+  }
 
   // Generate tokens for each shadow level
   for (const scale of SHADOW_SCALE) {
@@ -167,17 +222,33 @@ export function generateShadowTokens(
     for (const part of SHADOW_PARTS) {
       const partName = `${scaleName}-${part}`;
       partDeps.push(partName);
+      const { value, multiplier, rung } = parts[part];
+      const bound = multiplier !== undefined && rung !== undefined;
 
       tokens.push({
         name: partName,
-        value: parts[part],
+        value,
         category: 'shadow',
         namespace: 'shadow',
         semanticMeaning: `${part} component of ${scale} shadow`,
         usageContext: ['designer-override'],
         scalePosition: scaleIndex,
-        dependsOn: ['shadow-base-unit'],
-        description: `Shadow ${scale} ${part}: ${parts[part]}. Override to customize this shadow layer.`,
+        dependsOn: bound ? ['spacing-base', `shadow-rung-${rung}`] : ['shadow-base-unit'],
+        ...(bound
+          ? {
+              binding: {
+                plugin: 'shadow-rung',
+                input: {
+                  base: 'spacing-base',
+                  multiplier,
+                  ratio: ratioVal,
+                  floor: bounds.floor,
+                  ceiling: bounds.ceiling,
+                },
+              },
+            }
+          : {}),
+        description: `Shadow ${scale} ${part}: ${value}. Override to customize this shadow layer.`,
         generatedAt: timestamp,
         containerQueryAware: false,
         userOverride: null,

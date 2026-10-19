@@ -21,6 +21,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   scalePlugin,
   statePlugin,
   TokenRegistry,
@@ -59,6 +60,7 @@ function baseRegistry(): TokenRegistry {
     statePlugin,
     invertPlugin,
     mirrorPlugin,
+    shadowRungPlugin,
   ]);
 }
 

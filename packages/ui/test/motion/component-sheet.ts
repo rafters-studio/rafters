@@ -20,6 +20,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -53,6 +54,7 @@ export function componentSheet(component: string): Promise<string> {
       statePlugin,
       invertPlugin,
       mirrorPlugin,
+      shadowRungPlugin,
     ]);
     return registryToCompiled(registry, { contentSources: [componentDir(component)] });
   })();

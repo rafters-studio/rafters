@@ -4,6 +4,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -187,6 +188,7 @@ describe('badge icon candidates compile', () => {
       statePlugin,
       invertPlugin,
       mirrorPlugin,
+      shadowRungPlugin,
     ]);
     const css = await registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/badge')],

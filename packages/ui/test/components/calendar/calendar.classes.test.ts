@@ -11,6 +11,7 @@ import {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  shadowRungPlugin,
   registryToCompiled,
   scalePlugin,
   statePlugin,
@@ -137,6 +138,7 @@ const sheet = (): Promise<string> => {
       statePlugin,
       invertPlugin,
       mirrorPlugin,
+      shadowRungPlugin,
     ]);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/calendar')],
