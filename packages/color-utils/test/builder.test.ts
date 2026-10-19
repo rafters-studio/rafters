@@ -4,7 +4,12 @@
 
 import type { OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
+import { rebakeAccessibility } from '../src/accessibility.js';
 import { buildColorValue } from '../src/builder.js';
+import { roundOKLCH } from '../src/conversion.js';
+import { getGamutTier } from '../src/gamut.js';
+import { generateOKLCHScale } from '../src/harmony.js';
+import { SCALE_POSITIONS } from '../src/scale-positions.js';
 
 describe('buildColorValue', () => {
   // Reference colors for testing
@@ -76,13 +81,49 @@ describe('buildColorValue', () => {
       expect(result.scale[10]?.l).toBeLessThan(0.1);
     });
 
-    it('maintains the base hue throughout scale', () => {
-      const result = buildColorValue(blue);
-
-      for (const color of result.scale) {
-        // Hue should be preserved (with rounding tolerance)
-        expect(color.h).toBe(240);
+    it('keeps the base hue on every step that needed no gamut mapping', () => {
+      // An sRGB seed: steps already in sRGB are not moved and keep the hue
+      // exactly. A step mapped by colorjs.io toGamut can turn a few degrees
+      // (its CSS method ends in a clip held within deltaEOK 0.02), so mapped
+      // steps are only required to land in sRGB.
+      const muted: OKLCH = { l: 0.5, c: 0.05, h: 240, alpha: 1 };
+      const unmapped = SCALE_POSITIONS.map((pos) => generateOKLCHScale(muted)[pos]);
+      const result = buildColorValue(muted);
+      expect(result.seedAdjusted).toBeUndefined();
+      let kept = 0;
+      for (const [i, color] of result.scale.entries()) {
+        const before = unmapped[i];
+        if (before && getGamutTier(before) === 'srgb') {
+          expect(color).toEqual(before);
+          expect(color.h).toBe(240);
+          kept++;
+        } else {
+          expect(getGamutTier(color)).toBe('srgb');
+        }
       }
+      expect(kept).toBeGreaterThan(5);
+    });
+
+    it('turns a mapped step by a hue difference within deltaEOK 0.02', () => {
+      // Seeds whose steps do move: the hue turn colorjs.io's clip makes is
+      // measured as the OKLab distance it costs at the stored chroma,
+      // 2 * c * sin(dh / 2), which stays inside the 0.02 JND.
+      let turned = 0;
+      for (const seed of [
+        { l: 0.55, c: 0.2, h: 0, alpha: 1 },
+        { l: 0.55, c: 0.2, h: 260, alpha: 1 },
+        { l: 0.55, c: 0.12, h: 90, alpha: 1 },
+      ]) {
+        const result = buildColorValue(seed);
+        const seedHue = result.scale[6]?.h ?? seed.h;
+        for (const color of result.scale) {
+          const dh = Math.abs(color.h - seedHue) % 360;
+          const turn = Math.min(dh, 360 - dh);
+          if (turn > 0) turned++;
+          expect(2 * color.c * Math.sin((turn * Math.PI) / 360)).toBeLessThanOrEqual(0.02);
+        }
+      }
+      expect(turned).toBeGreaterThan(0);
     });
   });
 
@@ -466,6 +507,88 @@ describe('buildColorValue', () => {
       // input, none dropped or collapsed into another.
       expect(results).toHaveLength(colors.length);
       expect(new Set(results.map((r) => r.tokenId)).size).toBe(colors.length);
+    });
+  });
+
+  describe('stored steps say what they are (#2672)', () => {
+    const fireTruck: OKLCH = { l: 0.55, c: 0.2, h: 0, alpha: 1 };
+    const blue260: OKLCH = { l: 0.55, c: 0.2, h: 260, alpha: 1 };
+    const sky: OKLCH = { l: 0.55, c: 0.12, h: 210, alpha: 1 };
+    const citrine: OKLCH = { l: 0.55, c: 0.12, h: 90, alpha: 1 };
+    const zinc: OKLCH = { l: 0.55, c: 0.01, h: 260, alpha: 1 };
+    const tooLight: OKLCH = { l: 0.9, c: 0.1, h: 30, alpha: 1 };
+    const families = [
+      fireTruck,
+      blue260,
+      sky,
+      citrine,
+      zinc,
+      tooLight,
+      blue,
+      red,
+      gray,
+      white,
+      black,
+    ];
+
+    it('puts every step of the four default families in sRGB', () => {
+      for (const seed of [fireTruck, blue260, sky, citrine]) {
+        const value = buildColorValue(seed);
+        for (const step of value.scale) expect(getGamutTier(step)).toBe('srgb');
+      }
+    });
+
+    it("records seedAdjusted with reason 'gamut' for the P3 seeds", () => {
+      for (const seed of [sky, citrine]) {
+        expect(getGamutTier(seed)).toBe('p3');
+        const value = buildColorValue(seed);
+        expect(value.seedAdjusted?.reason).toBe('gamut');
+        expect(value.seedAdjusted?.from).toEqual(seed);
+        expect(value.seedAdjusted?.to).toEqual(value.scale[6]);
+      }
+    });
+
+    it('returns strictly falling lightness from 50 to 950', () => {
+      for (const seed of families) {
+        const { scale } = buildColorValue(seed);
+        for (let i = 1; i < scale.length; i++) {
+          expect(scale[i]?.l).toBeLessThan(scale[i - 1]?.l as number);
+        }
+      }
+    });
+
+    it('records one gamut tier per step, equal to getGamutTier of that step', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        expect(value.gamut).toHaveLength(value.scale.length);
+        for (const [i, step] of value.scale.entries()) {
+          expect(value.gamut?.[i]).toBe(getGamutTier(step));
+        }
+      }
+    });
+
+    it("records a seed moved by the lightness bounds with reason 'lightness-bounds'", () => {
+      const value = buildColorValue(tooLight);
+      expect(value.seedAdjusted?.reason).toBe('lightness-bounds');
+      expect(value.seedAdjusted?.from.l).toBe(0.9);
+      expect(value.seedAdjusted?.to).toEqual(value.scale[6]);
+    });
+
+    it('never moves the seed unrecorded: without seedAdjusted, the 600 step is the seed', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        if (value.seedAdjusted) continue;
+        expect(value.scale[6]).toEqual(roundOKLCH(seed));
+      }
+    });
+
+    it('re-baking an unchanged family returns the same onWhite and onBlack', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        const rebaked = rebakeAccessibility(value);
+        expect(rebaked.accessibility?.onWhite).toEqual(value.accessibility?.onWhite);
+        expect(rebaked.accessibility?.onBlack).toEqual(value.accessibility?.onBlack);
+      }
     });
   });
 });

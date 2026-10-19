@@ -22,6 +22,7 @@
 
 import {
   buildColorValue,
+  getGamutTier,
   oklchToCSS,
   POSITION_TO_INDEX,
   rebakeAccessibility,
@@ -47,9 +48,15 @@ export function importColorFamily(name: string, seedPosition: string, seed: OKLC
   // write would be a derived value they never picked.
   // The pinned scale is no longer the one `buildColorValue` measured, so
   // color-utils re-derives the WCAG metadata from the stored scale.
+  // The pinned seed records its true tier, 'out' included, and the family
+  // carries no seedAdjusted: the typed seed is stored as typed (#2672 spec
+  // delta, veneer 2026-10-19).
   const scale = [...built.scale];
   scale[seedIndex] = seed;
-  const value = rebakeAccessibility({ ...built, name, scale });
+  const seedTier = getGamutTier(seed);
+  const gamut = built.gamut?.map((tier, i) => (i === seedIndex ? seedTier : tier));
+  const { seedAdjusted: _built600Move, ...rest } = built;
+  const value = rebakeAccessibility({ ...rest, name, scale, gamut });
   const tokens: Token[] = [
     {
       name,

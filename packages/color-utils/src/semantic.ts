@@ -26,6 +26,7 @@ import type {
   SemanticColorSuggestions,
   SemanticStatusRole,
 } from '@rafters/shared';
+import { calculateWCAGContrast } from './accessibility.js';
 import { roundOKLCH } from './conversion.js';
 import { clampColor } from './gamut.js';
 import { clamp01, normalizeHue } from './internal/math.js';
@@ -105,6 +106,20 @@ type FamilyWithReferences = ColorValue & {
 };
 
 type PairMatrix = readonly (readonly number[])[];
+
+const STANDARD_RANK: Record<PairStandard, number> = { none: 0, AA: 1, AAA: 2 };
+
+/** The highest WCAG standard (normal text) a contrast ratio meets. */
+function standardFor(ratio: number): PairStandard {
+  if (ratio >= 7) return 'AAA';
+  if (ratio >= 4.5) return 'AA';
+  return 'none';
+}
+
+/** The highest WCAG standard (normal text) two colours meet, measured. */
+function standardOf(a: OKLCH, b: OKLCH): PairStandard {
+  return standardFor(calculateWCAGContrast(a, b));
+}
 
 function partnerForBase(pairs: PairMatrix | undefined, base: number): number | undefined {
   if (!pairs) return undefined;
@@ -257,13 +272,41 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
   const aaaPairs = family.accessibility?.wcagAAA?.normal;
   const aaPairs = family.accessibility?.wcagAA?.normal;
 
+  /** Contrast between two steps of this family, by scale index. */
+  function contrastOf(a: number, b: number): number {
+    const colorA = family.scale[a];
+    const colorB = family.scale[b];
+    if (!colorA || !colorB) return 1;
+    return calculateWCAGContrast(colorA, colorB);
+  }
+
+  /** The colour a leg names, when this context holds that family. */
+  function colorOf(leg: PairLeg): OKLCH | undefined {
+    if (leg.family !== familyName && leg.family !== family.name) return undefined;
+    const index = POSITION_TO_INDEX[leg.position];
+    return index === undefined ? undefined : family.scale[index];
+  }
+
+  /**
+   * The highest standard a pair's own two steps meet, measured on the two
+   * colours the legs resolve to. A leg whose colour this context does not
+   * hold cannot be measured, so it claims no standard.
+   */
+  function measuredStandard(fromPosition: string, to: PairLeg): PairStandard {
+    const fromColor = colorOf({ family: familyName, position: fromPosition });
+    const toColor = colorOf(to);
+    if (!fromColor || !toColor) return 'none';
+    return standardOf(fromColor, toColor);
+  }
+
   function foregroundPair(from: string, level: 'AA' | 'AAA'): Pair {
     const auto = refs.foregroundReferences?.auto;
     if (auto) {
+      const to = { family: auto.family, position: auto.position };
       return {
         from: { family: familyName, position: from },
-        to: { family: auto.family, position: auto.position },
-        standard: level,
+        to,
+        standard: measuredStandard(from, to),
         tier: 'reference',
       };
     }
@@ -272,29 +315,49 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     const aaa = exactAAA ?? nearestPartner(aaaPairs, base);
     const exactAA = partnerForBase(aaPairs, base);
     const aa = exactAA ?? nearestPartner(aaPairs, base);
-    const partner = level === 'AAA' ? (aaa ?? aa) : aa;
-    if (partner === undefined) {
+
+    // Candidates in the order they are tried: the AAA matrix's partner (when
+    // AAA is asked for), then the AA matrix's.
+    const candidates: { partner: number; exact: boolean }[] = [];
+    if (level === 'AAA' && aaa !== undefined) {
+      candidates.push({ partner: aaa, exact: exactAAA !== undefined });
+    }
+    if (aa !== undefined) candidates.push({ partner: aa, exact: exactAA !== undefined });
+    if (candidates.length === 0) {
       throw new SemanticSelectionError(
         familyName,
         `has no WCAG pair partner for position ${from} (accessibility metadata required)`,
       );
     }
-    const fromAAA = level === 'AAA' && aaa !== undefined;
+
+    const measured = candidates.map((candidate) => ({
+      ...candidate,
+      ratio: contrastOf(base, candidate.partner),
+    }));
+    const targets: readonly PairStandard[] = level === 'AAA' ? ['AAA', 'AA'] : ['AA'];
+    const chosen =
+      targets
+        .map((target) =>
+          measured.find((m) => STANDARD_RANK[standardFor(m.ratio)] >= STANDARD_RANK[target]),
+        )
+        .find((m) => m !== undefined) ??
+      measured.reduce((best, m) => (m.ratio > best.ratio ? m : best));
     return {
       from: { family: familyName, position: from },
-      to: { family: familyName, position: requirePosition(partner, familyName) },
-      standard: fromAAA ? 'AAA' : 'AA',
-      tier: (fromAAA ? exactAAA : exactAA) !== undefined ? 'pair-exact' : 'pair-nearest',
+      to: { family: familyName, position: requirePosition(chosen.partner, familyName) },
+      standard: standardFor(chosen.ratio),
+      tier: chosen.exact ? 'pair-exact' : 'pair-nearest',
     };
   }
 
   function statePair(use: StateUse, from: string, dark?: boolean): Pair {
     const precomputed = refs.stateReferences?.[use];
     if (precomputed) {
+      const to = { family: precomputed.family, position: String(precomputed.position) };
       return {
         from: { family: familyName, position: from },
-        to: { family: precomputed.family, position: String(precomputed.position) },
-        standard: 'AAA',
+        to,
+        standard: measuredStandard(from, to),
         tier: 'reference',
       };
     }
@@ -317,7 +380,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     return {
       from: { family: familyName, position: from },
       to: { family: familyName, position: requirePosition(targetIndex, familyName) },
-      standard: 'AAA',
+      standard: standardFor(contrastOf(base, targetIndex)),
       tier: 'ladder',
     };
   }
@@ -339,10 +402,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     // advisory here because the cascade re-derives it as contrast against the
     // dark background. Sum-scoring let a distant fg leg drag the bg to the
     // wrong side of the scale.
-    for (const [pairs, standard] of [
-      [aaaPairs, 'AAA'],
-      [aaPairs, 'AA'],
-    ] as const) {
+    for (const pairs of [aaaPairs, aaPairs]) {
       if (!pairs || pairs.length === 0) continue;
       let best: { from: number; to: number; fromDist: number; toDist: number } | null = null;
       for (const [p1, p2] of pairs) {
@@ -365,7 +425,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
         return {
           from: { family: familyName, position: requirePosition(best.from, familyName) },
           to: { family: familyName, position: requirePosition(best.to, familyName) },
-          standard,
+          standard: standardFor(contrastOf(best.from, best.to)),
           tier: best.fromDist === 0 && best.toDist === 0 ? 'pair-exact' : 'pair-nearest',
         };
       }
@@ -376,7 +436,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     return {
       from: { family: familyName, position: requirePosition(fromTarget, familyName) },
       to: { family: familyName, position: requirePosition(toFallback, familyName) },
-      standard: 'none',
+      standard: standardFor(contrastOf(fromTarget, toFallback)),
       tier: 'inversion',
     };
   }

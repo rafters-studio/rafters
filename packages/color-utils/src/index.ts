@@ -42,12 +42,16 @@ export {
 
 // Gamut
 export {
+  ALLOW_P3,
   computeGamutBoundaries,
   type GamutBoundaryPoint,
+  type GamutCeiling,
   type GamutTier,
   getGamutTier,
   isInP3Gamut,
   isInSRGBGamut,
+  mapScaleToGamut,
+  toGamutCeiling,
   toNearestGamut,
 } from './gamut.js';
 
