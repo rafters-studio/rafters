@@ -240,10 +240,12 @@ describe('toDTCG conforms to DTCG Format/Color 2025.10', () => {
     expect(typeOf(out, 'focus.ring.color')).toBe('color');
     expect(resolve(out, 'rafters.extent.pop')).toMatchObject({ $value: 0.95 });
     expect(typeOf(out, 'rafters.extent.pop')).toBe('number');
-    expect(tokenFor('font-weight-semibold')).toMatchObject({ $value: 600 });
+    expect(tokenFor('font-weight-semibold')).toMatchObject({ $type: 'fontWeight', $value: 600 });
+    expect(tokenFor('font-sans')?.$type).toBe('fontFamily');
     expect(Array.isArray(tokenFor('font-sans')?.$value)).toBe(true);
-    expect(tokenFor('line-height-lg')).toMatchObject({ $value: 1.5 });
+    expect(tokenFor('line-height-lg')).toMatchObject({ $type: 'number', $value: 1.5 });
     expect(tokenFor('spacing-2')).toMatchObject({
+      $type: 'dimension',
       $value: { value: 0.5, unit: 'rem' },
       $extensions: { rafters: { css: 'calc(var(--rafters-spacing-base) * 2)' } },
     });
