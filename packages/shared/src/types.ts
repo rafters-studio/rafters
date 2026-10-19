@@ -70,16 +70,32 @@ export const DTCGTokenBaseSchema = z.object({
 export type DTCGTokenBase = z.infer<typeof DTCGTokenBaseSchema>;
 
 /**
- * W3C DTCG Color Value (OKLCH format)
+ * W3C DTCG Color Value (Design Tokens Color Module 2025.10, section 4.1)
+ * https://www.designtokens.org/TR/2025.10/color/
  */
 export const DTCGColorValueSchema = z.object({
-  colorSpace: z.literal('oklch'),
-  channels: z.tuple([
-    z.number().min(0).max(1), // Lightness
-    z.number().min(0), // Chroma
-    z.number().min(0).max(360), // Hue
+  colorSpace: z.enum([
+    'srgb',
+    'srgb-linear',
+    'hsl',
+    'hwb',
+    'lab',
+    'lch',
+    'oklab',
+    'oklch',
+    'display-p3',
+    'a98-rgb',
+    'prophoto-rgb',
+    'rec2020',
+    'xyz-d65',
+    'xyz-d50',
   ]),
-  alpha: z.number().min(0).max(1).optional().default(1),
+  components: z.array(z.union([z.number(), z.literal('none')])),
+  alpha: z.number().min(0).max(1).optional(),
+  hex: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
 });
 
 export type DTCGColorValue = z.infer<typeof DTCGColorValueSchema>;
@@ -126,26 +142,27 @@ export const DTCGFileSchema = z.record(z.string(), z.union([DTCGTokenBaseSchema,
 export type DTCGFile = z.infer<typeof DTCGFileSchema>;
 
 /**
- * Helper: Convert OKLCH to DTCG Color Value
+ * Helper: Convert OKLCH to DTCG Color Value.
+ * `alpha` is present only when it is below 1 (Color Module 2025.10 defaults it to 1).
  */
 export function oklchToDTCG(oklch: OKLCH): DTCGColorValue {
-  return {
-    colorSpace: 'oklch',
-    channels: [oklch.l, oklch.c, oklch.h],
-    alpha: oklch.alpha ?? 1,
-  };
+  const value: DTCGColorValue = { colorSpace: 'oklch', components: [oklch.l, oklch.c, oklch.h] };
+  if (oklch.alpha !== undefined && oklch.alpha < 1) value.alpha = oklch.alpha;
+  return value;
 }
 
 /**
- * Helper: Convert DTCG Color Value to OKLCH
+ * Helper: Convert an oklch DTCG Color Value to OKLCH. A `none` component reads as 0.
  */
 export function dtcgToOKLCH(dtcg: DTCGColorValue): OKLCH {
-  return {
-    l: dtcg.channels[0],
-    c: dtcg.channels[1],
-    h: dtcg.channels[2],
-    alpha: dtcg.alpha ?? 1,
+  if (dtcg.colorSpace !== 'oklch') {
+    throw new Error(`dtcgToOKLCH: colorSpace "${dtcg.colorSpace}" is not oklch`);
+  }
+  const component = (i: number): number => {
+    const c = dtcg.components[i];
+    return typeof c === 'number' ? c : 0;
   };
+  return { l: component(0), c: component(1), h: component(2), alpha: dtcg.alpha ?? 1 };
 }
 
 /**
