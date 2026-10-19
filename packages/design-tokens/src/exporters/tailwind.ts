@@ -222,8 +222,8 @@ function tokenValueToCSS(token: Token): string | null {
         // forced to 1 because the old formatter never emitted a fourth
         // channel at all, even for an imported color carrying alpha < 1.
         // This holds for every OKLCH this exporter can receive, not only
-        // the already-rounded output of generateOKLCHScale/hardcoded
-        // defaults -- see the imported-primary fixture test below.
+        // the already-rounded output of the default seeded families
+        // -- see the imported-primary fixture test below.
         return oklchToCSS({
           l: Number(baseColor.l.toFixed(3)),
           c: Number(baseColor.c.toFixed(3)),

@@ -74,16 +74,16 @@ describe('tokensToTypeScript', () => {
    * `imported-primary` case below does, and pins the alpha-dropping
    * behavior.
    *
-   * `zinc` is anchored to the hardcoded `DEFAULT_NEUTRAL_SCALE`; the
-   * `silver-true-glacier` assertion additionally exercises a non-zero
-   * chroma and tracks `DEFAULT_COLOR_PALETTE_BASES` -- retuning that
-   * palette's hue/chroma is expected to move this literal too.
+   * Both literals track `DEFAULT_COLOR_SEEDS`: `zinc` is its 500 step
+   * (seeded at 600, L 0.442); the `silver-true-glacier` assertion
+   * additionally exercises a non-zero chroma -- retuning either seed is
+   * expected to move these literals too.
    */
   it('produces byte-identical L/C precision after the oklchToCSS migration (H gains trailing zeros)', () => {
     const system = generateBaseSystem({});
     const source = tokensToTypeScript(system.allTokens);
-    expect(source).toContain("'zinc': 'oklch(0.552 0.000 0.000)'");
-    expect(source).toContain("'silver-true-glacier': 'oklch(0.645 0.120 180.000)'");
+    expect(source).toContain("'zinc': 'oklch(0.563 0.000 0.000)'");
+    expect(source).toContain("'silver-true-glacier': 'oklch(0.652 0.103 178.000)'");
   });
 
   it('drops alpha for a full-precision, alpha-carrying imported seed, exactly as the old formatter did', () => {

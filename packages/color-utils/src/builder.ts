@@ -15,6 +15,7 @@ import {
   CONTRAST_BLACK,
   CONTRAST_WHITE,
   minFontSizeForAPCA,
+  REFERENCE_STEP_INDEX,
 } from './accessibility.js';
 import {
   calculateAtmosphericWeight,
@@ -22,7 +23,15 @@ import {
   getColorTemperature,
   isLightColor,
 } from './analysis.js';
-import { generateHarmony, generateOKLCHScale } from './harmony.js';
+import {
+  ceilingForSeed,
+  getGamutTier,
+  mapScaleToGamut,
+  storedTier,
+  toGamutCeiling,
+} from './gamut.js';
+import { boundSeedLightness, generateHarmony, generateOKLCHScale } from './harmony.js';
+import { roundOKLCH } from './conversion.js';
 import { generateColorName } from './naming/index.js';
 import { SCALE_POSITIONS } from './scale-positions.js';
 import { generateSemanticColorSuggestions } from './semantic.js';
@@ -82,18 +91,42 @@ export interface BuildColorValueOptions {
  * ```
  */
 export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = {}): ColorValue {
-  // Generate the 11-position scale
-  const scaleRecord = generateOKLCHScale(oklch);
-  const scale = SCALE_POSITIONS.map((pos) => scaleRecord[pos]).filter(
-    (v): v is OKLCH => v !== undefined,
+  // The seed the family is built from: inside the lightness bounds first,
+  // then, for a P3 seed above the ceiling (P3 not allowed), mapped into sRGB
+  // before the scale is built. Every step, the seed's included, is then mapped
+  // into the ceiling. Any move of the seed is recorded below.
+  const bounded = boundSeedLightness(oklch);
+  const ceiling = ceilingForSeed(bounded);
+  const seed = getGamutTier(bounded) === 'p3' ? toGamutCeiling(bounded, ceiling) : bounded;
+
+  // Generate the 11-position scale and map every step into the ceiling
+  const scaleRecord = generateOKLCHScale(seed);
+  const scale = mapScaleToGamut(
+    SCALE_POSITIONS.map((pos) => scaleRecord[pos]).filter((v): v is OKLCH => v !== undefined),
+    ceiling,
   );
+  const gamut = scale.map(storedTier);
+
+  // The seed lands on the 600 step. Any difference from the requested seed
+  // (beyond the rounding every step gets) is a move, and is recorded.
+  const landed = scale[REFERENCE_STEP_INDEX];
+  const requested = roundOKLCH(oklch);
+  const seedAdjusted: ColorValue['seedAdjusted'] =
+    landed && (landed.l !== requested.l || landed.c !== requested.c || landed.h !== requested.h)
+      ? {
+          from: { ...oklch },
+          to: { ...landed },
+          reason: bounded !== oklch ? 'lightness-bounds' : 'gamut',
+        }
+      : undefined;
 
   // Generate harmonies
   const harmony = generateHarmony(oklch);
 
   // WCAG accessibility (pair matrices + on-white/on-black) via the shared
-  // assembler; APCA is layered on below, builder-only.
-  const wcagAccessibility = assembleWcagAccessibility(scale, oklch);
+  // assembler, measured on the step the seed landed on (the same step
+  // rebakeAccessibility uses); APCA is layered on below, builder-only.
+  const wcagAccessibility = assembleWcagAccessibility(scale, landed ?? oklch);
   const apcaOnWhite = calculateAPCAContrast(oklch, CONTRAST_WHITE);
   const apcaOnBlack = calculateAPCAContrast(oklch, CONTRAST_BLACK);
 
@@ -115,6 +148,8 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
   const colorValue: ColorValue = {
     name,
     scale,
+    gamut,
+    ...(seedAdjusted && { seedAdjusted }),
     tokenId: `color-${oklch.l.toFixed(3)}-${oklch.c.toFixed(3)}-${Math.round(oklch.h)}`,
 
     // Optional metadata from options

@@ -5,7 +5,7 @@
  * Generators are pure functions - they receive data, they don't embed it.
  *
  * This file contains:
- * - Default color scales (OKLCH values)
+ * - Default colour family seeds (OKLCH)
  * - Default breakpoint definitions
  * - Default depth (z-index) definitions
  * - Default shadow definitions
@@ -27,48 +27,21 @@ import type { MotionBand, MotionTravel } from './motion-derivation.js';
 // =============================================================================
 
 /**
- * Neutral color scale in OKLCH
- * Based on shadcn zinc palette, converted to OKLCH for perceptual uniformity
+ * A default colour family, as the seed color-utils builds it from.
+ * `buildFamily` (generators/color.ts) turns each entry into a full
+ * `ColorValue` via `buildColorValue`; nothing here is a scale.
  */
-export const DEFAULT_NEUTRAL_SCALE: Record<string, OKLCH> = {
-  '50': { l: 0.985, c: 0, h: 0, alpha: 1 },
-  '100': { l: 0.967, c: 0, h: 0, alpha: 1 },
-  '200': { l: 0.92, c: 0, h: 0, alpha: 1 },
-  '300': { l: 0.869, c: 0, h: 0, alpha: 1 },
-  // biome-ignore lint/suspicious/noApproximativeNumericConstant: OKLCH lightness value, not Math.SQRT1_2
-  '400': { l: 0.707, c: 0, h: 0, alpha: 1 },
-  '500': { l: 0.552, c: 0, h: 0, alpha: 1 },
-  '600': { l: 0.442, c: 0, h: 0, alpha: 1 },
-  '700': { l: 0.37, c: 0, h: 0, alpha: 1 },
-  '800': { l: 0.269, c: 0, h: 0, alpha: 1 },
-  '900': { l: 0.2, c: 0, h: 0, alpha: 1 },
-  '950': { l: 0.141, c: 0, h: 0, alpha: 1 },
-};
-
-export interface ColorScaleInput {
-  name: string;
-  scale: Record<string, OKLCH>;
-  description?: string;
+export interface ColorSeedEntry {
+  /** The OKLCH seed `buildColorValue` derives the family from */
+  seed: OKLCH;
+  /** What the family is for; becomes the ColorValue's `use` */
+  description: string;
 }
 
-export const DEFAULT_COLOR_SCALES: ColorScaleInput[] = [
-  {
-    name: 'zinc',
-    scale: DEFAULT_NEUTRAL_SCALE,
-    description: 'Achromatic zinc palette. Default backing family for the neutral semantic role.',
-  },
-];
-
-// =============================================================================
-// COLOR PALETTE BASES
-// =============================================================================
-
 /**
- * Base hue and chroma for color palette generation.
- * Full 11-position scales are computed mathematically via generateOKLCHScale().
+ * Every default colour family, as a seed.
  *
- * Rafters palette - color names from API cache (api.rafters.studio):
- * - zinc: achromatic (h:0, c:0) - defined above, backs the `neutral` semantic
+ * - zinc: achromatic, seeded at its 600 step (L 0.442); backs the `neutral` semantic
  * - silver-true-glacier: teal/cyan (h:180, c:0.12) - cool, serene
  * - silver-bold-fire-truck: fire-truck red (h:0, c:0.20) - warm, energetic
  * - silver-true-honey: honey gold (h:60, c:0.12) - warm, inviting
@@ -76,52 +49,36 @@ export const DEFAULT_COLOR_SCALES: ColorScaleInput[] = [
  * - silver-true-sky: sky blue (h:210, c:0.12) - calm, trustworthy
  * - silver-true-violet: violet/purple (h:270, c:0.12) - creative, luxurious
  */
-export interface ColorPaletteBase {
-  /** Hue in degrees (0-360) */
-  hue: number;
-  /** Chroma (0-0.4 typical range) */
-  chroma: number;
-  /** Description of the color */
-  description: string;
-}
-
-export const DEFAULT_COLOR_PALETTE_BASES: Record<string, ColorPaletteBase> = {
+export const DEFAULT_COLOR_SEEDS: Record<string, ColorSeedEntry> = {
+  zinc: {
+    seed: { l: 0.442, c: 0, h: 0, alpha: 1 },
+    description: 'Achromatic zinc palette. Default backing family for the neutral semantic role.',
+  },
   'silver-true-glacier': {
-    hue: 180,
-    chroma: 0.12,
+    seed: { l: 0.55, c: 0.12, h: 180, alpha: 1 },
     description: 'Cool cyan/teal palette - serene, balanced, calming.',
   },
   'silver-bold-fire-truck': {
-    hue: 0,
-    chroma: 0.2,
+    seed: { l: 0.55, c: 0.2, h: 0, alpha: 1 },
     description: 'Bold fire-truck red palette - warm, energetic, attention-grabbing.',
   },
   'silver-true-honey': {
-    hue: 60,
-    chroma: 0.12,
+    seed: { l: 0.55, c: 0.12, h: 60, alpha: 1 },
     description: 'Warm honey gold palette - inviting, refined, subtle warmth.',
   },
   'silver-true-citrine': {
-    hue: 90,
-    chroma: 0.12,
+    seed: { l: 0.55, c: 0.12, h: 90, alpha: 1 },
     description: 'Fresh citrine green palette - natural, growth, harmony.',
   },
   'silver-true-sky': {
-    hue: 210,
-    chroma: 0.12,
+    seed: { l: 0.55, c: 0.12, h: 210, alpha: 1 },
     description: 'Calm sky blue palette - trustworthy, serene, reliable.',
   },
   'silver-true-violet': {
-    hue: 270,
-    chroma: 0.12,
+    seed: { l: 0.55, c: 0.12, h: 270, alpha: 1 },
     description: 'Creative violet palette - luxurious, imaginative, refined.',
   },
 };
-
-/** @deprecated Use DEFAULT_COLOR_PALETTE_BASES instead */
-export const DEFAULT_SEMANTIC_COLOR_BASES = DEFAULT_COLOR_PALETTE_BASES;
-/** @deprecated Use ColorPaletteBase instead */
-export type SemanticColorBase = ColorPaletteBase;
 
 // =============================================================================
 // BREAKPOINT DEFAULTS
@@ -2411,7 +2368,7 @@ export interface SemanticColorMapping {
  * This is the single source of truth for semantic color definitions.
  * All exporters (Tailwind, DTCG, TypeScript) read from this via the registry.
  *
- * Color family names from API cache (api.rafters.studio):
+ * Color families (seeded in DEFAULT_COLOR_SEEDS, built by color-utils):
  * - neutral: zinc (achromatic)
  * - silver-true-glacier: cyan/teal (h:180)
  * - silver-bold-fire-truck: red (h:0)

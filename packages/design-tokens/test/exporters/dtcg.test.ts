@@ -22,8 +22,8 @@ describe('toDTCG oklch formatting', () => {
   it('produces byte-identical oklch() strings after the oklchToCSS migration', () => {
     const system = generateBaseSystem({});
     const dtcg = JSON.stringify(toDTCG(system.allTokens));
-    expect(dtcg).toContain('"oklch(0.552 0 0)"');
-    expect(dtcg).toContain('"oklch(0.645 0.12 180)"');
+    expect(dtcg).toContain('"oklch(0.563 0 0)"');
+    expect(dtcg).toContain('"oklch(0.652 0.103 178)"');
   });
 
   it('drops alpha for a full-precision, alpha-carrying imported seed, exactly as the old template literal did', () => {

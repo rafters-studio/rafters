@@ -15,13 +15,17 @@
  * fancy name from `generateColorName`), and pins the seed back into the
  * position the designer wrote it at -- not always 500. A designer who
  * authored `--color-foo-700` gets foo@700 = the seed they wrote; the
- * rest of the scale is derived around that anchor.
+ * rest of the scale is derived around that anchor. After the pin, the
+ * family's WCAG metadata is re-derived by color-utils'
+ * `rebakeAccessibility`, so it always describes the stored scale.
  */
 
 import {
   buildColorValue,
+  getGamutTier,
   oklchToCSS,
   POSITION_TO_INDEX,
+  rebakeAccessibility,
   SCALE_POSITIONS,
 } from '@rafters/color-utils';
 import type { OKLCH, Token } from '@rafters/shared';
@@ -42,9 +46,17 @@ export function importColorFamily(name: string, seedPosition: string, seed: OKLC
   // override, the value the designer typed would land at whatever index
   // the progression chose (currently 600), and the position they DID
   // write would be a derived value they never picked.
+  // The pinned scale is no longer the one `buildColorValue` measured, so
+  // color-utils re-derives the WCAG metadata from the stored scale.
+  // The pinned seed records its true tier, 'out' included, and the family
+  // carries no seedAdjusted: the typed seed is stored as typed (#2672 spec
+  // delta, veneer 2026-10-19).
   const scale = [...built.scale];
   scale[seedIndex] = seed;
-  const value = { ...built, name, scale };
+  const seedTier = getGamutTier(seed);
+  const gamut = built.gamut?.map((tier, i) => (i === seedIndex ? seedTier : tier));
+  const { seedAdjusted: _built600Move, ...rest } = built;
+  const value = rebakeAccessibility({ ...rest, name, scale, gamut });
   const tokens: Token[] = [
     {
       name,
