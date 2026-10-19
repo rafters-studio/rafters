@@ -36,6 +36,7 @@ import {
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
+import { SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
 
 const REGISTRY_PLUGINS = [
   scalePlugin,
@@ -1133,20 +1134,7 @@ export async function init(options: InitOptions): Promise<void> {
             // Walk semantic roles. The designer assigns detected palettes
             // to each role. Filter to roles that exist as semantic-namespace
             // tokens in the registry (tertiary ships only in some configs).
-            const ALL_ROLES = [
-              'primary',
-              'secondary',
-              'tertiary',
-              'accent',
-              'highlight',
-              'neutral',
-              'muted',
-              'success',
-              'warning',
-              'destructive',
-              'info',
-            ];
-            const ROLES = ALL_ROLES.filter((r) => {
+            const ROLES = SEMANTIC_FAMILY_ROLES.filter((r) => {
               const tok = registry.get(r);
               return tok !== undefined && tok.namespace === 'semantic';
             });
