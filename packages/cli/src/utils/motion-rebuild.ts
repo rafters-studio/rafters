@@ -147,22 +147,26 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
 }
 
 /**
- * The word each leaf namespace was spelled with before #2746 gave duration and
- * easing a single token set. A stored token named `motion-<word>-<member>` is
- * the retired twin of the `rafters-<namespace>-<member>` leaf; the values share
- * a format (`"150ms"`, a curve's CSS string), so an override moves across as is.
+ * The one legacy-to-twin rename table (#2746). Before #2746 every duration tier
+ * and easing curve existed twice, as an unlinked pair; the `rafters-*` leaf is
+ * the one kept. Each retired name is spelled out here, once, so a stored file
+ * written before #2746 can still be read. The values share a format (`"150ms"`,
+ * a curve's CSS string), so an override moves across as is.
  */
-const RETIRED_TWIN_WORD = { duration: 'duration', ease: 'easing' } as const;
-
-/** The `rafters-*` leaf a retired duration or easing name maps to, or null. */
-function leafForRetiredName(name: string): string | null {
-  if (name === 'motion-duration-base') return null;
-  for (const [namespace, word] of Object.entries(RETIRED_TWIN_WORD)) {
-    const prefix = `motion-${word}-`;
-    if (name.startsWith(prefix)) return `rafters-${namespace}-${name.slice(prefix.length)}`;
-  }
-  return null;
-}
+const RETIRED_TO_TWIN: ReadonlyMap<string, string> = new Map([
+  ['motion-duration-instant', 'rafters-duration-instant'],
+  ['motion-duration-micro', 'rafters-duration-micro'],
+  ['motion-duration-fast', 'rafters-duration-fast'],
+  ['motion-duration-moderate', 'rafters-duration-moderate'],
+  ['motion-duration-normal', 'rafters-duration-normal'],
+  ['motion-duration-slow', 'rafters-duration-slow'],
+  ['motion-easing-standard', 'rafters-ease-standard'],
+  ['motion-easing-enter', 'rafters-ease-enter'],
+  ['motion-easing-exit', 'rafters-ease-exit'],
+  ['motion-easing-linear', 'rafters-ease-linear'],
+  ['motion-easing-spring-smooth', 'rafters-ease-spring-smooth'],
+  ['motion-easing-spring-snappy', 'rafters-ease-spring-snappy'],
+]);
 
 /**
  * Move each override stored on a retired name onto its `rafters-*` twin.
@@ -178,11 +182,11 @@ function renameRetiredOverrides(
 ): Map<string, CarriedMotionOverride> {
   const renamed = new Map<string, CarriedMotionOverride>();
   for (const [name, override] of carried) {
-    if (leafForRetiredName(name) === null) renamed.set(name, override);
+    if (!RETIRED_TO_TWIN.has(name)) renamed.set(name, override);
   }
   for (const [name, override] of carried) {
-    const leaf = leafForRetiredName(name);
-    if (leaf === null) continue;
+    const leaf = RETIRED_TO_TWIN.get(name);
+    if (leaf === undefined) continue;
     const twin = renamed.get(leaf);
     if (twin && JSON.stringify(twin.value) !== JSON.stringify(override.value)) {
       throw new Error(
