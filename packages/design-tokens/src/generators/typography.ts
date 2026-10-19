@@ -59,7 +59,7 @@ export function generateTypographyTokens(
     semanticMeaning: 'Primary font family for UI text',
     usageContext: ['body-text', 'ui-elements', 'buttons', 'forms'],
     description:
-      'Sans-serif font family. Noto Sans Variable provides excellent language support and all weight variations.',
+      'Sans-serif font family. The Noto stack covers the writing systems chosen at init, with all weight variations.',
     generatedAt: timestamp,
     containerQueryAware: false,
     localeAware: true,

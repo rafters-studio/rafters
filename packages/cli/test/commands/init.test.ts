@@ -1,12 +1,14 @@
-import { readdirSync, rmSync } from 'node:fs';
+import { readdirSync, readFileSync, rmSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { generateBaseSystem, generateNamespaces } from '@rafters/design-tokens';
+import { generateBaseSystem, generateNamespaces, SCRIPT_FONTS } from '@rafters/design-tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   cleanSourceCssBlocks,
   ensureTailwindCli,
   init,
   isTailwindCliInstalled,
+  promptScripts,
 } from '../../src/commands/init.js';
 import { cleanupFixture, createFixture } from '../fixtures/projects.js';
 import {
@@ -282,4 +284,194 @@ describe('rafters init --rebuild -- motion namespace (#2208)', () => {
     expect(written.length).toBe(new Set(sortedNames(defaults.allTokens)).size);
     expect(files.length).toBe(defaults.metadata.namespaces.length);
   }, 60000);
+});
+
+describe('rafters init -- writing systems and the Noto stack (#2742)', () => {
+  let projectDir = '';
+  let originalCwd = '';
+
+  async function readJson(path: string): Promise<Record<string, unknown>> {
+    const parsed: unknown = JSON.parse(await readFile(path, 'utf-8'));
+    if (typeof parsed !== 'object' || parsed === null) throw new Error(`not an object: ${path}`);
+    return parsed as Record<string, unknown>;
+  }
+
+  async function readFonts(): Promise<{ scripts?: unknown; imports?: unknown }> {
+    const config = await readJson(join(projectDir, '.rafters/config.rafters.json'));
+    const fonts: unknown = config.fonts;
+    if (typeof fonts !== 'object' || fonts === null) throw new Error('config has no fonts');
+    return fonts;
+  }
+
+  function fontSans(): { value: unknown; userOverride?: unknown } | undefined {
+    return findToken(readNamespaceTokens(projectDir, 'typography'), 'font-sans');
+  }
+
+  async function updateDependenciesMock() {
+    const { updateDependencies } = await import('../../src/utils/update-dependencies.js');
+    return vi.mocked(updateDependencies);
+  }
+
+  beforeEach(async () => {
+    originalCwd = process.cwd();
+    projectDir = await createFixture('vite-no-shadcn');
+    process.chdir(projectDir);
+    (await updateDependenciesMock()).mockClear();
+  });
+
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await cleanupFixture(projectDir);
+    projectDir = '';
+  });
+
+  it('--agent --scripts writes the scripts, the imports, installs them, and emits font-sans', async () => {
+    await init({ agent: true, scripts: 'Latn,Arab,Hebr,Jpan' });
+
+    const packages = [
+      '@fontsource-variable/noto-sans',
+      '@fontsource-variable/noto-sans-arabic',
+      '@fontsource-variable/noto-sans-hebrew',
+      '@fontsource-variable/noto-sans-jp',
+    ];
+    const fonts = await readFonts();
+    expect(fonts.scripts).toEqual(['Latn', 'Arab', 'Hebr', 'Jpan']);
+    expect(fonts.imports).toEqual(packages);
+    expect(await updateDependenciesMock()).toHaveBeenCalledWith(packages, [], { cwd: projectDir });
+
+    const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
+    expect(css).toContain(
+      "--font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
+    );
+  }, 60000);
+
+  it('--agent without --scripts uses DEFAULT_SCRIPTS', async () => {
+    await init({ agent: true });
+
+    const fonts = await readFonts();
+    expect(fonts.scripts).toEqual(['Latn', 'Grek', 'Cyrl']);
+    expect(fonts.imports).toEqual(['@fontsource-variable/noto-sans']);
+    expect(fontSans()?.value).toBe("'Noto Sans Variable', sans-serif");
+  }, 60000);
+
+  it('--scripts Latn,Klingon fails naming Klingon and writes nothing', async () => {
+    await expect(init({ agent: true, scripts: 'Latn,Klingon' })).rejects.toThrow(/Klingon/);
+
+    expect(readdirSync(projectDir)).not.toContain('.rafters');
+    expect(await updateDependenciesMock()).not.toHaveBeenCalled();
+  });
+
+  it('keeps a CSS-imported font-sans and records both import sets', async () => {
+    const googleUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap';
+    await writeFile(
+      join(projectDir, 'src/index.css'),
+      `@import url("${googleUrl}");\n@import "tailwindcss";\n`,
+    );
+
+    await init({ agent: true, scripts: 'Latn,Arab' });
+
+    expect(fontSans()?.value).toBe('Inter');
+    expect((await readFonts()).imports).toEqual([
+      googleUrl,
+      '@fontsource-variable/noto-sans',
+      '@fontsource-variable/noto-sans-arabic',
+    ]);
+    expect(await updateDependenciesMock()).toHaveBeenCalledWith(
+      ['@fontsource-variable/noto-sans', '@fontsource-variable/noto-sans-arabic'],
+      [],
+      { cwd: projectDir },
+    );
+  }, 60000);
+
+  describe('--rebuild', () => {
+    async function setFonts(scripts: unknown, imports: string[] = []): Promise<void> {
+      const path = join(projectDir, '.rafters/config.rafters.json');
+      const config = await readJson(path);
+      config.fonts = { path: null, imports, scripts };
+      await writeFile(path, JSON.stringify(config, null, 2));
+    }
+
+    it('reproduces the stack and imports from fonts.scripts', async () => {
+      await init({ agent: true });
+      const googleUrl = 'https://fonts.googleapis.com/css2?family=Inter';
+      await setFonts(['Latn', 'Kore'], [googleUrl, '@fontsource-variable/noto-sans-thai']);
+      (await updateDependenciesMock()).mockClear();
+
+      await init({ agent: true, rebuild: true });
+
+      const stack = "'Noto Sans Variable', 'Noto Sans KR Variable', sans-serif";
+      expect(fontSans()?.value).toBe(stack);
+      expect(fontSans()?.userOverride ?? null).toBeNull();
+      const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
+      expect(css).toContain(`--font-sans: ${stack}`);
+      expect((await readFonts()).imports).toEqual([
+        googleUrl,
+        '@fontsource-variable/noto-sans',
+        '@fontsource-variable/noto-sans-kr',
+      ]);
+      expect(await updateDependenciesMock()).toHaveBeenCalledWith(
+        ['@fontsource-variable/noto-sans', '@fontsource-variable/noto-sans-kr'],
+        [],
+        { cwd: projectDir },
+      );
+    }, 60000);
+
+    it("keeps a project's own font-sans", async () => {
+      await writeFile(
+        join(projectDir, 'src/index.css'),
+        '@import url("https://fonts.googleapis.com/css2?family=Inter");\n@import "tailwindcss";\n',
+      );
+      await init({ agent: true });
+      expect(fontSans()?.value).toBe('Inter');
+      await setFonts(['Latn', 'Arab']);
+
+      await init({ agent: true, rebuild: true });
+
+      expect(fontSans()?.value).toBe('Inter');
+      expect((await readFonts()).imports).toEqual([
+        '@fontsource-variable/noto-sans',
+        '@fontsource-variable/noto-sans-arabic',
+      ]);
+    }, 60000);
+
+    it('fails on an unknown stored code and writes nothing', async () => {
+      await init({ agent: true });
+      await setFonts(['Latn', 'Klingon']);
+      const configPath = join(projectDir, '.rafters/config.rafters.json');
+      const cssPath = join(projectDir, '.rafters/output/rafters.css');
+      const configBefore = await readFile(configPath, 'utf-8');
+      const cssBefore = await readFile(cssPath, 'utf-8');
+      const tokensBefore = readdirSync(tokensDir(projectDir))
+        .sort()
+        .map((f) => readFileSync(join(tokensDir(projectDir), f), 'utf-8'));
+
+      await expect(init({ agent: true, rebuild: true })).rejects.toThrow(/Klingon/);
+
+      expect(await readFile(configPath, 'utf-8')).toBe(configBefore);
+      expect(await readFile(cssPath, 'utf-8')).toBe(cssBefore);
+      expect(
+        readdirSync(tokensDir(projectDir))
+          .sort()
+          .map((f) => readFileSync(join(tokensDir(projectDir), f), 'utf-8')),
+      ).toEqual(tokensBefore);
+    }, 60000);
+  });
+});
+
+describe('promptScripts (#2742)', () => {
+  it('asks the writing-systems question with Latin, Greek and Cyrillic preselected', async () => {
+    const { checkbox } = await import('@inquirer/prompts');
+    vi.mocked(checkbox).mockResolvedValueOnce([['Latn', 'Grek', 'Cyrl'], ['Arab']]);
+
+    const scripts = await promptScripts();
+
+    expect(scripts).toEqual(['Latn', 'Grek', 'Cyrl', 'Arab']);
+    const call = vi.mocked(checkbox).mock.calls.at(-1)?.[0];
+    expect(call?.message).toBe('Which writing systems will this project support?');
+    const choices = (call?.choices ?? []) as ReadonlyArray<{ value: string[]; checked?: boolean }>;
+    expect(choices.filter((c) => c.checked).map((c) => c.value)).toEqual([
+      ['Latn', 'Grek', 'Cyrl'],
+    ]);
+    expect(choices.flatMap((c) => c.value)).toEqual(Object.keys(SCRIPT_FONTS));
+  });
 });

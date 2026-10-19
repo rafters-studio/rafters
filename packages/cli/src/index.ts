@@ -30,6 +30,10 @@ program
     'Override framework detection (next|vite|remix|react-router|astro|wc|vanilla)',
   )
   .option('--agent', 'Output JSON for machine consumption')
+  .option(
+    '--scripts <codes>',
+    'Writing systems to support, as comma-separated ISO 15924 codes (e.g. Latn,Arab,Jpan)',
+  )
   .action(withErrorHandler(init));
 
 program

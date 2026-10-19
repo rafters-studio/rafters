@@ -17,10 +17,14 @@ import {
   type ColorDeclaration,
   classifyDeclarations,
   contrastPlugin,
+  DEFAULT_SCRIPTS,
   type DetectedFont,
   detectFamilySeeds,
+  detectFontImports,
   extractShadcnRoot,
   extractThemeBlocks,
+  fontImportsFor,
+  fontStackFor,
   generateBaseSystem,
   getAdapter,
   importColorFamily,
@@ -29,12 +33,14 @@ import {
   loadRegistryFromDir,
   regenerateOutputs,
   resolveContentSources,
+  SCRIPT_FONTS,
   saveRegistryToDir,
   scalePlugin,
   senseShadcnCss,
   statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
+import { z } from 'zod';
 
 const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
@@ -79,6 +85,11 @@ interface InitOptions {
    * wc | vanilla.
    */
   framework?: string;
+  /**
+   * Writing systems the project supports, as comma-separated ISO 15924
+   * codes (e.g. `Latn,Arab`). Skips the writing-systems prompt.
+   */
+  scripts?: string;
 }
 
 async function backupCss(cssPath: string): Promise<string> {
@@ -352,6 +363,76 @@ async function resolveFramework(
   return picked;
 }
 
+/** `fonts.scripts` as stored in config.rafters.json: external data, narrowed here. */
+const StoredScriptsSchema = z.array(z.string()).optional();
+
+/**
+ * Ask which writing systems the project supports (#2742). One choice per
+ * Noto family in SCRIPT_FONTS; Latin, Greek and Cyrillic share one choice.
+ * DEFAULT_SCRIPTS are preselected. Returns ISO 15924 codes.
+ */
+export async function promptScripts(): Promise<string[]> {
+  const choices: Array<{ name: string; value: string[]; checked: boolean }> = [];
+  for (const [code, font] of Object.entries(SCRIPT_FONTS)) {
+    const existing = choices.find((c) => c.name === font.label);
+    if (existing) {
+      existing.value.push(code);
+      existing.checked = existing.checked && DEFAULT_SCRIPTS.includes(code);
+      continue;
+    }
+    choices.push({ name: font.label, value: [code], checked: DEFAULT_SCRIPTS.includes(code) });
+  }
+  const selections = await checkbox({
+    message: 'Which writing systems will this project support?',
+    choices,
+    required: true,
+  });
+  return selections.flat();
+}
+
+/**
+ * Resolve the project's writing systems: the `--scripts` flag wins, then the
+ * interactive prompt, then DEFAULT_SCRIPTS. Validated by `fontStackFor`
+ * (throws naming an unknown code) so the caller can run this before any write.
+ */
+async function resolveScripts(flag: string | undefined, agentMode: boolean): Promise<string[]> {
+  let scripts: string[];
+  if (flag !== undefined) {
+    scripts = flag
+      .split(',')
+      .map((code) => code.trim())
+      .filter((code) => code !== '');
+  } else if (!agentMode && isInteractive()) {
+    scripts = await promptScripts();
+  } else {
+    scripts = [...DEFAULT_SCRIPTS];
+  }
+  fontStackFor(scripts);
+  return scripts;
+}
+
+/**
+ * Is this value a `font-sans` stack `fontStackFor` produces (the default
+ * stack included)? Anything else is the project's own font.
+ */
+function isScriptFontStack(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const codes: string[] = [];
+  for (const part of value.split(',').map((p) => p.trim())) {
+    if (part === 'sans-serif') continue;
+    const family = part.replace(/^['"]|['"]$/g, '');
+    const entry = Object.entries(SCRIPT_FONTS).find(([, font]) => font.family === family);
+    if (entry === undefined) return false;
+    codes.push(entry[0]);
+  }
+  return codes.length > 0 && fontStackFor(codes) === value;
+}
+
+/** Merge import lists in order, each entry once. */
+function mergeImports(...lists: readonly (readonly string[])[]): string[] {
+  return [...new Set(lists.flat())];
+}
+
 /**
  * Prompt user for export format selections
  * Returns defaults if not in an interactive terminal
@@ -497,6 +578,11 @@ async function regenerateFromExisting(
     existingConfig.rulesPath = frameworkPaths.rules;
   }
 
+  // Writing systems (#2742): validated before anything below writes. An
+  // existing project with no `fonts.scripts` keeps today's default.
+  const storedScripts = StoredScriptsSchema.parse(existingConfig?.fonts?.scripts);
+  const scriptStack = storedScripts === undefined ? undefined : fontStackFor(storedScripts);
+
   // Deleted token namespaces (#1638 S2 elevation, #1637 fill): drop the
   // stale files so their dead tokens stop reloading on every rebuild.
   await rm(join(paths.tokens, 'elevation.rafters.json'), { force: true });
@@ -516,6 +602,25 @@ async function regenerateFromExisting(
 
   if (registry.size() === 0) {
     throw new Error('No tokens found. Cannot regenerate without existing tokens.');
+  }
+
+  // `font-sans` follows `fonts.scripts` only while it is a stack the
+  // writing systems produce; any other value is the project's own font.
+  if (scriptStack !== undefined) {
+    const fontSans = registry.get('font-sans');
+    if (
+      fontSans !== undefined &&
+      fontSans.value !== scriptStack &&
+      isScriptFontStack(fontSans.value)
+    ) {
+      if (fontSans.userOverride) {
+        registry.set('font-sans', scriptStack, { reason: 'rebuilt from fonts.scripts' });
+      } else {
+        registry.define({ ...fontSans, value: scriptStack });
+      }
+      saveRegistryToDir(paths.tokens, registry);
+      log({ event: 'init:font_stack_rebuilt', fontSans: scriptStack });
+    }
   }
 
   // Get unique namespaces for logging
@@ -556,6 +661,17 @@ async function regenerateFromExisting(
 
   if (existingConfig) {
     existingConfig.exports = exports;
+    if (storedScripts !== undefined) {
+      // Replace the script packages; keep every other recorded import.
+      const scriptPackages = new Set(Object.values(SCRIPT_FONTS).map((f) => f.package));
+      const detected = (existingConfig.fonts?.imports ?? []).filter((i) => !scriptPackages.has(i));
+      const scriptImports = fontImportsFor(storedScripts);
+      existingConfig.fonts = {
+        ...existingConfig.fonts,
+        imports: mergeImports(detected, scriptImports),
+      };
+      await updateDependencies(scriptImports, [], { cwd });
+    }
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
   } else {
     const frameworkPaths = FRAMEWORK_SPECS[framework].components;
@@ -798,6 +914,13 @@ export async function init(options: InitOptions): Promise<void> {
     log({ event: 'init:exports_selected', exports });
   }
 
+  // Writing systems (#2742). Resolved and validated before any file is
+  // written; the stack lands in baseConfig so the typography generator
+  // writes `font-sans`.
+  const scripts = await resolveScripts(options.scripts, isAgentMode);
+  const scriptImports = fontImportsFor(scripts);
+  log({ event: 'init:scripts_selected', scripts });
+
   // Phase A: install-time generation. Spacing-base detection runs FIRST
   // -- the cascade flows from baseSpacingUnit through five namespaces
   // (resolveConfig in generators/types.ts derives baseFontSize,
@@ -808,7 +931,7 @@ export async function init(options: InitOptions): Promise<void> {
   // bake values numerically at generation time and would not update.
   // See legion reflection 019e57d8 for the full invariant.
   const adapter = getAdapter(source ?? 'tailwind');
-  const baseConfig: Partial<BaseSystemConfig> = {};
+  const baseConfig: Partial<BaseSystemConfig> = { fontFamily: fontStackFor(scripts) };
   // Source CSS resolution priority for both pre-generation base detection
   // AND the later sense/apply flow:
   //   1. shadcn's components.json `tailwind.css` IF the file actually exists
@@ -967,7 +1090,7 @@ export async function init(options: InitOptions): Promise<void> {
     cssPath: detectedCssPath,
     exports,
     intent: 'efficient',
-    fonts: { path: null, imports: [] },
+    fonts: { path: null, imports: scriptImports, scripts },
     installed: {
       components: [],
       primitives: [],
@@ -976,6 +1099,7 @@ export async function init(options: InitOptions): Promise<void> {
     },
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));
+  await updateDependencies(scriptImports, [], { cwd });
 
   // Sense source CSS, then prompt-and-apply each shadcn semantic color.
   // Each accepted color becomes two registry ops: `define` a new family
@@ -1218,6 +1342,14 @@ export async function init(options: InitOptions): Promise<void> {
     if (sourceCss !== null) {
       const detectedFonts = adapter.detectFonts(sourceCss);
       if (detectedFonts.length > 0) {
+        // The project's own web font imports sit next to the script
+        // packages in `fonts.imports` (#2742).
+        const detectedImports = detectFontImports(sourceCss);
+        if (detectedImports.length > 0) {
+          config.fonts = { ...config.fonts, imports: mergeImports(detectedImports, scriptImports) };
+          await writeFile(paths.config, JSON.stringify(config, null, 2));
+        }
+
         // Derive the role/base mapping from the registry's typography
         // graph instead of hardcoding it here. Base families are typography
         // tokens whose value is a literal font stack (no `dependsOn`);

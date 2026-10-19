@@ -16,6 +16,8 @@ import type { PathField } from '../utils/paths.js';
 export interface FontsConfig {
   path?: string | null;
   imports?: string[];
+  /** ISO 15924 script codes the project supports, e.g. ['Latn', 'Arab']. Absent = DEFAULT_SCRIPTS. */
+  scripts?: string[];
 }
 
 export interface RaftersConfig {
