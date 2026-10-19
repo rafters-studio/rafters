@@ -82,10 +82,6 @@ separately and can disagree with it.
 
 ## Same for everything, but not
 
-Every namespace has a base and tokens derived from it, but no two use the same
-layers. Only semantic colour uses the registry; everything else that cascades
-does it in CSS.
-
 | Namespace | Tokens | Base | `dependsOn` | Registry binding | CSS chain | Follows its base in the browser |
 | --- | --- | --- | --- | --- | --- | --- |
 | semantic colour | 414 | a palette, through a role root | all 414 | all 414, up to 5 hops deep | flat: utility, theme switch, `--rafters-<role>`, a palette step | only the light/dark switch; a role change moves nothing |
