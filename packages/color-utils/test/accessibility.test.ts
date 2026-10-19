@@ -161,6 +161,20 @@ describe('contrast measures colours as stored, sRGB or P3 (#2673)', () => {
     );
   });
 
+  it('snaps a channel inGamut accepts at -7e-5 to 0 as float noise, not NaN', () => {
+    const [l = 0, c = 0, h = 0] = new Color('srgb', [-7e-5, 0.5, 0.5]).to('oklch').coords;
+    const edge = { l, c, h, alpha: 1 };
+    expect(getGamutTier(edge)).toBe('srgb');
+    const [r = 0, g = 0, b = 0] = new Color('oklch', [l, c, h]).to('srgb').coords;
+    expect(r).toBeLessThan(0);
+    const contrast = calculateAPCAContrast(edge, CONTRAST_WHITE);
+    expect(Number.isFinite(contrast)).toBe(true);
+    expect(contrast).toBeCloseTo(
+      APCAcontrast(sRGBtoY([0, g * 255, b * 255]), sRGBtoY([255, 255, 255])),
+      6,
+    );
+  });
+
   it('leaves black text on white unchanged in APCA', () => {
     const contrast = calculateAPCAContrast(CONTRAST_BLACK, CONTRAST_WHITE);
     expect(contrast).toBeCloseTo(APCAcontrast(sRGBtoY([0, 0, 0]), sRGBtoY([255, 255, 255])), 6);
