@@ -1,13 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  contrastPlugin,
-  generateNamespaces,
-  invertPlugin,
-  mirrorPlugin,
-  scalePlugin,
-  statePlugin,
-} from '@rafters/design-tokens';
+import { generateNamespaces, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   isCarryableMotionValue,
@@ -25,7 +18,7 @@ import {
   tokensDir,
 } from '../fixtures/stale-motion.js';
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+const PLUGINS = REGISTRY_PLUGINS;
 
 /**
  * The carry gate is a SECOND declaration of the cell value shape -- the first

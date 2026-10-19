@@ -556,13 +556,13 @@ describe('rafters init - source CSS sensing', () => {
     const spacing4 = spacing.tokens.find((t) => t.name === 'spacing-4');
     expect(spacing4?.value).toBe('calc(var(--rafters-spacing-base) * 4)');
 
-    // Shadow tokens bake from baseSpacingUnit at generation -- they don't
-    // have an *Override on the default config, so the new base flows
-    // through. shadow-base-unit = 8/16 = 0.5rem.
+    // Shadow geometry follows the detected base (#2648): shadow-base-unit
+    // references the spacing base in CSS, and each part names the rung the
+    // registry picks for the detected base.
     const shadowRaw = await readFixtureFile(fixturePath, '.rafters/tokens/shadow.rafters.json');
     const shadow = JSON.parse(shadowRaw) as { tokens: Array<{ name: string; value: unknown }> };
     const shadowBaseUnit = shadow.tokens.find((t) => t.name === 'shadow-base-unit');
-    expect(shadowBaseUnit?.value).toBe('0.5rem');
+    expect(shadowBaseUnit?.value).toBe('var(--rafters-spacing-base)');
 
     // The other *Override-pinned namespaces (typography font-size,
     // radius, focus, motion duration) stay at their explicit defaults.

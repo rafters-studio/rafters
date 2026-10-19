@@ -14,15 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateBaseSystem } from '../../src/generators/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '../../src/index.js';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '../../src/index.js';
 
 // A representative slice of the real component vocabulary: role colors, a
 // foreground pair, a variant-prefixed utility, a data-attribute variant,
@@ -43,13 +35,7 @@ const EXPECTED_RULES = [
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-    mirrorPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 describe('standalone compiled sheet (#1731)', () => {

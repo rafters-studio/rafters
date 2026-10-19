@@ -16,7 +16,6 @@ import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
-  contrastPlugin,
   type DetectedFont,
   detectFamilySeeds,
   extractShadcnRoot,
@@ -24,20 +23,15 @@ import {
   generateBaseSystem,
   getAdapter,
   importColorFamily,
-  invertPlugin,
-  mirrorPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
   saveRegistryToDir,
-  scalePlugin,
   senseShadcnCss,
-  statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
 import { SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 import {
   type ComponentTarget,

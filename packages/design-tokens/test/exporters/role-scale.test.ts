@@ -11,16 +11,10 @@ import {
   TokenRegistry,
   tokensToTailwind,
 } from '../../src/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  scalePlugin,
-  statePlugin,
-} from '../../src/plugins/index.js';
+import { REGISTRY_PLUGINS } from '../../src/plugins/index.js';
 import semanticColors from './fixtures/semantic-colors.json' with { type: 'json' };
 
-const PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin]; // the list init.ts registers
+const PLUGINS = REGISTRY_PLUGINS; // the list init.ts registers
 
 // Resolve a custom property to its literal in light (:root + @theme) or dark (+ .dark).
 type Ctx = Map<string, string>;

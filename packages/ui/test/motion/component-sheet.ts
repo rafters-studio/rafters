@@ -16,15 +16,7 @@
  */
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 
 /** Tailwind escapes every character outside [A-Za-z0-9_-] with a backslash, so
  *  `data-[state=open]:opacity-100` is emitted as
@@ -47,13 +39,7 @@ export function componentSheet(component: string): Promise<string> {
   if (existing) return existing;
   const pending = (async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-      mirrorPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     return registryToCompiled(registry, { contentSources: [componentDir(component)] });
   })();
   compiled.set(component, pending);
