@@ -8,23 +8,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { generateBaseSystem, registryToTailwind, TokenRegistry } from '../src/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  shadowRungPlugin,
-  scalePlugin,
-  statePlugin,
-} from '../src/plugins/index.js';
+import { REGISTRY_PLUGINS } from '../src/plugins/index.js';
 
-const PLUGINS = [
-  scalePlugin,
-  contrastPlugin,
-  statePlugin,
-  invertPlugin,
-  mirrorPlugin,
-  shadowRungPlugin,
-];
+const PLUGINS = REGISTRY_PLUGINS;
 
 const COMPOSITES = [
   'motion-fade-in',

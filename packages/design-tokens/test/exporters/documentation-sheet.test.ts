@@ -16,16 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateBaseSystem } from '../../src/generators/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  shadowRungPlugin,
-  registryToDocumentation,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '../../src/index.js';
+import { registryToDocumentation, TokenRegistry, REGISTRY_PLUGINS } from '../../src/index.js';
 
 // Pure layout utilities with NO token dependency -- these only appear when
 // Tailwind scans component source files via contentSources. Utilities like
@@ -43,14 +34,7 @@ const CONTENT_ONLY_UTILITIES = [
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-    mirrorPlugin,
-    shadowRungPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 describe('documentation sheet (#2039)', () => {

@@ -17,15 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { generateBaseSystem } from '../src/generators/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  shadowRungPlugin,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '../src/index.js';
+import { TokenRegistry, REGISTRY_PLUGINS } from '../src/index.js';
 import { type OutputExports, regenerateOutputs } from '../src/outputs.js';
 
 const ALL_ON: OutputExports = {
@@ -54,14 +46,7 @@ const KNOWN_FILES = [
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-    mirrorPlugin,
-    shadowRungPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 describe('regenerateOutputs (#1944)', () => {

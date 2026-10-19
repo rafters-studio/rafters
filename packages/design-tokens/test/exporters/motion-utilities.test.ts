@@ -19,16 +19,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_MOTION_CELL_ANIMATIONS } from '../../src/generators/defaults.js';
 import { generateBaseSystem } from '../../src/generators/index.js';
 import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  shadowRungPlugin,
   registryToCompiled,
   registryToTailwind,
   registryToTailwindStatic,
-  scalePlugin,
-  statePlugin,
   TokenRegistry,
+  REGISTRY_PLUGINS,
 } from '../../src/index.js';
 
 /**
@@ -81,14 +76,7 @@ const FIXTURE_CLASSES =
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-    mirrorPlugin,
-    shadowRungPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
