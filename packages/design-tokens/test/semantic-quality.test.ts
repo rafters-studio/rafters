@@ -206,6 +206,16 @@ describe('semantic selection follows the designer (#2668)', () => {
     expect(step('primary-ring')).toBe(onCard);
   });
 
+  it('a foreground that falls back stores the neutral role and moves when neutral does', () => {
+    const reg = fresh();
+    const { step } = helpers(reg);
+    const fallbacks = ['alert-foreground', 'destructive-foreground', 'success-foreground'];
+    for (const name of fallbacks) expect(reg.get(name)?.value).toMatchObject({ family: 'neutral' });
+    const before = new Map(fallbacks.map((n) => [n, step(n)]));
+    reg.set('neutral', { family: 'silver-true-violet', position: '500' }, { reason: 'test' });
+    for (const name of fallbacks) expect(step(name), name).not.toBe(before.get(name));
+  });
+
   it('a ring the designer sets keeps its step through a registry reload', () => {
     const reg = fresh();
     const { colour } = helpers(reg);

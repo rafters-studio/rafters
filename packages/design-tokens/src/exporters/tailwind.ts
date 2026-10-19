@@ -499,21 +499,30 @@ function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'cl
     const owner = findRoleOwner(name, tokens);
     const own = tokens.get(mode === 'light' ? name : `${name}${DARK_SUFFIX}`) ?? tokens.get(name);
     const family = storedFamily(own);
-    if (
-      owner === null ||
-      family === null ||
-      familyPalette(family, tokens) !== rolePalette(owner, tokens)
-    ) {
-      return `var(--color-${paletteRef})`;
-    }
     const cssStep = colorPosition(own);
-    const registryStep = paletteRef.match(/-(\d+)$/)?.[1] ?? null;
-    if (cssStep === null || cssStep !== registryStep || !SCALE_STEPS.has(cssStep)) {
-      throw new Error(
-        `Semantic token "${name}" (${mode}): CSS step ${cssStep ?? 'none'} disagrees with registry step ${registryStep ?? 'none'}`,
-      );
+    const checkedStep = (): string => {
+      const registryStep = paletteRef.match(/-(\d+)$/)?.[1] ?? null;
+      if (cssStep === null || cssStep !== registryStep || !SCALE_STEPS.has(cssStep)) {
+        throw new Error(
+          `Semantic token "${name}" (${mode}): CSS step ${cssStep ?? 'none'} disagrees with registry step ${registryStep ?? 'none'}`,
+        );
+      }
+      return cssStep;
+    };
+    if (
+      owner !== null &&
+      family !== null &&
+      familyPalette(family, tokens) === rolePalette(owner, tokens)
+    ) {
+      return `var(--rafters-${owner}-${checkedStep()})`;
     }
-    return `var(--rafters-${owner}-${cssStep})`;
+    // A token stored on another role than its owner's (a foreground that
+    // fell back to the neutral, #2668) rides that role's step, so it follows
+    // that role.
+    if (family !== null && isRoleRoot(family, tokens)) {
+      return `var(--rafters-${family}-${checkedStep()})`;
+    }
+    return `var(--color-${paletteRef})`;
   };
 
   // Light mode --rafters-* tokens

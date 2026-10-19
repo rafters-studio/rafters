@@ -497,14 +497,16 @@ describe('semantic colour roles', () => {
     const before = new Map(
       [...reg.list()]
         .filter((t) => t.namespace === 'semantic')
-        .map((t) => [t.name, JSON.stringify(t.value)]),
+        .map((t) => [t.name, resolved(reg, t.name)]),
     );
     for (const [i, role] of ROLES.entries()) {
       newFamily(reg, `test-${role}`, i * 36);
       reg.set(role, { family: `test-${role}`, position: position(reg, role) }, { reason: 'test' });
     }
+    // Compared as rendered (through role names to a palette step): a foreground
+    // stored on the neutral role (#2668's fallback) moves when neutral moves.
     const unchanged = [...before]
-      .filter(([n, v]) => JSON.stringify(reg.get(n)?.value) === v)
+      .filter(([n, v]) => resolved(reg, n) === v)
       .map(([n]) => n.replace(/--dark$/, ''));
     expect([...new Set(unchanged)].sort()).toEqual([
       'chart-1',
