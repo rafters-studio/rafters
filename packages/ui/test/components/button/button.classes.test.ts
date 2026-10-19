@@ -1,14 +1,6 @@
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
 import classy from '../../../src/primitives/classy';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
@@ -174,13 +166,7 @@ const sheet = (): Promise<string> => {
   if (compiled) return compiled;
   compiled = (async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-      mirrorPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/button')],
     });

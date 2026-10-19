@@ -16,7 +16,6 @@ import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
-  contrastPlugin,
   type DetectedFont,
   detectFamilySeeds,
   extractShadcnRoot,
@@ -24,19 +23,15 @@ import {
   generateBaseSystem,
   getAdapter,
   importColorFamily,
-  invertPlugin,
-  mirrorPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
   saveRegistryToDir,
-  scalePlugin,
   senseShadcnCss,
-  statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
+import { SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
 
 import {
   type ComponentTarget,
@@ -1125,20 +1120,7 @@ export async function init(options: InitOptions): Promise<void> {
             // Walk semantic roles. The designer assigns detected palettes
             // to each role. Filter to roles that exist as semantic-namespace
             // tokens in the registry (tertiary ships only in some configs).
-            const ALL_ROLES = [
-              'primary',
-              'secondary',
-              'tertiary',
-              'accent',
-              'highlight',
-              'neutral',
-              'muted',
-              'success',
-              'warning',
-              'destructive',
-              'info',
-            ];
-            const ROLES = ALL_ROLES.filter((r) => {
+            const ROLES = SEMANTIC_FAMILY_ROLES.filter((r) => {
               const tok = registry.get(r);
               return tok !== undefined && tok.namespace === 'semantic';
             });
