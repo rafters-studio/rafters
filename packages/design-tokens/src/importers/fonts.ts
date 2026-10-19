@@ -158,11 +158,7 @@ export function detectFonts(css: string): readonly DetectedFont[] {
  * in `fonts.imports` next to the writing-system packages (#2742).
  */
 export function detectFontImports(css: string): string[] {
-  const out: string[] = [];
-  for (const url of googleFontImportUrls(css)) {
-    if (!out.includes(url)) out.push(url);
-  }
-  return out;
+  return [...new Set(googleFontImportUrls(css))];
 }
 
 /**

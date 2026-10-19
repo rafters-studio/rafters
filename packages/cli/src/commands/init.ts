@@ -453,11 +453,8 @@ async function installScriptFonts(
       default: false,
     });
     if (!proceed) throw new Error(failure);
-    const failed = new Set(packages);
-    return scripts.filter((code) => {
-      const font = SCRIPT_FONTS[code];
-      return font !== undefined && !failed.has(font.package);
-    });
+    // One install call: when it fails, none of the packages is installed.
+    return [];
   }
 }
 
