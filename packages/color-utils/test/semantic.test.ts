@@ -10,6 +10,7 @@
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
+import { calculateWCAGContrast } from '../src/accessibility.js';
 import { buildColorValue } from '../src/builder.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from '../src/scale-positions.js';
 import { type Pair, type SemanticContext, semanticFor } from '../src/semantic.js';
@@ -62,7 +63,20 @@ function pluginForegroundIndex(value: ColorValue, baseIndex: number): number | u
   const aaPairs = value.accessibility?.wcagAA?.normal;
   const aaa = partnerOf(aaaPairs, baseIndex) ?? nearestPartnerOf(aaaPairs, baseIndex);
   const aa = partnerOf(aaPairs, baseIndex) ?? nearestPartnerOf(aaPairs, baseIndex);
-  return aaa ?? aa;
+  // #2672: try the AAA candidate, then the AA one, by measured contrast;
+  // otherwise the candidate with the best measured contrast.
+  const candidates = [aaa, aa].filter((c): c is number => c !== undefined);
+  const base = value.scale[baseIndex];
+  if (!base || candidates.length === 0) return undefined;
+  const ratio = (c: number): number => {
+    const partner = value.scale[c];
+    return partner ? calculateWCAGContrast(base, partner) : 1;
+  };
+  return (
+    candidates.find((c) => ratio(c) >= 7) ??
+    candidates.find((c) => ratio(c) >= 4.5) ??
+    candidates.reduce((best, c) => (ratio(c) > ratio(best) ? c : best))
+  );
 }
 
 describe('semanticFor — foreground pairs (parity with contrast plugin)', () => {

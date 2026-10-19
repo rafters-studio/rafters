@@ -13,10 +13,10 @@ export function isLightColor(color: OKLCH): boolean {
   // Base threshold at 50% lightness
   let threshold = 0.5;
 
-  // Adjust threshold based on chroma
-  // High chroma colors appear darker due to the Helmholtz-Kohlrausch effect
+  // Adjust threshold based on chroma. Helmholtz-Kohlrausch: at equal
+  // lightness a saturated colour looks lighter, so the threshold drops.
   if (color.c > 0.15) {
-    threshold += color.c * 0.3; // Increase threshold for high chroma
+    threshold -= color.c * 0.3;
   }
 
   // Very low chroma colors are essentially gray, use simple lightness
@@ -125,7 +125,10 @@ export function calculatePerceptualWeight(color: OKLCH): {
   const hue = color.h;
   let hueWeight = 0.5;
 
-  if (hue >= 345 || hue <= 15)
+  // An achromatic colour has no hue to weigh (its h is 0, which would read as
+  // red); same neutral threshold as getColorTemperature.
+  if (color.c < 0.04) hueWeight = 0.5;
+  else if (hue >= 345 || hue <= 15)
     hueWeight = 0.9; // Red - heaviest
   else if (hue <= 45)
     hueWeight = 0.8; // Red-Orange

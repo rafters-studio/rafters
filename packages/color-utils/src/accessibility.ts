@@ -230,6 +230,14 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
 }
 
 /**
+ * The step a family's on-white/on-black figures are measured on: the 600
+ * step, where the seed lands (after any seed adjustment). buildColorValue and
+ * rebakeAccessibility both read it, so re-baking an unchanged family is a
+ * no-op.
+ */
+export const REFERENCE_STEP_INDEX = 6;
+
+/**
  * Assemble the WCAG half of ColorValue.accessibility for a scale: pair
  * matrices plus on-white/on-black ratios and pass flags for a reference
  * color. Shared by buildColorValue (which adds APCA on top) and
@@ -271,7 +279,7 @@ export function assembleWcagAccessibility(
  */
 export function rebakeAccessibility(value: ColorValue): ColorValue {
   if (!('scale' in value) || !Array.isArray(value.scale)) return value;
-  const reference = value.scale[5] ?? value.scale[0];
+  const reference = value.scale[REFERENCE_STEP_INDEX] ?? value.scale[0];
   if (!reference) return value;
   return { ...value, accessibility: assembleWcagAccessibility(value.scale, reference) };
 }

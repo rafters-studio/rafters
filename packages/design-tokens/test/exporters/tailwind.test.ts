@@ -31,7 +31,7 @@ describe('tokensToTailwind oklch formatting', () => {
     const system = generateBaseSystem({});
     const css = tokensToTailwind(system.allTokens, { includeImport: false }, []);
     expect(css).toContain('--color-zinc: oklch(0.563 0 0);');
-    expect(css).toContain('--color-silver-true-glacier: oklch(0.645 0.12 180);');
+    expect(css).toContain('--color-silver-true-glacier: oklch(0.652 0.103 178);');
   });
 
   it('rounds a full-precision, alpha-carrying imported seed exactly as the old formatNumber did (no alpha channel)', () => {

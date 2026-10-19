@@ -517,7 +517,7 @@ exports[`semanticFor — invert (the #1635 fix: pair inversion, character-preser
     "300": "700/50 (pair-nearest,AAA)",
     "400": "700/50 (pair-nearest,AAA)",
     "50": "950/300 (pair-exact,AAA)",
-    "500": "300/950 (pair-nearest,AAA)",
+    "500": "700/50 (pair-nearest,AAA)",
     "600": "300/950 (pair-nearest,AAA)",
     "700": "300/950 (pair-exact,AAA)",
     "800": "200/950 (pair-exact,AAA)",

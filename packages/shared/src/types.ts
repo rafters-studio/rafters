@@ -416,6 +416,17 @@ export const ColorValueSchema = z.object({
 
   // Unique token ID for quick color lookups (e.g., "color-0.500-0.120-240.0")
   tokenId: z.string().optional(),
+
+  // The gamut each scale step sits in, index-aligned with `scale`
+  gamut: z.array(z.enum(['srgb', 'p3'])).optional(),
+  // Present when the family was built from a different seed than requested
+  seedAdjusted: z
+    .object({
+      from: OKLCHSchema,
+      to: OKLCHSchema,
+      reason: z.enum(['lightness-bounds', 'gamut']),
+    })
+    .optional(),
 });
 
 export type ColorValue = z.infer<typeof ColorValueSchema>;

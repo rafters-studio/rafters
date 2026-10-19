@@ -83,7 +83,7 @@ describe('tokensToTypeScript', () => {
     const system = generateBaseSystem({});
     const source = tokensToTypeScript(system.allTokens);
     expect(source).toContain("'zinc': 'oklch(0.563 0.000 0.000)'");
-    expect(source).toContain("'silver-true-glacier': 'oklch(0.645 0.120 180.000)'");
+    expect(source).toContain("'silver-true-glacier': 'oklch(0.652 0.103 178.000)'");
   });
 
   it('drops alpha for a full-precision, alpha-carrying imported seed, exactly as the old formatter did', () => {

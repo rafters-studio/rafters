@@ -2,7 +2,7 @@
  * Tests for colorWheel() -- complete 11-family semantic color system from a single OKLCH seed.
  */
 
-import type { OKLCH } from '@rafters/shared';
+import type { ColorValue, OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { calculateWCAGContrast } from '../src/accessibility.js';
 import type { HarmonyType, SemanticColorSystem } from '../src/color-wheel.js';
@@ -12,6 +12,16 @@ import { colorWheel } from '../src/color-wheel.js';
 const blue: OKLCH = { l: 0.5, c: 0.15, h: 240, alpha: 1 };
 const red: OKLCH = { l: 0.55, c: 0.2, h: 25, alpha: 1 };
 const lowChroma: OKLCH = { l: 0.5, c: 0.04, h: 200, alpha: 1 };
+
+/**
+ * The hue colorWheel asked buildColorValue for. A seed outside sRGB is mapped
+ * into sRGB (#2672), which can turn its hue a few degrees; the family records
+ * the requested seed in seedAdjusted.from. These tests check colorWheel's hue
+ * relationships, so they read the requested hue.
+ */
+function requestedHue(family: ColorValue): number {
+  return family.seedAdjusted?.from.h ?? family.scale[6]?.h ?? 0;
+}
 
 const HARMONY_TYPES: HarmonyType[] = [
   'complementary',
@@ -89,8 +99,7 @@ describe('colorWheel', () => {
       const system = colorWheel(blue, 'complementary');
 
       // The 600 position in the scale is the anchor (index 6)
-      const scaleAnchor = system.primary.scale[6];
-      expect(scaleAnchor?.h).toBeCloseTo(blue.h, 1);
+      expect(requestedHue(system.primary)).toBeCloseTo(blue.h, 1);
     });
   });
 
@@ -99,17 +108,15 @@ describe('colorWheel', () => {
       const system = colorWheel(blue, 'complementary');
 
       // seed hue 240, complement 60
-      const accentAnchor = system.accent.scale[6];
       const expectedHue = (blue.h + 180) % 360;
-      expect(accentAnchor?.h).toBeCloseTo(expectedHue, 0);
+      expect(requestedHue(system.accent)).toBeCloseTo(expectedHue, 0);
     });
 
     it('accent hue for red seed is approximately 205', () => {
       const system = colorWheel(red, 'complementary');
 
       const expectedHue = (red.h + 180) % 360;
-      const accentAnchor = system.accent.scale[6];
-      expect(accentAnchor?.h).toBeCloseTo(expectedHue, 0);
+      expect(requestedHue(system.accent)).toBeCloseTo(expectedHue, 0);
     });
   });
 
@@ -118,8 +125,8 @@ describe('colorWheel', () => {
       const system = colorWheel(blue, 'complementary');
 
       // Both scale anchors should share the same hue
-      const primaryH = system.primary.scale[6]?.h ?? 0;
-      const secondaryH = system.secondary.scale[6]?.h ?? 0;
+      const primaryH = requestedHue(system.primary);
+      const secondaryH = requestedHue(system.secondary);
       expect(Math.abs(primaryH - secondaryH)).toBeLessThan(2);
     });
 
@@ -178,8 +185,7 @@ describe('colorWheel', () => {
     it('info hue is near 230', () => {
       const system = colorWheel(blue, 'complementary');
 
-      const infoAnchor = system.info.scale[6];
-      expect(infoAnchor?.h).toBeCloseTo(230, 0);
+      expect(requestedHue(system.info)).toBeCloseTo(230, 0);
     });
 
     it('status chroma is constrained by seed chroma', () => {
@@ -358,8 +364,7 @@ describe('colorWheel', () => {
       const hue0: OKLCH = { l: 0.5, c: 0.15, h: 0, alpha: 1 };
       const system = colorWheel(hue0, 'complementary');
 
-      const accentAnchor = system.accent.scale[6];
-      expect(accentAnchor?.h).toBeCloseTo(180, 0);
+      expect(requestedHue(system.accent)).toBeCloseTo(180, 0);
     });
 
     it('achromatic seed (c=0) triggers fallback lightness path without error', () => {
@@ -381,8 +386,8 @@ describe('colorWheel', () => {
     it('highlight hue matches tertiary hue', () => {
       const system = colorWheel(blue, 'complementary');
 
-      const tertiaryH = system.tertiary.scale[6]?.h ?? 0;
-      const highlightH = system.highlight.scale[6]?.h ?? 0;
+      const tertiaryH = requestedHue(system.tertiary);
+      const highlightH = requestedHue(system.highlight);
       expect(Math.abs(tertiaryH - highlightH)).toBeLessThan(2);
     });
 

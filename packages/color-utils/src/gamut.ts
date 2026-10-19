@@ -69,6 +69,115 @@ export function toNearestGamut(oklch: OKLCH): { color: OKLCH; tier: GamutTier } 
 }
 
 /**
+ * Whether Display P3 steps are allowed in a family. Current choice (Sean,
+ * 2026-10-17; revisable): one constant, off by default, so every family is
+ * built in sRGB until a setting exists to turn it on.
+ */
+export const ALLOW_P3 = false;
+
+/** The gamut a family is built inside: the space every one of its steps fits in. */
+export type GamutCeiling = 'srgb' | 'p3';
+
+function inCeiling(oklch: OKLCH, ceiling: GamutCeiling): boolean {
+  return new Color('oklch', [oklch.l, oklch.c, oklch.h]).inGamut(ceiling);
+}
+
+/**
+ * Map one colour into a gamut ceiling: unchanged when already inside, else
+ * colorjs.io toGamut into that space.
+ */
+export function toGamutCeiling(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
+  const color = new Color('oklch', [oklch.l, oklch.c, oklch.h]);
+  if (color.inGamut(ceiling)) return { ...oklch };
+  const [l, c, h] = color.toGamut({ space: ceiling }).to('oklch').coords;
+  return {
+    l: l ?? oklch.l,
+    c: c ?? 0,
+    h: h === undefined || Number.isNaN(h) ? oklch.h : h,
+    alpha: oklch.alpha,
+  };
+}
+
+/**
+ * Round a colour the way stored steps are rounded, then take chroma off in
+ * 0.001 steps until the rounded colour is inside the ceiling. Rounding hue to
+ * a whole degree and chroma to three places can carry a boundary colour back
+ * out; this keeps what is stored inside.
+ */
+function roundInside(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
+  const rounded = roundOKLCH(oklch);
+  let c = rounded.c;
+  while (c > 0 && !inCeiling({ ...rounded, c }, ceiling)) {
+    c = Math.round((c - 0.001) * 1000) / 1000;
+  }
+  return { ...rounded, c: Math.max(0, c) };
+}
+
+/** Keep the step's lightness and hue; reduce chroma only, to the ceiling's edge. */
+function reduceChromaOnly(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
+  const maxC = findMaxChroma(oklch.l, oklch.h, ceiling);
+  return roundInside({ ...oklch, c: Math.min(oklch.c, maxC) }, ceiling);
+}
+
+/**
+ * Map every step of a scale into the ceiling, keeping lightness order.
+ *
+ * A step already inside the ceiling is not moved. A step outside is mapped
+ * with colorjs.io toGamut; where that mapping would break the scale's
+ * strictly falling lightness, the step keeps its lightness and loses chroma
+ * only. Steps already inside are never re-marked, so the loop ends: at worst
+ * every outside step keeps its lightness, and the input order holds.
+ */
+export function mapScaleToGamut(scale: readonly OKLCH[], ceiling: GamutCeiling): OKLCH[] {
+  const chromaOnly = new Set<number>();
+  const mapStep = (step: OKLCH, i: number): OKLCH => {
+    if (inCeiling(step, ceiling)) return { ...step };
+    if (chromaOnly.has(i)) return reduceChromaOnly(step, ceiling);
+    return roundInside(toGamutCeiling(step, ceiling), ceiling);
+  };
+  let mapped = scale.map(mapStep);
+  for (;;) {
+    let marked = false;
+    for (let i = 1; i < mapped.length; i++) {
+      const prev = mapped[i - 1];
+      const cur = mapped[i];
+      if (prev === undefined || cur === undefined || cur.l < prev.l) continue;
+      for (const j of [i - 1, i]) {
+        const original = scale[j];
+        if (original && !chromaOnly.has(j) && !inCeiling(original, ceiling)) {
+          chromaOnly.add(j);
+          marked = true;
+        }
+      }
+    }
+    if (!marked) return mapped;
+    mapped = scale.map(mapStep);
+  }
+}
+
+/**
+ * The ceiling a family is built inside, set by its seed: 'p3' only when the
+ * seed is a Display P3 colour and ALLOW_P3 is on; otherwise 'srgb'.
+ */
+export function ceilingForSeed(seed: OKLCH): GamutCeiling {
+  return ALLOW_P3 && getGamutTier(seed) === 'p3' ? 'p3' : 'srgb';
+}
+
+/**
+ * The tier of a stored step. mapScaleToGamut leaves no step 'out'; a step that
+ * still measures 'out' was never mapped, which is a bug in the caller.
+ */
+export function storedTier(oklch: OKLCH): GamutCeiling {
+  const tier = getGamutTier(oklch);
+  if (tier === 'out') {
+    throw new Error(
+      `gamut: step oklch(${oklch.l} ${oklch.c} ${oklch.h}) is outside Display P3; map it before storing`,
+    );
+  }
+  return tier;
+}
+
+/**
  * Snap an OKLCH into sRGB and round it -- the shape every generated color is
  * emitted in. Lives here because both halves are gamut/conversion concerns;
  * harmony.ts and semantic.ts are callers, not owners.
