@@ -6,8 +6,8 @@
  * encodes the same derivation as a runtime hook for the cascade.
  *
  *   primary             dependsOn=[family]                binding: scale@family@N
- *   primary-foreground  dependsOn=[primary]               binding: contrast@primary,AAA
- *   primary-ring        dependsOn=[family]                binding: scale@family@N   (sibling of primary)
+ *   primary-foreground  dependsOn=[primary]               binding: contrast@primary,AAA,fallback=neutral
+ *   primary-ring        dependsOn=[primary]               binding: state@primary,ring,surface=background
  *   primary-hover       dependsOn=[primary]               binding: state@primary,hover
  *   primary-active      dependsOn=[primary]               binding: state@primary,active
  *   primary-focus       dependsOn=[primary]               binding: state@primary,focus
@@ -40,6 +40,8 @@ import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 const SCALE_LAST_INDEX = SCALE_POSITIONS.length - 1;
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
 const STATE_SUFFIXES = STATE_USES.map((s) => `-${s}` as const);
+/** The role a foreground falls back to when its own family has no AA pair. */
+const FALLBACK_FAMILY = 'neutral';
 
 type Derivation =
   | { kind: 'scale'; family: string; scalePosition: number }
@@ -113,14 +115,25 @@ function derivationToBinding(derivation: Derivation): Binding {
     case 'state':
       return {
         plugin: 'state',
-        input: { from: derivation.from, stateType: derivation.stateType },
+        input: stateInput(derivation.from, derivation.stateType),
       };
     case 'contrast':
       return {
         plugin: 'contrast',
-        input: { against: derivation.against, level: derivation.level },
+        input: { against: derivation.against, level: derivation.level, fallback: FALLBACK_FAMILY },
       };
   }
+}
+
+/**
+ * A state binding's input. A ring is measured, by default, against the page
+ * background of its mode; a designer points it at any other surface by
+ * rebinding it with a different `surface`.
+ */
+function stateInput(from: string, stateType: StateUse): Record<string, string> {
+  if (stateType !== 'ring') return { from, stateType };
+  const surface = from.endsWith('--dark') ? 'background--dark' : 'background';
+  return { from, stateType, surface };
 }
 
 function derivationParent(derivation: Derivation, suffix = ''): string {
@@ -163,12 +176,16 @@ function deriveDarkBinding(
     case 'state':
       return {
         plugin: 'state',
-        input: { from: `${derivation.from}--dark`, stateType: derivation.stateType },
+        input: stateInput(`${derivation.from}--dark`, derivation.stateType),
       };
     case 'contrast':
       return {
         plugin: 'contrast',
-        input: { against: `${derivation.against}--dark`, level: derivation.level },
+        input: {
+          against: `${derivation.against}--dark`,
+          level: derivation.level,
+          fallback: FALLBACK_FAMILY,
+        },
       };
   }
 }

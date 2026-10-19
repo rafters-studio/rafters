@@ -57,6 +57,10 @@ export interface PairRequest {
   from: string;
   level?: 'AA' | 'AAA';
   dark?: boolean;
+  /** ring only: the colour the ring sits on (the mode's background). */
+  surface?: OKLCH;
+  /** foreground only: the family to fall back to when no in-family pair meets AA (the neutral family). */
+  fallback?: ColorValue;
 }
 
 export interface SemanticContext {
@@ -85,7 +89,11 @@ export const STATE_USES: readonly StateUse[] = [
   'subtle',
 ];
 
-/** Rank step per state on the AAA ladder. sign: 1 for light (darker), -1 for dark (lighter). */
+/**
+ * Rank step per state on the AAA ladder. sign: 1 for light (darker), -1 for dark (lighter).
+ * Without a surface a ring copies its base; with one, statePair searches the
+ * whole family instead (see ringOnSurface).
+ */
 const STATE_RANK_STEP: Record<
   StateUse,
   (rank: number, ladder: readonly number[], sign: number) => number
@@ -98,6 +106,34 @@ const STATE_RANK_STEP: Record<
   ring: (rank) => rank,
   subtle: (rank, _l, s) => rank - 2 * s,
 };
+
+/**
+ * States whose target is reflected back into the ladder when it would leave
+ * it: the step goes the same distance the other way, so a base at an end of
+ * the ladder never collapses onto itself. disabled and ring never step off.
+ */
+const REFLECTED_STATES: ReadonlySet<StateUse> = new Set([
+  'hover',
+  'active',
+  'focus',
+  'border',
+  'subtle',
+]);
+
+/** The minimum contrast a focus indicator needs against its surface (WCAG 2.2). */
+const RING_MIN_CONTRAST = 3;
+
+/**
+ * Bring a target rank inside a ladder of `length` rungs: reflect it about the
+ * base rank (when the state reflects), then clamp what is still outside.
+ */
+function rankInLadder(use: StateUse, baseRank: number, target: number, length: number): number {
+  const last = length - 1;
+  const inside = (rank: number): boolean => rank >= 0 && rank <= last;
+  const reflected =
+    !inside(target) && REFLECTED_STATES.has(use) ? baseRank - (target - baseRank) : target;
+  return Math.max(0, Math.min(last, reflected));
+}
 
 /** Escape hatches the generators may precompute onto a family. */
 type FamilyWithReferences = ColorValue & {
@@ -299,7 +335,38 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     return standardOf(fromColor, toColor);
   }
 
-  function foregroundPair(from: string, level: 'AA' | 'AAA'): Pair {
+  /**
+   * The fallback family's step with the highest contrast against this
+   * family's step at `base`, labelled by its measured standard.
+   */
+  function fallbackForeground(from: string, base: number, fallback: ColorValue): Pair {
+    const baseColor = family.scale[base];
+    let bestIndex = -1;
+    let bestRatio = 0;
+    for (let index = 0; index < fallback.scale.length; index++) {
+      const candidate = fallback.scale[index];
+      if (!baseColor || !candidate) continue;
+      const ratio = calculateWCAGContrast(baseColor, candidate);
+      if (ratio > bestRatio) {
+        bestRatio = ratio;
+        bestIndex = index;
+      }
+    }
+    if (bestIndex === -1) {
+      throw new SemanticSelectionError(
+        familyName,
+        `has no step at ${from}, or fallback "${fallback.name}" has no steps`,
+      );
+    }
+    return {
+      from: { family: familyName, position: from },
+      to: { family: fallback.name, position: requirePosition(bestIndex, fallback.name) },
+      standard: standardFor(bestRatio),
+      tier: 'pair-nearest',
+    };
+  }
+
+  function foregroundPair(from: string, level: 'AA' | 'AAA', fallback?: ColorValue): Pair {
     const auto = refs.foregroundReferences?.auto;
     if (auto) {
       const to = { family: auto.family, position: auto.position };
@@ -335,13 +402,14 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
       ratio: contrastOf(base, candidate.partner),
     }));
     const targets: readonly PairStandard[] = level === 'AAA' ? ['AAA', 'AA'] : ['AA'];
-    const chosen =
-      targets
-        .map((target) =>
-          measured.find((m) => STANDARD_RANK[standardFor(m.ratio)] >= STANDARD_RANK[target]),
-        )
-        .find((m) => m !== undefined) ??
-      measured.reduce((best, m) => (m.ratio > best.ratio ? m : best));
+    const passing = targets
+      .map((target) =>
+        measured.find((m) => STANDARD_RANK[standardFor(m.ratio)] >= STANDARD_RANK[target]),
+      )
+      .find((m) => m !== undefined);
+    // No in-family pair meets AA: the fallback family (the neutral) serves.
+    if (!passing && fallback) return fallbackForeground(from, base, fallback);
+    const chosen = passing ?? measured.reduce((best, m) => (m.ratio > best.ratio ? m : best));
     return {
       from: { family: familyName, position: from },
       to: { family: familyName, position: requirePosition(chosen.partner, familyName) },
@@ -350,7 +418,48 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     };
   }
 
-  function statePair(use: StateUse, from: string, dark?: boolean): Pair {
+  /**
+   * A ring that stands out from `surface`: starting at the base and moving
+   * away from the surface's lightness, the first step at least 3:1 against
+   * the surface; when no step reaches 3:1, the step with the highest contrast.
+   */
+  function ringOnSurface(from: string, surface: OKLCH): Pair {
+    const base = requireIndex(from, familyName);
+    const baseColor = family.scale[base];
+    if (!baseColor) {
+      throw new SemanticSelectionError(familyName, `has no step at ${from}`);
+    }
+    // Scale index grows darker: a surface lighter than the base sends the
+    // search toward darker steps, otherwise toward lighter ones.
+    const step = surface.l > baseColor.l ? 1 : -1;
+    const ratioAt = (index: number): number => {
+      const color = family.scale[index];
+      return color ? calculateWCAGContrast(color, surface) : 0;
+    };
+    let chosen: number | undefined;
+    for (let index = base; index >= 0 && index < family.scale.length; index += step) {
+      if (ratioAt(index) >= RING_MIN_CONTRAST) {
+        chosen = index;
+        break;
+      }
+    }
+    if (chosen === undefined) {
+      let best = base;
+      for (let index = 0; index < family.scale.length; index++) {
+        if (ratioAt(index) > ratioAt(best)) best = index;
+      }
+      chosen = best;
+    }
+    return {
+      from: { family: familyName, position: from },
+      to: { family: familyName, position: requirePosition(chosen, familyName) },
+      standard: standardFor(contrastOf(base, chosen)),
+      tier: 'ladder',
+    };
+  }
+
+  function statePair(request: PairRequest & { use: StateUse }): Pair {
+    const { use, from, dark, surface } = request;
     const precomputed = refs.stateReferences?.[use];
     if (precomputed) {
       const to = { family: precomputed.family, position: String(precomputed.position) };
@@ -361,6 +470,7 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
         tier: 'reference',
       };
     }
+    if (use === 'ring' && surface) return ringOnSurface(from, surface);
     if (!aaaPairs || aaaPairs.length === 0) {
       throw new SemanticSelectionError(
         familyName,
@@ -372,10 +482,10 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
     const baseRank = closestRankTo(ladder, base);
     const sign = dark ? -1 : 1;
     const targetRank = STATE_RANK_STEP[use](baseRank, ladder, sign);
-    const clampedRank = Math.max(0, Math.min(ladder.length - 1, targetRank));
-    const targetIndex = ladder[clampedRank];
+    const rank = rankInLadder(use, baseRank, targetRank, ladder.length);
+    const targetIndex = ladder[rank];
     if (targetIndex === undefined) {
-      throw new SemanticSelectionError(familyName, `ladder lookup failed at rank ${clampedRank}`);
+      throw new SemanticSelectionError(familyName, `ladder lookup failed at rank ${rank}`);
     }
     return {
       from: { family: familyName, position: from },
@@ -444,12 +554,15 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
   return {
     pair(request: PairRequest): Pair {
       const level = request.level ?? 'AAA';
-      if (request.use === 'foreground') return foregroundPair(request.from, level);
-      return statePair(request.use, request.from, request.dark);
+      const { use } = request;
+      if (use === 'foreground') return foregroundPair(request.from, level, request.fallback);
+      return statePair({ ...request, use });
     },
     states(from: string, dark?: boolean): Record<StateUse, Pair> {
       const out = {} as Record<StateUse, Pair>;
-      for (const use of STATE_USES) out[use] = statePair(use, from, dark);
+      for (const use of STATE_USES) {
+        out[use] = statePair({ use, from, ...(dark === undefined ? {} : { dark }) });
+      }
       return out;
     },
     invert,

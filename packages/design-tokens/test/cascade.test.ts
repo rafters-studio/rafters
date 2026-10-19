@@ -341,6 +341,9 @@ describe('cascade integration', () => {
 
     it('subtle steps opposite direction from hover', () => {
       const r = setupSurfaceChain();
+      // A mid-scale surface, so neither step reaches an end of the ladder
+      // (at an end a step reflects back, #2668).
+      r.bind('surface', 'scale', { familyName: 'accent', scalePosition: 5 });
       const surface = r.get('surface')?.value as { family: string; position: string };
       const hover = r.get('surface-hover')?.value as { family: string; position: string };
       const subtle = r.get('surface-subtle')?.value as { family: string; position: string };
@@ -494,14 +497,16 @@ describe('semantic colour roles', () => {
     const before = new Map(
       [...reg.list()]
         .filter((t) => t.namespace === 'semantic')
-        .map((t) => [t.name, JSON.stringify(t.value)]),
+        .map((t) => [t.name, resolved(reg, t.name)]),
     );
     for (const [i, role] of ROLES.entries()) {
       newFamily(reg, `test-${role}`, i * 36);
       reg.set(role, { family: `test-${role}`, position: position(reg, role) }, { reason: 'test' });
     }
+    // Compared as rendered (through role names to a palette step): a foreground
+    // stored on the neutral role (#2668's fallback) moves when neutral moves.
     const unchanged = [...before]
-      .filter(([n, v]) => JSON.stringify(reg.get(n)?.value) === v)
+      .filter(([n, v]) => resolved(reg, n) === v)
       .map(([n]) => n.replace(/--dark$/, ''));
     expect([...new Set(unchanged)].sort()).toEqual([
       'chart-1',

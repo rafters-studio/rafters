@@ -85,27 +85,27 @@
   },
   "--color-primary-hover": {
     "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "dark": "oklch(0.881 0 0)"
   },
   "--color-primary-hover-foreground": {
     "light": "oklch(0.95 0 0)",
     "dark": "oklch(0.344 0 0)"
   },
   "--color-primary-active": {
-    "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "light": "oklch(0.344 0 0)",
+    "dark": "oklch(0.809 0 0)"
   },
   "--color-primary-active-foreground": {
     "light": "oklch(0.95 0 0)",
-    "dark": "oklch(0.344 0 0)"
+    "dark": "oklch(0.246 0 0)"
   },
   "--color-primary-focus": {
     "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "dark": "oklch(0.881 0 0)"
   },
   "--color-primary-border": {
-    "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "light": "oklch(0.344 0 0)",
+    "dark": "oklch(0.809 0 0)"
   },
   "--color-primary-ring": {
     "light": "oklch(0.148 0 0)",
@@ -152,15 +152,15 @@
     "dark": "oklch(0.734 0 0)"
   },
   "--color-secondary-ring": {
-    "light": "oklch(0.881 0 0)",
-    "dark": "oklch(0.246 0 0)"
+    "light": "oklch(0.563 0 0)",
+    "dark": "oklch(0.563 0 0)"
   },
   "--color-secondary-subtle": {
-    "light": "oklch(0.95 0 0)",
+    "light": "oklch(0.734 0 0)",
     "dark": "oklch(0.05 0 0)"
   },
   "--color-secondary-subtle-foreground": {
-    "light": "oklch(0.344 0 0)",
+    "light": "oklch(0.148 0 0)",
     "dark": "oklch(0.95 0 0)"
   },
   "--color-muted": {
@@ -216,15 +216,15 @@
     "dark": "oklch(0.734 0 0)"
   },
   "--color-accent-ring": {
-    "light": "oklch(0.881 0 0)",
-    "dark": "oklch(0.246 0 0)"
+    "light": "oklch(0.563 0 0)",
+    "dark": "oklch(0.563 0 0)"
   },
   "--color-accent-subtle": {
-    "light": "oklch(0.95 0 0)",
+    "light": "oklch(0.734 0 0)",
     "dark": "oklch(0.05 0 0)"
   },
   "--color-accent-subtle-foreground": {
-    "light": "oklch(0.344 0 0)",
+    "light": "oklch(0.148 0 0)",
     "dark": "oklch(0.95 0 0)"
   },
   "--color-destructive": {
@@ -232,7 +232,7 @@
     "dark": "oklch(0.645 0.2 0)"
   },
   "--color-destructive-foreground": {
-    "light": "oklch(0.938 0.036 352)",
+    "light": "oklch(0.95 0 0)",
     "dark": "oklch(0.061 0.024 12)"
   },
   "--color-destructive-hover": {
@@ -260,8 +260,8 @@
     "dark": "oklch(0.825 0.108 357)"
   },
   "--color-destructive-ring": {
-    "light": "oklch(0.436 0.176 2)",
-    "dark": "oklch(0.713 0.197 360)"
+    "light": "oklch(0.55 0.2 0)",
+    "dark": "oklch(0.645 0.2 0)"
   },
   "--color-destructive-subtle": {
     "light": "oklch(0.765 0.154 358)",
@@ -276,7 +276,7 @@
     "dark": "oklch(0.646 0.113 88)"
   },
   "--color-success-foreground": {
-    "light": "oklch(0.95 0.034 88)",
+    "light": "oklch(0.05 0 0)",
     "dark": "oklch(0.177 0.037 75)"
   },
   "--color-success-hover": {
@@ -304,8 +304,8 @@
     "dark": "oklch(0.839 0.113 88)"
   },
   "--color-success-ring": {
-    "light": "oklch(0.428 0.088 83)",
-    "dark": "oklch(0.717 0.113 88)"
+    "light": "oklch(0.551 0.112 88)",
+    "dark": "oklch(0.646 0.113 88)"
   },
   "--color-success-subtle": {
     "light": "oklch(0.78 0.113 88)",
@@ -348,8 +348,8 @@
     "dark": "oklch(0.834 0.116 62)"
   },
   "--color-warning-ring": {
-    "light": "oklch(0.716 0.12 60)",
-    "dark": "oklch(0.716 0.12 60)"
+    "light": "oklch(0.55 0.12 60)",
+    "dark": "oklch(0.645 0.12 60)"
   },
   "--color-warning-subtle": {
     "light": "oklch(0.834 0.116 62)",
@@ -392,8 +392,8 @@
     "dark": "oklch(0.842 0.098 213)"
   },
   "--color-info-ring": {
-    "light": "oklch(0.721 0.098 213)",
-    "dark": "oklch(0.721 0.098 213)"
+    "light": "oklch(0.559 0.097 213)",
+    "dark": "oklch(0.652 0.098 213)"
   },
   "--color-info-subtle": {
     "light": "oklch(0.842 0.098 213)",
@@ -408,7 +408,7 @@
     "dark": "oklch(0.645 0.2 0)"
   },
   "--color-alert-foreground": {
-    "light": "oklch(0.938 0.036 352)",
+    "light": "oklch(0.95 0 0)",
     "dark": "oklch(0.061 0.024 12)"
   },
   "--color-alert-hover": {
@@ -432,8 +432,8 @@
     "dark": "oklch(0.825 0.108 357)"
   },
   "--color-alert-ring": {
-    "light": "oklch(0.436 0.176 2)",
-    "dark": "oklch(0.713 0.197 360)"
+    "light": "oklch(0.55 0.2 0)",
+    "dark": "oklch(0.645 0.2 0)"
   },
   "--color-alert-subtle": {
     "light": "oklch(0.765 0.154 358)",
@@ -605,11 +605,11 @@
   },
   "--color-sidebar-primary-hover": {
     "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "dark": "oklch(0.881 0 0)"
   },
   "--color-sidebar-primary-active": {
-    "light": "oklch(0.05 0 0)",
-    "dark": "oklch(0.95 0 0)"
+    "light": "oklch(0.344 0 0)",
+    "dark": "oklch(0.809 0 0)"
   },
   "--color-sidebar-accent": {
     "light": "oklch(0.881 0 0)",
@@ -664,8 +664,8 @@
     "dark": "oklch(0.344 0 0)"
   },
   "--color-sidebar-ring": {
-    "light": "oklch(0.881 0 0)",
-    "dark": "oklch(0.148 0 0)"
+    "light": "oklch(0.563 0 0)",
+    "dark": "oklch(0.563 0 0)"
   },
   "--color-nav": {
     "light": "oklch(0.95 0 0)",
