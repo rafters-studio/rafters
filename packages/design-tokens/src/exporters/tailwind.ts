@@ -382,26 +382,57 @@ function findRoleOwner(name: string, tokens: TokenIndex): string | null {
   }
 }
 
-/**
- * The family a role's scale comes from: the one its root's scale binding
- * names, falling back to the root's stored family. Either another role or a
- * palette.
- */
-function roleScaleSource(role: string, tokens: TokenIndex): string {
-  const root = tokens.get(role);
-  const bound = root?.binding?.plugin === 'scale' ? bindingInput(root, 'familyName') : null;
-  const value = root?.value;
-  const stored =
-    typeof value === 'object' && value !== null && 'family' in value ? value.family : null;
-  const source = bound ?? stored;
-  if (!source) throw new Error(`Role "${role}" names no family for its scale`);
-  return source;
-}
-
 function colorPosition(token: Token | undefined): string | null {
   const value = token?.value;
   if (typeof value !== 'object' || value === null || !('position' in value)) return null;
   return String(value.position);
+}
+
+function storedFamily(token: Token | undefined): string | null {
+  const value = token?.value;
+  if (typeof value !== 'object' || value === null || !('family' in value)) return null;
+  return value.family;
+}
+
+/** What a role's scale points at: another role's scale, or a palette. */
+type RoleScaleSource = { layer: 'rafters' | 'color'; family: string };
+
+/**
+ * A role's scale follows what the registry stores for its root. A stored
+ * family that is another role hangs the scale off that role. A stored palette
+ * hangs it off the role its scale binding names only when that role's scale
+ * resolves to the same palette (the default: primary stores zinc, its binding
+ * names neutral, neutral is zinc); otherwise (a role set to another palette)
+ * the scale sits on the stored palette.
+ */
+function roleScaleSource(role: string, tokens: TokenIndex, seen: Set<string>): RoleScaleSource {
+  const root = tokens.get(role);
+  const stored = storedFamily(root);
+  if (!root || !stored) throw new Error(`Role "${role}" stores no family for its scale`);
+  if (stored !== role && isRoleRoot(stored, tokens)) return { layer: 'rafters', family: stored };
+  const bound = root.binding?.plugin === 'scale' ? bindingInput(root, 'familyName') : null;
+  if (
+    bound !== null &&
+    bound !== role &&
+    isRoleRoot(bound, tokens) &&
+    rolePalette(bound, tokens, new Set(seen)) === stored
+  ) {
+    return { layer: 'rafters', family: bound };
+  }
+  return { layer: 'color', family: stored };
+}
+
+/** The palette a role's scale finally resolves to. */
+function rolePalette(role: string, tokens: TokenIndex, seen = new Set<string>()): string {
+  if (seen.has(role)) throw new Error(`Role scales form a cycle at "${role}"`);
+  seen.add(role);
+  const source = roleScaleSource(role, tokens, seen);
+  return source.layer === 'rafters' ? rolePalette(source.family, tokens, seen) : source.family;
+}
+
+/** The palette a stored family resolves to: a role's palette, or the family itself. */
+function familyPalette(family: string, tokens: TokenIndex): string {
+  return isRoleRoot(family, tokens) ? rolePalette(family, tokens) : family;
 }
 
 /**
@@ -437,10 +468,12 @@ function generateThemeInlineBlock(tokens: TokenIndex): string {
  * Reads semantic mappings from actual tokens in the registry.
  *
  * The role layer comes first: one 50-950 scale per family role with a root,
- * pointing at its palette or at the role its root names. Every semantic
+ * pointing at its palette or at another role's scale. Every semantic
  * declaration then points at its owning role's step, so changing a role's
- * scale moves every token the role owns. A token with no owning role stays
- * on its palette step.
+ * scale moves every token the role owns. A token with no owning role, or
+ * whose stored palette is not its owner's (a dependent set to another
+ * palette), stays on its palette step: the CSS renders what the registry
+ * stores.
  */
 function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'class'): string {
   const semanticMappings = getSemanticMappingsFromTokens(semanticTokensOf(tokens));
@@ -449,10 +482,9 @@ function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'cl
 
   // Role layer: the same scale in light and dark
   for (const role of rolesWithRoot(tokens)) {
-    const source = roleScaleSource(role, tokens);
-    const layer = source !== role && isRoleRoot(source, tokens) ? 'rafters' : 'color';
+    const { layer, family } = roleScaleSource(role, tokens, new Set([role]));
     for (const step of SCALE_POSITIONS) {
-      lines.push(`  --rafters-${role}-${step}: var(--${layer}-${source}-${step});`);
+      lines.push(`  --rafters-${role}-${step}: var(--${layer}-${family}-${step});`);
     }
   }
 
@@ -463,9 +495,16 @@ function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'cl
   // light and the --dark token's for dark; it must agree with the registry's.
   const declaration = (name: string, mode: 'light' | 'dark', paletteRef: string): string => {
     const owner = findRoleOwner(name, tokens);
-    if (owner === null) return `var(--color-${paletteRef})`;
-    const own = tokens.get(mode === 'light' ? name : `${name}${DARK_SUFFIX}`);
-    const cssStep = colorPosition(own) ?? colorPosition(tokens.get(name));
+    const own = tokens.get(mode === 'light' ? name : `${name}${DARK_SUFFIX}`) ?? tokens.get(name);
+    const family = storedFamily(own);
+    if (
+      owner === null ||
+      family === null ||
+      familyPalette(family, tokens) !== rolePalette(owner, tokens)
+    ) {
+      return `var(--color-${paletteRef})`;
+    }
+    const cssStep = colorPosition(own);
     const registryStep = paletteRef.match(/-(\d+)$/)?.[1] ?? null;
     if (cssStep === null || cssStep !== registryStep || !SCALE_STEPS.has(cssStep)) {
       throw new Error(

@@ -176,6 +176,60 @@ describe('role scale: ownership', () => {
     expect(() => tokensToTailwind(tokens)).toThrow(/"primary-hover" \(dark\).*200.*300/);
   });
 
+  describe('renders what the registry stores', () => {
+    const SKY_600 = 'oklch(0.559 0.097 213)';
+    const build = (override?: string) => {
+      const r = new TokenRegistry(generateBaseSystem().allTokens, PLUGINS);
+      if (override) {
+        r.set(override, { family: 'silver-true-sky', position: '600' }, { reason: 'designer' });
+      }
+      return { r, ctx: contexts(registryToTailwind(r)) };
+    };
+    // Every semantic token, light and dark: its --color-<name> utility resolves
+    // to the colour its stored palette and step resolve to.
+    const mismatches = (r: TokenRegistry, ctx: ReturnType<typeof contexts>): string[] => {
+      const out: string[] = [];
+      for (const t of r.list()) {
+        if (t.namespace !== 'semantic' || t.name.endsWith('--dark')) continue;
+        if (typeof t.value !== 'object' || !('family' in t.value)) continue;
+        for (const mode of ['light', 'dark'] as const) {
+          const stored = mode === 'light' ? t : (r.get(`${t.name}--dark`) ?? t);
+          if (typeof stored.value !== 'object' || !('family' in stored.value)) continue;
+          const want = resolve(
+            ctx.light,
+            `--color-${stored.value.family}-${stored.value.position}`,
+          );
+          const got = resolve(ctx[mode], `--color-${t.name}`);
+          if (want !== got) out.push(`${t.name} ${mode}: ${got} != ${want}`);
+        }
+      }
+      return out;
+    };
+
+    it('at the default system', () => {
+      const { r, ctx } = build();
+      expect(mismatches(r, ctx)).toEqual([]);
+    });
+
+    it('after a role is set to another palette', () => {
+      const { r, ctx } = build('primary');
+      expect(mismatches(r, ctx)).toEqual([]);
+      expect(resolve(ctx.light, '--color-primary')).toBe(SKY_600);
+      expect(resolve(ctx.light, '--color-primary-600')).toBe(SKY_600);
+      expect(resolve(ctx.light, '--color-primary-hover')).toBe(
+        resolve(ctx.light, '--color-silver-true-sky-800'),
+      );
+      expect(resolve(ctx.light, '--color-secondary')).toBe(resolve(ctx.light, '--color-zinc-100'));
+    });
+
+    it('after a dependent is set to another palette', () => {
+      const { r, ctx } = build('primary-hover');
+      expect(mismatches(r, ctx)).toEqual([]);
+      expect(resolve(ctx.light, '--color-primary-hover')).toBe(SKY_600);
+      expect(resolve(ctx.light, '--color-primary')).toBe(resolve(ctx.light, '--color-zinc-900'));
+    });
+  });
+
   it('compiles the role utilities', async () => {
     const source = fileURLToPath(new URL('./fixtures/role-utilities.html', import.meta.url));
     const compiled = await registryToCompiled(reg, { minify: false, contentSources: [source] });
