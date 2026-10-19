@@ -46,16 +46,6 @@ export function shadowScale(ratioVal: number, bounds: ScaleBounds): number[] {
 }
 
 /**
- * Resolve a definition's relative weight onto the progression.
- *
- * Zero stays zero -- `none` is the absence of a shadow, not the smallest one.
- */
-function scalePx(multiplier: number, baseSpacing: number, scale: number[]): number {
-  if (multiplier === 0) return 0;
-  return nearestRung(multiplier * baseSpacing, scale);
-}
-
-/**
  * The index of the rung a non-zero weight lands on. The generator and the
  * `shadow-rung` plugin both pick through here, so a part re-picked by the
  * cascade lands where a fresh generation at the same base would put it.
@@ -82,13 +72,17 @@ const GEOMETRY_PARTS = {
 
 type ShadowPart = (typeof SHADOW_PARTS)[number];
 
+/** One layer of a shadow: a definition's first layer, or its second. */
+type ShadowLayer = Pick<ShadowDef, 'yOffset' | 'blur' | 'spread' | 'opacity'>;
+
 /**
- * Compute the shadow part values from a definition. A non-zero geometry part
- * names its rung (and carries the multiplier the cascade re-picks it from);
- * `offset-x`, zero parts and colour stay literal.
+ * Compute the part values of one shadow layer. A non-zero geometry part names
+ * its rung (and carries the multiplier the cascade re-picks it from);
+ * `offset-x`, zero parts and colour stay literal. Zero stays zero -- `none` is
+ * the absence of a shadow, not the smallest one.
  */
 function resolveShadowParts(
-  def: ShadowDef,
+  def: ShadowLayer,
   baseSpacing: number,
   scale: number[],
 ): Record<ShadowPart, { value: string; multiplier?: number; rung?: number }> {
@@ -109,26 +103,13 @@ function resolveShadowParts(
 }
 
 /**
- * Generate inner shadow CSS string (not decomposed -- edge case, low override demand)
+ * Build the composite shadow value from var() references to the decomposed
+ * parts of each layer, in layer order.
  */
-function generateInnerShadowValue(
-  inner: NonNullable<ShadowDef['innerShadow']>,
-  baseSpacing: number,
-  scale: number[],
-): string {
-  const y = pxToRem(scalePx(inner.yOffset, baseSpacing, scale));
-  const blur = pxToRem(scalePx(inner.blur, baseSpacing, scale));
-  const spread = pxToRem(scalePx(inner.spread, baseSpacing, scale));
-  return `0 ${y} ${blur} ${spread} rgb(0 0 0 / ${inner.opacity})`;
-}
-
-/**
- * Build composite shadow value from var() references to decomposed tokens,
- * plus an optional baked inner shadow layer.
- */
-function buildCompositeFromVars(prefix: string, innerValue: string | null): string {
-  const primary = SHADOW_PARTS.map((part) => `var(--rafters-${prefix}-${part})`).join(' ');
-  return innerValue ? `${primary}, ${innerValue}` : primary;
+function buildCompositeFromVars(prefixes: readonly string[]): string {
+  return prefixes
+    .map((prefix) => SHADOW_PARTS.map((part) => `var(--rafters-${prefix}-${part})`).join(' '))
+    .join(', ');
 }
 
 /**
@@ -215,52 +196,63 @@ export function generateShadowTokens(
       continue;
     }
 
-    // Decomposed tokens for this scale
-    const parts = resolveShadowParts(def, baseSpacingUnit, geometry);
-    const partDeps: string[] = [];
-
-    for (const part of SHADOW_PARTS) {
-      const partName = `${scaleName}-${part}`;
-      partDeps.push(partName);
-      const { value, multiplier, rung } = parts[part];
-      const bound = multiplier !== undefined && rung !== undefined;
-
-      tokens.push({
-        name: partName,
-        value,
-        category: 'shadow',
-        namespace: 'shadow',
-        semanticMeaning: `${part} component of ${scale} shadow`,
-        usageContext: ['designer-override'],
-        scalePosition: scaleIndex,
-        dependsOn: bound ? ['spacing-base', `shadow-rung-${rung}`] : ['shadow-base-unit'],
-        ...(bound
-          ? {
-              binding: {
-                plugin: 'shadow-rung',
-                input: {
-                  base: 'spacing-base',
-                  multiplier,
-                  ratio: ratioVal,
-                  floor: bounds.floor,
-                  ceiling: bounds.ceiling,
-                },
-              },
-            }
-          : {}),
-        description: `Shadow ${scale} ${part}: ${value}. Override to customize this shadow layer.`,
-        generatedAt: timestamp,
-        containerQueryAware: false,
-        userOverride: null,
+    // Decomposed tokens for each layer of this scale. The second layer's parts
+    // are `<scale>-layer-2-<part>`: the part suffix stays last, so the exporter
+    // emits them as --rafters-* parts like the first layer's, and every
+    // non-zero geometry part on either layer follows `spacing-base` (#2764).
+    const layers: { layer: ShadowLayer; prefix: string; label: string }[] = [
+      { layer: def, prefix: scaleName, label: scale },
+    ];
+    if (def.innerShadow && def.innerShadow.opacity > 0) {
+      layers.push({
+        layer: def.innerShadow,
+        prefix: `${scaleName}-layer-2`,
+        label: `${scale} second-layer`,
       });
     }
+    const partDeps: string[] = [];
 
-    // Composite token referencing decomposed parts via var()
-    const innerValue =
-      def.innerShadow && def.innerShadow.opacity > 0
-        ? generateInnerShadowValue(def.innerShadow, baseSpacingUnit, geometry)
-        : null;
-    const compositeValue = buildCompositeFromVars(scaleName, innerValue);
+    for (const { layer, prefix, label } of layers) {
+      const parts = resolveShadowParts(layer, baseSpacingUnit, geometry);
+      for (const part of SHADOW_PARTS) {
+        const partName = `${prefix}-${part}`;
+        partDeps.push(partName);
+        const { value, multiplier, rung } = parts[part];
+        const bound = multiplier !== undefined && rung !== undefined;
+
+        tokens.push({
+          name: partName,
+          value,
+          category: 'shadow',
+          namespace: 'shadow',
+          semanticMeaning: `${part} component of ${label} shadow`,
+          usageContext: ['designer-override'],
+          scalePosition: scaleIndex,
+          dependsOn: bound ? ['spacing-base', `shadow-rung-${rung}`] : ['shadow-base-unit'],
+          ...(bound
+            ? {
+                binding: {
+                  plugin: 'shadow-rung',
+                  input: {
+                    base: 'spacing-base',
+                    multiplier,
+                    ratio: ratioVal,
+                    floor: bounds.floor,
+                    ceiling: bounds.ceiling,
+                  },
+                },
+              }
+            : {}),
+          description: `Shadow ${label} ${part}: ${value}. Override to customize this shadow layer.`,
+          generatedAt: timestamp,
+          containerQueryAware: false,
+          userOverride: null,
+        });
+      }
+    }
+
+    // Composite token referencing every layer's decomposed parts via var()
+    const compositeValue = buildCompositeFromVars(layers.map(({ prefix }) => prefix));
 
     tokens.push({
       name: scaleName,
