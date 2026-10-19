@@ -135,13 +135,24 @@ describe('role scale: ownership', () => {
 
   it('a change to neutral moves the roles that hang off it and no others', () => {
     const moved = movedBySwap(css, 'neutral');
-    expect(moved).toHaveLength(127);
+    expect(moved).toHaveLength(130);
     for (const u of ['--color-primary', '--color-secondary', '--color-accent', '--color-muted']) {
       expect(moved).toContain(u);
     }
+    // #2668: a foreground whose own role has no AA pair falls back to the neutral role and
+    // rides its step, so it moves with neutral.
+    const fallbacks = [
+      '--color-alert-foreground',
+      '--color-destructive-foreground',
+      '--color-success-foreground',
+    ];
+    for (const u of fallbacks) expect(moved).toContain(u);
     for (const role of ['destructive', 'success', 'warning', 'info', 'highlight']) {
       expect(
-        moved.filter((u) => u === `--color-${role}` || u.startsWith(`--color-${role}-`)),
+        moved.filter(
+          (u) =>
+            !fallbacks.includes(u) && (u === `--color-${role}` || u.startsWith(`--color-${role}-`)),
+        ),
       ).toEqual([]);
     }
   });
