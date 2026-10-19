@@ -371,6 +371,25 @@ export type PerceptualWeight = z.infer<typeof PerceptualWeightSchema>;
 export const SEMANTIC_STATUS_ROLES = ['destructive', 'success', 'warning', 'info'] as const;
 export type SemanticStatusRole = (typeof SEMANTIC_STATUS_ROLES)[number];
 
+// Family roles: the semantic tokens a designer assigns a palette to. Every
+// other semantic colour belongs to one of these (its owner), and the CSS
+// exporter emits one 50-950 scale per role so a role change moves everything
+// it owns.
+export const SEMANTIC_FAMILY_ROLES = [
+  'primary',
+  'secondary',
+  'tertiary',
+  'accent',
+  'highlight',
+  'neutral',
+  'muted',
+  'success',
+  'warning',
+  'destructive',
+  'info',
+] as const;
+export type SemanticFamilyRole = (typeof SEMANTIC_FAMILY_ROLES)[number];
+
 // Semantic Color Suggestions Schema.
 // 'danger' is a deprecated mirror of 'destructive', kept while apps/api (which
 // asserts .danger) migrates to platform. Inputs with only the legacy key parse
