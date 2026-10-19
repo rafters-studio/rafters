@@ -455,6 +455,105 @@ describe('rafters init -- writing systems and the Noto stack (#2742)', () => {
           .map((f) => readFileSync(join(tokensDir(projectDir), f), 'utf-8')),
       ).toEqual(tokensBefore);
     }, 60000);
+
+    it('fails in agent mode when the fonts do not install, and writes nothing', async () => {
+      await init({ agent: true });
+      await setFonts(['Latn', 'Arab']);
+      const configPath = join(projectDir, '.rafters/config.rafters.json');
+      const configBefore = await readFile(configPath, 'utf-8');
+      const tokensBefore = readdirSync(tokensDir(projectDir))
+        .sort()
+        .map((f) => readFileSync(join(tokensDir(projectDir), f), 'utf-8'));
+      (await updateDependenciesMock()).mockRejectedValueOnce(new Error('install failed'));
+
+      await expect(init({ agent: true, rebuild: true })).rejects.toThrow(
+        'pnpm add @fontsource-variable/noto-sans @fontsource-variable/noto-sans-arabic',
+      );
+
+      expect(await readFile(configPath, 'utf-8')).toBe(configBefore);
+      expect(
+        readdirSync(tokensDir(projectDir))
+          .sort()
+          .map((f) => readFileSync(join(tokensDir(projectDir), f), 'utf-8')),
+      ).toEqual(tokensBefore);
+    }, 60000);
+  });
+
+  describe('a failed font install', () => {
+    let savedStdinTTY: boolean | undefined;
+    let savedStdoutTTY: boolean | undefined;
+
+    function setTTY(interactive: boolean): void {
+      const value = interactive ? true : (undefined as unknown as boolean);
+      process.stdin.isTTY = value;
+      process.stdout.isTTY = value;
+    }
+
+    async function promptsMock() {
+      const prompts = await import('@inquirer/prompts');
+      return { checkbox: vi.mocked(prompts.checkbox), confirm: vi.mocked(prompts.confirm) };
+    }
+
+    /** Interactive init: exports, then writing systems (Latin group + Arabic). */
+    async function answerInteractive(continueWithoutFonts: boolean): Promise<void> {
+      setTTY(true);
+      const { checkbox, confirm } = await promptsMock();
+      checkbox.mockReset();
+      confirm.mockReset();
+      checkbox
+        .mockResolvedValueOnce(['tailwind', 'typescript'])
+        .mockResolvedValueOnce([['Latn', 'Grek', 'Cyrl'], ['Arab']]);
+      confirm.mockResolvedValueOnce(continueWithoutFonts);
+      (await updateDependenciesMock()).mockRejectedValueOnce(new Error('install failed'));
+    }
+
+    beforeEach(() => {
+      savedStdinTTY = process.stdin.isTTY;
+      savedStdoutTTY = process.stdout.isTTY;
+    });
+
+    afterEach(() => {
+      process.stdin.isTTY = savedStdinTTY as boolean;
+      process.stdout.isTTY = savedStdoutTTY as boolean;
+    });
+
+    it('interactive, yes: names the packages, continues without them, and falls back to sans-serif', async () => {
+      await answerInteractive(true);
+
+      await init({});
+
+      const { confirm } = await promptsMock();
+      const question = confirm.mock.calls[0]?.[0];
+      expect(question?.message).toBe(
+        'Could not install @fontsource-variable/noto-sans, @fontsource-variable/noto-sans-arabic. Continue without these fonts?',
+      );
+      expect(question?.default).toBe(false);
+      const fonts = await readFonts();
+      expect(fonts.scripts).toEqual(['Latn', 'Grek', 'Cyrl', 'Arab']);
+      expect(fonts.imports).toEqual([]);
+      expect(fontSans()?.value).toBe('sans-serif');
+      const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
+      expect(css).toContain('--font-sans: sans-serif');
+    }, 60000);
+
+    it('interactive, no: exits with an error and writes nothing', async () => {
+      await answerInteractive(false);
+
+      await expect(init({})).rejects.toThrow('Could not install the fonts');
+
+      expect(readdirSync(projectDir)).not.toContain('.rafters');
+    }, 60000);
+
+    it('agent mode: fails naming the packages and the pnpm add command, and writes nothing', async () => {
+      (await updateDependenciesMock()).mockRejectedValueOnce(new Error('install failed'));
+
+      const attempt = init({ agent: true, scripts: 'Latn,Hebr' });
+
+      await expect(attempt).rejects.toThrow(
+        'pnpm add @fontsource-variable/noto-sans @fontsource-variable/noto-sans-hebrew',
+      );
+      expect(readdirSync(projectDir)).not.toContain('.rafters');
+    }, 60000);
   });
 });
 

@@ -7,15 +7,7 @@
  */
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
 import classy from '../../../src/primitives/classy';
 import {
@@ -162,13 +154,7 @@ const escapeCandidate = (candidate: string): string =>
 describe('toggle-group icon candidates compile', () => {
   it('every icon candidate became a real rule, on logical edges', async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-      mirrorPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     const css = await registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/toggle-group')],
     });

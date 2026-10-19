@@ -16,7 +16,6 @@ import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
-  contrastPlugin,
   DEFAULT_SCRIPTS,
   type DetectedFont,
   detectFamilySeeds,
@@ -28,21 +27,17 @@ import {
   generateBaseSystem,
   getAdapter,
   importColorFamily,
-  invertPlugin,
-  mirrorPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
   SCRIPT_FONTS,
   saveRegistryToDir,
-  scalePlugin,
   senseShadcnCss,
-  statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
+import { SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
 import { z } from 'zod';
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 import {
   type ComponentTarget,
@@ -425,7 +420,45 @@ function isScriptFontStack(value: unknown): boolean {
     if (entry === undefined) return false;
     codes.push(entry[0]);
   }
-  return codes.length > 0 && fontStackFor(codes) === value;
+  return fontStackFor(codes) === value;
+}
+
+/**
+ * Install the writing systems' font packages before init writes anything
+ * (#2742). Returns the scripts whose fonts are installed. A failed install
+ * is the user's call: interactive init names the packages and asks to
+ * continue without them (the answer defaults to no); `--agent` or no TTY
+ * fails with the `pnpm add` command. Either refusal leaves the project
+ * untouched.
+ */
+async function installScriptFonts(
+  scripts: readonly string[],
+  cwd: string,
+  agentMode: boolean,
+): Promise<string[]> {
+  const packages = fontImportsFor(scripts);
+  if (packages.length === 0) return [...scripts];
+  try {
+    await updateDependencies(packages, [], { cwd });
+    return [...scripts];
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    const failure = `Could not install the fonts ${packages.join(', ')}. Nothing was written. Install them with \`pnpm add ${packages.join(' ')}\` and run init again.`;
+    if (agentMode || !isInteractive()) {
+      throw new Error(`${failure}\n${cause}`);
+    }
+    log({ event: 'init:font_install_failed', packages, error: cause });
+    const proceed = await confirm({
+      message: `Could not install ${packages.join(', ')}. Continue without these fonts?`,
+      default: false,
+    });
+    if (!proceed) throw new Error(failure);
+    const failed = new Set(packages);
+    return scripts.filter((code) => {
+      const font = SCRIPT_FONTS[code];
+      return font !== undefined && !failed.has(font.package);
+    });
+  }
 }
 
 /** Merge import lists in order, each entry once. */
@@ -580,8 +613,15 @@ async function regenerateFromExisting(
 
   // Writing systems (#2742): validated before anything below writes. An
   // existing project with no `fonts.scripts` keeps today's default.
+  // The fonts install next, still before any write; only installed fonts
+  // reach the stack and `fonts.imports`.
   const storedScripts = StoredScriptsSchema.parse(existingConfig?.fonts?.scripts);
-  const scriptStack = storedScripts === undefined ? undefined : fontStackFor(storedScripts);
+  if (storedScripts !== undefined) fontStackFor(storedScripts);
+  const installedScripts =
+    storedScripts === undefined
+      ? undefined
+      : await installScriptFonts(storedScripts, cwd, isAgentMode);
+  const scriptStack = installedScripts === undefined ? undefined : fontStackFor(installedScripts);
 
   // Deleted token namespaces (#1638 S2 elevation, #1637 fill): drop the
   // stale files so their dead tokens stop reloading on every rebuild.
@@ -661,16 +701,14 @@ async function regenerateFromExisting(
 
   if (existingConfig) {
     existingConfig.exports = exports;
-    if (storedScripts !== undefined) {
+    if (installedScripts !== undefined) {
       // Replace the script packages; keep every other recorded import.
       const scriptPackages = new Set(Object.values(SCRIPT_FONTS).map((f) => f.package));
       const detected = (existingConfig.fonts?.imports ?? []).filter((i) => !scriptPackages.has(i));
-      const scriptImports = fontImportsFor(storedScripts);
       existingConfig.fonts = {
         ...existingConfig.fonts,
-        imports: mergeImports(detected, scriptImports),
+        imports: mergeImports(detected, fontImportsFor(installedScripts)),
       };
-      await updateDependencies(scriptImports, [], { cwd });
     }
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
   } else {
@@ -914,12 +952,13 @@ export async function init(options: InitOptions): Promise<void> {
     log({ event: 'init:exports_selected', exports });
   }
 
-  // Writing systems (#2742). Resolved and validated before any file is
-  // written; the stack lands in baseConfig so the typography generator
-  // writes `font-sans`.
+  // Writing systems (#2742). Resolved, validated and their fonts installed
+  // before any file is written; the stack of the installed fonts lands in
+  // baseConfig so the typography generator writes `font-sans`.
   const scripts = await resolveScripts(options.scripts, isAgentMode);
-  const scriptImports = fontImportsFor(scripts);
   log({ event: 'init:scripts_selected', scripts });
+  const installedScripts = await installScriptFonts(scripts, cwd, isAgentMode);
+  const scriptImports = fontImportsFor(installedScripts);
 
   // Phase A: install-time generation. Spacing-base detection runs FIRST
   // -- the cascade flows from baseSpacingUnit through five namespaces
@@ -931,7 +970,7 @@ export async function init(options: InitOptions): Promise<void> {
   // bake values numerically at generation time and would not update.
   // See legion reflection 019e57d8 for the full invariant.
   const adapter = getAdapter(source ?? 'tailwind');
-  const baseConfig: Partial<BaseSystemConfig> = { fontFamily: fontStackFor(scripts) };
+  const baseConfig: Partial<BaseSystemConfig> = { fontFamily: fontStackFor(installedScripts) };
   // Source CSS resolution priority for both pre-generation base detection
   // AND the later sense/apply flow:
   //   1. shadcn's components.json `tailwind.css` IF the file actually exists
@@ -1099,7 +1138,6 @@ export async function init(options: InitOptions): Promise<void> {
     },
   };
   await writeFile(paths.config, JSON.stringify(config, null, 2));
-  await updateDependencies(scriptImports, [], { cwd });
 
   // Sense source CSS, then prompt-and-apply each shadcn semantic color.
   // Each accepted color becomes two registry ops: `define` a new family
@@ -1249,20 +1287,7 @@ export async function init(options: InitOptions): Promise<void> {
             // Walk semantic roles. The designer assigns detected palettes
             // to each role. Filter to roles that exist as semantic-namespace
             // tokens in the registry (tertiary ships only in some configs).
-            const ALL_ROLES = [
-              'primary',
-              'secondary',
-              'tertiary',
-              'accent',
-              'highlight',
-              'neutral',
-              'muted',
-              'success',
-              'warning',
-              'destructive',
-              'info',
-            ];
-            const ROLES = ALL_ROLES.filter((r) => {
+            const ROLES = SEMANTIC_FAMILY_ROLES.filter((r) => {
               const tok = registry.get(r);
               return tok !== undefined && tok.namespace === 'semantic';
             });

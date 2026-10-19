@@ -70,7 +70,9 @@ export {
   contrastPlugin,
   invertPlugin,
   mirrorPlugin,
+  REGISTRY_PLUGINS,
   scalePlugin,
+  shadowRungPlugin,
   statePlugin,
 } from './plugins/index.js';
 export {

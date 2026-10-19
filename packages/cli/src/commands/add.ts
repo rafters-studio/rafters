@@ -9,14 +9,10 @@ import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
-  scalePlugin,
-  statePlugin,
 } from '@rafters/design-tokens';
 import { RegistryClient } from '../registry/client.js';
 import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
@@ -45,8 +41,6 @@ export interface AddOptions {
   registryUrl?: string;
   agent?: boolean;
 }
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin, mirrorPlugin];
 
 /**
  * Regenerate the output artifacts after an install/update changes the installed

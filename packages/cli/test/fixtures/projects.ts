@@ -48,6 +48,13 @@ interface ShadcnComponentsJson {
   };
 }
 
+/** Build-script decisions for the fixtures' dependencies (pnpm 11 `allowBuilds`). */
+const PNPM_BUILD_POLICY = `allowBuilds:
+  esbuild: false
+  sharp: false
+  workerd: false
+`;
+
 interface FixtureTemplate {
   packageJson: PackageJson;
   componentsJson?: ShadcnComponentsJson;
@@ -324,6 +331,12 @@ export async function createFixture(type: FixtureType): Promise<string> {
 
   // Write package.json
   await writeFile(join(fixturePath, 'package.json'), JSON.stringify(template.packageJson, null, 2));
+
+  // A real pnpm 11 project records its build-script decisions; without them
+  // `pnpm add` exits non-zero on ERR_PNPM_IGNORED_BUILDS, and `rafters init`
+  // installs its fonts with `pnpm add` (#2742). No `packages:` key, so the
+  // fixture is not a workspace root.
+  await writeFile(join(fixturePath, 'pnpm-workspace.yaml'), PNPM_BUILD_POLICY);
 
   // Write components.json if shadcn is configured
   if (template.componentsJson) {

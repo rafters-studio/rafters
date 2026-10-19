@@ -13,14 +13,10 @@
 import { describe, expect, it } from 'vitest';
 import { generateBaseSystem } from '../../src/generators/index.js';
 import {
-  contrastPlugin,
-  invertPlugin,
-  mirrorPlugin,
   registryToTailwind,
   registryToTailwindStatic,
-  scalePlugin,
-  statePlugin,
   TokenRegistry,
+  REGISTRY_PLUGINS,
 } from '../../src/index.js';
 
 const CANDIDATE_MARKERS = [
@@ -41,13 +37,7 @@ function markersOf(css: string): string[] {
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-    mirrorPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 // The frozen section contract. Update these ONLY when intentionally changing an
