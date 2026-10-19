@@ -347,17 +347,36 @@ describe('rafters init - source CSS sensing', () => {
       reason: expect.stringContaining('imported from --primary'),
     });
 
-    // (6) Tailwind output resolves end-to-end: `--rafters-primary` points
-    // at the imported family's 500 position, and that position is declared
-    // (not a dangling reference).
+    // (6) Tailwind output resolves end-to-end: `--rafters-primary` points at
+    // primary's role step 500 (#2745), primary's role scale sits on the
+    // imported family, and that position is declared (not a dangling
+    // reference).
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
-    expect(css).toContain('--rafters-primary: var(--color-imported-primary-500)');
+    const declared = new Map<string, string>();
+    for (const m of css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+      if (m[1] && m[2] && !declared.has(m[1])) declared.set(m[1], m[2].trim());
+    }
+    // Follow a var() chain to the last custom property it names.
+    const chainEnd = (name: string): string => {
+      let current = name;
+      for (let hops = 0; hops < 20; hops++) {
+        const next = declared.get(current)?.match(/^var\((--[\w-]+)\)$/)?.[1];
+        if (!next) return current;
+        current = next;
+      }
+      return current;
+    };
+    expect(css).toContain('--rafters-primary: var(--rafters-primary-500)');
+    expect(css).toContain('--rafters-primary-500: var(--color-imported-primary-500)');
+    expect(chainEnd('--rafters-primary')).toBe('--color-imported-primary-500');
     expect(css).toContain('--color-imported-primary-500: oklch(0.5 0.2 30)');
 
     // (6) The cascade fired through the imported family: primary-foreground
     // re-derived to use the imported family's most-contrasting position
-    // (50 here, the lightest), not the pre-import neutral default.
-    expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--color-imported-primary-\d+\)/);
+    // (50 here, the lightest), not the pre-import neutral default. It points
+    // at primary's role step, which resolves into the imported family.
+    expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--rafters-primary-\d+\)/);
+    expect(chainEnd('--rafters-primary-foreground')).toMatch(/^--color-imported-primary-\d+$/);
 
     // (7) Direct-set on the `radius` token persisted the user's value
     // verbatim. Source: `--radius: 0.5rem`.
