@@ -23,14 +23,7 @@ import {
   getColorTemperature,
   isLightColor,
 } from './analysis.js';
-import {
-  ceilingForSeed,
-  isInP3Gamut,
-  isInSRGBGamut,
-  mapScaleToGamut,
-  storedTier,
-  toGamutCeiling,
-} from './gamut.js';
+import { ceilingForSeed, mapScaleToGamut, storedTier, toGamutCeiling } from './gamut.js';
 import { boundSeedLightness, generateHarmony, generateOKLCHScale } from './harmony.js';
 import { roundOKLCH } from './conversion.js';
 import { generateColorName } from './naming/index.js';
@@ -97,8 +90,7 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
   // mapped like every other step. Either move is recorded below.
   const bounded = boundSeedLightness(oklch);
   const ceiling = ceilingForSeed(bounded);
-  const inside = ceiling === 'p3' ? isInP3Gamut(bounded) : isInSRGBGamut(bounded);
-  const seed = inside ? bounded : toGamutCeiling(bounded, ceiling);
+  const seed = toGamutCeiling(bounded, ceiling);
 
   // Generate the 11-position scale and map every step into the ceiling
   const scaleRecord = generateOKLCHScale(seed);
@@ -112,11 +104,8 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
   // (beyond the rounding every step gets) is a move, and is recorded.
   const landed = scale[REFERENCE_STEP_INDEX];
   const requested = roundOKLCH(oklch);
-  const moved =
-    landed !== undefined &&
-    (landed.l !== requested.l || landed.c !== requested.c || landed.h !== requested.h);
   const seedAdjusted: ColorValue['seedAdjusted'] =
-    landed && moved
+    landed && (landed.l !== requested.l || landed.c !== requested.c || landed.h !== requested.h)
       ? {
           from: { ...oklch },
           to: { ...landed },
