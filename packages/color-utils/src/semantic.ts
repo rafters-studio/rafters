@@ -90,7 +90,7 @@ export const STATE_USES: readonly StateUse[] = [
 ];
 
 /**
- * Rank step per state on the AAA ladder. sign: 1 for light (darker), -1 for dark (lighter).
+ * Rank step per state on the AA ladder (steps with an in-family partner of at least 4.5:1). sign: 1 for light (darker), -1 for dark (lighter).
  * Without a surface a ring copies its base; with one, statePair searches the
  * whole family instead (see ringOnSurface).
  */
@@ -471,14 +471,14 @@ export function semanticFor(family: ColorValue, options?: { name?: string }): Se
       };
     }
     if (use === 'ring' && surface) return ringOnSurface(from, surface);
-    if (!aaaPairs || aaaPairs.length === 0) {
+    if (!aaPairs || aaPairs.length === 0) {
       throw new SemanticSelectionError(
         familyName,
-        'has no accessibility.wcagAAA.normal ladder (color generator must emit accessibility metadata)',
+        'has no accessibility.wcagAA.normal ladder (color generator must emit accessibility metadata)',
       );
     }
     const base = requireIndex(from, familyName);
-    const ladder = collectLadder(aaaPairs);
+    const ladder = collectLadder(aaPairs);
     const baseRank = closestRankTo(ladder, base);
     const sign = dark ? -1 : 1;
     const targetRank = STATE_RANK_STEP[use](baseRank, ladder, sign);

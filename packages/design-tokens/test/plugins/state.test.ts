@@ -3,27 +3,26 @@ import { describe, expect, it } from 'vitest';
 import { statePlugin, TokenGraph } from '../../src/index.js';
 import { MINIMAL_SCALE as minimalScale } from './_fixtures.js';
 
-// Ladder positions sorted: [0, 1, 2, 3, 7, 8, 9, 10].
+// Ladder positions sorted: [0, 1, 2, 3, 7, 8, 9, 10]. States walk the AA
+// ladder (#2762); every AAA pair is also an AA pair, so both carry the same pairs.
+const fullLadderPairs = [
+  [0, 8],
+  [0, 9],
+  [0, 10],
+  [1, 8],
+  [1, 9],
+  [1, 10],
+  [2, 9],
+  [2, 10],
+  [3, 10],
+  [7, 0],
+  [8, 0],
+  [9, 0],
+  [10, 0],
+];
 const fullLadderAccessibility = {
-  wcagAAA: {
-    normal: [
-      [0, 8],
-      [0, 9],
-      [0, 10],
-      [1, 8],
-      [1, 9],
-      [1, 10],
-      [2, 9],
-      [2, 10],
-      [3, 10],
-      [7, 0],
-      [8, 0],
-      [9, 0],
-      [10, 0],
-    ],
-    large: [],
-  },
-  wcagAA: { normal: [], large: [] },
+  wcagAAA: { normal: fullLadderPairs, large: [] },
+  wcagAA: { normal: fullLadderPairs, large: [] },
   onWhite: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [], aaa: [] },
   onBlack: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [], aaa: [] },
 };
@@ -101,7 +100,15 @@ describe('statePlugin', () => {
           ],
           large: [],
         },
-        wcagAA: { normal: [], large: [] },
+        wcagAA: {
+          normal: [
+            [5, 0],
+            [5, 1],
+            [6, 0],
+            [7, 0],
+          ],
+          large: [],
+        },
         onWhite: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [], aaa: [] },
         onBlack: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [], aaa: [] },
       },
@@ -122,12 +129,12 @@ describe('statePlugin', () => {
     );
   });
 
-  it('throws when the parent family has no accessibility.wcagAAA ladder', () => {
+  it('throws when the parent family has no accessibility.wcagAA ladder', () => {
     const g = new TokenGraph([statePlugin]);
     seedFamily(g, 'accent');
     g.seed('primary', { family: 'accent', position: '500' });
     expect(() => g.bind('primary-hover', 'state', { from: 'primary', stateType: 'hover' })).toThrow(
-      /no accessibility\.wcagAAA\.normal ladder/,
+      /no accessibility\.wcagAA\.normal ladder/,
     );
   });
 

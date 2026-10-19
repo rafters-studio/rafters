@@ -31,7 +31,7 @@ const accentToken: Token = {
     scale: minimalScale,
     accessibility: {
       wcagAAA: { normal: [[5, 0]], large: [] },
-      wcagAA: { normal: [], large: [] },
+      wcagAA: { normal: [[5, 0]], large: [] },
       onWhite: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [5], aaa: [9] },
       onBlack: { wcagAA: true, wcagAAA: true, contrastRatio: 7, aa: [5], aaa: [0] },
     },
