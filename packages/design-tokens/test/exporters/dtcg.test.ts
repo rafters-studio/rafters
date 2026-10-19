@@ -397,6 +397,31 @@ describe('toDTCG composites, records and role scale (#2758)', () => {
     expect(record['card-shadow']?.reason).toContain('"shadow-none"');
   });
 
+  it('records a name with an object-prototype segment as unrepresented and leaves Object.prototype alone', () => {
+    const tok = (name: string): Token => ({
+      name,
+      value: '1rem',
+      category: 'spacing',
+      namespace: 'spacing',
+      userOverride: null,
+    });
+    const result = toDTCG([
+      tok('__proto__-polluted'),
+      tok('spacing-constructor'),
+      tok('__proto__'),
+    ]) as Node;
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    const record = (
+      result.$extensions as { rafters: { unrepresented: Record<string, { reason: string }> } }
+    ).rafters.unrepresented;
+    expect(Object.keys(record).sort()).toEqual([
+      '__proto__',
+      '__proto__-polluted',
+      'spacing-constructor',
+    ]);
+    expect(record['spacing-constructor']?.reason).toContain('"constructor"');
+  });
+
   it('checks hex against a step stored at tier out', () => {
     const family = importColorFamily('vivid', '600', { l: 0.65, c: 0.3, h: 145, alpha: 1 })[0]
       ?.value;

@@ -163,9 +163,14 @@ function invalidSegment(name: string): string | null {
   const segs = segmentsOf(name);
   if (segs.length === 0) return 'Its name has no path segments, and DTCG names must not be empty.';
   const bad = segs.find((s) => s.startsWith('$') || /[{}.]/.test(s));
-  return bad === undefined
+  if (bad !== undefined) {
+    return `Its path segment "${bad}" starts with $ or contains {, } or ., which DTCG names must not.`;
+  }
+  // These keys would write through to Object.prototype when the group tree is built.
+  const reserved = segs.find((s) => s === '__proto__' || s === 'constructor' || s === 'prototype');
+  return reserved === undefined
     ? null
-    : `Its path segment "${bad}" starts with $ or contains {, } or ., which DTCG names must not.`;
+    : `Its path segment "${reserved}" is a JavaScript object key the exported tree cannot hold.`;
 }
 
 /** Floating point noise from resolving calc and em values; colour components are never rounded. */
@@ -762,7 +767,7 @@ class DTCGBuilder {
       const segs = layoutPath(name).split('.');
       let node = root;
       for (const seg of segs.slice(0, -1)) {
-        const next = node[seg];
+        const next = Object.hasOwn(node, seg) ? node[seg] : undefined;
         if (isRecord(next)) {
           node = next;
         } else {
@@ -774,13 +779,18 @@ class DTCGBuilder {
       node[segs[segs.length - 1] as string] = out;
     }
 
-    const unrepresented: Record<string, unknown> = {};
+    const unrepresentedEntries: Array<[string, unknown]> = [];
     for (const [name, token] of this.tokens) {
       const c = this.classified.get(name);
       if (c?.kind === 'unrepresented') {
-        unrepresented[name] = { value: token.value, category: token.category, reason: c.reason };
+        unrepresentedEntries.push([
+          name,
+          { value: token.value, category: token.category, reason: c.reason },
+        ]);
       }
     }
+    // fromEntries defines own keys, so a token literally named __proto__ is kept, not swallowed.
+    const unrepresented = Object.fromEntries(unrepresentedEntries);
     root.$extensions = { rafters: { unrepresented } };
     return root as DTCGFile;
   }
