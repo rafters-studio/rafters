@@ -13,9 +13,15 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
-import { oklchToCSS } from '@rafters/color-utils';
+import { oklchToCSS, SCALE_POSITIONS } from '@rafters/color-utils';
 import * as csstree from 'css-tree';
-import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
+import {
+  type ColorReference,
+  type ColorValue,
+  SEMANTIC_FAMILY_ROLES,
+  type Token,
+  type TypographyElementOverride,
+} from '@rafters/shared';
 import type { MotionNamespace } from '../generators/motion.js';
 import type { TokenRegistry } from '../registry.js';
 
@@ -304,19 +310,153 @@ function groupTokens(tokens: Token[]): GroupedTokens {
   return groups;
 }
 
+/** Every token by name: the owner walk reads tokens outside the semantic group. */
+type TokenIndex = ReadonlyMap<string, Token>;
+
+const FAMILY_ROLES: ReadonlySet<string> = new Set(SEMANTIC_FAMILY_ROLES);
+const SCALE_STEPS: ReadonlySet<string> = new Set(SCALE_POSITIONS);
+const DARK_SUFFIX = '--dark';
+const OWNER_WALK_HOPS = 12;
+/** The binding inputs that name the token (or palette) a token is derived from. */
+const BINDING_PARENT_KEYS = ['familyName', 'against', 'from', 'fromToken'] as const;
+type BindingParentKey = (typeof BINDING_PARENT_KEYS)[number];
+
+function indexTokens(tokens: Token[]): TokenIndex {
+  const index = new Map<string, Token>();
+  for (const token of tokens) index.set(token.name, token);
+  return index;
+}
+
+function semanticTokensOf(tokens: TokenIndex): Token[] {
+  return [...tokens.values()].filter((t) => t.namespace === 'semantic');
+}
+
+function withoutDarkSuffix(name: string): string {
+  return name.endsWith(DARK_SUFFIX) ? name.slice(0, -DARK_SUFFIX.length) : name;
+}
+
+function bindingInput(token: Token, key: BindingParentKey): string | null {
+  const input = token.binding?.input;
+  if (typeof input !== 'object' || input === null || !(key in input)) return null;
+  const value: unknown = (input as Record<string, unknown>)[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function bindingParent(token: Token): string | null {
+  for (const key of BINDING_PARENT_KEYS) {
+    const parent = bindingInput(token, key);
+    if (parent) return parent;
+  }
+  return null;
+}
+
+/** A family role that has a semantic root token in this token set. */
+function isRoleRoot(name: string, tokens: TokenIndex): boolean {
+  return FAMILY_ROLES.has(name) && tokens.get(name)?.namespace === 'semantic';
+}
+
+/** The family roles that have a root token, in SEMANTIC_FAMILY_ROLES order. */
+function rolesWithRoot(tokens: TokenIndex): string[] {
+  return SEMANTIC_FAMILY_ROLES.filter((role) => isRoleRoot(role, tokens));
+}
+
+/**
+ * The family role that owns a semantic token: walk its binding inputs upward
+ * until a role root. `X--dark` walks as `X`. A walk that reaches a palette
+ * family (or a token with no binding) ends with no owner.
+ */
+function findRoleOwner(name: string, tokens: TokenIndex): string | null {
+  let current = withoutDarkSuffix(name);
+  for (let hops = 0; ; hops++) {
+    if (isRoleRoot(current, tokens)) return current;
+    const token = tokens.get(current);
+    if (!token || token.namespace !== 'semantic') return null;
+    const parent = bindingParent(token);
+    if (!parent) return null;
+    if (hops === OWNER_WALK_HOPS) {
+      throw new Error(
+        `Role owner walk for semantic token "${name}" did not end within ${OWNER_WALK_HOPS} hops`,
+      );
+    }
+    current = withoutDarkSuffix(parent);
+  }
+}
+
+function colorPosition(token: Token | undefined): string | null {
+  const value = token?.value;
+  if (typeof value !== 'object' || value === null || !('position' in value)) return null;
+  return String(value.position);
+}
+
+function storedFamily(token: Token | undefined): string | null {
+  const value = token?.value;
+  if (typeof value !== 'object' || value === null || !('family' in value)) return null;
+  return value.family;
+}
+
+/** What a role's scale points at: another role's scale, or a palette. */
+type RoleScaleSource = { layer: 'rafters' | 'color'; family: string };
+
+/**
+ * A role's scale follows what the registry stores for its root. A stored
+ * family that is another role hangs the scale off that role. A stored palette
+ * hangs it off the role its scale binding names only when that role's scale
+ * resolves to the same palette (the default: primary stores zinc, its binding
+ * names neutral, neutral is zinc); otherwise (a role set to another palette)
+ * the scale sits on the stored palette.
+ */
+function roleScaleSource(role: string, tokens: TokenIndex, seen: Set<string>): RoleScaleSource {
+  const root = tokens.get(role);
+  const stored = storedFamily(root);
+  if (!root || !stored) throw new Error(`Role "${role}" stores no family for its scale`);
+  if (stored !== role && isRoleRoot(stored, tokens)) return { layer: 'rafters', family: stored };
+  const bound = root.binding?.plugin === 'scale' ? bindingInput(root, 'familyName') : null;
+  if (
+    bound !== null &&
+    bound !== role &&
+    isRoleRoot(bound, tokens) &&
+    rolePalette(bound, tokens, new Set(seen)) === stored
+  ) {
+    return { layer: 'rafters', family: bound };
+  }
+  return { layer: 'color', family: stored };
+}
+
+/** The palette a role's scale finally resolves to. */
+function rolePalette(role: string, tokens: TokenIndex, seen = new Set<string>()): string {
+  if (seen.has(role)) throw new Error(`Role scales form a cycle at "${role}"`);
+  seen.add(role);
+  const source = roleScaleSource(role, tokens, seen);
+  return source.layer === 'rafters' ? rolePalette(source.family, tokens, seen) : source.family;
+}
+
+/** The palette a stored family resolves to: a role's palette, or the family itself. */
+function familyPalette(family: string, tokens: TokenIndex): string {
+  return isRoleRoot(family, tokens) ? rolePalette(family, tokens) : family;
+}
+
 /**
  * Generate @theme inline block for semantic color bridges
- * These reference :root variables and must use @theme inline for dynamic resolution
+ * These reference :root variables and must use @theme inline for dynamic resolution.
+ * Every role step gets a bridge too, so Tailwind generates its utilities
+ * (bg-primary-950 reads --rafters-primary-950).
  * @see https://tailwindcss.com/docs/theme#using-custom-values
  */
-function generateThemeInlineBlock(semanticTokens: Token[]): string {
-  const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
+function generateThemeInlineBlock(tokens: TokenIndex): string {
+  const semanticMappings = getSemanticMappingsFromTokens(semanticTokensOf(tokens));
   const lines: string[] = [];
   lines.push('@theme inline {');
 
   // Semantic color bridges (reference :root variables)
   for (const name of Object.keys(semanticMappings)) {
     lines.push(`  --color-${name}: var(--${name});`);
+  }
+
+  // Role step bridges (reference the role layer in :root)
+  for (const role of rolesWithRoot(tokens)) {
+    for (const step of SCALE_POSITIONS) {
+      lines.push(`  --color-${role}-${step}: var(--rafters-${role}-${step});`);
+    }
   }
 
   lines.push('}');
@@ -326,22 +466,64 @@ function generateThemeInlineBlock(semanticTokens: Token[]): string {
 /**
  * Generate :root block with --rafters-* namespace and dark mode via .dark class
  * Reads semantic mappings from actual tokens in the registry.
+ *
+ * The role layer comes first: one 50-950 scale per family role with a root,
+ * pointing at its palette or at another role's scale. Every semantic
+ * declaration then points at its owning role's step, so changing a role's
+ * scale moves every token the role owns. A token with no owning role, or
+ * whose stored palette is not its owner's (a dependent set to another
+ * palette), stays on its palette step: the CSS renders what the registry
+ * stores.
  */
-function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' = 'class'): string {
-  const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
+function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'class'): string {
+  const semanticMappings = getSemanticMappingsFromTokens(semanticTokensOf(tokens));
   const lines: string[] = [];
   lines.push(':root, :host {');
 
+  // Role layer: the same scale in light and dark
+  for (const role of rolesWithRoot(tokens)) {
+    const { layer, family } = roleScaleSource(role, tokens, new Set([role]));
+    for (const step of SCALE_POSITIONS) {
+      lines.push(`  --rafters-${role}-${step}: var(--${layer}-${family}-${step});`);
+    }
+  }
+
+  lines.push('');
+
+  // A semantic declaration: its owning role at its own step, or its palette
+  // step when no role owns it. The step is the light token's position for
+  // light and the --dark token's for dark; it must agree with the registry's.
+  const declaration = (name: string, mode: 'light' | 'dark', paletteRef: string): string => {
+    const owner = findRoleOwner(name, tokens);
+    const own = tokens.get(mode === 'light' ? name : `${name}${DARK_SUFFIX}`) ?? tokens.get(name);
+    const family = storedFamily(own);
+    if (
+      owner === null ||
+      family === null ||
+      familyPalette(family, tokens) !== rolePalette(owner, tokens)
+    ) {
+      return `var(--color-${paletteRef})`;
+    }
+    const cssStep = colorPosition(own);
+    const registryStep = paletteRef.match(/-(\d+)$/)?.[1] ?? null;
+    if (cssStep === null || cssStep !== registryStep || !SCALE_STEPS.has(cssStep)) {
+      throw new Error(
+        `Semantic token "${name}" (${mode}): CSS step ${cssStep ?? 'none'} disagrees with registry step ${registryStep ?? 'none'}`,
+      );
+    }
+    return `var(--rafters-${owner}-${cssStep})`;
+  };
+
   // Light mode --rafters-* tokens
   for (const [name, mapping] of Object.entries(semanticMappings)) {
-    lines.push(`  --rafters-${name}: var(--color-${mapping.light});`);
+    lines.push(`  --rafters-${name}: ${declaration(name, 'light', mapping.light)};`);
   }
 
   lines.push('');
 
   // Dark mode --rafters-dark-* tokens
   for (const [name, mapping] of Object.entries(semanticMappings)) {
-    lines.push(`  --rafters-dark-${name}: var(--color-${mapping.dark});`);
+    lines.push(`  --rafters-dark-${name}: ${declaration(name, 'dark', mapping.dark)};`);
   }
 
   lines.push('');
@@ -1363,12 +1545,13 @@ export function tokensToTailwind(
   sections.push('');
 
   // @theme inline block for semantic color bridges (reference :root variables)
-  const themeInlineBlock = generateThemeInlineBlock(groups.semantic);
+  const tokensByName = indexTokens(tokens);
+  const themeInlineBlock = generateThemeInlineBlock(tokensByName);
   sections.push(themeInlineBlock);
   sections.push('');
 
   // :root block with --rafters-* namespace and dark mode
-  const rootBlock = generateRootBlock(groups.semantic, options.darkMode ?? 'class');
+  const rootBlock = generateRootBlock(tokensByName, options.darkMode ?? 'class');
   sections.push(rootBlock);
   sections.push('');
 
@@ -1656,8 +1839,8 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   sections.push(themeBlock);
   sections.push('');
 
-  // @theme inline block for semantic color bridges
-  const themeInlineBlock = generateThemeInlineBlock(groups.semantic);
+  // @theme inline block for semantic color bridges and role step bridges
+  const themeInlineBlock = generateThemeInlineBlock(indexTokens(tokens));
   sections.push(themeInlineBlock);
   sections.push('');
 
