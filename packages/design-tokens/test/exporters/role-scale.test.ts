@@ -82,6 +82,9 @@ describe('role scale', () => {
     const ctx = contexts(css);
     for (const u of utilities(ctx.theme))
       expect({ light: resolve(ctx.light, u), dark: resolve(ctx.dark, u) }).toEqual(baseline[u]);
+    // Both directions: no baseline utility was dropped, none was added.
+    expect(utilities(ctx.theme).sort()).toEqual(Object.keys(baseline).sort());
+    expect(Object.keys(baseline)).toHaveLength(202);
   });
   it('moves exactly what a role owns', () => {
     const swapped = css.replace(
@@ -167,6 +170,17 @@ describe('role scale: ownership', () => {
     });
     tokens.push(loop('loop-a', 'loop-b'), loop('loop-b', 'loop-a'));
     expect(() => tokensToTailwind(tokens)).toThrow(/"loop-a".*12 hops/);
+  });
+
+  it('throws when two role scales name each other', () => {
+    const tokens = generateBaseSystem().allTokens.map((t) => {
+      if (t.name === 'primary') return { ...t, value: { family: 'secondary', position: '900' } };
+      if (t.name === 'secondary') return { ...t, value: { family: 'primary', position: '100' } };
+      return t;
+    });
+    expect(() => tokensToTailwind(tokens)).toThrow(
+      /Role scales form a cycle at "(primary|secondary)"/,
+    );
   });
 
   it('throws when the CSS step and the registry step disagree', () => {
