@@ -13,7 +13,12 @@ import { describe, expect, it } from 'vitest';
 import { calculateWCAGContrast } from '../src/accessibility.js';
 import { buildColorValue } from '../src/builder.js';
 import { POSITION_TO_INDEX, SCALE_POSITIONS } from '../src/scale-positions.js';
-import { type Pair, type SemanticContext, semanticFor } from '../src/semantic.js';
+import {
+  type Pair,
+  type SemanticContext,
+  SemanticSelectionError,
+  semanticFor,
+} from '../src/semantic.js';
 
 const blue: OKLCH = { l: 0.5, c: 0.15, h: 240, alpha: 1 };
 const red: OKLCH = { l: 0.5, c: 0.2, h: 25, alpha: 1 };
@@ -121,7 +126,7 @@ describe('semanticFor — state pairs (parity with state plugin)', () => {
     baseIndex: number,
     state: 'hover' | 'active' | 'focus' | 'disabled',
   ): number {
-    const pairs = value.accessibility?.wcagAAA?.normal ?? [];
+    const pairs = value.accessibility?.wcagAA?.normal ?? [];
     const positions = new Set<number>();
     for (const pair of pairs) for (const p of pair) positions.add(p);
     const ladder = Array.from(positions).sort((a, b) => a - b);
@@ -528,7 +533,7 @@ describe('semanticFor — distinct states, visible rings, readable foregrounds (
   it('a ring without a surface keeps copying its base rung', () => {
     const sem = semanticFor(family(blue), { name: 'blue' });
     expect(sem.states('500').ring).toEqual(sem.pair({ use: 'ring', from: '500' }));
-    // 950 is a rung of the AAA ladder, so the ring is the base itself.
+    // 950 is a rung of the AA ladder, so the ring is the base itself.
     expect(sem.pair({ use: 'ring', from: '950' }).to.position).toBe('950');
   });
 
@@ -589,5 +594,58 @@ describe('semanticFor — distinct states, visible rings, readable foregrounds (
       const withFallback = sem.pair({ use: 'foreground', from, fallback: family(gray) });
       expect(withFallback).toEqual(sem.pair({ use: 'foreground', from }));
     }
+  });
+});
+
+describe('semanticFor -- states walk the AA ladder (#2762)', () => {
+  // DEFAULT_COLOR_SEEDS (packages/design-tokens/src/generators/defaults.ts), copied:
+  // color-utils does not depend on design-tokens.
+  const DEFAULT_SEEDS: Record<string, OKLCH> = {
+    zinc: { l: 0.442, c: 0, h: 0, alpha: 1 },
+    'silver-true-glacier': { l: 0.55, c: 0.12, h: 180, alpha: 1 },
+    'silver-bold-fire-truck': { l: 0.55, c: 0.2, h: 0, alpha: 1 },
+    'silver-true-honey': { l: 0.55, c: 0.12, h: 60, alpha: 1 },
+    'silver-true-citrine': { l: 0.55, c: 0.12, h: 90, alpha: 1 },
+    'silver-true-sky': { l: 0.55, c: 0.12, h: 210, alpha: 1 },
+    'silver-true-violet': { l: 0.55, c: 0.12, h: 270, alpha: 1 },
+  };
+  const OFFSET = { hover: 1, focus: 1, active: 2, border: 2, subtle: 2 } as const;
+  const USES = Object.keys(OFFSET) as (keyof typeof OFFSET)[];
+  const idx = (p: string) => SCALE_POSITIONS.indexOf(p as (typeof SCALE_POSITIONS)[number]);
+
+  it('states step along the AA ladder and never cross the AAA gap', () => {
+    for (const [name, seed] of Object.entries(DEFAULT_SEEDS)) {
+      const v = buildColorValue(seed);
+      const sem = semanticFor(v, { name });
+      const bestPartner = (i: number) =>
+        Math.max(
+          ...v.scale.map((c, j) => (i === j ? 0 : calculateWCAGContrast(v.scale[i] as OKLCH, c))),
+        );
+      for (const [i, from] of SCALE_POSITIONS.entries()) {
+        for (const dark of [false, true]) {
+          for (const use of USES) {
+            const to = idx(sem.pair({ use, from, dark }).to.position);
+            const label = `${name} ${from} ${use} dark=${dark}`;
+            expect(Math.abs(to - i), label).toBeLessThanOrEqual(OFFSET[use] + 1);
+            expect(bestPartner(to), label).toBeGreaterThanOrEqual(4.5);
+          }
+          const disabled = sem.pair({ use: 'disabled', from, dark }).to.position;
+          expect(disabled, `${name} ${from} disabled dark=${dark}`).toBe('500');
+          expect(bestPartner(idx(disabled))).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
+
+  it('throws naming wcagAA.normal when the AA ladder is empty and no stateReferences exist', () => {
+    const value = family(blue);
+    if (!value.accessibility) throw new Error('blue has no accessibility metadata');
+    const empty: ColorValue = {
+      ...value,
+      accessibility: { ...value.accessibility, wcagAA: { normal: [], large: [] } },
+    };
+    const sem = semanticFor(empty, { name: 'blue' });
+    expect(() => sem.pair({ use: 'hover', from: '500' })).toThrow(SemanticSelectionError);
+    expect(() => sem.pair({ use: 'hover', from: '500' })).toThrow(/wcagAA\.normal ladder/);
   });
 });

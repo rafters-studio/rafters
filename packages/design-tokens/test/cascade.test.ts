@@ -28,27 +28,26 @@ const minimalScale = [
 ];
 
 function buildAccentFamily(name = 'accent'): ColorValue {
+  // Every AAA pair is also an AA pair; states walk the AA ladder (#2762).
+  const pairs = [
+    [0, 8],
+    [1, 9],
+    [2, 9],
+    [3, 9],
+    [4, 9],
+    [5, 0],
+    [5, 9],
+    [6, 0],
+    [7, 0],
+    [8, 0],
+    [9, 0],
+  ];
   return {
     name,
     scale: minimalScale,
     accessibility: {
-      wcagAAA: {
-        normal: [
-          [0, 8],
-          [1, 9],
-          [2, 9],
-          [3, 9],
-          [4, 9],
-          [5, 0],
-          [5, 9],
-          [6, 0],
-          [7, 0],
-          [8, 0],
-          [9, 0],
-        ],
-        large: [],
-      },
-      wcagAA: { normal: [], large: [] },
+      wcagAAA: { normal: pairs, large: [] },
+      wcagAA: { normal: pairs, large: [] },
       onWhite: {
         wcagAA: false,
         wcagAAA: false,

@@ -236,7 +236,7 @@ describe('role scale: ownership', () => {
       expect(resolve(ctx.light, '--color-primary')).toBe(SKY_600);
       expect(resolve(ctx.light, '--color-primary-600')).toBe(SKY_600);
       expect(resolve(ctx.light, '--color-primary-hover')).toBe(
-        resolve(ctx.light, '--color-silver-true-sky-800'),
+        resolve(ctx.light, '--color-silver-true-sky-700'),
       );
       expect(resolve(ctx.light, '--color-secondary')).toBe(resolve(ctx.light, '--color-zinc-100'));
     });
