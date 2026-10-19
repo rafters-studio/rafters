@@ -112,7 +112,7 @@ export const REPRESENTATIVE_TOKEN_SET: Token[] = [
     userOverride: null,
   },
   {
-    name: 'motion-easing-productive',
+    name: 'rafters-ease-standard',
     namespace: 'motion',
     category: 'motion',
     value: 'cubic-bezier(0.4, 0, 0.2, 1)',

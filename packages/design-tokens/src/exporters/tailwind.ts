@@ -491,13 +491,9 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens (raw values for non-duration/easing)
+  // Motion tokens other than the namespace leaves
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      // Duration and easing tokens get special Tailwind-native names below
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
-        continue;
-      if (token.name.startsWith('motion-easing-')) continue;
       if (motionNamespaceParts(token.name)) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
@@ -1557,12 +1553,9 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens (raw values for non-duration/easing)
+  // Motion tokens other than the namespace leaves
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
-        continue;
-      if (token.name.startsWith('motion-easing-')) continue;
       // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
       // not raw custom properties -- no --var to reference.
       if (token.name.startsWith('motion-semantic-')) continue;

@@ -151,18 +151,16 @@ describe('semantic motion utilities compile (#1902/#1903/#1904)', () => {
     // are covered here.
     const css = await registryToCompiled(baseRegistry(), { contentSources: [fixtureDir] });
 
-    // Every motion prefix, the animation chain INCLUDED. It used to stop short:
-    // `--motion-duration-*` / `--motion-easing-*` were carved out because
-    // `--animate-*` referenced them while nothing declared them, so every
-    // animate-* utility shipped with no duration and no timing function --
-    // `animation: scale-out  ;`, which parses, computes to a zero duration, and
-    // silently never runs. That was #2000, and this PR fixes it at the source
-    // (motion.ts now builds the animation value on the declared namespace leaves
-    // `--rafters-duration-*` / `--rafters-ease-*`). The carve-out described a
-    // defect that no longer exists, so it is gone and the prefixes are in the
-    // sweep: reintroducing the `--motion-duration-*` reference now fails here.
+    // Every motion prefix, the animation chain INCLUDED. A reference to a
+    // duration or curve nothing declares leaves every animate-* utility with no
+    // duration and no timing function -- `animation: scale-out  ;`, which
+    // parses, computes to a zero duration, and silently never runs (#2000).
+    // Animation values are built on the declared namespace leaves
+    // `--rafters-duration-*` / `--rafters-ease-*`, which are the only duration
+    // and curve tokens since #2746, so the sweep covers the leaves and every
+    // name that references them.
     const CHECKED =
-      /^--(duration|ease|animate|motion-(duration|easing|animation)|rafters-(duration|ease|delay|extent|period|animate))-/;
+      /^--(duration|ease|animate|motion-animation|rafters-(duration|ease|delay|extent|period|animate))-/;
 
     const referenced = new Set<string>();
     for (const match of css.matchAll(/var\((--[a-z][a-z0-9-]*)\)/g)) {

@@ -23,270 +23,6 @@
       "generatedAt": "2026-08-18T21:55:48.884Z"
     },
     {
-      "name": "motion-duration-instant",
-      "value": "0ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.",
-      "usageContext": ["disabled-motion", "prefers-reduced-motion", "cursor", "badge-count"],
-      "usagePatterns": {
-        "do": ["Use for prefers-reduced-motion", "Use for disabled animations"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 0,
-      "mathRelationship": "0ms (fixed)",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "transition",
-      "motionDuration": 0,
-      "description": "Duration instant: 0ms. Fixed. No perceptible transition. Cursor changes, text selection, badge counts. Below all perception -- there is nothing to track, so nothing is communicated.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-duration-micro",
-      "value": "100ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change. Band: at the instantaneous threshold (Nielsen 0.1s).",
-      "usageContext": ["focus", "press", "micro-feedback"],
-      "usagePatterns": {
-        "do": ["Use for acknowledgment feedback (hover, focus, press)"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 1,
-      "mathRelationship": "100ms within 50-120ms (perceptual: at the instantaneous threshold (Nielsen 0.1s))",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "transition",
-      "motionDuration": 100,
-      "description": "Duration micro: 100ms. Range: 50-120ms. Band: at the instantaneous threshold (Nielsen 0.1s). Immediate but visible. Focus rings and press feedback. At the instantaneous threshold -- acknowledgment that input landed, not communication of a change.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-duration-fast",
-      "value": "150ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication. Band: below the communicative window.",
-      "usageContext": ["hover", "micro-feedback"],
-      "usagePatterns": {
-        "do": ["Use for acknowledgment feedback (hover, focus, press)"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 2,
-      "mathRelationship": "150ms within 120-200ms (perceptual: below the communicative window)",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "transition",
-      "motionDuration": 150,
-      "description": "Duration fast: 150ms. Range: 120-200ms. Band: below the communicative window. Hover states. The cursor is already there, so the response must match its speed. Below the communicative window -- acknowledgment, not communication.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-duration-moderate",
-      "value": "250ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model. Band: communicative (~200-300ms).",
-      "usageContext": ["dropdowns", "tab-switches", "small-reveals"],
-      "usagePatterns": {
-        "do": ["Use for communicative transitions where the user must track the change"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 3,
-      "mathRelationship": "250ms within 200-300ms (perceptual: communicative (~200-300ms))",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "transition",
-      "motionDuration": 250,
-      "description": "Duration moderate: 250ms. Range: 200-300ms. Band: communicative (~200-300ms). Dropdowns, tab switches, small reveals. The communicative window: fast enough to feel responsive, slow enough for the eye to track a trajectory and build a spatial model.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-duration-normal",
-      "value": "350ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement. Band: communicative, larger movement.",
-      "usageContext": ["modals", "toggles", "state-changes"],
-      "usagePatterns": {
-        "do": ["Use for communicative transitions where the user must track the change"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 4,
-      "mathRelationship": "350ms within 300-400ms (perceptual: communicative, larger movement)",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "enter",
-      "motionDuration": 350,
-      "description": "Duration normal: 350ms. Range: 300-400ms. Band: communicative, larger movement. The workhorse -- modal entrances, toggles, standard state transitions. The communicative window for larger movement.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-duration-slow",
-      "value": "500ms",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions. Band: at the sluggish boundary.",
-      "usageContext": ["sheets", "page-transitions", "large-spatial-movement"],
-      "usagePatterns": {
-        "do": ["Use for communicative transitions where the user must track the change"],
-        "never": ["Ignore prefers-reduced-motion", "Use slow animations for frequent actions"]
-      },
-      "userOverride": null,
-      "dependsOn": [],
-      "scalePosition": 5,
-      "mathRelationship": "500ms within 400-500ms (perceptual: at the sluggish boundary)",
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "motionIntent": "enter",
-      "motionDuration": 500,
-      "description": "Duration slow: 500ms. Range: 400-500ms. Band: at the sluggish boundary. Sheets, page transitions, large spatial movement where the user needs orientation. At the sluggish boundary -- the ceiling for anything but full-screen spatial transitions.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-standard",
-      "value": "cubic-bezier(0.4, 0, 0.2, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag.",
-      "usageContext": ["state-changes", "hover", "general-purpose"],
-      "usagePatterns": {
-        "do": ["Match the curve register to the interaction feel"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0.4, 0, 0.2, 1],
-      "easingName": "standard",
-      "description": "Easing standard: cubic-bezier(0.4, 0, 0.2, 1). Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-enter",
-      "value": "cubic-bezier(0, 0, 0.2, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)",
-      "usageContext": ["enter-animations", "elements-appearing"],
-      "usagePatterns": {
-        "do": ["Use for anything entering the viewport"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0, 0, 0.2, 1],
-      "easingName": "enter",
-      "description": "Easing enter: cubic-bezier(0, 0, 0.2, 1). Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-exit",
-      "value": "cubic-bezier(0.4, 0, 1, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.",
-      "usageContext": ["exit-animations", "elements-leaving"],
-      "usagePatterns": {
-        "do": ["Use for anything leaving the viewport"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0.4, 0, 1, 1],
-      "easingName": "exit",
-      "description": "Easing exit: cubic-bezier(0.4, 0, 1, 1). Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-linear",
-      "value": "linear",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.",
-      "usageContext": ["progress-bars", "loading-spinners", "opacity-fades", "focus-ring-fade"],
-      "usagePatterns": {
-        "do": ["Use for progress and loading, where the system is working not interacting"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0, 0, 1, 1],
-      "easingName": "linear",
-      "description": "Easing linear: linear. Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-spring-smooth",
-      "value": "cubic-bezier(0.2, 0.9, 0.3, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)",
-      "usageContext": ["page-transitions", "sheets", "large-spatial-movement"],
-      "usagePatterns": {
-        "do": ["Match the curve register to the interaction feel"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0.2, 0.9, 0.3, 1],
-      "easingName": "spring-smooth",
-      "description": "Easing spring-smooth: cubic-bezier(0.2, 0.9, 0.3, 1). Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
-      "name": "motion-easing-spring-snappy",
-      "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
-      "category": "motion",
-      "namespace": "motion",
-      "semanticMeaning": "Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.",
-      "usageContext": ["toggles", "presses", "input-tracking"],
-      "usagePatterns": {
-        "do": ["Match the curve register to the interaction feel"],
-        "never": [
-          "Use exit for entering (arrives reluctantly)",
-          "Use linear for interactive spatial transitions (reads as mechanical)"
-        ]
-      },
-      "userOverride": null,
-      "containerQueryAware": false,
-      "reducedMotionAware": true,
-      "easingCurve": [0.2, 0.8, 0.2, 1],
-      "easingName": "spring-snappy",
-      "description": "Easing spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1). Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
-    },
-    {
       "name": "rafters-duration-instant",
       "value": "0ms",
       "category": "motion",
@@ -431,7 +167,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-standard: cubic-bezier(0.4, 0, 0.2, 1) [provenance: baseline] Efficient baseline curve. Precision -- a responsive start that decelerates into place, engineered rather than thrown. The general-purpose workhorse for state transitions and hover: the fast start matches a cursor already on target, where a symmetric ease would drag.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0.4, 0, 0.2, 1],
+      "easingName": "standard"
     },
     {
       "name": "rafters-ease-enter",
@@ -452,7 +190,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-enter: cubic-bezier(0, 0, 0.2, 1) [provenance: baseline] Efficient baseline curve. Arrival, welcome, settling into place. The fast start communicates responsiveness; the slow finish communicates care. Anything entering the viewport. Paired with `exit` as a deliberately asymmetric couple. (Dragicevic 2011: slow-in/slow-out outperforms constant speed for tracking.)",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0, 0, 0.2, 1],
+      "easingName": "enter"
     },
     {
       "name": "rafters-ease-exit",
@@ -473,7 +213,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-exit: cubic-bezier(0.4, 0, 1, 1) [provenance: baseline] Efficient baseline curve. Withdrawal, giving space. The brief hesitation acknowledges the user; the fast departure avoids lingering. Anything leaving the viewport. Paired with `enter` as a deliberately asymmetric couple -- exits are faster than entrances by design.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0.4, 0, 1, 1],
+      "easingName": "exit"
     },
     {
       "name": "rafters-ease-linear",
@@ -494,7 +236,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-linear: linear [provenance: baseline] Efficient baseline curve. Mechanical, procedural, without personality -- a process, not a gesture. Progress and loading, where the system is working rather than interacting. Never for interactive spatial transitions.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0, 0, 1, 1],
+      "easingName": "linear"
     },
     {
       "name": "rafters-ease-spring-smooth",
@@ -515,7 +259,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-spring-smooth: cubic-bezier(0.2, 0.9, 0.3, 1) [provenance: baseline] Efficient baseline curve. Alive, coming physically to rest -- a critically-damped spring with no overshoot. Page transitions, sheets, large tracked spatial movement. (Johansson 1973 / Pratt 2010: animate motion is perceived as alive and captures attention.)",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0.2, 0.9, 0.3, 1],
+      "easingName": "spring-smooth"
     },
     {
       "name": "rafters-ease-spring-snappy",
@@ -536,7 +282,9 @@
       "containerQueryAware": false,
       "reducedMotionAware": false,
       "description": "ease-spring-snappy: cubic-bezier(0.2, 0.8, 0.2, 1) [provenance: baseline] Efficient baseline curve. Alive, tight, following input closely -- a tighter spring with less settle and no overshoot. Toggles, presses, interactions that track input.",
-      "generatedAt": "2026-08-18T21:55:48.884Z"
+      "generatedAt": "2026-08-18T21:55:48.884Z",
+      "easingCurve": [0.2, 0.8, 0.2, 1],
+      "easingName": "spring-snappy"
     },
     {
       "name": "rafters-delay-hover-intent",
@@ -1545,13 +1293,13 @@
     },
     {
       "name": "motion-fade-in",
-      "value": "150ms cubic-bezier(0, 0, 0.2, 1)",
+      "value": "var(--rafters-duration-fast) var(--rafters-ease-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade in animation preset",
       "usageContext": ["fade-in", "appear"],
       "userOverride": null,
-      "dependsOn": ["motion-duration-fast", "motion-easing-enter"],
+      "dependsOn": ["rafters-duration-fast", "rafters-ease-enter"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [0, 0, 0.2, 1],
@@ -1562,13 +1310,13 @@
     },
     {
       "name": "motion-fade-out",
-      "value": "150ms cubic-bezier(0.4, 0, 1, 1)",
+      "value": "var(--rafters-duration-fast) var(--rafters-ease-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Fade out animation preset",
       "usageContext": ["fade-out", "disappear"],
       "userOverride": null,
-      "dependsOn": ["motion-duration-fast", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-fast", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [0.4, 0, 1, 1],
@@ -1579,13 +1327,13 @@
     },
     {
       "name": "motion-slide-in",
-      "value": "350ms cubic-bezier(0, 0, 0.2, 1)",
+      "value": "var(--rafters-duration-normal) var(--rafters-ease-enter)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide in animation preset",
       "usageContext": ["slide-in", "panel-enter", "modal-enter"],
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-enter"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-enter"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [0, 0, 0.2, 1],
@@ -1596,13 +1344,13 @@
     },
     {
       "name": "motion-slide-out",
-      "value": "150ms cubic-bezier(0.4, 0, 1, 1)",
+      "value": "var(--rafters-duration-fast) var(--rafters-ease-exit)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Slide out animation preset",
       "usageContext": ["slide-out", "panel-exit", "modal-exit"],
       "userOverride": null,
-      "dependsOn": ["motion-duration-fast", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-fast", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [0.4, 0, 1, 1],
@@ -1613,13 +1361,13 @@
     },
     {
       "name": "motion-scale-in",
-      "value": "350ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+      "value": "var(--rafters-duration-normal) var(--rafters-ease-spring-snappy)",
       "category": "motion",
       "namespace": "motion",
       "semanticMeaning": "Scale in with spring animation",
       "usageContext": ["pop-in", "button-press", "emphasis"],
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-spring-snappy"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-spring-snappy"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "easingCurve": [0.2, 0.8, 0.2, 1],
@@ -1640,7 +1388,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-fast", "motion-easing-standard"],
+      "dependsOn": ["rafters-duration-fast", "rafters-ease-standard"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
@@ -1660,7 +1408,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-micro", "motion-easing-linear"],
+      "dependsOn": ["rafters-duration-micro", "rafters-ease-linear"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
@@ -1680,7 +1428,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-micro", "motion-easing-spring-snappy"],
+      "dependsOn": ["rafters-duration-micro", "rafters-ease-spring-snappy"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
@@ -1700,7 +1448,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-moderate", "motion-easing-standard"],
+      "dependsOn": ["rafters-duration-moderate", "rafters-ease-standard"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "transition",
@@ -1722,7 +1470,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-moderate", "motion-easing-enter"],
+      "dependsOn": ["rafters-duration-moderate", "rafters-ease-enter"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",
@@ -1744,7 +1492,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-fast", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-fast", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "exit",
@@ -1766,7 +1514,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-enter"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-enter"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",
@@ -1788,7 +1536,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-moderate", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-moderate", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "exit",
@@ -1810,7 +1558,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-spring-smooth"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-spring-smooth"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",
@@ -1832,7 +1580,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "exit",
@@ -1852,7 +1600,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-enter"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-enter"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",
@@ -1874,7 +1622,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-moderate", "motion-easing-exit"],
+      "dependsOn": ["rafters-duration-moderate", "rafters-ease-exit"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "exit",
@@ -1894,7 +1642,7 @@
         "never": ["Hardcode a raw numeric duration in place of this token"]
       },
       "userOverride": null,
-      "dependsOn": ["motion-duration-normal", "motion-easing-spring-smooth"],
+      "dependsOn": ["rafters-duration-normal", "rafters-ease-spring-smooth"],
       "containerQueryAware": false,
       "reducedMotionAware": true,
       "motionIntent": "enter",

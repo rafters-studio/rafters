@@ -74,7 +74,7 @@ describe('motion generator: golden output', () => {
     // Proven explicitly so a redefinition cannot slip through a blind snapshot
     // update; standard is referenced by var(--ease-standard) everywhere, so this
     // one token value is the whole surface the change moves.
-    const standard = emitMotion().tokens.find((t) => t.name === 'motion-easing-standard');
+    const standard = emitMotion().tokens.find((t) => t.name === 'rafters-ease-standard');
     expect(standard?.value).toBe('cubic-bezier(0.4, 0, 0.2, 1)');
   });
 
@@ -85,12 +85,12 @@ describe('motion generator: golden output', () => {
     // 200/300/400 that shipped between b864de01 and #1991 was band MINIMUMS
     // leaking out through the derivation, not a decision anyone made.
     const byName = new Map(emitMotion().tokens.map((t) => [t.name, String(t.value)]));
-    expect(byName.get('motion-duration-instant')).toBe('0ms');
-    expect(byName.get('motion-duration-micro')).toBe('100ms');
-    expect(byName.get('motion-duration-fast')).toBe('150ms');
-    expect(byName.get('motion-duration-moderate')).toBe('250ms');
-    expect(byName.get('motion-duration-normal')).toBe('350ms');
-    expect(byName.get('motion-duration-slow')).toBe('500ms');
+    expect(byName.get('rafters-duration-instant')).toBe('0ms');
+    expect(byName.get('rafters-duration-micro')).toBe('100ms');
+    expect(byName.get('rafters-duration-fast')).toBe('150ms');
+    expect(byName.get('rafters-duration-moderate')).toBe('250ms');
+    expect(byName.get('rafters-duration-normal')).toBe('350ms');
+    expect(byName.get('rafters-duration-slow')).toBe('500ms');
   });
 
   it('emits the five namespaces as rafters-* leaves, and no motion-delay-* orphans', () => {
