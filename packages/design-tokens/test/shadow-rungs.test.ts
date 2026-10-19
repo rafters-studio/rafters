@@ -134,7 +134,49 @@ const TODAY_PART_RUNGS: Record<string, number> = {
   'shadow-2xl-offset-y': 12,
   'shadow-2xl-blur': 16,
   'shadow-2xl-spread': 0,
+  // Second layers (#2764), pinned from the baked literals before #2764.
+  'shadow-sm-layer-2-offset-y': 0,
+  'shadow-sm-layer-2-blur': 1,
+  'shadow-layer-2-offset-y': 0,
+  'shadow-layer-2-blur': 1,
+  'shadow-md-layer-2-offset-y': 1,
+  'shadow-md-layer-2-blur': 3,
+  'shadow-md-layer-2-spread': 0,
+  'shadow-lg-layer-2-offset-y': 3,
+  'shadow-lg-layer-2-blur': 6,
+  'shadow-lg-layer-2-spread': 0,
+  'shadow-xl-layer-2-offset-y': 6,
+  'shadow-xl-layer-2-blur': 10,
+  'shadow-xl-layer-2-spread': 0,
 };
+
+// The scales that carry a second layer, and each one's resolved composite
+// before #2764 (the second layer's offset-x then read `0`, now `0rem`).
+const TWO_LAYER = ['shadow-sm', 'shadow', 'shadow-md', 'shadow-lg', 'shadow-xl'];
+const TODAY_COMPOSITES: Record<string, string> = {
+  'shadow-xs': '0rem 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.05)',
+  'shadow-sm':
+    '0rem 0.063rem 0.25rem 0rem rgb(0 0 0 / 0.06), 0rem 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+  shadow:
+    '0rem 0.125rem 0.375rem 0.063rem rgb(0 0 0 / 0.1), 0rem 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1)',
+  'shadow-md':
+    '0rem 0.25rem 0.438rem 0.063rem rgb(0 0 0 / 0.1), 0rem 0.125rem 0.25rem 0.063rem rgb(0 0 0 / 0.1)',
+  'shadow-lg':
+    '0rem 0.438rem 0.938rem 0.063rem rgb(0 0 0 / 0.1), 0rem 0.25rem 0.438rem 0.063rem rgb(0 0 0 / 0.1)',
+  'shadow-xl':
+    '0rem 1.125rem 1.375rem 0.063rem rgb(0 0 0 / 0.1), 0rem 0.438rem 0.938rem 0.063rem rgb(0 0 0 / 0.1)',
+  'shadow-2xl': '0rem 1.375rem 2.875rem 0.063rem rgb(0 0 0 / 0.25)',
+};
+
+// A composite's value with every var(--rafters-*) followed to its literal.
+const resolvedComposite = (reg: TokenRegistry, name: string): string =>
+  String(reg.get(name)?.value).replace(/var\(--rafters-([a-z0-9-]+)\)/g, (_, part: string) =>
+    resolvedRem(reg, part),
+  );
+
+// The resolved second layer of a two-layer composite.
+const secondLayer = (reg: TokenRegistry, name: string): string =>
+  String(resolvedComposite(reg, name).split(', ')[1]);
 
 describe('shadow rungs: every part', () => {
   it('references the spacing base from --shadow-base-unit', () => {
@@ -175,6 +217,66 @@ describe('shadow rungs: every part', () => {
     const bound = [...reg.list()].filter((t) => t.binding?.plugin === 'shadow-rung');
     expect(bound).toHaveLength(Object.keys(TODAY_PART_RUNGS).length);
     for (const t of bound) expect(resolvedRem(reg, t.name)).toBe(resolvedRem(expected, t.name));
+  });
+});
+
+describe('shadow rungs: the second layer', () => {
+  it('declares every non-zero second-layer part on a rung and keeps every shadow today', () => {
+    const reg = new TokenRegistry(generateBaseSystem().allTokens, PLUGINS);
+    const css = registryToTailwind(reg);
+    for (const name of TWO_LAYER) {
+      for (const part of ['offset-y', 'blur', 'spread']) {
+        const token = reg.get(`${name}-layer-2-${part}`);
+        if (token?.value === '0rem') {
+          expect(token.binding).toBeUndefined();
+          continue;
+        }
+        expect(token?.value).toMatch(/^var\(--rafters-shadow-rung-\d+\)$/);
+        expect(token?.binding?.plugin).toBe('shadow-rung');
+        expect(css).toContain(`--rafters-${name}-layer-2-${part}: ${token?.value};`);
+      }
+      expect(reg.get(name)?.value).toContain(`var(--rafters-${name}-layer-2-blur)`);
+    }
+    for (const name of ['shadow-sm-layer-2-spread', 'shadow-layer-2-spread']) {
+      expect(reg.get(name)?.value).toBe('0rem');
+    }
+    for (const [name, value] of Object.entries(TODAY_COMPOSITES)) {
+      expect(resolvedComposite(reg, name)).toBe(value);
+    }
+    // second-layer parts stay --rafters-* parts, never Tailwind utilities
+    expect(css).not.toMatch(/--shadow-[a-z0-9-]*layer-2/);
+  });
+
+  it('moves every second layer with spacing-base as a fresh generation would', () => {
+    const reg = new TokenRegistry(generateBaseSystem().allTokens, PLUGINS);
+    const before = Object.fromEntries(TWO_LAYER.map((n) => [n, secondLayer(reg, n)]));
+    reg.set('spacing-base', '0.375rem', { reason: 'test' });
+    const expected = new TokenRegistry(
+      generateBaseSystem({ baseSpacingUnit: 6 }).allTokens,
+      PLUGINS,
+    );
+    for (const name of TWO_LAYER) {
+      expect(secondLayer(reg, name)).not.toBe(before[name]);
+      expect(secondLayer(reg, name)).toBe(secondLayer(expected, name));
+    }
+    expect(secondLayer(reg, 'shadow-md')).toBe('0rem 0.188rem 0.375rem 0.063rem rgb(0 0 0 / 0.1)');
+    const bound = [...reg.list()].filter(
+      (t) => t.binding?.plugin === 'shadow-rung' && t.name.includes('-layer-2-'),
+    );
+    expect(bound).toHaveLength(13);
+    for (const t of bound) expect(resolvedRem(reg, t.name)).toBe(resolvedRem(expected, t.name));
+  });
+
+  it('keeps an overridden second-layer part', () => {
+    const tokens = generateBaseSystem().allTokens.map((t) =>
+      t.name === 'shadow-md-layer-2-blur'
+        ? { ...t, value: '0.5rem', userOverride: { previousValue: t.value, reason: 'test' } }
+        : t,
+    );
+    const reg = new TokenRegistry(tokens, PLUGINS);
+    reg.set('spacing-base', '0.375rem', { reason: 'test' });
+    expect(reg.get('shadow-md-layer-2-blur')?.value).toBe('0.5rem');
+    expect(resolvedRem(reg, 'shadow-md-layer-2-offset-y')).toBe('0.188rem');
   });
 });
 
