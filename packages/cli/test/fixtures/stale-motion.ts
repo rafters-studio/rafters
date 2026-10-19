@@ -16,8 +16,8 @@
  *      path's own way of reintroducing (1), by writing the stale value back
  *      over a correctly regenerated cell;
  *   5. a duration tier under its retired pre-#2746 name, carrying a designer
- *      override. The name is deleted, not renamed: the token and its override
- *      are dropped, and the `rafters-duration-*` leaf is regenerated as is.
+ *      override. The name is not regenerated; the override moves onto its
+ *      `rafters-duration-*` twin.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -89,7 +89,7 @@ export const CARRIED_EASING = STALE_MOTION_FILE.tokens[2];
 /** The 0.2.3-shaped cell whose override must NOT drag its stale value back. */
 export const STALE_OVERRIDDEN_CELL = STALE_MOTION_FILE.tokens[3];
 
-/** The retired duration name whose token and override are dropped, not renamed. */
+/** The retired duration name whose override moves onto its `rafters-duration-*` twin. */
 export const RETIRED_DURATION = STALE_MOTION_FILE.tokens[4];
 
 export type StoredToken = { name: string; value: string; userOverride: unknown };

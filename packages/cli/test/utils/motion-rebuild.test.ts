@@ -1,4 +1,5 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   contrastPlugin,
   generateNamespaces,
@@ -7,11 +8,12 @@ import {
   scalePlugin,
   statePlugin,
 } from '@rafters/design-tokens';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   isCarryableMotionValue,
   regenerateMotionNamespace,
 } from '../../src/utils/motion-rebuild.js';
+import { setAgentMode } from '../../src/utils/ui.js';
 import { cleanupFixture, createFixture } from '../fixtures/projects.js';
 import {
   CARRIED_EASING,
@@ -106,8 +108,24 @@ describe('regenerateMotionNamespace: one duration and easing set (#2746)', () =>
     expect(() => regenerateMotionNamespace(tokensDir(projectDir), PLUGINS)).not.toThrow();
   });
 
-  it('drops a retired duration name and its override; the rafters-* leaf is regenerated', () => {
-    regenerateMotionNamespace(tokensDir(projectDir), PLUGINS);
+  it('moves an override stored on a retired name onto its rafters-* twin', () => {
+    setAgentMode(true);
+    const logged = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let events: string[] = [];
+    try {
+      regenerateMotionNamespace(tokensDir(projectDir), PLUGINS);
+      // Read before restoring: mockRestore clears the calls.
+      events = logged.mock.calls.map(([line]) => String(line));
+    } finally {
+      logged.mockRestore();
+      setAgentMode(false);
+    }
+    expect(
+      events.some(
+        (line) =>
+          line.includes('motion:override-carried') && line.includes('"rafters-duration-fast"'),
+      ),
+    ).toBe(true);
 
     const rebuilt = readNamespaceTokens(projectDir, 'motion');
     expect(
@@ -116,11 +134,48 @@ describe('regenerateMotionNamespace: one duration and easing set (#2746)', () =>
     expect(findToken(rebuilt, RETIRED_DURATION.name)).toBeUndefined();
 
     const leaf = findToken(rebuilt, 'rafters-duration-fast');
-    const generated = generateNamespaces(['motion']).allTokens.find(
-      (t) => t.name === 'rafters-duration-fast',
+    expect(leaf?.value).toBe(RETIRED_DURATION.value);
+    expect(leaf?.userOverride).toEqual(RETIRED_DURATION.userOverride);
+  });
+
+  it('fails before any write when a retired override and its twin disagree', () => {
+    const file = join(tokensDir(projectDir), 'motion.rafters.json');
+    const stored = JSON.parse(readFileSync(file, 'utf8')) as { tokens: unknown[] };
+    stored.tokens.push({
+      name: 'rafters-duration-fast',
+      value: '180ms',
+      category: 'motion',
+      namespace: 'motion',
+      userOverride: {
+        previousValue: '150ms',
+        reason: 'A second, different decision',
+        kind: 'designer',
+      },
+    });
+    writeFileSync(file, `${JSON.stringify(stored, null, 2)}\n`, 'utf8');
+    const before = readFileSync(file, 'utf8');
+
+    expect(() => regenerateMotionNamespace(tokensDir(projectDir), PLUGINS)).toThrowError(
+      /"motion-duration-fast".*"rafters-duration-fast"/,
     );
-    expect(leaf?.value).toBe(generated?.value);
-    expect(leaf?.userOverride).toBeNull();
+    expect(readFileSync(file, 'utf8')).toBe(before);
+  });
+
+  it('accepts a retired override whose twin holds the same value', () => {
+    const file = join(tokensDir(projectDir), 'motion.rafters.json');
+    const stored = JSON.parse(readFileSync(file, 'utf8')) as { tokens: unknown[] };
+    stored.tokens.push({
+      name: 'rafters-duration-fast',
+      value: RETIRED_DURATION.value,
+      category: 'motion',
+      namespace: 'motion',
+      userOverride: RETIRED_DURATION.userOverride,
+    });
+    writeFileSync(file, `${JSON.stringify(stored, null, 2)}\n`, 'utf8');
+
+    expect(() => regenerateMotionNamespace(tokensDir(projectDir), PLUGINS)).not.toThrow();
+    const leaf = findToken(readNamespaceTokens(projectDir, 'motion'), 'rafters-duration-fast');
+    expect(leaf?.value).toBe(RETIRED_DURATION.value);
   });
 
   it('carries an override stored on a rafters-* leaf', () => {

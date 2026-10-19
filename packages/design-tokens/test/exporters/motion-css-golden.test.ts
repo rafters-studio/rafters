@@ -160,7 +160,7 @@ describe('motion CSS: golden emission', () => {
 
   it('never references a custom property the sheet does not declare', () => {
     // Reflection 019fb063, promoted from prose to an assertion. `--animate-scale-out`
-    // referenced `--motion-duration-fast`, which NOTHING declares in either emission
+    // referenced a duration property that NOTHING declared in either emission
     // path: `animation: scale-out  ;` parses, resolves to a zero duration, and the
     // animation silently never runs. That is why presence had no exit frames to hold.
     // Reference-plus-declaration, both read off the same emitted sheet. Scoped to

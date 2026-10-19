@@ -147,14 +147,63 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
 }
 
 /**
+ * The word each leaf namespace was spelled with before #2746 gave duration and
+ * easing a single token set. A stored token named `motion-<word>-<member>` is
+ * the retired twin of the `rafters-<namespace>-<member>` leaf; the values share
+ * a format (`"150ms"`, a curve's CSS string), so an override moves across as is.
+ */
+const RETIRED_TWIN_WORD = { duration: 'duration', ease: 'easing' } as const;
+
+/** The `rafters-*` leaf a retired duration or easing name maps to, or null. */
+function leafForRetiredName(name: string): string | null {
+  if (name === 'motion-duration-base') return null;
+  for (const [namespace, word] of Object.entries(RETIRED_TWIN_WORD)) {
+    const prefix = `motion-${word}-`;
+    if (name.startsWith(prefix)) return `rafters-${namespace}-${name.slice(prefix.length)}`;
+  }
+  return null;
+}
+
+/**
+ * Move each override stored on a retired name onto its `rafters-*` twin.
+ *
+ * A stored retired token without an override is not in the map at all, so it is
+ * simply not regenerated. A retired override whose twin carries a DIFFERENT
+ * override is two designer decisions for one value; picking one silently would
+ * discard the other, so it is an error naming both, raised before anything is
+ * written.
+ */
+function renameRetiredOverrides(
+  carried: Map<string, CarriedMotionOverride>,
+): Map<string, CarriedMotionOverride> {
+  const renamed = new Map<string, CarriedMotionOverride>();
+  for (const [name, override] of carried) {
+    if (leafForRetiredName(name) === null) renamed.set(name, override);
+  }
+  for (const [name, override] of carried) {
+    const leaf = leafForRetiredName(name);
+    if (leaf === null) continue;
+    const twin = renamed.get(leaf);
+    if (twin && JSON.stringify(twin.value) !== JSON.stringify(override.value)) {
+      throw new Error(
+        `Stored motion overrides conflict: "${name}" holds ${JSON.stringify(override.value)} and its replacement "${leaf}" holds ${JSON.stringify(twin.value)}. ` +
+          `Keep one: remove the override from either token in .rafters/tokens/motion.rafters.json, then run the command again.`,
+      );
+    }
+    if (!twin) renamed.set(leaf, override);
+  }
+  return renamed;
+}
+
+/**
  * Rewrite `.rafters/tokens/motion.rafters.json` from the motion generator.
  *
  * Motion is system-owned end to end -- cells, easings, durations and the five
  * namespaces all come out of the motion matrix, and nobody hand-authors one.
  * A file written by an older rafters therefore holds tokens the current
  * generator no longer emits: 0.2.3 cells keyed on `durationTier` instead of
- * `duration.kind`, duration and easing names other than the `rafters-duration-*`
- * and `rafters-ease-*` leaves, which are retired. Reloading those
+ * `duration.kind`, and the duration and easing names retired in #2746 in favour
+ * of the `rafters-duration-*` and `rafters-ease-*` leaves. Reloading those
  * fails either TokenSchema validation or the Tailwind exporter, which is what
  * made `--rebuild` and post-install regen unusable on every pre-0.3.0
  * project (#2208).
@@ -169,7 +218,10 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
  * could no longer produce drops BOTH halves: what is left is the regenerated
  * token exactly as the generator emitted it, `userOverride: null`, rather than
  * a token asserting a decision over a shape that no longer exists. The drop is
- * logged, because a discarded designer decision is not a thing to do silently.
+ * logged, because a discarded designer decision is not a thing to do silently,
+ * and so is every override that is carried. An override stored on a retired
+ * duration or easing name is carried onto its `rafters-*` twin first (see
+ * {@link renameRetiredOverrides}), which throws before any write on a conflict.
  *
  * Writing before the registry load is what lets the reload see the regenerated
  * namespace with no further surgery.
@@ -177,7 +229,9 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
  * Callers must check {@link hasStoredTokens} first.
  */
 export function regenerateMotionNamespace(tokensDir: string, plugins: readonly Plugin[]): void {
-  const carried = readStoredMotionOverrides(join(tokensDir, 'motion.rafters.json'));
+  const carried = renameRetiredOverrides(
+    readStoredMotionOverrides(join(tokensDir, 'motion.rafters.json')),
+  );
 
   const tokens = generateNamespaces(['motion']).allTokens.map((token) => {
     const override = carried.get(token.name);
@@ -190,6 +244,11 @@ export function regenerateMotionNamespace(tokensDir: string, plugins: readonly P
       });
       return token;
     }
+    log({
+      event: 'motion:override-carried',
+      token: token.name,
+      message: `Stored override on "${token.name}" is carried onto the regenerated token.`,
+    });
     return { ...token, ...override };
   });
 
