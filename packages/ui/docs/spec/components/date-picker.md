@@ -2,17 +2,17 @@
 
 Status: PORTED (#2398). A calendar in an anchored popup: a trigger opens it,
 grid navigation selects a date, and the selected date submits with its form.
-Ships React + Web Component + Astro.
+Ships React + Astro.
 
 Files (`src/components/date-picker/`):
 
 ```
 date-picker.behavior.ts   date-picker.classes.ts
-date-picker.tsx           date-picker.element.ts   date-picker.astro
+date-picker.tsx           date-picker.astro
 ```
 
 Tests mirror into `test/components/date-picker/`: a pure behavior test, a
-classes parity test, and `.spec` + `.a11y` files for each of React, WC and
+classes parity test, and `.spec` + `.a11y` files for each of React and
 Astro.
 
 ## Composition
@@ -36,8 +36,7 @@ into the score:
 - React renders `<Calendar>` controlled by the picker's effective value
   (`selected={fromSelection(value)}`); `onSelect` feeds the glue's `commit`.
   One source of truth.
-- WC and Astro nest calendar's own performance (`<rafters-calendar>`,
-  `calendar.astro`), and `bindCalendar` drives the grid. Each activation
+- Astro nests calendar's own performance (`calendar.astro`), and `bindCalendar` drives the grid. Each activation
   reaches the picker as the `calendarselect` event; the picker computes the
   next selection with calendar's `nextSelection` and commits it. The calendar's
   cell and the picker's cell are seeded from the same serialized string and
@@ -76,7 +75,7 @@ containment (anything inside the popup is `content`), then asks the keymap.
 | form-value | yes | the hidden mirror input (`formValueAttrs`): the trigger is a button, not a form field |
 | keyboard-handler | via calendar | calendar composes it for grid navigation; the picker adds no key handling of its own beyond Escape |
 | escape-keydown | no | Escape rides the score keymap on the content, as dialog and popover do |
-| portal | no | the popup lives in light DOM, present but `inert` while closed, so all three performances share one bind |
+| portal | no | the popup lives in light DOM, present but `inert` while closed, so both performances share one bind |
 | createDisclosure / createSelectionGroup | no | cell-owning primitives do not compose; the open axis is the `disclosable` slice inside popover's score |
 
 ## Config, state, actions
@@ -116,7 +115,7 @@ transition) and closes the popup when the selection is complete: a single date,
 or a range with both ends. A partial range keeps the popup open for the second
 click. The disabled gate refuses `open` and `commit`, never `close`.
 
-Pure helpers shared by all three performances: `formatValue` (the trigger
+Pure helpers shared by both performances: `formatValue` (the trigger
 label), `serializeValue` (the form value), `isComplete`, `isEmpty`, and
 `toSelection` / `fromSelection` / `selectionProp` (the React `Date` shapes).
 The form value uses calendar's own serialization, `yyyy-mm-dd` or
@@ -147,7 +146,6 @@ Two optional props place decorative icons around the trigger's label, in reading
 | --- | --- | --- |
 | React | `startIcon: ReactNode` | `endIcon: ReactNode` |
 | Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
-| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
 
 ```html
 <button data-part="trigger" class="grid grid-flow-col items-center gap-2 ...">
@@ -176,7 +174,7 @@ Two optional props place decorative icons around the trigger's label, in reading
 - Selecting a complete value closes the popup and returns focus to the
   trigger.
 - Selecting the start of a range keeps the popup open with focus on the grid.
-  Under WC and Astro this is calendar's own contract: `bindCalendar` refocuses
+  Under Astro this is calendar's own contract: `bindCalendar` refocuses
   the chosen day after rebuilding the cells (#2400), so the picker adds nothing.
 
 ## Motion
@@ -206,9 +204,6 @@ Per target:
 
 - React: `<DatePicker mode value defaultValue onValueChange open defaultOpen
   onOpenChange name placeholder disabled formatDate calendarProps />`.
-- WC: `<rafters-date-picker mode value name placeholder disabled default-open
-  today default-month from-date to-date week-starts-on show-outside-days
-  fixed-weeks>`. Calendar attributes forward to the nested `<rafters-calendar>`.
 - Astro: `<DatePicker id mode value name placeholder disabled defaultMonth
   fromDate toDate showOutsideDays fixedWeeks weekStartsOn today />`, with
   `value` serialized as above.
@@ -218,14 +213,14 @@ Per target:
 | Oracle feature | Disposition |
 | --- | --- |
 | `mode` single / range | contract |
-| `value` + `onValueChange` | contract (controlled shadow; `defaultValue` added for the uncontrolled case the WC and Astro targets need) |
+| `value` + `onValueChange` | contract (controlled shadow; `defaultValue` added for the uncontrolled case the Astro target needs) |
 | `placeholder` (default "Pick a date") | contract |
 | `disabled` | contract (native `disabled` + score gate) |
 | trigger shows the formatted date; range shows `from - to`, start alone while partial | contract (`formatValue`) |
 | en-US short date format | contract (`formatDate`) |
 | `formatDate` prop | framework-affordance (React; a function is not serializable) |
 | `formatRange` prop | dropped: `formatDate` formats each end and the ` - ` join is the contract |
-| `calendarProps` passthrough | contract in React; WC and Astro forward the serializable calendar options as attributes/props |
+| `calendarProps` passthrough | contract in React; Astro forwards the serializable calendar options as props |
 | single closes on select; range closes when complete | contract (glue `commit`) |
 | trigger `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`, `data-state` | contract (from popover's score; `aria-controls` open-guarded) |
 | content `role="dialog"` | contract |
@@ -237,7 +232,7 @@ Per target:
 | portal to `document.body` | dropped: the popup lives in light DOM, present and `inert` while closed |
 | calendar glyph in the trigger | contract (the oracle's SVG, `size-4 shrink-0 opacity-50`) |
 | `defaultMonth` falls back to the value, else today | contract (calendar seeds its month from the selection, else today) |
-| content unmounts on close | dropped: present-and-inert keeps the calendar's visible month between openings, identically in all three targets, and lets the exit transition play |
+| content unmounts on close | dropped: present-and-inert keeps the calendar's visible month between openings, identically in both targets, and lets the exit transition play |
 | tailwindcss-animate enter/exit classes | replaced: the content transitions on the generics its matrix rows assign (#2282), no keyframe |
 
 ## Deltas from the oracle
@@ -256,7 +251,7 @@ Per target:
 
 - 1.3.1 / 4.1.2: `aria-haspopup`, `aria-expanded`, `aria-controls` on the
   trigger; `role="dialog"` named by `aria-labelledby`; the grid's own roles.
-  Axe-clean closed and open in all three targets.
+  Axe-clean closed and open in both targets.
 - 2.1.1: fully operable from the keyboard: the trigger, calendar's grid keys,
   Escape.
 - 2.1.2: no keyboard trap; Tab leaves the popup.

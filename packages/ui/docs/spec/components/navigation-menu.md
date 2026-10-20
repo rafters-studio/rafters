@@ -18,8 +18,8 @@ Files (`src/components/navigation-menu/`):
 navigation-menu.classes.ts    navigation-menu.behavior.ts    navigation-menu.tsx
 ```
 
-Tests mirror into `test/components/navigation-menu/`. WC and Astro
-performances not yet written (same debt as button and dialog).
+Tests mirror into `test/components/navigation-menu/`. The Astro
+performance is not yet written (same debt as button and dialog).
 
 ## What the score owns vs what effects own
 
@@ -89,7 +89,6 @@ Two optional props place decorative icons around the label of each trigger and e
 | --- | --- | --- |
 | React | `startIcon: ReactNode` on `NavigationMenuTrigger` and `NavigationMenuLink` | `endIcon: ReactNode` |
 | Astro | slot `<value>:start-icon` for a trigger, `<value>:<link index>:start-icon` for a link | `:end-icon` in place of `:start-icon` |
-| Web Component | child of the trigger or link with `slot="start-icon"` | child with `slot="end-icon"` |
 
 The Astro component is data-driven (`items`), so its slot names carry the item value, and the link index for a link, to say which row the icon belongs to.
 
@@ -115,7 +114,7 @@ Current choice (2026-10-19): a `NavigationMenuLink` that sits directly in a `Nav
 
 - The link class carries the trigger's type role, height and alignment scoped to a link directly in the item: `[li>&]:text-label-medium [li>&]:ts-label-medium [li>&]:h-11 @md:[li>&]:h-10 [li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:px-4 [li>&]:py-2`. Its font-size, font-weight, line-height and height equal the trigger's.
 - A link inside a `NavigationMenuContent` panel is not a direct child of the item, so it keeps its own type and the stacked title-over-description layout.
-- The selector is in the classes, so React, the Web Component and Astro read the same rule.
+- The selector is in the classes, so React and Astro read the same rule.
 - `navigationMenuTriggerStyle()` stays as the shadcn export; a top-level link no longer needs it.
 
 ## Keyboard

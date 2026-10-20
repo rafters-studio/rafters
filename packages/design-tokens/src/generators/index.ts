@@ -9,7 +9,9 @@
  * registry or exporters lives in the CLI's init flow, not here.
  */
 
-import type { ColorValue, Token } from '@rafters/shared';
+import { ColorReferenceSchema, type ColorValue, type Token } from '@rafters/shared';
+import { REGISTRY_PLUGINS } from '../plugins/index.js';
+import { TokenRegistry } from '../registry.js';
 import { generateBreakpointTokens } from './breakpoint.js';
 import { buildFamily, generateColorTokens } from './color.js';
 import {
@@ -40,7 +42,7 @@ import { generateDepthTokens } from './depth.js';
 import { generateFocusTokens } from './focus.js';
 import { generateMotionTokens } from './motion.js';
 import { generateRadiusTokens } from './radius.js';
-import { generateSemanticTokens } from './semantic.js';
+import { generateSemanticTokens, semanticDescription } from './semantic.js';
 import { generateShadowTokens } from './shadow.js';
 import { generateSpacingTokens } from './spacing.js';
 import type { BaseSystemConfig, ResolvedSystemConfig } from './types.js';
@@ -180,6 +182,25 @@ export interface GenerateAllResult {
   };
 }
 
+/**
+ * Replace every bound semantic token's value with the one the registry
+ * computes from its binding, so loading the generated tokens changes no
+ * semantic value. A derived token's description is written from that value.
+ */
+function settleSemanticValues(tokens: readonly Token[]): Token[] {
+  const registry = new TokenRegistry(tokens, REGISTRY_PLUGINS);
+  return tokens.map((token) => {
+    if (token.namespace !== 'semantic' || !token.binding) return token;
+    const value = registry.get(token.name)?.value;
+    if (value === undefined) return token;
+    const ref = ColorReferenceSchema.safeParse(value);
+    if (!ref.success || token.name.endsWith('--dark') || !token.semanticMeaning) {
+      return { ...token, value };
+    }
+    return { ...token, value, description: semanticDescription(token.semanticMeaning, ref.data) };
+  });
+}
+
 export function generateBaseSystem(config: Partial<BaseSystemConfig> = {}): GenerateAllResult {
   const mergedConfig: BaseSystemConfig = {
     ...DEFAULT_SYSTEM_CONFIG,
@@ -198,9 +219,15 @@ export function generateBaseSystem(config: Partial<BaseSystemConfig> = {}): Gene
     allTokens.push(...result.tokens);
   }
 
+  const settled = settleSemanticValues(allTokens);
+  byNamespace.set(
+    'semantic',
+    settled.filter((token) => token.namespace === 'semantic'),
+  );
+
   return {
     byNamespace,
-    allTokens,
+    allTokens: settled,
     metadata: {
       generatedAt: new Date().toISOString(),
       config: resolvedConfig,

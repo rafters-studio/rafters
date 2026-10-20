@@ -10,11 +10,11 @@ Files (`src/components/separator/`):
 
 ```
 separator.classes.ts    separator.behavior.ts    separator.tsx
-separator.element.ts     separator.astro
+separator.astro
 ```
 
 Tests mirror into `test/components/separator/`: behavior (pure), classes,
-and conformance across React, the Web Component, and Astro via the shared
+and conformance across React and Astro via the shared
 harness.
 
 ## Purpose
@@ -26,7 +26,7 @@ Visual divider. A horizontal or vertical rule; decorative by default
 
 - Renders one part, `root`, a `<div>` carrying the composed classes and the
   score's resolved aria projection. There are no children: a rule carries no
-  content, so the Web Component ships no slot.
+  content.
 - `orientation` selects the thin axis: `horizontal` is a 1px-tall full-width
   rule (`h-px w-full`), `vertical` a 1px-wide full-height rule
   (`h-full w-px`). Selection only -- both strings are literals in
@@ -72,23 +72,18 @@ nothing to gate). All three are asserted directly in
 `separator.behavior.test.ts` -- the explicit "nothing happens" contract, per
 the issue's acceptance criteria.
 
-## Framework parity note: the `decorative` attribute/prop split
+## The `decorative` prop
 
 React and Astro expose `decorative` as a plain boolean prop defaulting to
-`true`. The Web Component exposes it as a presence-based attribute, faithful
-to the oracle: ABSENT = decorative;
-PRESENT and not the literal `"false"` = semantic; `decorative="false"` keeps
-it decorative. This attribute/prop asymmetry is standard (an attribute is a
-string, a prop is a boolean) and is asserted in both conformance suites.
+`true`.
 
 ## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
 | --- | --- |
-| `orientation` (`horizontal \| vertical`, all three targets) | contract |
+| `orientation` (`horizontal \| vertical`, both targets) | contract |
 | `decorative` (default true; role="none" vs role="separator" + aria-orientation) | contract -- the earned accessibility semantic, moved verbatim into the score's aria projection |
 | Base classes `shrink-0 bg-border` + orientation map (`h-px w-full` / `h-full w-px`) | contract, ported verbatim from the old separator |
-| WC presence-based `decorative` rule (absent/"false" = decorative; any other present value = semantic) | contract -- preserved as the WC attribute semantic, distinct from the React/Astro boolean prop |
 | `forwardRef<HTMLDivElement>` | contract -- separators are frequently placed by layout wrappers; ref forwarding is load-bearing |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `separator.tsx` as the recorded designer decision |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags | dropped from `separator.tsx` -- the four required tags are the registry's parsed surface; the extras were prose, recoverable from the oracle if a future pass wants them |

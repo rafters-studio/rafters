@@ -11,7 +11,7 @@ Files (`src/components/button-group/`):
 
 ```
 button-group.classes.ts   button-group.behavior.ts   button-group.tsx
-button-group.element.ts    button-group.astro
+button-group.astro
 ```
 
 ## Purpose
@@ -56,7 +56,7 @@ form-associated.
 
 | Part | Element | ARIA | Notes |
 | --- | --- | --- | --- |
-| `root` | `div` (React/Astro) or the WC host | `role="group"` | Projected unconditionally by the score -- `role="group"` is the WAI-ARIA APG pattern for a related control set and is NOT native to `div`, so the score must state it (the alert idiom). `aria-label` rides as a consumer passthrough, never the projection. |
+| `root` | `div` | `role="group"` | Projected unconditionally by the score -- `role="group"` is the WAI-ARIA APG pattern for a related control set and is NOT native to `div`, so the score must state it (the alert idiom). `aria-label` rides as a consumer passthrough, never the projection. |
 
 Child buttons keep their own native semantics and full keyboard accessibility;
 the group adds no roving focus and claims no keys.
@@ -68,17 +68,12 @@ Focus moves between child buttons by their own native tab order; the
 `[&>*:focus-visible]:z-10` rule raises the focused child so the single ring
 clears the overlapping collapsed borders.
 
-## Connected borders across the shadow boundary
+## Connected borders
 
 React and Astro collapse the shared borders with Tailwind arbitrary descendant
 selectors in `button-group.classes.ts` (`[&>*:first-child]:rounded-r-none`,
 `[&>*:not(:first-child)]:-ml-px`, ...), because the buttons are light-DOM
-descendants of the root. The Web Component projects its buttons through a
-`<slot>`; slotted children stay in the light tree, so those descendant
-selectors cannot cross the shadow boundary. The WC therefore encodes the SAME
-behaviour natively as irreducible `::slotted(*)` shadow CSS, keyed by the
-reflected `data-orientation` host attribute -- ported verbatim from the oracle
-element. These rules carry no design tokens, so they live in `static styles`.
+descendants of the root.
 
 ## Oracle dispositions
 
@@ -86,8 +81,7 @@ element. These rules carry no design tokens, so they live in `static styles`.
 | --- | --- |
 | `role="group"` + `aria-label` grouping | contract |
 | `orientation` (horizontal/vertical) + connected-border / focus-stacking classes | contract |
-| WC `::slotted` shadow CSS for connected borders (light-DOM slots) | contract -- ported verbatim as irreducible shadow styles |
-| `size` prop + `ButtonGroupContext` + `useButtonGroupContext` | framework-affordance (React only) -- context does not cross to the WC/Astro slotted light DOM, and the oracle element observed orientation only |
+| `size` prop + `ButtonGroupContext` + `useButtonGroupContext` | framework-affordance (React only) -- context does not cross to the Astro slotted light DOM |
 | `ButtonGroupSize` (`default`/`sm`/`lg`/`icon`) narrow enum | widened -- the context now carries the ported Button's full `ButtonSize` (imported from `button.behavior`), so a published size is always a legal Button size |
 | Button consuming `useButtonGroupContext` | oracle gap, not ported here -- the ORACLE's Button never consumed the hook either, so nothing regresses; the hook is the seam, and wiring Button to read it is a separate, out-of-scope change to a different component |
 | `@semantic-meaning` / `@usage-patterns` prose JSDoc | dropped from the intelligence tags -- the registry parses the four canonical tags (`@cognitive-load` in the new five-dimension format, `@attention-economics`, `@trust-building`, `@accessibility`); usage guidance stays in this doc |

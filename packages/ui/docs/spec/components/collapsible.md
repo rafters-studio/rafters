@@ -7,11 +7,11 @@ Files (`src/components/collapsible/`):
 
 ```
 collapsible.behavior.ts   collapsible.classes.ts   collapsible.tsx
-collapsible.element.ts     collapsible.astro
+collapsible.astro
 ```
 
 Tests mirror into `test/components/collapsible/`: behavior (pure), classes
-(parity), and conformance across React, WC, and Astro on the shared harness.
+(parity), and conformance across React and Astro on the shared harness.
 
 ## Composition
 
@@ -70,7 +70,7 @@ so an initially-closed collapsible never leaks a dangling reference. Native
 - `keymap`: none. The native `<button>` fulfils Enter/Space as click; a disabled
   button suppresses both, and `canDispatch` is the belt-and-suspenders.
 - Effects: none. Presence is a pure DOM concern -- the content is
-  present-but-hidden in the WC/Astro bind (toggled on the open axis) and mounts
+  present-but-hidden in the Astro bind (toggled on the open axis) and mounts
   on open in React (`forceMount` keeps it mounted, hidden, while closed).
 
 ## Oracle dispositions (boundary 9)
@@ -98,8 +98,8 @@ transition. A keyframed height animation waits on a real
 ## WCAG 2.1 AA obligations
 
 - 1.3.1/4.1.2: the trigger's `aria-expanded` and (while open) `aria-controls`
-  are wired to the content's real DOM id, asserted by the harness across all
-  three performances.
+  are wired to the content's real DOM id, asserted by the harness across both
+  performances.
 - 2.1.1: the region is fully operable from the keyboard via the native button
   (Enter/Space); no pointer-only path.
 - 2.4.7: a token focus ring on the trigger (`focus-visible:ring-ring` with a

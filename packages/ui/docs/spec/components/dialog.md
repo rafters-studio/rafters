@@ -8,7 +8,7 @@ Status: DRAFT. Second test article. Validates composition (Spec 02).
 > DIRECTLY: a `startDialogModalEffects({ content, getTrigger, onDismiss })`
 > function in `dialog.behavior.ts` starts `createFocusTrap` + `preventBodyScroll`
 > + `onPointerDownOutside` on open and tears them down on close, called by both
-> `bindDialog` (WC/Astro) and a React `useEffect`. dialog is the OVERLAY reference
+> `bindDialog` (Astro) and a React `useEffect`. dialog is the OVERLAY reference
 > for this pattern -- see `05-authoring.md`. Do not reintroduce an effect list.
 
 Files (`src/components/dialog/`):
@@ -17,7 +17,7 @@ Files (`src/components/dialog/`):
 dialog.classes.ts    dialog.behavior.ts    dialog.tsx
 ```
 
-Tests mirror into `test/components/dialog/`. WC and Astro not yet written.
+Tests mirror into `test/components/dialog/`. Astro not yet written.
 
 ## Composition
 

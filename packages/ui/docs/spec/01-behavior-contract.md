@@ -54,7 +54,7 @@ export interface PartDecl {
 }
 
 /** SSR-stable element ids, supplied by the framework binding
- *  (React useId, WC instance counter). Behavior never generates ids.
+ *  (e.g. React useId). Behavior never generates ids.
  *  Empty-id sentinel (ruled 2026-07-08): a binding passes '' for a part it
  *  did not render. Projections emit `undefined` for any aria reference to an
  *  empty id -- a dangling aria-controls is an axe violation; absence is

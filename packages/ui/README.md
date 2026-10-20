@@ -11,8 +11,7 @@ functions and data, concrete enough to be unambiguous, abstract enough to be
 interpreted.
 
 Framework files are **performances** of the score. React plays it with hooks
-and JSX. A Web Component plays it with shadow DOM and attributes. Astro plays
-it once, at build time, then puts the instrument down. Same score, different
+and JSX. Astro plays it once, at build time, then puts the instrument down. Same score, different
 instruments; the score does not care which orchestra showed up.
 
 `classes.ts` is **decoration** -- the presentation layer, selecting literal
@@ -43,7 +42,6 @@ target.
 button.behavior.ts    # THE component (the score) — state, actions, aria, keymap, effects
 button.classes.ts     # decoration — literal token-class selection from config + state
 button.tsx            # React performance
-button.element.ts     # Web Component performance
 button.astro          # Astro performance
 ```
 
@@ -56,9 +54,9 @@ Framework files render the declared parts and map DOM events to actions --
 nothing else. There is no shared per-framework adapter: each React controller
 composes the substrate directly -- `createBehavior` owns the memory cell,
 `useMemory` (useSyncExternalStore) subscribes the component to it, and
-`useBehaviorEffects` runs the effects runner. The WC and Astro performances
-import the same `bindX` DOM-native client from the behavior file, so one
-binding drives all three. Any decision in a framework file is a bug.
+`useBehaviorEffects` runs the effects runner. The Astro performance imports
+the `bindX` DOM-native client from the behavior file. Any decision in a
+framework file is a bug.
 
 ## Config vs state
 

@@ -11,11 +11,11 @@ Files (`src/components/context-menu/`):
 
 ```
 context-menu.classes.ts   context-menu.behavior.ts
-context-menu.tsx          context-menu.element.ts   context-menu.astro
+context-menu.tsx          context-menu.astro
 ```
 
 Tests mirror into `test/components/context-menu/`: behavior (pure), classes,
-and React + WC + Astro conformance via the shared harness.
+and React + Astro conformance via the shared harness.
 
 ## Composition
 
@@ -34,7 +34,7 @@ outside-click          onPointerDownOutside dismissal
 
 `startContextMenuEffects({ content, loop, onDismiss })` composes the
 roving/typeahead/dismiss trio and returns one cleanup; both `bindContextMenu`
-(WC/Astro) and a React `useEffect` call it on the open transition and tear it
+(Astro) and a React `useEffect` call it on the open transition and tear it
 down on close. `positionContextMenuContent(content, point, config)` runs the
 collision math once, shared by every client so placement lives in ONE place.
 
@@ -91,9 +91,9 @@ a legitimate move (the menu follows the cursor).
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | trigger | always | `data-state`; no role (a right-click region has no keyboard equivalent, so an `aria-haspopup` on a non-interactive host would mislead AT). `tabindex="-1"` so focus can be restored here on close |
-| content | while open (React unmounts; WC/Astro `hidden`-toggle) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
+| content | while open (React unmounts; Astro `hidden`-toggle) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `hidden` (absent while open) |
 | sub-trigger | always (a menuitem of the parent) | `role="menuitem"`, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` (only while the submenu is open), `data-state` |
-| sub-content | always (WC/Astro); while open in React (`usePresence` unmounts once the close transition finishes) -- never `hidden` (#2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `data-open-source` (`pointer` or `discrete` while open, reflecting the input that opened it; absent while closed or on a controlled/never-dispatched open), `aria-hidden` (while closed) |
+| sub-content | always (Astro); while open in React (`usePresence` unmounts once the close transition finishes) -- never `hidden` (#2152: a hidden node cannot transition, and the CSS reveal must run once the menu is open) | `role="menu"`, `aria-orientation="vertical"`, `data-state`, `data-open-source` (`pointer` or `discrete` while open, reflecting the input that opened it; absent while closed or on a controlled/never-dispatched open), `aria-hidden` (while closed) |
 
 Items are `menuitem` / `menuitemcheckbox` / `menuitemradio` in the decorators;
 they carry no per-instance sibling ids, so the score declares no `instanceAria`
@@ -108,7 +108,6 @@ One optional prop places a decorative icon at the start of an item: `startIcon`.
 | --- | --- |
 | React | `startIcon: ReactNode` on `Item`, `CheckboxItem`, `RadioItem`, `SubTrigger` |
 | Astro | slot `start-icon-{index}` for the item or sub-trigger at that index; `start-icon-{index}-{n}` for the n-th item of that submenu, and so on down |
-| Web Component | child with `slot="start-icon"` inside the item |
 
 ```html
 <div role="menuitem">
@@ -121,7 +120,7 @@ One optional prop places a decorative icon at the start of an item: `startIcon`.
 - `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
 - The content and the submenu panel are grids on `grid-cols-menu-row` (indicator, icon, label, end). Each item, group and Astro submenu wrapper is `grid-cols-subgrid col-span-full`, with the indicator in column 1, the icon in column 2, the label (`data-part="label"`) in column 3, and the shortcut or chevron in column 4. Labels line up between items whether or not they carry an indicator or an icon, and the row mirrors on a `dir="rtl"` page. No physical direction class remains in `context-menu.classes.ts`.
 - Spacing is a margin on the cell with something after it (`me-2` on the indicator and the icon), not a gap, so an empty track leaves no stray space.
-- In React, a `ContextMenu.Shortcut` child stays outside the label part and takes the end column. In the Web Component the host wraps an item's loose text in the label part, and a `kbd` or svg child stays after it.
+- In React, a `ContextMenu.Shortcut` child stays outside the label part and takes the end column.
 - Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 
 ## Keyboard and effects
@@ -171,7 +170,7 @@ does not yet.
 | `asChild` on Trigger | framework affordance (React) |
 | CheckboxItem/RadioItem check + dot indicator SVGs | framework affordance (React markup) |
 | `onSelect` cancelable event, `onCheckedChange`, radio `onValueChange` | contract (consumer callbacks at the React boundary) |
-| Sub / SubTrigger / SubContent (nested submenu, hover-intent) | contract -- its own `contextSubMenu` score, composed from the same primitives (roving/typeahead + collision-detector anchored to the sub-trigger). The oracle's `setTimeout` hover-open is GONE (#2152): hover/focus dispatch open/close immediately and the hover-intent delay is a CSS `transition-delay` on `subContent`, the same shape #2148 gave tooltip/hover-card. Bound in all three frameworks; supports arbitrary nesting |
+| Sub / SubTrigger / SubContent (nested submenu, hover-intent) | contract -- its own `contextSubMenu` score, composed from the same primitives (roving/typeahead + collision-detector anchored to the sub-trigger). The oracle's `setTimeout` hover-open is GONE (#2152): hover/focus dispatch open/close immediately and the hover-intent delay is a CSS `transition-delay` on `subContent`, the same shape #2148 gave tooltip/hover-card. Bound in both frameworks; supports arbitrary nesting |
 | `alignOffset` prop on Content | dropped -- cursor placement uses side='bottom' align='start' at the point; the offset knob had no wave-4 consumer and no oracle test exercised a non-zero value |
 | raw `duration-100` transitions and `animate-in`/`zoom-*` utilities | defect-do-not-port -- replaced by the semantic motion tokens (Spec 05 prohibits raw numeric durations) |
 
@@ -181,7 +180,7 @@ does not yet.
    right-click region when the menu closes, without adding it to the Tab order.
 2. Positioning via `left`/`top` rather than the oracle's `left`/`top` on a React
    state object -- the point now lives in the score, read by every client.
-3. Content presence: React unmounts the closed menu; WC/Astro keep it in light
+3. Content presence: React unmounts the closed menu; Astro keeps it in light
    DOM and toggle `hidden` (the bind reads it for the composed primitives) --
    the same split dialog uses.
 
@@ -194,4 +193,4 @@ does not yet.
 - 2.4.3 Focus Order: focus moves into the menu on open (first enabled item) and
   restores to the trigger on close.
 - 4.1.2 name/role/value: the menu carries an accessible name (consumer
-  `aria-label` in React/WC, the trigger label in the Astro SSR harness).
+  `aria-label` in React, the trigger label in the Astro SSR harness).

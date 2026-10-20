@@ -8,11 +8,11 @@ Files (`src/components/input-group/`):
 
 ```
 input-group.classes.ts   input-group.behavior.ts   input-group.tsx
-input-group.element.ts   input-group.astro
+input-group.astro
 ```
 
-Tests mirror into `test/components/input-group/`. React, Web Component, and
-Astro are all conformance-verified against the shared harness.
+Tests mirror into `test/components/input-group/`. React and
+Astro are both conformance-verified against the shared harness.
 
 ## The archetype question
 
@@ -83,8 +83,8 @@ root draws the border. The contained control renders no border of its own to
 turn destructive, so the destructive treatment has to land on the box.
 
 **`data-position` is projected, not hand-written.** Each affix's side comes out
-of the score, so React, the Web Component, and Astro are asserted against one
-source rather than three markup conventions.
+of the score, so React and Astro are asserted against one
+source rather than two markup conventions.
 
 ## The disabled rule
 
@@ -135,13 +135,11 @@ Durations and easing come from tokens; the score declares no motion.
 | --- | --- |
 | `InputGroup` / `InputGroupAddon` / `InputGroupInput` React surface | contract -- same names, same props (`size`, `disabled`, `position`, `variant`), same composition order; a drop-in |
 | `size` vocabulary (`sm`/`default`/`lg`) and unknown-value fallback | contract -- carried into the score, with `parseInputGroupSize` for the attribute path |
-| addon `position` (`start`/`end`) and its divider side | contract -- promoted from a class-only concern to two declared parts, so the harness asserts it in all three frameworks |
+| addon `position` (`start`/`end`) and its divider side | contract -- promoted from a class-only concern to two declared parts, so the harness asserts it in both frameworks |
 | addon `variant` (`default`/`filled`) | contract -- decoration only, so it stays in `input-group.classes.ts` and never reaches the score |
-| focus-within ring around the whole assembly | contract -- an ordinary class on the light-DOM root instead of a `:host(:focus-within)` rule |
+| focus-within ring around the whole assembly | contract -- an ordinary class on the root |
 | `disabled` propagation to contained controls | contract, CORRECTED -- see below |
 | unconditional `child.disabled = disabled` | defect-do-not-port -- the oracle assigned `false` as readily as `true`, so an ENABLED group silently re-enabled a control the author had disabled individually. `isControlDisabled` makes propagation an OR |
-| `<rafters-input-group-addon>` custom element | dropped -- it existed so an affix could own a shadow root. In the light-DOM model an affix is a `<div data-part="addonStart">`; a second element with a lifecycle buys nothing |
-| shadow DOM, `::slotted()` normalisation, `:host` display shims, the rebuilt inner `.group` wrapper | dropped -- all were shadow-boundary workarounds. A light-DOM enhancer needs none of them (the same trade `field` made) |
 | `bg-background` on the group | replaced -- `bg-transparent`, so the control inherits the surface it sits on (fill-never-background) |
 | `text-sm` on the small size | replaced -- `text-body-small`, the typography role token |
 | `form-value` primitive (issue: "add") | not ported -- it builds a hidden mirror input for controls that are NOT native form fields. The contained `<input>` is form-associated already, so a mirror would submit the field twice |
@@ -150,23 +148,9 @@ Durations and easing come from tokens; the score declares no motion.
 
 ## Deltas from the oracle
 
-1. **Light DOM, not shadow DOM.** The Web Component enhances author markup
-   rather than rendering a wrapper into a shadow root. This is what lets the
-   affixes be plain elements and the ring be a plain class.
-
-   The cost, stated plainly because it is the likeliest reviewer question: the
-   bind applies the ARIA/state projection and the disabled propagation, but it
-   does NOT paint classes. A hand-authored `<rafters-input-group>` is
-   behaviorally correct and visually unstyled unless the author also copies the
-   class strings (which is what `input-group.astro` server-renders, and what
-   the React performance paints). The oracle's shadow element DID apply its own
-   classes, so this is a real trade, not a wash: it buys the light-DOM
-   affixes, the plain `focus-within` ring, and one element instead of two. It
-   is the same trade `input` and `field` made -- decoration is the
-   performance's job, not the client's -- so the family stays consistent.
-2. **Fill is `bg-transparent`.** The group inherits the surface it sits on.
-3. **The propagation OR** (above) -- the one behavioral correction.
-4. **Bind-once.** Like input/field/radio-group, the client wires server/author
+1. **Fill is `bg-transparent`.** The group inherits the surface it sits on.
+2. **The propagation OR** (above) -- the one behavioral correction.
+3. **Bind-once.** Like input/field/radio-group, the client wires server/author
    markup a single time. Re-toggling `disabled` or `data-invalid` at runtime is
    React's declarative affordance, not a lifecycle this client re-observes.
 
@@ -174,7 +158,7 @@ Durations and easing come from tokens; the score declares no motion.
 
 - 1.3.1/4.1.2: `aria-invalid` is projected onto the CONTROL, where assistive
   tech expects validity, never onto the decorative wrapper. Asserted against
-  real DOM in all three conformance suites.
+  real DOM in both conformance suites.
 - 2.4.7 (focus visible): the ring is `focus-within` on the root, so focus is
   visible wherever it lands inside the box -- including on an affix button,
   which a control-only ring would leave unringed.

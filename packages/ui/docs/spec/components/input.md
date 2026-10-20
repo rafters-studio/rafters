@@ -9,10 +9,10 @@ Files (`src/components/input/`):
 
 ```
 input.classes.ts    input.behavior.ts    input.tsx
-input.element.ts     input.astro
+input.astro
 ```
 
-Tests mirror into `test/components/input/`. React and WC are
+Tests mirror into `test/components/input/`. React is
 conformance-verified against the shared harness; Astro ships (`input.astro`)
 but has no test harness yet (mirrors dialog/navigation-menu).
 
@@ -62,7 +62,7 @@ for an edit the field would not have accepted.
 | error | consumer renders | referenced by `aria-describedby`; carries no aria of its own (like dialog's title/description -- an id target only) |
 
 The `error` id is sourced deterministically, NOT from a mounted child: React
-takes it from the `errorId` prop, the WC/Astro bind reads
+takes it from the `errorId` prop, the Astro bind reads
 `getPart('error')?.id`. Because the id never comes from a rendered child,
 React needs no presence tracking (no `useState`/`setPart`) -- the "track
 presence for unguarded cross-ref parts" note (dialog) does not apply here.
@@ -80,7 +80,6 @@ Two optional props place decorative icons around the field, in reading order (th
 | --- | --- | --- |
 | React | `startIcon: ReactNode` | `endIcon: ReactNode` |
 | Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
-| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
 
 ```html
 <div data-part="row" class="grid grid-flow-col grid-cols-affix-both items-center gap-2 ...">
@@ -100,10 +99,9 @@ Two optional props place decorative icons around the field, in reading order (th
 - The row is a grid (`grid grid-flow-col items-center gap-2`). The icons and the field are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class. The track list is a named utility, one per combination (`grid-cols-affix-start`, `grid-cols-affix-end`, `grid-cols-affix-both`), because `classy` skips arbitrary track lists and an absent icon must leave no empty track and no stray gap.
 - Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
 - Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
-- In the Web Component the bind wraps the slotted children and seats the field in the row, and sets the field's class to the in-row set.
 - An icon that carries meaning on its own (an icon-only control, a status with no text) needs an accessible name, not `aria-hidden`; it is not a `startIcon`.
 
-## The three gotchas
+## The two gotchas
 
 1. **Controlled callback compares effective-before vs INTRINSIC-after.**
    `request` reads `effectiveValue(before)` then, after dispatch, the raw
@@ -122,9 +120,6 @@ Two optional props place decorative icons around the field, in reading order (th
    what makes this gotcha load-bearing here. (React writes the resolved
    strings directly as JSX attributes, so it is unaffected -- the coercion
    only exists on the DOM-native path.)
-3. **WC bind deferred one microtask.** `connectedCallback` can fire before the
-   light-DOM `<input>` is parsed, so `input.element.ts` binds in
-   `queueMicrotask`.
 
 ## Keyboard, effects, and value-sync
 
@@ -161,8 +156,8 @@ controller to port. The primitives the matrix once planned are dispositioned:
 1. Fill is `bg-transparent`, never `bg-background`: the control inherits the
    surface it sits on (the fill-never-background rule).
 2. Validity styling keys off the projected `aria-invalid`
-   (`aria-invalid:border-destructive`), so light-DOM markup, the WC, and React
-   all pick up the destructive border with no extra class.
+   (`aria-invalid:border-destructive`), so the Astro markup and React
+   both pick up the destructive border with no extra class.
 
 ## WCAG 2.1 AA obligations
 
