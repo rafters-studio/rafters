@@ -126,14 +126,13 @@ function getCompositesPath(): string {
 /**
  * Component file extensions to discover.
  * The .tsx file is the primary; others are framework-specific variants.
- * .element.ts is the Web Component target, parallel to .tsx/.astro/.vue/.svelte.
  */
-const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
+const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
 
 /**
  * Shared auxiliary file suffixes bundled with components.
  * `.behavior.ts` is the score -- the single source of truth every framework
- * variant (.tsx, .element.ts, .astro) imports; without it the served component
+ * variant (.tsx, .astro) imports; without it the served component
  * is non-functional. The rest provide class maps, types, constants, or
  * shadow-DOM styles shared across variants.
  */

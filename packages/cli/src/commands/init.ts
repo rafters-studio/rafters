@@ -77,7 +77,7 @@ interface InitOptions {
   /**
    * Override detected framework. When set, skips the auto-detect + prompt
    * fallback. Valid values: next | vite | remix | react-router | astro |
-   * wc | vanilla.
+   * vanilla.
    */
   framework?: string;
   /**

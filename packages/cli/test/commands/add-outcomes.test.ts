@@ -7,31 +7,32 @@
  * defect hid behind: a blanket success line over a tree where an item never
  * landed.
  *
- * The failure here is genuine, not injected. With `componentTarget: 'wc'` an
- * item whose only file is `.vue` has no `.element.ts` and no React fallback
- * (`wc` is not a REACT_FALLBACK_TARGET), so `installItem` throws
- * "No .element.ts version available" and the outer catch records it as failed.
+ * The failure here is genuine, not injected. With `componentTarget: 'react'`
+ * an item whose only file is a shared `.classes.ts` has no component file, so
+ * `installItem` throws "No .tsx version available" and the outer catch records
+ * it as failed.
  */
 
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { add } from '../../src/commands/add.js';
+import { withErrorHandler } from '../../src/utils/ui.js';
 import type { RaftersConfig } from '../../src/commands/init.js';
 import type { RegistryItem } from '../../src/registry/types.js';
 
 const PROJECT_DIR = join(import.meta.dirname, '.tmp-add-outcomes');
 const REGISTRY_URL = 'https://registry.test';
 
-/** Written: has the .element.ts file a wc project needs. */
+/** Written: has the .tsx file a react project needs. */
 const buttonItem: RegistryItem = {
   name: 'button',
   type: 'ui',
   primitives: [],
   files: [
     {
-      path: 'components/ui/button.element.ts',
-      content: 'export class ButtonElement extends HTMLElement {}',
+      path: 'components/ui/button.tsx',
+      content: 'export function Button() { return null; }',
       dependencies: [],
       devDependencies: [],
     },
@@ -40,15 +41,15 @@ const buttonItem: RegistryItem = {
   composites: [],
 };
 
-/** Failed: Vue-only, so a wc project has nothing installable and no fallback. */
+/** Failed: only a shared file, so a react project has no component file to install. */
 const vueOnlyItem: RegistryItem = {
   name: 'z',
   type: 'ui',
   primitives: [],
   files: [
     {
-      path: 'components/ui/z.vue',
-      content: '<template><div /></template>',
+      path: 'components/ui/z.classes.ts',
+      content: 'export const zClasses = {};',
       dependencies: [],
       devDependencies: [],
     },
@@ -60,7 +61,7 @@ const vueOnlyItem: RegistryItem = {
 /**
  * Skipped: a primitive, tracked in config and present on disk. Primitives
  * bypass framework filtering entirely, so the tracked-and-on-disk guard fires
- * for it under the wc target where a .tsx-only ui item would instead fail.
+ * for it, where a ui item would go through framework selection.
  */
 const classyItem: RegistryItem = {
   name: 'classy',
@@ -102,10 +103,10 @@ function stubRegistry(): void {
   });
 }
 
-function wcConfig(): RaftersConfig {
+function reactConfig(): RaftersConfig {
   return {
     framework: 'vite',
-    componentTarget: 'wc',
+    componentTarget: 'react',
     registryUrl: REGISTRY_URL,
     componentsPath: 'components/ui',
     primitivesPath: 'lib/primitives',
@@ -136,13 +137,14 @@ function eventsFrom(logSpy: ReturnType<typeof vi.spyOn>): Emitted[] {
 
 describe('rafters add mixed outcomes', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     await rm(PROJECT_DIR, { recursive: true, force: true });
     await mkdir(PROJECT_DIR, { recursive: true });
     vi.spyOn(process, 'cwd').mockReturnValue(PROJECT_DIR);
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     stubRegistry();
     process.exitCode = undefined;
   });
@@ -158,7 +160,7 @@ describe('rafters add mixed outcomes', () => {
     await mkdir(join(PROJECT_DIR, '.rafters'), { recursive: true });
     await writeFile(
       join(PROJECT_DIR, '.rafters', 'config.rafters.json'),
-      JSON.stringify(wcConfig(), null, 2),
+      JSON.stringify(reactConfig(), null, 2),
     );
     // classy is tracked AND on disk -- the skip case.
     await mkdir(join(PROJECT_DIR, 'lib/primitives'), { recursive: true });
@@ -187,19 +189,21 @@ describe('rafters add mixed outcomes', () => {
     const warning = eventsFrom(logSpy).find(
       (event) => event.event === 'add:warning' && event.component === 'z',
     );
-    expect(String(warning?.message)).toContain('.element.ts');
+    expect(String(warning?.message)).toContain('No .tsx version available');
 
     // The written item actually reached disk; the failed one did not.
-    const written = await readFile(join(PROJECT_DIR, 'components/ui/button.element.ts'), 'utf-8');
-    expect(written).toContain('ButtonElement');
-    await expect(readFile(join(PROJECT_DIR, 'components/ui/z.vue'), 'utf-8')).rejects.toThrow();
+    const written = await readFile(join(PROJECT_DIR, 'components/ui/button.tsx'), 'utf-8');
+    expect(written).toContain('Button');
+    await expect(
+      readFile(join(PROJECT_DIR, 'components/ui/z.classes.ts'), 'utf-8'),
+    ).rejects.toThrow();
   });
 
   it('exits nonzero when an item failed', async () => {
     await mkdir(join(PROJECT_DIR, '.rafters'), { recursive: true });
     await writeFile(
       join(PROJECT_DIR, '.rafters', 'config.rafters.json'),
-      JSON.stringify(wcConfig(), null, 2),
+      JSON.stringify(reactConfig(), null, 2),
     );
 
     await add(['z'], { agent: true });
@@ -213,11 +217,31 @@ describe('rafters add mixed outcomes', () => {
     await mkdir(join(PROJECT_DIR, '.rafters'), { recursive: true });
     await writeFile(
       join(PROJECT_DIR, '.rafters', 'config.rafters.json'),
-      JSON.stringify(wcConfig(), null, 2),
+      JSON.stringify(reactConfig(), null, 2),
     );
 
     await add(['button'], { agent: true });
 
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it('refuses a config whose componentTarget is the removed wc target', async () => {
+    await mkdir(join(PROJECT_DIR, '.rafters'), { recursive: true });
+    await writeFile(
+      join(PROJECT_DIR, '.rafters', 'config.rafters.json'),
+      JSON.stringify({ ...reactConfig(), componentTarget: 'wc' }, null, 2),
+    );
+
+    await withErrorHandler(add)(['button'], { agent: true });
+
+    expect(process.exitCode).toBe(1);
+    const messages = errorSpy.mock.calls.map((call) => String(call[0]));
+    const removal = messages.find((m) => m.includes('componentTarget \\"wc\\"'));
+    expect(removal).toContain('Web Component target (wc) was removed');
+    expect(removal).toContain('Supported targets: react, astro, vue, svelte');
+    // Nothing installs: no silent React fallback.
+    await expect(
+      readFile(join(PROJECT_DIR, 'components/ui/button.tsx'), 'utf-8'),
+    ).rejects.toThrow();
   });
 });
