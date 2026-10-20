@@ -40,19 +40,19 @@
  * @example
  * ```tsx
  * <NavigationMenu>
- *   <NavigationMenu.List>
- *     <NavigationMenu.Item value="products">
- *       <NavigationMenu.Trigger>Products</NavigationMenu.Trigger>
- *       <NavigationMenu.Content>
- *         <NavigationMenu.Link href="/products/widgets">Widgets</NavigationMenu.Link>
- *         <NavigationMenu.Link href="/products/gadgets">Gadgets</NavigationMenu.Link>
- *       </NavigationMenu.Content>
- *     </NavigationMenu.Item>
- *     <NavigationMenu.Item>
- *       <NavigationMenu.Link href="/about">About</NavigationMenu.Link>
- *     </NavigationMenu.Item>
- *   </NavigationMenu.List>
- *   <NavigationMenu.Viewport />
+ *   <NavigationMenuList>
+ *     <NavigationMenuItem value="products">
+ *       <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+ *       <NavigationMenuContent>
+ *         <NavigationMenuLink href="/products/widgets">Widgets</NavigationMenuLink>
+ *         <NavigationMenuLink href="/products/gadgets">Gadgets</NavigationMenuLink>
+ *       </NavigationMenuContent>
+ *     </NavigationMenuItem>
+ *     <NavigationMenuItem>
+ *       <NavigationMenuLink href="/about">About</NavigationMenuLink>
+ *     </NavigationMenuItem>
+ *   </NavigationMenuList>
+ *   <NavigationMenuViewport />
  * </NavigationMenu>
  * ```
  */

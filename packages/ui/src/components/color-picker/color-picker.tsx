@@ -6,6 +6,15 @@
  * @attention-economics Spatial color: area for L/C, bar for hue, inputs for precision, preview for confirmation
  * @trust-building Immediate visual feedback, gamut tier indicator, precise numeric entry
  * @accessibility Full keyboard navigation, screen reader support, gamut tier announcements
+ *
+ * @example
+ * ```tsx
+ * // Uncontrolled
+ * <ColorPicker defaultValue={{ l: 0.7, c: 0.15, h: 250 }} />
+ *
+ * // Controlled
+ * <ColorPicker value={color} onValueChange={setColor} />
+ * ```
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

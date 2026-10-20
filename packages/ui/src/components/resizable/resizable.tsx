@@ -19,15 +19,15 @@
  *
  * @example
  * ```tsx
- * <Resizable.PanelGroup direction="horizontal">
- *   <Resizable.Panel defaultSize={25} minSize={10}>
+ * <ResizablePanelGroup direction="horizontal">
+ *   <ResizablePanel defaultSize={25} minSize={10}>
  *     <Sidebar />
- *   </Resizable.Panel>
- *   <Resizable.Handle />
- *   <Resizable.Panel defaultSize={75}>
+ *   </ResizablePanel>
+ *   <ResizableHandle />
+ *   <ResizablePanel defaultSize={75}>
  *     <MainContent />
- *   </Resizable.Panel>
- * </Resizable.PanelGroup>
+ *   </ResizablePanel>
+ * </ResizablePanelGroup>
  * ```
  */
 import * as React from 'react';
