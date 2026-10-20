@@ -114,6 +114,9 @@ export interface SidebarProviderProps extends React.HTMLAttributes<HTMLDivElemen
   side?: SidebarSide;
   variant?: SidebarVariant;
   collapsible?: SidebarConfig['collapsible'];
+  /** Bound the provider, panel and inset to the provider's container instead
+   *  of the viewport. Default `false`: the viewport-height rail. */
+  contained?: boolean;
 }
 
 export function SidebarProvider({
@@ -123,6 +126,7 @@ export function SidebarProvider({
   side = 'left',
   variant = 'sidebar',
   collapsible = 'offcanvas',
+  contained = false,
   className,
   children,
   ...props
@@ -199,6 +203,7 @@ export function SidebarProvider({
         data-part="root"
         data-side={side}
         data-variant={variant}
+        data-contained={contained ? 'true' : undefined}
         className={classy(sidebarClasses().provider, className)}
         {...props}
       >
