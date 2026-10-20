@@ -14,6 +14,12 @@ describe('label classes', () => {
     expect(classes).toContain('peer-disabled:opacity-70');
   });
 
+  it('carries the has-disabled affordance for a wrapped disabled control (#2656)', () => {
+    const classes = root({});
+    expect(classes).toContain('has-disabled:cursor-not-allowed');
+    expect(classes).toContain('has-disabled:opacity-70');
+  });
+
   it('defaults to the foreground role token when no variant is given', () => {
     expect(root({})).toContain('text-foreground');
   });

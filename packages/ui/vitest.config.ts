@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
+import { compileCss } from './test/browser/compile-css.command';
 import { a11yOnly } from './vitest.astro.shared';
 
 /**
@@ -111,6 +112,7 @@ export default defineConfig({
             provider: playwright(),
             instances: [{ browser: 'chromium' }],
             headless: true,
+            commands: { compileCss },
           },
         },
       },
