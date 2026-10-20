@@ -35,6 +35,30 @@ export interface TailwindExportOptions {
   includeImport?: boolean;
   /** Dark mode strategy: 'class' (.dark class toggle) or 'media' (OS preference). Default: 'class' */
   darkMode?: 'class' | 'media';
+  /**
+   * Font stylesheets to load, e.g. ['@fontsource-variable/noto-sans'].
+   * Each distinct entry becomes one `@import "<entry>";` line, in list order,
+   * as the first lines of the sheet. Absent or empty = output identical to today.
+   */
+  fontImports?: readonly string[];
+}
+
+const INVALID_FONT_IMPORT = /["\\\r\n]/;
+
+/**
+ * One `@import "<entry>";` line per distinct entry, in list order (first
+ * occurrence wins). Throws before anything is emitted on an entry that cannot
+ * be written as one valid `@import` line.
+ */
+function fontImportLines(entries: readonly string[] = []): string[] {
+  for (const entry of entries) {
+    if (entry === '' || INVALID_FONT_IMPORT.test(entry)) {
+      throw new Error(
+        `Invalid font import ${JSON.stringify(entry)}: expected a package specifier or URL with no quotes, backslashes or line breaks`,
+      );
+    }
+  }
+  return [...new Set(entries)].map((entry) => `@import "${entry}";`);
 }
 
 const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
@@ -981,9 +1005,9 @@ export const NAMED_TRACKING: Record<string, string> = {
   widest: '0.1em',
 };
 
-function trackingRef(key: string): string {
+function trackingRef(key: string, tokenNames: ReadonlySet<string>): string {
   const named = NAMED_TRACKING[key];
-  if (named !== undefined) return named;
+  if (named !== undefined && !tokenNames.has(`letter-spacing-${key}`)) return named;
   return `var(--letter-spacing-${key})`;
 }
 
@@ -1016,7 +1040,11 @@ function parseComposites(compositeTokens: Token[]): ParsedComposite[] {
  * via var(), plus --rafters-ts-{name} entries for font-family (which
  * --text-* cannot carry). Zero new values -- pure references.
  */
-function generateTypographyCompositeThemeInline(compositeTokens: Token[]): string {
+function generateTypographyCompositeThemeInline(
+  compositeTokens: Token[],
+  typographyTokens: Token[],
+): string {
+  const tokenNames = new Set(typographyTokens.map((t) => t.name));
   const mappings = parseComposites(compositeTokens);
   if (mappings.length === 0) return '';
 
@@ -1026,7 +1054,7 @@ function generateTypographyCompositeThemeInline(compositeTokens: Token[]): strin
   for (const m of mappings) {
     lines.push(`  --text-${m.name}: var(--font-size-${m.fontSize});`);
     lines.push(`  --text-${m.name}--line-height: var(--font-size-${m.lineHeight}--line-height);`);
-    lines.push(`  --text-${m.name}--letter-spacing: ${trackingRef(m.letterSpacing)};`);
+    lines.push(`  --text-${m.name}--letter-spacing: ${trackingRef(m.letterSpacing, tokenNames)};`);
     lines.push(`  --text-${m.name}--font-weight: var(--font-weight-${m.fontWeight});`);
 
     lines.push(`  --rafters-ts-${m.name}: var(--font-${m.fontFamily});`);
@@ -1566,12 +1594,15 @@ export function tokensToTailwind(
     throw new Error('Registry is empty');
   }
 
+  const fontLines = fontImportLines(options.fontImports);
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = [...fontLines];
 
   // Tailwind import
   if (includeImport) {
     sections.push('@import "tailwindcss";');
+  }
+  if (includeImport || fontLines.length > 0) {
     sections.push('');
   }
 
@@ -1608,6 +1639,7 @@ export function tokensToTailwind(
   // Typography composition assignments (@theme inline + ts-* utility)
   const typographyThemeInline = generateTypographyCompositeThemeInline(
     groups['typography-composite'],
+    groups.typography,
   );
   if (typographyThemeInline) {
     sections.push('');
@@ -1856,7 +1888,10 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
  * await writeFile('.rafters/output/rafters.tailwind.css', staticCSS);
  * ```
  */
-export function registryToTailwindStatic(registry: TokenRegistry): string {
+export function registryToTailwindStatic(
+  registry: TokenRegistry,
+  options?: Pick<TailwindExportOptions, 'fontImports'>,
+): string {
   const tokens = [...registry.list()];
 
   if (tokens.length === 0) {
@@ -1864,7 +1899,7 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   }
 
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = fontImportLines(options?.fontImports);
 
   // Tailwind import
   sections.push('@import "tailwindcss";');
@@ -1899,7 +1934,10 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   // so the parity gap this block used to work around no longer exists.
 
   // Typography composition assignments + ts-* utility
-  const staticTypoTheme = generateTypographyCompositeThemeInline(groups['typography-composite']);
+  const staticTypoTheme = generateTypographyCompositeThemeInline(
+    groups['typography-composite'],
+    groups.typography,
+  );
   if (staticTypoTheme) {
     sections.push('');
     sections.push(staticTypoTheme);

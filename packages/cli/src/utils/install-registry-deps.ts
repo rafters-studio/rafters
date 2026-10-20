@@ -68,7 +68,7 @@ export interface InstallRegistryDepsOptions {
 /**
  * Runtime packages that exist solely to support React-target components.
  * Type-only imports from these packages erase at compile time, so non-React
- * targets (astro, vue, wc, vanilla) don't need them installed.
+ * targets (astro, vue, svelte, vanilla) don't need them installed.
  */
 const REACT_RUNTIME_PACKAGES = new Set(['react', 'react-dom', '@types/react', '@types/react-dom']);
 
@@ -193,7 +193,7 @@ export async function installRegistryDependencies(
   // always matches what this CLI was built against.
   // Drop React-family runtime packages when the target isn't React --
   // those imports are type-only in shared primitives and aren't needed at
-  // runtime on astro/vue/wc/vanilla projects.
+  // runtime on astro/vue/svelte/vanilla projects.
   const externalDeps: string[] = [];
   const dropForTarget = options.target && options.target !== 'react';
   for (const dep of allDeps) {

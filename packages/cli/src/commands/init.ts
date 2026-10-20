@@ -77,7 +77,7 @@ interface InitOptions {
   /**
    * Override detected framework. When set, skips the auto-detect + prompt
    * fallback. Valid values: next | vite | remix | react-router | astro |
-   * wc | vanilla.
+   * vanilla.
    */
   framework?: string;
   /**
@@ -560,6 +560,7 @@ export async function generateOutputs(
   source: string | undefined,
   darkMode: 'class' | 'media' = 'class',
   config?: RaftersConfig | null,
+  fontImports: readonly string[] = config?.fonts?.imports ?? [],
 ): Promise<string[]> {
   const contentSources = config ? resolveContentSources(cwd, config) : [];
 
@@ -577,6 +578,7 @@ export async function generateOutputs(
     contentSources,
     darkMode,
     includeImport: source !== 'shadcn',
+    fontImports,
   });
 }
 
@@ -686,6 +688,17 @@ async function regenerateFromExisting(
   // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
 
+  if (existingConfig && installedScripts !== undefined) {
+    // Replace the script packages; keep every other recorded import. Done
+    // before the outputs so rafters.css imports what the config records.
+    const scriptPackages = new Set(Object.values(SCRIPT_FONTS).map((f) => f.package));
+    const detected = (existingConfig.fonts?.imports ?? []).filter((i) => !scriptPackages.has(i));
+    existingConfig.fonts = {
+      ...existingConfig.fonts,
+      imports: mergeImports(detected, fontImportsFor(installedScripts)),
+    };
+  }
+
   const outputs = await generateOutputs(
     cwd,
     paths,
@@ -698,15 +711,6 @@ async function regenerateFromExisting(
 
   if (existingConfig) {
     existingConfig.exports = exports;
-    if (installedScripts !== undefined) {
-      // Replace the script packages; keep every other recorded import.
-      const scriptPackages = new Set(Object.values(SCRIPT_FONTS).map((f) => f.package));
-      const detected = (existingConfig.fonts?.imports ?? []).filter((i) => !scriptPackages.has(i));
-      existingConfig.fonts = {
-        ...existingConfig.fonts,
-        imports: mergeImports(detected, fontImportsFor(installedScripts)),
-      };
-    }
     await writeFile(paths.config, JSON.stringify(existingConfig, null, 2));
   } else {
     const frameworkPaths = FRAMEWORK_SPECS[framework].components;
@@ -1067,7 +1071,16 @@ export async function init(options: InitOptions): Promise<void> {
   });
 
   // Generate outputs based on export config
-  const outputs = await generateOutputs(cwd, paths, registry, exports, source);
+  const outputs = await generateOutputs(
+    cwd,
+    paths,
+    registry,
+    exports,
+    source,
+    'class',
+    null,
+    scriptImports,
+  );
 
   // Find and update the main CSS file (if not using shadcn which has its own CSS path).
   // `project.cssPath` is computed against the auto-detected framework; if the
@@ -1241,7 +1254,16 @@ export async function init(options: InitOptions): Promise<void> {
           // produced the defaults; this pass overwrites with the imported
           // overrides cascaded through their dependents.
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, source);
+          await generateOutputs(
+            cwd,
+            paths,
+            registry,
+            exports,
+            source,
+            'class',
+            null,
+            config.fonts?.imports ?? [],
+          );
           const importedNames = [
             ...toImportColors.map((c) => c.name),
             ...toImportNonColors.map((d) => d.name),
@@ -1339,7 +1361,16 @@ export async function init(options: InitOptions): Promise<void> {
             }
 
             saveRegistryToDir(paths.tokens, registry);
-            await generateOutputs(cwd, paths, registry, exports, source);
+            await generateOutputs(
+              cwd,
+              paths,
+              registry,
+              exports,
+              source,
+              'class',
+              null,
+              config.fonts?.imports ?? [],
+            );
             const themeImportedNames = families.flatMap((f) =>
               SCALE_POSITIONS.map((p) => `color-${f.name}-${p}`).concat([`color-${f.name}`]),
             );
@@ -1487,7 +1518,16 @@ export async function init(options: InitOptions): Promise<void> {
         }
         if (fontAssignments.length > 0 || definedFonts.length > 0) {
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, source);
+          await generateOutputs(
+            cwd,
+            paths,
+            registry,
+            exports,
+            source,
+            'class',
+            null,
+            config.fonts?.imports ?? [],
+          );
           log({
             event: 'init:import_fonts_applied',
             cssPath: detectedCssPath,

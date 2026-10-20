@@ -19,7 +19,6 @@ export type Framework =
   | 'react-router'
   | 'astro'
   | 'preact'
-  | 'wc'
   | 'vanilla'
   | 'unknown';
 
@@ -31,7 +30,6 @@ export const SELECTABLE_FRAMEWORKS: ReadonlyArray<Exclude<Framework, 'unknown'>>
   'react-router',
   'astro',
   'preact',
-  'wc',
   'vanilla',
 ];
 
@@ -98,10 +96,6 @@ function frameworkFromDeps(deps: Record<string, string>): Framework {
   if (deps['react-router']) return 'react-router';
   if (Object.keys(deps).some((d) => d.startsWith('@remix-run/'))) return 'remix';
   if (deps.astro) return 'astro';
-  // Web Components: `lit` (or `@lit/*`) without React. A lit+react project is
-  // still React-driven, so we only flip to `wc` when React is absent.
-  const hasLit = Boolean(deps.lit) || Object.keys(deps).some((d) => d.startsWith('@lit/'));
-  if (hasLit && !deps.react) return 'wc';
   // Preact without React, including Vite + Preact, so it precedes `vite`.
   if (deps.preact && !deps.react) return 'preact';
   if (deps.vite) return 'vite';
@@ -161,25 +155,24 @@ export function isTailwindV3(version: string | null): boolean {
  * Component target derived from framework.
  * Determines which file extension to prefer when installing components.
  */
-export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte' | 'wc';
+export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte';
 
 /**
  * Map a framework to its default component target.
  * All React-based frameworks (next, vite, remix, react-router) map to 'react'.
  * `preact` gets the React files too: they run through preact/compat.
- * `wc` projects get Web Component files; `vanilla` defaults to 'react' since
- * the React file is the shadcn drop-in form most plain-TS projects still use.
+ * `vanilla` defaults to 'react' since the React file is the shadcn drop-in
+ * form most plain-TS projects still use.
  */
 export function frameworkToTarget(framework: Framework): ComponentTarget {
   if (framework === 'astro') return 'astro';
-  if (framework === 'wc') return 'wc';
   return 'react';
 }
 
 /**
  * All supported component file extensions, derived from ComponentTarget values.
  */
-export const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'] as const;
+export const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'] as const;
 
 /**
  * Map a component target to its preferred file extension.
@@ -190,7 +183,6 @@ export function targetToExtension(target: ComponentTarget): string {
     astro: '.astro',
     vue: '.vue',
     svelte: '.svelte',
-    wc: '.element.ts',
   };
   return map[target];
 }
@@ -298,16 +290,6 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       rules: 'src/lib/rules',
     },
     note: 'Preact: rafters installs React (.tsx) components, so react and react-dom must alias to preact/compat (@preact/preset-vite sets this up).',
-  },
-  wc: {
-    label: 'Web Components (custom elements, shadow DOM)',
-    cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css'],
-    components: {
-      components: 'src/components/ui',
-      primitives: 'src/lib/primitives',
-      composites: 'src/composites',
-      rules: 'src/lib/rules',
-    },
   },
   vanilla: {
     label: 'Vanilla (plain HTML/TS, no framework)',

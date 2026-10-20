@@ -53,6 +53,8 @@ export interface RegenerateOutputsInput {
    * consumer's own CSS already imports Tailwind (shadcn layout).
    */
   includeImport?: boolean;
+  /** Passed to registryToTailwind for rafters.css only. Not passed to the compiled or documentation sheet. */
+  fontImports?: readonly string[];
 }
 
 export interface RegenerateOutputsHooks {
@@ -144,12 +146,13 @@ export async function regenerateOutputs(
     contentSources = [],
     darkMode = 'class',
     includeImport = true,
+    fontImports = [],
   } = input;
   await mkdir(outputDir, { recursive: true });
   const written: string[] = [];
 
   if (exports.tailwind) {
-    const css = registryToTailwind(registry, { includeImport, darkMode });
+    const css = registryToTailwind(registry, { includeImport, darkMode, fontImports });
     await writeFile(join(outputDir, 'rafters.css'), css);
     written.push('rafters.css');
   }

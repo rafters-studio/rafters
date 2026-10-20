@@ -129,4 +129,23 @@ describe('regenerateOutputs (#1944)', () => {
       }),
     ).resolves.toEqual(['rafters.css']);
   });
+
+  it('writes fontImports into rafters.css only (#2754)', async () => {
+    const SANS = '@fontsource-variable/noto-sans';
+    const registry = baseRegistry();
+    await regenerateOutputs(registry, { outputDir, exports: ALL_ON, fontImports: [SANS] });
+    const plainDir = mkdtempSync(join(tmpdir(), 'rafters-outputs-plain-'));
+    try {
+      await regenerateOutputs(registry, { outputDir: plainDir, exports: ALL_ON });
+      const css = await readFile(join(outputDir, 'rafters.css'), 'utf-8');
+      expect(css.startsWith(`@import "${SANS}";\n@import "tailwindcss";`)).toBe(true);
+      for (const name of ['rafters.standalone.css', 'rafters.documentation.css']) {
+        await expect(readFile(join(outputDir, name), 'utf-8')).resolves.toBe(
+          await readFile(join(plainDir, name), 'utf-8'),
+        );
+      }
+    } finally {
+      rmSync(plainDir, { recursive: true, force: true });
+    }
+  }, 60000);
 });

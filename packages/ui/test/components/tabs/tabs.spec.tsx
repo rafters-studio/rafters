@@ -399,3 +399,60 @@ describe('tabs icons [react]', () => {
       .toBeInTheDocument();
   });
 });
+
+describe('tabs rail width [react]', () => {
+  // No compiled Tailwind sheet loads in the browser project, so this stand-in
+  // gives each structural class its rule, keyed by the class itself: the
+  // geometry follows whatever classes the component paints.
+  let style: HTMLStyleElement;
+  beforeEach(() => {
+    style = document.createElement('style');
+    style.textContent = `
+      .flex { display: flex; }
+      .inline-flex { display: inline-flex; }
+      .flex-col { flex-direction: column; }
+      .flex-row { flex-direction: row; }
+      .self-start { align-self: flex-start; }
+      .p-1 { padding: 4px; }
+      .h-10 { height: 40px; }
+      .h-auto { height: auto; }
+      .px-3 { padding-inline: 12px; }
+      [data-testid="frame"] { width: 416px; }
+    `;
+    document.head.appendChild(style);
+  });
+  afterEach(() => {
+    cleanup();
+    style.remove();
+  });
+
+  function measure(orientation: 'horizontal' | 'vertical') {
+    render(
+      <div data-testid="frame">
+        <TestTabs defaultValue="overview" orientation={orientation} />
+      </div>,
+    );
+    const list = partElement(body(), 'list');
+    if (!list) throw new Error('no tablist rendered');
+    const triggers = partElements(body(), 'trigger').map((t) => t.getBoundingClientRect());
+    return { list: list.getBoundingClientRect(), triggers };
+  }
+
+  it('a horizontal list is as wide as its triggers plus its padding, with no empty rail', () => {
+    const { list, triggers } = measure('horizontal');
+    const sum = triggers.reduce((total, rect) => total + rect.width, 0);
+    expect(list.width).toBeCloseTo(sum + 8, 0);
+    expect(list.width).toBeLessThan(416);
+    const first = triggers[0];
+    const last = triggers[triggers.length - 1];
+    if (!first || !last) throw new Error('no triggers rendered');
+    expect(first.left - list.left).toBeCloseTo(4, 0);
+    expect(list.right - last.right).toBeCloseTo(4, 0);
+  });
+
+  it('a vertical list still fits its widest trigger', () => {
+    const { list, triggers } = measure('vertical');
+    const widest = Math.max(...triggers.map((rect) => rect.width));
+    expect(list.width).toBeCloseTo(widest + 8, 0);
+  });
+});

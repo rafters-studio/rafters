@@ -8,7 +8,7 @@
  * design-tokens import edge into the bundle.
  */
 
-import type { ComponentTarget } from '../registry/types.js';
+import { type ComponentTarget, ComponentTargetSchema } from '../registry/types.js';
 import type { Framework } from '../utils/detect.js';
 import type { ExportConfig } from '../utils/exports.js';
 import type { PathField } from '../utils/paths.js';
@@ -59,4 +59,18 @@ export function migrateConfig(raw: Record<string, unknown>): Record<string, unkn
     delete raw.shadcn;
   }
   return raw;
+}
+
+/**
+ * A config whose `componentTarget` is not one of `ComponentTargetSchema`'s
+ * targets. Raised instead of falling back to React, so a project still pointed
+ * at the removed Web Component target learns why nothing installs for it.
+ */
+export class UnsupportedComponentTargetError extends Error {
+  constructor(value: unknown, configPath: string) {
+    super(
+      `componentTarget ${JSON.stringify(value)} in ${configPath} is not supported: the Web Component target (wc) was removed. Supported targets: ${ComponentTargetSchema.options.join(', ')}.`,
+    );
+    this.name = 'UnsupportedComponentTargetError';
+  }
 }

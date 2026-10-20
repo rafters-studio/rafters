@@ -137,7 +137,7 @@ function stripBlockComments(source: string): string {
  *
  * Block comments are stripped first (string-literal-aware, see
  * `stripBlockComments`): a JSDoc `@example` may show a consumer-side
- * `import ... from '@rafters/ui'` (select.tsx/.astro/.element.ts do exactly
+ * `import ... from '@rafters/ui'` (select.tsx/.astro do exactly
  * this), which is documentation, not a delivered import, and must never be
  * flagged.
  */
