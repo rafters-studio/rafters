@@ -242,7 +242,6 @@ export function generateTypographyTokens(
       category: 'typography',
       namespace: 'typography',
       semanticMeaning: `Line height for ${scale} text size`,
-      dependsOn: [`font-size-${scale}`],
       description: `Line height ${lineHeight} for ${scale} text. Tighter for large text, looser for small.`,
       generatedAt: timestamp,
       containerQueryAware: false,
