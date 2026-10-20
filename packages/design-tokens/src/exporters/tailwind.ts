@@ -54,7 +54,7 @@ function fontImportLines(entries: readonly string[] = []): string[] {
   for (const entry of entries) {
     if (entry === '' || INVALID_FONT_IMPORT.test(entry)) {
       throw new Error(
-        `Invalid font import ${JSON.stringify(entry)}: expected a package specifier or URL with no quotes, semicolons or line breaks`,
+        `Invalid font import ${JSON.stringify(entry)}: expected a package specifier or URL with no quotes, backslashes or line breaks`,
       );
     }
   }
