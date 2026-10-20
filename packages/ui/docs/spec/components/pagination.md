@@ -123,6 +123,15 @@ Nothing configurable on the landmark: the label is fixed, the trail is composed.
 `asChild` to merge onto a router link (via `mergeProps`); `PaginationPrevious`
 and `PaginationNext` accept a custom `label`.
 
+A page-number link is square at every size: the height and the minimum width
+are the same step, and the inline padding never pushes a single digit past that
+minimum. `sm` is 36 x 36 (`h-9 min-w-9 px-3`), `default` is 40 x 40
+(`h-10 min-w-10 px-4 py-2`), and `lg` is 44 x 44 (`h-11 min-w-11 px-4`) for one
+digit. A multi-digit page number grows the link in width only, so it never
+clips. `icon` is a fixed 40 x 40 (`h-10 w-10`). Current choice (2026-10-19):
+`lg` is square like `sm` and `default`, because the three sizes of one control
+should change scale, not shape; revisable.
+
 ## Parts and ARIA
 
 | Part | Presence | ARIA |
