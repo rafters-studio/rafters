@@ -71,6 +71,13 @@ export {
 } from './motion-constraints.js';
 export { generateRadiusTokens } from './radius.js';
 export { generateSemanticTokens } from './semantic.js';
+export {
+  DEFAULT_SCRIPTS,
+  fontImportsFor,
+  fontStackFor,
+  SCRIPT_FONTS,
+  type ScriptFont,
+} from './scripts.js';
 export { generateShadowTokens } from './shadow.js';
 export { generateSpacingTokens } from './spacing.js';
 export * from './types.js';

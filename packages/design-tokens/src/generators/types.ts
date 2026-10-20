@@ -13,6 +13,7 @@
 
 import type { Token } from '@rafters/shared';
 import type { ColorSeedEntry } from './defaults.js';
+import { DEFAULT_SCRIPTS, fontStackFor } from './scripts.js';
 
 /**
  * Configuration for the base design system
@@ -27,7 +28,7 @@ export interface BaseSystemConfig {
   /** Mathematical progression ratio (default: 'minor-third' = 1.2) */
   progressionRatio: string;
 
-  /** Primary font family (default: 'Noto Sans Variable', sans-serif) */
+  /** Primary font family (default: fontStackFor(DEFAULT_SCRIPTS), see scripts.ts) */
   fontFamily: string;
 
   /** Mono font family (default: system monospace stack) */
@@ -112,7 +113,7 @@ export function resolveConfig(config: BaseSystemConfig): ResolvedSystemConfig {
 export const DEFAULT_SYSTEM_CONFIG: BaseSystemConfig = {
   baseSpacingUnit: 4,
   progressionRatio: 'minor-third', // 1.2 ratio
-  fontFamily: "'Noto Sans Variable', sans-serif",
+  fontFamily: fontStackFor(DEFAULT_SCRIPTS),
   monoFontFamily:
     "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
   // Rafters aesthetic overrides.
@@ -133,7 +134,7 @@ export const DEFAULT_SYSTEM_CONFIG: BaseSystemConfig = {
 export const PURE_MATH_CONFIG: BaseSystemConfig = {
   baseSpacingUnit: 4,
   progressionRatio: 'minor-third',
-  fontFamily: "'Noto Sans Variable', sans-serif",
+  fontFamily: fontStackFor(DEFAULT_SCRIPTS),
   monoFontFamily:
     "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
   // No overrides - pure mathematical derivation
