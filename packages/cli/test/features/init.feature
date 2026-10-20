@@ -183,3 +183,30 @@ Feature: rafters init command
     Then init creates the framework's CSS file importing rafters
     And the entry point imports that CSS file exactly once
     And when no entry point can be found, init reports the exact import line to add and the file to add it to, and exits 0
+
+  @criterion-11
+  Scenario Outline: init imports the created CSS from each framework entry it edits
+    Given a "<fixture>" project
+    And the project has no CSS file
+    And "<entry>" exists
+    When I run "rafters init --agent"
+    Then the command should succeed
+    And "<css>" imports ".rafters/output/rafters.css" by its relative path
+    And "<entry>" imports "<specifier>" exactly once
+    Examples:
+      | fixture                | entry                    | css                   | specifier             |
+      | vite-no-shadcn         | src/main.tsx             | src/index.css         | ./index.css           |
+      | nextjs-no-shadcn       | app/layout.tsx           | app/globals.css       | ./globals.css         |
+      | nextjs-no-shadcn       | src/app/layout.tsx       | src/app/globals.css   | ./globals.css         |
+      | remix-shadcn-v4        | app/root.tsx             | app/styles/global.css | ./styles/global.css   |
+      | react-router-shadcn-v4 | app/root.tsx             | app/app.css           | ./app.css             |
+      | astro-shadcn-v4        | src/layouts/Layout.astro | src/styles/global.css | ../styles/global.css  |
+
+  @criterion-11
+  Scenario: the Astro layout keeps parsing with the import in its frontmatter
+    Given a "astro-shadcn-v4" project
+    And the project has no CSS file
+    And "src/layouts/Layout.astro" exists
+    When I run "rafters init --agent"
+    Then the command should succeed
+    And "src/layouts/Layout.astro" parses with Astro's compiler and imports "../styles/global.css" in its frontmatter

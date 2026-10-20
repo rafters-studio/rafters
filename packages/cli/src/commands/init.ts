@@ -98,112 +98,6 @@ interface InitOptions {
   scripts?: string;
 }
 
-/**
- * Block-level source cleaning after an applied import (#1647).
- *
- * Values now live in .rafters/tokens and emit through rafters.css, so token
- * layers left in the source override the system in the cascade:
- * - `@theme inline` blocks are removed entirely -- they are token bridges by
- *   definition, and rafters.css emits the canonical bridge.
- * - `:root` blocks (anywhere, including under @media) lose ALL custom-property
- *   declarations; non-custom-prop declarations (color-scheme, ...) survive.
- *   A block left with no content is removed; an at-rule shell emptied by that
- *   removal is removed too.
- * Plain `@theme` blocks are untouched: non-imported props there (custom
- * fonts, ...) are intentional user tokens. Pre-strip backup is the recovery
- * path. Brace matching is character-depth based; brace characters inside
- * string values are not handled (acceptable for token layers).
- */
-export function cleanSourceCssBlocks(content: string): string {
-  type Block = {
-    headerStart: number;
-    bodyStart: number;
-    end: number;
-    header: string;
-  };
-
-  function parseBlocks(src: string): Block[] {
-    const blocks: Block[] = [];
-    let depth = 0;
-    const headerStack: number[] = [];
-    let segmentStart = 0;
-    for (let i = 0; i < src.length; i++) {
-      const ch = src.charAt(i);
-      if (ch === '{') {
-        headerStack.push(segmentStart);
-        depth++;
-        if (depth >= 1) {
-          blocks.push({
-            headerStart: segmentStart,
-            bodyStart: i + 1,
-            end: -1,
-            header: src.slice(segmentStart, i).trim(),
-          });
-        }
-        segmentStart = i + 1;
-      } else if (ch === '}') {
-        depth--;
-        const open = blocks
-          .slice()
-          .reverse()
-          .find((b) => b.end === -1);
-        if (open) open.end = i + 1;
-        headerStack.pop();
-        segmentStart = i + 1;
-      } else if (ch === ';') {
-        segmentStart = i + 1;
-      }
-    }
-    return blocks.filter((b) => b.end !== -1);
-  }
-
-  function isContentEmpty(body: string): boolean {
-    return body.replace(/\/\*[\s\S]*?\*\//g, '').trim().length === 0;
-  }
-
-  let out = content;
-  // Iterate until stable: removing inner blocks can empty outer shells.
-  for (let pass = 0; pass < 10; pass++) {
-    const blocks = parseBlocks(out);
-    let edited = false;
-    // Walk innermost-last so splices don't invalidate earlier ranges;
-    // process one edit per pass for simplicity and re-parse.
-    for (const block of blocks.sort((a, b) => b.headerStart - a.headerStart)) {
-      const header = block.header;
-      if (/^@theme\s+inline$/.test(header)) {
-        out = out.slice(0, block.headerStart) + out.slice(block.end);
-        edited = true;
-        break;
-      }
-      if (header === ':root' || /(^|,)\s*:root\s*$/.test(header)) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        const cleanedBody = body.replace(/--[\w-]+\s*:[^;{}]*;?/g, '');
-        if (isContentEmpty(cleanedBody)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-        if (cleanedBody !== body) {
-          out = out.slice(0, block.bodyStart) + cleanedBody + out.slice(block.end - 1);
-          edited = true;
-          break;
-        }
-        continue;
-      }
-      if (header.startsWith('@media') || header.startsWith('@supports')) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        if (isContentEmpty(body)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-      }
-    }
-    if (!edited) break;
-  }
-  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
-}
-
 const RAFTERS_CSS = '.rafters/output/rafters.css';
 
 /** An `.old.css` already sits where init would move the entry CSS (#2798). */
@@ -243,17 +137,16 @@ function assertEntryCssMovable(cwd: string, existing: ExistingEntryCss | null): 
 }
 
 /**
- * Import the created entry CSS from the framework's app entry, once. With no
+ * Import the created entry CSS from the app entry init found, once. With no
  * entry file, nothing is written and the caller reports the line to add.
  */
 async function importFromAppEntry(
   cwd: string,
   cssPath: string,
   framework: Framework,
+  found: string | undefined,
 ): Promise<{ entryPoint: string; importLine: string; entryWired: boolean }> {
-  const candidates = FRAMEWORK_SPECS[framework].entryPoints;
-  const found = candidates.find((p) => existsSync(join(cwd, p)));
-  const entryPoint = found ?? candidates[0] ?? 'src/main.ts';
+  const entryPoint = found ?? FRAMEWORK_SPECS[framework].entryPoints[0] ?? 'src/main.ts';
   const specifier = importSpecifier(entryPoint, cssPath);
   const importLine = `import '${specifier}';`;
   if (found === undefined) return { entryPoint, importLine, entryWired: false };
@@ -291,16 +184,23 @@ async function wireEntryCss(
     log({ event: 'init:css_already_imported', cssPath: existing.cssPath });
     return existing.cssPath;
   }
+  // A created file goes in the same root as the app entry init found
+  // (`app/layout.tsx` -> `app/globals.css`); `cssLocations[0]` otherwise.
+  const spec = FRAMEWORK_SPECS[framework];
+  const found = spec.entryPoints.find((p) => existsSync(join(cwd, p)));
+  const entryRoot = found?.split('/')[0];
   const entryPath =
     existing?.cssPath ??
-    (framework === 'unknown' ? undefined : FRAMEWORK_SPECS[framework].cssLocations[0]) ??
+    (framework === 'unknown'
+      ? undefined
+      : (spec.cssLocations.find((l) => l.split('/')[0] === entryRoot) ?? spec.cssLocations[0])) ??
     'src/index.css';
   const fullPath = join(cwd, entryPath);
   const content = `${source === 'shadcn' ? '@import "tailwindcss";\n' : ''}@import "${importSpecifier(entryPath, RAFTERS_CSS)}";\n`;
   if (existing === null) {
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content);
-    const entry = await importFromAppEntry(cwd, entryPath, framework);
+    const entry = await importFromAppEntry(cwd, entryPath, framework, found);
     log({
       event: 'init:css_created',
       cssPath: entryPath,

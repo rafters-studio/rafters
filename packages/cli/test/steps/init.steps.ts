@@ -11,6 +11,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
@@ -18,6 +19,7 @@ import { context } from './common.steps.js';
 import { execRafters } from './helpers.js';
 
 const { Given, When, Then } = createBdd();
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const RAFTERS_CSS = '.rafters/output/rafters.css';
 const LAYER_STATEMENT = '@layer theme, base, components, utilities;';
@@ -145,6 +147,17 @@ Given(
     );
   },
 );
+
+Given('{string} exists', async ({}, file: string) => {
+  const full = join(context.fixturePath, file);
+  await mkdir(dirname(full), { recursive: true });
+  await writeFile(
+    full,
+    file.endsWith('.astro')
+      ? '---\nconst { title } = Astro.props;\n---\n<html><head><title>{title}</title></head><body><slot /></body></html>\n'
+      : "import type { ReactNode } from 'react';\n\nexport default function Root({ children }: { children: ReactNode }) {\n  return children;\n}\n",
+  );
+});
 
 When('I run {string} interactively and accept the defaults', async ({}, command: string) => {
   // No TTY: every prompt takes its default, and output goes through the
@@ -305,5 +318,34 @@ Then(
     } finally {
       await cleanupFixture(fixture);
     }
+  },
+);
+
+Then('{string} imports {string} exactly once', async ({}, file: string, specifier: string) => {
+  const content = await readFile(join(context.fixturePath, file), 'utf-8');
+  expect(content.split(`import '${specifier}';`).length - 1).toBe(1);
+});
+
+Then(
+  "{string} parses with Astro's compiler and imports {string} in its frontmatter",
+  async ({}, file: string, specifier: string) => {
+    // Astro's compiler, as the workspace's Astro (packages/ui) depends on it.
+    const ui = createRequire(join(__dirname, '../../../ui/package.json'));
+    const astro = createRequire(ui.resolve('astro/package.json'));
+    const compiler: unknown = await import(astro.resolve('@astrojs/compiler-rs'));
+    expect(compiler).toMatchObject({ transform: expect.any(Function) });
+    const { transform } = compiler as {
+      transform: (
+        input: string,
+        options: { filename: string },
+      ) => { code: string; diagnostics: Array<{ severity: string }> };
+    };
+    const result = transform(await readFile(join(context.fixturePath, file), 'utf-8'), {
+      filename: file,
+    });
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.code).toMatch(
+      new RegExp(`^import ['"]${specifier.replace(/[./]/g, '\\$&')}['"]`, 'm'),
+    );
   },
 );
