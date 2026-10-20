@@ -61,7 +61,7 @@ export const table: BehaviorSpec<TableConfig, TableState, TableActions, TablePar
  * selected; the consumer sets it as a prop, never a state machine. A selected
  * row carries `aria-selected="true"` (a spec-supported property of role=row)
  * and the `data-state="selected"` hook the row decoration keys off
- * (`data-[state=selected]:bg-muted`). An unselected row carries NEITHER --
+ * (a muted background on the selected state). An unselected row carries NEITHER --
  * `aria-selected="false"` on every row is noise, so absence is the default and
  * only the selected row is announced.
  */

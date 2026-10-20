@@ -23,14 +23,14 @@ const rootVerticalClasses = 'flex-col';
 // `active:` variants over the state row's base assignment.
 //   toggle-group / item / off <-> on -- color -- duration-moderate, ease-standard
 //   toggle-group / item / press -- zoom + color -- duration-micro,
-//     ease-spring-snappy, extent-press
+//     ease-spring-snappy, extent press
 //
-// `active:scale-[0.98]` is gone: the press extent is `extent-press`, a token
+// The literal 0.98 active scale is gone: the press extent is a token
 // leaf Studio retunes, not a number typed here.
 //
 // BOX-SHADOW IS DELIBERATELY OUT OF THE TRANSITION LIST. The default variant's
 // `data-[state=on]:shadow-sm` is an elevation change, and toggle-group has no
-// elevation row in the matrix -- only button and card do. `transition-all` used
+// elevation row in the matrix -- only button and card do. An all-properties transition used
 // to time it by accident; naming the properties makes the shadow snap, which is
 // what a moment with no row is supposed to do. Reported rather than faked.
 const itemBaseClasses =

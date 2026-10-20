@@ -8,8 +8,8 @@ import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavio
  * token (z-depth-dropdown) replaces a raw z-index.
  *
  * THE THIRTEEN SEMANTIC MOTION CLASSES ARE GONE (ruling 2026-08-02). This file
- * used to name two of them -- `motion-dropdown-in` on `content` and
- * `motion-focus` on `itemBase` -- which compiled only because nothing failed on
+ * used to name two of them -- the dropdown-in class on `content` and the
+ * focus class on `itemBase` -- which compiled only because nothing failed on
  * an unknown class. Both are replaced below by what their matrix rows assign.
  */
 export interface ContextMenuClassSet {
@@ -39,8 +39,8 @@ const trigger = 'inline-block';
 // context-menu / content / closed -> open (moderate, enter, extent pop) and
 // open -> closed (fast, exit, extent pop) -- motion.md:173-174, emitted as
 // `context-menu-content-open` / `-close` in DEFAULT_MOTION_CELL_ANIMATIONS.
-// They replace `motion-dropdown-in` plus a hand-rolled `opacity-0 scale-95`
-// reveal: the retired semantic class named no tier the matrix assigns, and the
+// They replace the dropdown-in class plus a hand-rolled zero-opacity, 95%
+// scale reveal: the retired semantic class named no tier the matrix assigns, and the
 // hand-rolled pair is the tailwindcss-animate-shaped form this repo's own
 // popover/dropdown-menu classes already prohibit.
 //
@@ -121,12 +121,12 @@ const content =
 // projects it straight onto `subContent`, and this is a plain input-source
 // MARK, not a timing decision -- the CSS below still owns every duration,
 // curve, and delay. `data-[state=open]:data-[open-source=pointer]:` scopes
-// `delay-hover-intent` to that mark; click and keyboard opens carry
+// the hover-intent delay to that mark; click and keyboard opens carry
 // `data-open-source="discrete"` instead (never `"pointer"`, so the scoped
 // selector above never matches them) and so resolve through the un-delayed
-// `data-[state=open]:duration-moderate`/`ease-enter` pair a few lines below,
+// `data-[state=open]:duration-moderate` and enter-curve pair a few lines below,
 // with no reveal delay whatsoever (contrast tooltip/hover-card, whose
-// data-state path drops delay-hover-intent for a forced/keyboard open because
+// data-state path drops the hover-intent delay for a forced/keyboard open because
 // their content never moves and that path would otherwise race the live
 // `:hover` rule; here it never does, so there is nothing to race -- the
 // pointer/discrete split exists for the hover-intent filter itself, not to
@@ -173,7 +173,7 @@ const subContent =
 
 // THE ROW: context-menu / items / highlight move -- color, duration-micro,
 // ease-standard (motion.md:176), marked PROPOSED and unreviewed, transcribed as
-// written. It replaces the retired `motion-focus` semantic class, which named
+// written. It replaces the retired focus semantic class, which named
 // no tier this matrix assigns. A transition, not a keyframe -- the item stays
 // put -- so it is excluded from the cell vocabulary by name (`context-menu |
 // items | highlight move`, EXCLUDED_ROWS.noIntersectingProperty in

@@ -24,7 +24,7 @@
  *     <a href="/user/john">@john</a>
  *   </HoverCard.Trigger>
  *   <HoverCard.Content>
- *     <div className="flex gap-4">
+ *     <div className="flex">
  *       <Avatar src="/john.jpg" />
  *       <div>
  *         <h4>John Doe</h4>
@@ -68,7 +68,7 @@ import type { PartIds } from '../../lib/contract';
 interface Props {
   id: string;
   /** Href for the trigger anchor (keeps it a real, focusable link). The anchor
-   *  is inline-flex INSIDE the block root; the component as a whole is placed
+   *  is an inline flex box INSIDE the block root; the component as a whole is placed
    *  by Container, not inlined mid-sentence in a paragraph. */
   href?: string;
   /** Accessible name for the role=dialog preview. */

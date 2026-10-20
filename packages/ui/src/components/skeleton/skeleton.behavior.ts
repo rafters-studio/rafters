@@ -27,8 +27,8 @@ import type { BehaviorSpec } from '../../lib/contract';
  * across every framework.
  *
  * Motion intent is a feedback-loop shimmer, consumed via the generated
- * `animate-pulse-shimmer` cell utility (#2154); duration comes from
- * the `period-shimmer` token. The shimmer runs unchanged under
+ * pulse-shimmer cell utility (#2154); duration comes from
+ * the shimmer period token. The shimmer runs unchanged under
  * `prefers-reduced-motion` -- a period-kind cell is exempt from the
  * reduced-motion zeroing law, because a stopped work loop says the work
  * stopped (#2155).

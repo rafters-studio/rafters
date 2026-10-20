@@ -88,7 +88,7 @@ export interface CardProps extends NoClassName<React.HTMLAttributes<HTMLDivEleme
   /**
    * Fill signature over the colour vocabulary (#1637): `word`, `word/alpha`,
    * or `word-to-word`. When it resolves, the fill surface replaces the
-   * default `bg-card` surface; an invalid signature keeps the default.
+   * default card surface; an invalid signature keeps the default.
    */
   fill?: string;
 }

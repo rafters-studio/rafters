@@ -9,8 +9,8 @@ import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
  *
  * MOTION IS DECLARED, and every declaration below names a motion.jsonl row.
  * This file used to carry three vocabularies at once -- the oracle's literals
- * (`duration-200`), a rafters generic with no curve (`duration-fast` alone),
- * stock Tailwind curves, `animate-pulse`, and `motion-reduce:` escapes on both
+ * (a literal 200ms duration), a rafters generic with no curve (`duration-fast` alone),
+ * stock Tailwind curves, the stock pulse animation, and `motion-reduce:` escapes on both
  * mechanisms. The six rows sidebar is assigned, and where each lands:
  *
  *   item / active change  color, fast, standard   -> the four button classes
@@ -25,7 +25,7 @@ import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
  *
  * NO `motion-reduce:` anywhere, on either mechanism. The reduced-motion law is
  * written once on the duration and delay leaves; a component-level escape fights
- * it, and `motion-reduce:animate-none` fights it destructively -- `animation:
+ * it, and a reduced-motion animation reset fights it destructively -- `animation:
  * none` resets the whole shorthand and discards the zeroed duration with it.
  */
 export interface SidebarClassSet {
@@ -86,7 +86,7 @@ const providerClasses =
 // name and none is invented here.
 //
 // What IS consumed is the tier and the curve, on the property this rail actually
-// moves: it collapses its own `width` (w-64 -> w-12 for the icon rail, -> w-0
+// moves: it collapses its own `width` (16rem -> 3rem for the icon rail, -> 0
 // for offcanvas), which is what the rows' structural extent ("rail width")
 // describes and what the sibling content reflows against. No literal, no
 // physical side, no invented name. Reported on #2302.
@@ -141,8 +141,8 @@ const triggerClasses = 'inline-flex size-7 items-center justify-center';
 // normal, spring-smooth) and `.../ close` (moderate, exit) are consumed on THE
 // NODE THIS CLASS LANDS ON, by Sheet rather than by this string: sidebar.tsx
 // passes `classes.mobilePanel` as SheetContent's className, and sheet.classes.ts
-// already carries `data-[state=open]:animate-fade-in-normal-spring-smooth
-// data-[state=closed]:animate-fade-out-moderate-exit`. Those are the same two
+// already carries the open fade-in (normal, spring-smooth) and the closed
+// fade-out (moderate, exit). Those are the same two
 // (shape, tier, curve) triples the generator emits for sidebar's own cells --
 // `sidebar-overlay-mobile-open`/`-close` deduplicate onto the identical utility
 // names -- so the moment is animated exactly once, on the right element.
@@ -186,15 +186,15 @@ const contentClasses =
 
 const groupClasses = 'relative flex w-full min-w-0 flex-col p-2';
 
-// NO ROW for the label hiding as the rail collapses to icons (`opacity-0`,
-// `-mt-8`). The `root / collapse` row times the rail's width, not its children,
+// NO ROW for the label hiding as the rail collapses to icons (zero opacity,
+// negative top margin). The `root / collapse` row times the rail's width, not its children,
 // so the label snaps. Reported on #2302.
 const groupLabelClasses =
   'flex h-8 shrink-0 items-center rounded-md px-2 text-label-small ts-label-small text-sidebar-foreground/70 ' +
   'outline-none ring-sidebar-ring focus-visible:ring-2 ' +
   'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0';
 
-// `sidebar / item / hover` -- color, fast, standard. `transition-transform` was
+// `sidebar / item / hover` -- color, fast, standard. A transform transition was
 // the wrong property as well as an incomplete generic: nothing on this button
 // transforms; what changes on hover is `background` and `text`, exactly the
 // properties the row names.
@@ -259,7 +259,7 @@ export function sidebarMenuButtonClasses(
     .join(' ');
 }
 
-// `sidebar / item / hover` -- color, fast, standard. Same `transition-transform`
+// `sidebar / item / hover` -- color, fast, standard. Same transform transition
 // mis-naming groupAction carried, corrected the same way.
 const menuActionClasses =
   'absolute end-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
@@ -268,8 +268,8 @@ const menuActionClasses =
   'focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden';
 
-// NO ROW for the show-on-hover action's reveal (`md:opacity-0` ->
-// `opacity-100`). None of the sidebar rows names that fade, so it is instant.
+// NO ROW for the show-on-hover action's reveal (zero opacity at md and up ->
+// full opacity). None of the sidebar rows names that fade, so it is instant.
 // Reported on #2302.
 const menuActionShowOnHoverClasses =
   'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 ' +
@@ -284,16 +284,16 @@ const menuBadgeClasses =
   'group-data-[collapsible=icon]:hidden';
 
 // NO SIDEBAR ROW for the loading placeholder. The matrix assigns the moment
-// once, as `skeleton / root / waiting` -- a loop taking `period-shimmer`, which
+// once, as `skeleton / root / waiting` -- a loop taking the shimmer period, which
 // the generator emits as the `animate-pulse-shimmer` utility. These two are a
 // sidebar-flavoured skeleton and borrow that cell rather than invent a period of
 // their own; reported on #2302 so the matrix can decide whether sidebar wants a
 // row.
 //
-// What is gone: stock Tailwind's `animate-pulse` (whose duration is a literal
-// nothing in this system can retune) and `motion-reduce:animate-none`. A loop is
+// What is gone: stock Tailwind's pulse animation (whose duration is a literal
+// nothing in this system can retune) and the reduced-motion animation reset. A loop is
 // exempt from the reduced-motion zero BY DESIGN -- work loops slow, they never
-// stop -- and `animate-none` would win destructively anyway, resetting the whole
+// stop -- and `animation: none` would win destructively anyway, resetting the whole
 // shorthand and discarding the leaf's zeroed duration with it.
 const menuSkeletonClasses = 'flex h-8 items-center gap-2 rounded-md px-2';
 const menuSkeletonIconClasses =

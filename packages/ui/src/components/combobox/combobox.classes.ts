@@ -80,7 +80,7 @@ const chevronClasses =
 // `data-state` reaches this element from `comboboxAria(...).content`
 // (combobox.behavior.ts:211), spread by both the React and Astro views.
 //
-// NO motion-reduce:animate-none -- the generated utility zeroes
+// NO reduced-motion animation escape -- the generated utility zeroes
 // animation-duration under the media query, which keeps the keyframe's end
 // state; `animation: none` would discard that zero wherever it wins.
 //

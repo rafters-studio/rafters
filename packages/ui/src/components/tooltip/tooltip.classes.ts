@@ -18,7 +18,7 @@ const triggerClasses = 'inline-flex';
 // MOTION IS CSS AND TOKENS ONLY (#2148). No TypeScript reads a motion token, no
 // timer implements a delay, and the whole reveal works with JavaScript turned
 // off. The hover-intent delay that used to be a JavaScript timer over
-// `--rafters-delay-hover-intent` is now `transition-delay` on the reveal rule,
+// the hover-intent delay token is now `transition-delay` on the reveal rule,
 // and the reveal itself is native `:hover` / `:focus-visible` over the root's
 // real sibling structure (root > trigger, root > content).
 //
@@ -27,7 +27,7 @@ const triggerClasses = 'inline-flex';
 // "closed -> open" (moderate, enter, delay hover-intent) and tooltip / content /
 // "open -> closed" (fast, exit, NO delay). A tooltip does not linger: the linger
 // generic belongs to hover-card's close cell and to nothing else here. The old
-// `tooltipCloseDelay` read `--rafters-delay-linger` -- that was drift against
+// `tooltipCloseDelay` read the linger delay token -- that was drift against
 // the matrix, and it is gone rather than carried into CSS.
 //
 // The CLOSED cell is the base rule and the OPEN cell is the reveal rule, which
@@ -80,7 +80,7 @@ const triggerClasses = 'inline-flex';
 // keydown and cleared on pointerleave/blur. It has to win against a reveal rule
 // that is one class-level more specific, hence the important form.
 //
-// NO `delay-hover-intent` on the `data-[state=open]` path. Hover-intent filters
+// NO hover-intent delay on the `data-[state=open]` path. Hover-intent filters
 // accidental pointer transit; a consumer forcing `open` true -- or a keyboard
 // user -- has already declared intent, and the issue says so in as many words:
 // the data-state path "reveals the tooltip immediately (no delay)". The hover
@@ -115,8 +115,8 @@ export function tooltipClasses(_config: TooltipConfig, _state: TooltipState): To
  * data-state-driven consumer with no `[data-tooltip]`/`[data-part=trigger]`
  * sibling structure of its own -- chart-tooltip, which reveals via a
  * hit-tested datum rather than CSS `:hover` -- can reuse the SAME surface
- * and motion (`data-[state=open]:opacity-100 duration-moderate ease-enter`,
- * base `duration-fast ease-exit`, no spatial movement) without fabricating a
+ * and motion (open: full opacity at the moderate tier on the enter curve;
+ * base: the fast tier on the exit curve; no spatial movement) without fabricating a
  * `TooltipConfig`/`TooltipState` it has neither of just to call
  * `tooltipClasses()`. The CSS-hover reveal selectors embedded above are
  * scoped to `[data-tooltip]` ancestors and are inert wherever that marker is

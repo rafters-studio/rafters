@@ -5,7 +5,7 @@
  * the framework files import them directly (no context/provider needed for a
  * flat static) -- ported from the oracle's settled composition.
  * `text-label-medium ts-label-medium` / `bg-primary` / `text-foreground` /
- * `text-muted-foreground` are the semantic role tokens; `transition-colors` is
+ * the muted foreground are the semantic role tokens; `transition-colors` is
  * the sole motion intent (link hover colour), recorded in the matrix as
  * `motion.current`.
  */

@@ -26,12 +26,12 @@ export interface PopoverClassSet {
 // and it depended on a plugin this repo does not ship. Slide-on-enter goes with
 // it: it is not part of the presence contract and no acceptance asks for it.
 //
-// NO motion-reduce:animate-none. The generated utility zeroes animation-duration
-// under prefers-reduced-motion instead (mechanism B). That preserves the
-// keyframe's end state, which animate-none never reaches -- it removes the
+// NO reduced-motion animation escape. The generated utility zeroes
+// animation-duration under prefers-reduced-motion instead (mechanism B). That
+// preserves the keyframe's end state, which `animation: none` never reaches -- it removes the
 // animation rather than completing it instantly -- AND it still fires
-// animationend, which is what presence releases the unmount on; animate-none
-// fires nothing, so every reduced-motion close would fall through to the
+// animationend, which is what presence releases the unmount on; an animation
+// reset fires nothing, so every reduced-motion close would fall through to the
 // backstop timer. The two mechanisms never compose either: `animation: none`
 // resets the shorthand and discards the zeroed duration wherever it wins.
 const contentClasses =
@@ -53,12 +53,12 @@ const contentClasses =
 // THE COLOR HALF OF THE ROW HAS NO MOMENT ON THIS CONTROL, reported rather than
 // faked: the hover changes opacity alone (opacity-70 -> opacity-100) and no
 // background, text or border colour moves, so there is nothing for a
-// `transition-colors` to drive. Inventing a hover colour to fill the row would
+// colour transition to drive. Inventing a hover colour to fill the row would
 // be a design decision this issue does not carry. dialog, sheet and drawer carry
 // the identical row on the identical control and have the identical gap.
 //
 // NO component-level reduced-motion escape, and the pre-existing
-// `motion-reduce:transition-none` is REMOVED rather than kept. The generated
+// reduced-motion transition escape is REMOVED rather than kept. The generated
 // `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (the exporter's REDUCED_MOTION_ZEROED set,
 // packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the

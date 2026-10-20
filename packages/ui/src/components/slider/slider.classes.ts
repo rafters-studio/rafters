@@ -84,12 +84,12 @@ const rangeFillClasses: Record<SliderVariant, string> = {
 //
 //   thumb / hover -- color -- duration-fast, ease-standard
 //   thumb / keyboard step -- travel -- duration-fast, ease-standard, structural (step)
-//   thumb / grab -- zoom -- duration-micro, ease-spring-snappy, extent-press
+//   thumb / grab -- zoom -- duration-micro, ease-spring-snappy, extent press
 //   thumb / dragging -- travel -- duration {"kind":"pointer-rule"}: NOT A TUNABLE
 //     CELL. While a pointer drives the thumb it tracks the pointer exactly, and
 //     any nonzero duration is a defect.
 //
-// `transition-all duration-fast` was that defect: the score writes the thumb's
+// An all-properties transition at the fast tier was that defect: the score writes the thumb's
 // position as an inline `left`/`bottom` percentage, `all` covers it, so every
 // pointer move was arriving one `duration-fast` late. The fix is to drop the
 // POSITION out of the transition list while `data-dragging` is set, rather than
@@ -121,7 +121,7 @@ const rangeFillClasses: Record<SliderVariant, string> = {
 // kept as it stands and reported rather than deleted or given an invented cell;
 // its timing falls out of the hover row's own tier, which is the same fast/standard.
 //
-// `active:scale-105` is gone: the grab row assigns `extent-press`, so the scale
+// The literal 105% active scale is gone: the grab row assigns the press extent, so the scale
 // comes from the token leaf. Note the grab's `active:duration-micro
 // active:ease-spring-snappy` retimes every property on the element while pressed,
 // the hover colour included -- Tailwind emits one duration per rule, so a

@@ -306,7 +306,7 @@ function measureFloating(floating: HTMLElement): DOMRect {
 /**
  * Write a placement to the floating element through `left`/`top`, never
  * `transform`. Every named transition utility that covers `scale`
- * (`transition`, `transition-transform`, `transition-all`) also covers
+ * (the default set, the transform set, and the all-properties set) also covers
  * `transform`, so a placement written there animates with the popup's zoom: the
  * first open travels in from the viewport origin and a scroll reposition lags.
  * A `transform: scale()` keyframe would also replace the translate outright

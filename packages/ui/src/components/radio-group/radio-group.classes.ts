@@ -42,15 +42,15 @@ const itemBaseClasses =
 const itemGroupClass = 'group';
 
 // radio-group / indicator / unchecked <-> checked -- swap (dot scale) + fade
-//   -- duration-fast, ease-standard, extent-pop
+//   -- duration-fast, ease-standard, extent pop
 //
 // The dot is PAINTED IN BOTH STATES and fades/scales between them. It used to be
-// `group-data-[state=unchecked]:hidden`, and `display` cannot transition: the
+// hidden while the group is unchecked, and `display` cannot transition: the
 // generics would have been dead classes on a glyph that snapped.
 //
 // EXTENT-POP SITS ON THE ABSENT STATE. `pop` is the scale a thing enters FROM
 // (0.95 by default), so the unchecked dot rests at it and arrives at its natural
-// size. Checkbox's `extent-draw` is the mirror case -- a COMPLETED fraction, so
+// size. Checkbox's draw extent is the mirror case -- a COMPLETED fraction, so
 // it sits on the present state.
 const indicatorBaseClasses =
   'block h-2 w-2 rounded-full bg-current ' +

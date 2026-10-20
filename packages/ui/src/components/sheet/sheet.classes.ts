@@ -42,8 +42,9 @@ const overlayClasses =
 // assigns; the slide is reported. The classes are side-independent, so they sit
 // here rather than in `sheetSideClasses`.
 //
-// NO motion-reduce:animate-none. Reduced motion is handled on the duration
-// leaf, which the generated animation reads through it. animate-none here would
+// NO reduced-motion animation escape. Reduced motion is handled on the
+// duration leaf, which the generated animation reads through it. An animation
+// reset here would
 // reset the shorthand and discard the zeroed duration with it.
 const contentBaseClasses =
   'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 shadow-lg ' +

@@ -21,7 +21,7 @@ const rootClasses = 'group';
 
 // motion.jsonl `collapsible / trigger / hover` -- color (background, text,
 // border), fast, standard. The curve was missing before (a bare `duration-fast`
-// left the browser's default ease in place); `motion-reduce:transition-none` is
+// left the browser's default ease in place); the reduced-motion escape is
 // gone because the reduced-motion law is written once on the duration leaf and a
 // component-level escape only fights it.
 const triggerClasses =

@@ -23,7 +23,7 @@
  *     <a href="/user/john">@john</a>
  *   </HoverCard.Trigger>
  *   <HoverCard.Content>
- *     <div className="flex gap-4">
+ *     <div className="flex">
  *       <Avatar src="/john.jpg" />
  *       <div>
  *         <h4>John Doe</h4>

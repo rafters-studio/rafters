@@ -52,7 +52,7 @@ const iconClasses = 'inline-grid place-items-center';
 // `active:` variants over the state row's base assignment.
 //   toggle / root / off <-> on -- color -- duration-moderate, ease-standard
 //   toggle / root / press -- zoom + color -- duration-micro, ease-spring-snappy,
-//     extent-press
+//     extent press
 // `scale` is named in the transition list because Tailwind v4 writes the
 // individual `scale` property; `transform` would transition nothing.
 const baseClasses =

@@ -9,7 +9,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 
 /**
  * Textarea: a multi-line text field. The multi-line sibling of Input in the
- * text-input family -- same archetype (primary state is a VALUE), same
+ * text input family -- same archetype (primary state is a VALUE), same
  * controlled/uncontrolled boundary, same validity projection. Only the native
  * element changes: a `<textarea>` instead of an `<input>`.
  *

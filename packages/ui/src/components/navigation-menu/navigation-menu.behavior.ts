@@ -273,7 +273,7 @@ function canStillReveal(panel: HTMLElement, focusTarget: Node | null): boolean {
  * The condition is the whole point. Clearing a dismissal unconditionally when
  * the pointer left the bar re-revealed the panel the user had just dismissed:
  * a click-to-close or an Escape leaves focus on the trigger (Escape returns it
- * there deliberately), so `group-focus-within/navigation-item:opacity-100` was
+ * there deliberately), so the item group's focus-within full-opacity rule was
  * still matching, and deleting `data-dismissed` brought the panel back at
  * opacity 1 and hit-testable against `data-state="closed"` and
  * `aria-expanded="false"` -- a WCAG 1.4.13 dismissibility failure the `hidden`

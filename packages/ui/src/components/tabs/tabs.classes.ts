@@ -37,8 +37,8 @@ const triggerBaseClasses = [
   // here called the same declaration "indicator-move", which is a different row
   // and a part this component does not have (see panelClasses below).
   //
-  // `transition-all` narrowed to `transition-colors`: it also transitioned the
-  // active pill's `shadow-sm`, and the matrix assigns tabs no `elevation` row.
+  // The all-properties transition narrowed to `transition-colors`: it also
+  // transitioned the active pill's small shadow, and the matrix assigns tabs no `elevation` row.
   // A moment with no row does not move.
   'transition-colors duration-fast ease-standard',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
