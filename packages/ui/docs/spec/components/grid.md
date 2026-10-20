@@ -53,6 +53,20 @@ SCHEMA — layout JSON in the token registry, named slots, generator-emitted
 selection classes. Geometry only, ever: the first conditional or binding in
 that JSON is the template framework boundary 5 prohibits.
 
+## Item content
+
+The content of a `Grid.Item` fills the item. The item is placed by its
+spans (or by `data-priority` under a stock layout) and its content takes the
+item's full block size, so a Card in a primary bento item is as tall as both
+rows plus the gap, and the tiles in a row are one height. `Grid.Item` carries
+`grid` for this: its auto track stretches to the item's area and its child
+stretches to the track. Placement is unchanged.
+
+Current choice (2026-10-19): the item makes its content fill, not Card,
+because the outcome is about a grid item's content rather than only Cards,
+it reaches every child placed in a grid, and the grid Web Component (#2537)
+needs the same outcome from the grid side; revisable.
+
 ## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
