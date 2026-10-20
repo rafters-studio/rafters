@@ -67,7 +67,7 @@ describe('regenerateOutputs (#1944)', () => {
     for (const filename of KNOWN_FILES) {
       expect(existsSync(join(outputDir, filename))).toBe(true);
     }
-  }, 20000);
+  });
 
   it('writes nothing when every export is disabled', async () => {
     const written = await regenerateOutputs(baseRegistry(), { outputDir, exports: ALL_OFF });
@@ -103,7 +103,7 @@ describe('regenerateOutputs (#1944)', () => {
     expect(existsSync(join(outputDir, 'rafters.json'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.standalone.css'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.documentation.css'))).toBe(false);
-  }, 20000);
+  });
 
   it('never touches a file outside the known output filename set', async () => {
     const untouched = join(outputDir, 'notes.txt');
