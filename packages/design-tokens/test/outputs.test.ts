@@ -147,5 +147,5 @@ describe('regenerateOutputs (#1944)', () => {
     } finally {
       rmSync(plainDir, { recursive: true, force: true });
     }
-  }, 60000);
+  });
 });
