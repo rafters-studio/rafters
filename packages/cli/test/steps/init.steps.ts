@@ -7,7 +7,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, relative } from 'node:path';
@@ -16,35 +16,12 @@ import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
 import { context } from './common.steps.js';
-import { execRafters } from './helpers.js';
+import { execRafters, listFiles, type Snapshot, snapshot } from './helpers.js';
 
 const { Given, When, Then } = createBdd();
 
 const RAFTERS_CSS = '.rafters/output/rafters.css';
 const LAYER_STATEMENT = '@layer theme, base, components, utilities;';
-
-/** File contents keyed by project-relative path; node_modules and .rafters are skipped. */
-type Snapshot = Map<string, Buffer>;
-
-let before: Snapshot = new Map();
-let afterFirstInit: Snapshot = new Map();
-
-function listFiles(root: string, dir = root): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === '.rafters') continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...listFiles(root, full));
-    else files.push(relative(root, full).split('\\').join('/'));
-  }
-  return files;
-}
-
-async function snapshot(root: string): Promise<Snapshot> {
-  const snap: Snapshot = new Map();
-  for (const file of listFiles(root)) snap.set(file, await readFile(join(root, file)));
-  return snap;
-}
 
 function events(): Array<Record<string, unknown>> {
   const out: Array<Record<string, unknown>> = [];
@@ -91,25 +68,14 @@ async function removeCssFiles(): Promise<void> {
   }
 }
 
-Given('a {string} project', async ({}, fixture: string) => {
-  context.fixturePath = await createFixture(fixture as FixtureType);
-  before = await snapshot(context.fixturePath);
-});
-
 Given('the project has no CSS file', async () => {
   await removeCssFiles();
-  before = await snapshot(context.fixturePath);
-});
-
-Given('I have run {string}', async ({}, command: string) => {
-  const result = await execRafters(context.fixturePath, command.split(' ').slice(1));
-  expect(result.exitCode, result.stderr).toBe(0);
-  afterFirstInit = await snapshot(context.fixturePath);
+  context.before = await snapshot(context.fixturePath);
 });
 
 Given('{string} already exists', async ({}, file: string) => {
   await writeFile(join(context.fixturePath, file), '/* kept by the user */\n');
-  before = await snapshot(context.fixturePath);
+  context.before = await snapshot(context.fixturePath);
 });
 
 Given(
@@ -118,7 +84,7 @@ Given(
     const full = join(context.fixturePath, file);
     const css = await readFile(full, 'utf-8');
     await writeFile(full, `${css}\n${selector} {\n  ${property}: oklch(0.5 0.2 30);\n}\n`);
-    before = await snapshot(context.fixturePath);
+    context.before = await snapshot(context.fixturePath);
   },
 );
 
@@ -183,7 +149,7 @@ Then(
 Then(
   '{string} holds the original content of {string} byte for byte',
   async ({}, oldFile: string, entry: string) => {
-    const original = before.get(entry);
+    const original = context.before.get(entry);
     expect(original).toBeDefined();
     expect(await readFile(join(context.fixturePath, oldFile))).toEqual(original);
   },
@@ -212,7 +178,7 @@ Then('no file ending in {string} was created or moved', async ({}, suffix: strin
   const now = await snapshot(context.fixturePath);
   const pick = (snap: Snapshot): Array<[string, Buffer]> =>
     [...snap].filter(([f]) => f.endsWith(suffix)).sort(([a], [b]) => a.localeCompare(b));
-  expect(pick(now)).toEqual(pick(before));
+  expect(pick(now)).toEqual(pick(context.before));
 });
 
 Then('the output has no {string} event', async ({}, name: string) => {
@@ -255,8 +221,10 @@ Then(
   '{string} and {string} are byte for byte what the first init left',
   async ({}, a: string, b: string) => {
     for (const file of [a, b]) {
-      expect(afterFirstInit.get(file)).toBeDefined();
-      expect(await readFile(join(context.fixturePath, file))).toEqual(afterFirstInit.get(file));
+      expect(context.afterFirstInit.get(file)).toBeDefined();
+      expect(await readFile(join(context.fixturePath, file))).toEqual(
+        context.afterFirstInit.get(file),
+      );
     }
   },
 );
@@ -272,7 +240,7 @@ Then('no {string} directory exists', async ({}, dir: string) => {
 
 Then('{string} and {string} are unchanged', async ({}, a: string, b: string) => {
   for (const file of [a, b]) {
-    expect(await readFile(join(context.fixturePath, file))).toEqual(before.get(file));
+    expect(await readFile(join(context.fixturePath, file))).toEqual(context.before.get(file));
   }
 });
 

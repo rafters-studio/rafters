@@ -5,12 +5,13 @@
  */
 
 import type { ChildProcess } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
-import { cleanupFixture, createFixture } from '../fixtures/projects.js';
+import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
+import { type Snapshot, snapshot } from './helpers.js';
 
 const { Given, When, Then, After } = createBdd();
 
@@ -31,12 +32,21 @@ interface TestContext {
     stderr: string;
   } | null;
   serverProcess: ServerHandle | null;
+  /** The project's files before the command under test (#2798). */
+  before: Snapshot;
+  /** The project's files after `I have run {string}` (#2798). */
+  afterFirstInit: Snapshot;
+  /** `.rafters/tokens` contents after `I have run {string}` (#2799). */
+  tokenFiles: Map<string, string>;
 }
 
 const context: TestContext = {
   fixturePath: '',
   commandResult: null,
   serverProcess: null,
+  before: new Map(),
+  afterFirstInit: new Map(),
+  tokenFiles: new Map(),
 };
 
 // Cleanup after each scenario
@@ -82,6 +92,13 @@ Given('an Astro project with shadcn installed', async () => {
   context.fixturePath = await createFixture('astro-shadcn-v4');
 });
 
+Given('a {string} project', async ({}, fixture: string) => {
+  // A feature's Background may already have built a project; replace it.
+  if (context.fixturePath) await cleanupFixture(context.fixturePath);
+  context.fixturePath = await createFixture(fixture as FixtureType);
+  context.before = await snapshot(context.fixturePath);
+});
+
 // Tailwind version steps
 Given('Tailwind v4 is configured', async () => {
   // Fixtures already have Tailwind v4 by default
@@ -103,6 +120,21 @@ Given('rafters is initialized', async () => {
 
 Given('rafters is not initialized', async () => {
   // Default state - no .rafters directory
+});
+
+Given('I have run {string}', async ({}, command: string) => {
+  const { execRafters } = await import('./helpers.js');
+  const parts = command.split(' ');
+  if (parts[0] === 'rafters') parts.shift();
+  const result = await execRafters(context.fixturePath, parts);
+  expect(result.exitCode, result.stderr).toBe(0);
+  const tokens = join(context.fixturePath, '.rafters', 'tokens');
+  context.tokenFiles = existsSync(tokens)
+    ? new Map(
+        readdirSync(tokens).map((entry) => [entry, readFileSync(join(tokens, entry), 'utf8')]),
+      )
+    : new Map();
+  context.afterFirstInit = await snapshot(context.fixturePath);
 });
 
 Given('a Next.js project with .rafters already initialized', async () => {

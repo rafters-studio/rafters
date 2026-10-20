@@ -10,7 +10,6 @@ import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { generateNamespaces } from '@rafters/design-tokens';
 import { createBdd } from 'playwright-bdd';
-import { cleanupFixture, type FixtureType, createFixture } from '../fixtures/projects.js';
 import { CARRIED_EASING, RETIRED_DURATION, seedStaleMotion } from '../fixtures/stale-motion.js';
 import { context } from './common.steps.js';
 
@@ -26,10 +25,9 @@ type MotionToken = {
 const CHANGED_TOKEN = 'rafters-duration-fast';
 
 const state: {
-  tokenFiles: Map<string, string>;
   stamps: Map<string, string | undefined>;
   generatorValue: unknown;
-} = { tokenFiles: new Map(), stamps: new Map(), generatorValue: undefined };
+} = { stamps: new Map(), generatorValue: undefined };
 
 function tokensPath(): string {
   return join(context.fixturePath, '.rafters', 'tokens');
@@ -48,26 +46,6 @@ function motionToken(name: string): MotionToken {
   if (!token) throw new Error(`No motion token named "${name}"`);
   return token;
 }
-
-Given('a {string} project', async ({}, fixture: string) => {
-  // The feature's Background has already built a project; replace it.
-  if (context.fixturePath) await cleanupFixture(context.fixturePath);
-  context.fixturePath = await createFixture(fixture as FixtureType);
-});
-
-Given('I have run {string}', async ({}, command: string) => {
-  const { execRafters } = await import('./helpers.js');
-  const parts = command.split(' ');
-  if (parts[0] === 'rafters') parts.shift();
-  const result = await execRafters(context.fixturePath, parts);
-  expect(result.exitCode).toBe(0);
-  state.tokenFiles = new Map(
-    readdirSync(tokensPath()).map((entry) => [
-      entry,
-      readFileSync(join(tokensPath(), entry), 'utf8'),
-    ]),
-  );
-});
 
 Given(
   'one motion token in {string} holds a value the generator does not emit and no userOverride',
@@ -94,8 +72,8 @@ Then('every file in {string} is byte for byte what init left', async ({}, dir: s
   const after = new Map(
     readdirSync(full).map((entry) => [entry, readFileSync(join(full, entry), 'utf8')]),
   );
-  expect([...after.keys()].sort()).toEqual([...state.tokenFiles.keys()].sort());
-  for (const [entry, content] of state.tokenFiles) {
+  expect([...after.keys()].sort()).toEqual([...context.tokenFiles.keys()].sort());
+  for (const [entry, content] of context.tokenFiles) {
     expect(after.get(entry), entry).toBe(content);
   }
 });
