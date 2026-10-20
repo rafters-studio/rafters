@@ -84,6 +84,7 @@ interface Props {
   variant?: SidebarVariant;
   collapsible?: SidebarConfig['collapsible'];
   defaultOpen?: boolean;
+  contained?: boolean;
 }
 
 const {
@@ -92,6 +93,7 @@ const {
   variant = 'sidebar',
   collapsible = 'offcanvas',
   defaultOpen = true,
+  contained = false,
 } = Astro.props;
 
 const config: SidebarConfig = { defaultOpen, side, variant, collapsible };
@@ -110,6 +112,7 @@ const aria = sidebar.aria(state, config, ids);
   data-variant={variant}
   data-collapsible={collapsible}
   data-default-open={String(defaultOpen)}
+  data-contained={contained ? 'true' : undefined}
   class={classes.provider}
 >
   <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>

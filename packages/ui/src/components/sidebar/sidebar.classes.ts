@@ -57,7 +57,15 @@ export interface SidebarClassSet {
   separator: string;
 }
 
-const providerClasses = 'group/sidebar-wrapper flex min-h-svh w-full';
+// Viewport-height by default: the full-page rail. `contained` on the provider
+// (it renders `data-contained="true"`) bounds the family to the provider's own
+// container instead -- the provider fills it, and the panel and the inset read
+// that attribute through the named `sidebar-wrapper` group. A percentage height
+// under an auto-height parent resolves to auto, so a contained sidebar in an
+// unsized box grows to its content rather than collapsing.
+const providerClasses =
+  'group/sidebar-wrapper flex min-h-svh w-full ' +
+  'data-[contained=true]:h-full data-[contained=true]:min-h-0';
 
 // The one panel. Mobile: a fixed overlay panel (a modal dialog while open; the
 // bind `hidden`s it when closed). Desktop (md:): a sticky rail whose width
@@ -90,6 +98,10 @@ const panelBaseClasses =
   'flex flex-col bg-sidebar text-sidebar-foreground ' +
   'fixed inset-y-0 z-depth-modal h-svh w-72 ' +
   'md:sticky md:top-0 md:z-depth-navigation md:h-svh md:w-64 ' +
+  // Contained (#2657): drop the viewport height and let the provider's row
+  // stretch the panel to its own height, less the floating/inset margin. One
+  // non-arbitrary rule for every variant; it outranks each `md:h-*` above.
+  'md:group-data-[contained=true]/sidebar-wrapper:h-auto ' +
   'md:transition-[width] md:duration-normal md:ease-enter ' +
   'md:data-[state=collapsed]:duration-moderate md:data-[state=collapsed]:ease-exit ' +
   'md:data-[state=collapsed]:data-[collapsible=icon]:w-12 ' +
@@ -161,7 +173,9 @@ const railClasses =
   // physical: the rail hangs off the right edge of a left sidebar, and the reverse
   'group-data-[side=left]:-right-4 group-data-[side=right]:left-0';
 
-const insetClasses = 'relative flex min-h-svh w-full flex-1 flex-col bg-background';
+const insetClasses =
+  'relative flex min-h-svh w-full flex-1 flex-col bg-background ' +
+  'group-data-[contained=true]/sidebar-wrapper:min-h-0';
 
 const headerClasses = 'flex flex-col gap-2 p-2';
 const footerClasses = 'flex flex-col gap-2 p-2';
