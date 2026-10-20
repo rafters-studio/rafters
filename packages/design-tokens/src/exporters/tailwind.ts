@@ -35,6 +35,30 @@ export interface TailwindExportOptions {
   includeImport?: boolean;
   /** Dark mode strategy: 'class' (.dark class toggle) or 'media' (OS preference). Default: 'class' */
   darkMode?: 'class' | 'media';
+  /**
+   * Font stylesheets to load, e.g. ['@fontsource-variable/noto-sans'].
+   * Each distinct entry becomes one `@import "<entry>";` line, in list order,
+   * as the first lines of the sheet. Absent or empty = output identical to today.
+   */
+  fontImports?: readonly string[];
+}
+
+const INVALID_FONT_IMPORT = /["\\\r\n]/;
+
+/**
+ * One `@import "<entry>";` line per distinct entry, in list order (first
+ * occurrence wins). Throws before anything is emitted on an entry that cannot
+ * be written as one valid `@import` line.
+ */
+function fontImportLines(entries: readonly string[] = []): string[] {
+  for (const entry of entries) {
+    if (entry === '' || INVALID_FONT_IMPORT.test(entry)) {
+      throw new Error(
+        `Invalid font import ${JSON.stringify(entry)}: expected a package specifier or URL with no quotes, backslashes or line breaks`,
+      );
+    }
+  }
+  return [...new Set(entries)].map((entry) => `@import "${entry}";`);
 }
 
 const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
@@ -1570,12 +1594,15 @@ export function tokensToTailwind(
     throw new Error('Registry is empty');
   }
 
+  const fontLines = fontImportLines(options.fontImports);
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = [...fontLines];
 
   // Tailwind import
   if (includeImport) {
     sections.push('@import "tailwindcss";');
+  }
+  if (includeImport || fontLines.length > 0) {
     sections.push('');
   }
 
@@ -1861,7 +1888,10 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
  * await writeFile('.rafters/output/rafters.tailwind.css', staticCSS);
  * ```
  */
-export function registryToTailwindStatic(registry: TokenRegistry): string {
+export function registryToTailwindStatic(
+  registry: TokenRegistry,
+  options?: Pick<TailwindExportOptions, 'fontImports'>,
+): string {
   const tokens = [...registry.list()];
 
   if (tokens.length === 0) {
@@ -1869,7 +1899,7 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   }
 
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = fontImportLines(options?.fontImports);
 
   // Tailwind import
   sections.push('@import "tailwindcss";');

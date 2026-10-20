@@ -32312,17 +32312,6 @@ async function discoverFromDirs(...directories) {
   return discoverComposites(await adapter());
 }
 
-// src/config/rafters-config.ts
-function migrateConfig(raw) {
-  if ("shadcn" in raw && !("source" in raw)) {
-    if (raw.shadcn === true) {
-      raw.source = "shadcn";
-    }
-    delete raw.shadcn;
-  }
-  return raw;
-}
-
 // src/registry/types.ts
 var RegistryFileSchema = external_exports.object({
   path: external_exports.string(),
@@ -32344,7 +32333,7 @@ var RegistryItemIntelligenceSchema = external_exports.object({
     nevers: external_exports.array(external_exports.string()).default([])
   }).optional()
 });
-var ComponentTargetSchema = external_exports.enum(["react", "astro", "vue", "svelte", "wc"]);
+var ComponentTargetSchema = external_exports.enum(["react", "astro", "vue", "svelte"]);
 var PropFieldSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({
     type: external_exports.literal("enum"),
@@ -32412,6 +32401,25 @@ var RegistryIndexSchema = external_exports.object({
   rules: external_exports.array(external_exports.string()).default([]),
   substrate: external_exports.array(external_exports.string()).default([])
 });
+
+// src/config/rafters-config.ts
+function migrateConfig(raw) {
+  if ("shadcn" in raw && !("source" in raw)) {
+    if (raw.shadcn === true) {
+      raw.source = "shadcn";
+    }
+    delete raw.shadcn;
+  }
+  return raw;
+}
+var UnsupportedComponentTargetError = class extends Error {
+  constructor(value, configPath) {
+    super(
+      `componentTarget ${JSON.stringify(value)} in ${configPath} is not supported: the Web Component target (wc) was removed. Supported targets: ${ComponentTargetSchema.options.join(", ")}.`
+    );
+    this.name = "UnsupportedComponentTargetError";
+  }
+};
 
 // src/registry/client.ts
 var DEFAULT_REGISTRY_URL = "https://rafters.studio";
@@ -33205,14 +33213,14 @@ var SafePathFieldSchema = PathFieldSchema.refine(
 var ConfigWiringSchema = external_exports.object({
   // Closed set -- excludes 'unknown', which is a detection sentinel, not a
   // valid target a caller may set.
-  framework: external_exports.enum(["next", "vite", "remix", "react-router", "astro", "wc", "vanilla"]),
+  framework: external_exports.enum(["next", "vite", "remix", "react-router", "astro", "vanilla"]),
   // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
   // is tracked as a follow-up -- see the registryUrl SSRF issue.)
   registryUrl: external_exports.string().url().refine((u) => /^https?:$/.test(new URL(u).protocol), {
     message: "registryUrl must be an http(s) URL"
   }),
   // Closed set derived from the framework (see ComponentTarget in detect.ts).
-  componentTarget: external_exports.enum(["react", "astro", "vue", "svelte", "wc"]),
+  componentTarget: external_exports.enum(["react", "astro", "vue", "svelte"]),
   source: external_exports.string().min(1),
   cssPath: external_exports.union([external_exports.string(), external_exports.null()]).refine((v) => v === null || isSafeRelPath(v), {
     message: "cssPath must be relative and stay inside the workspace"
@@ -33637,22 +33645,27 @@ var RaftersToolHandler = class {
    *
    * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
    * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
-   * trusted as a `ComponentTarget` -- a stale or typo'd value falls back to
-   * degraded mode (`undefined` target) instead of silently forcing
-   * `rendersForTarget` false for every node.
+   * trusted as a `ComponentTarget` -- a value outside the schema (the removed
+   * Web Component target, or a typo) is a `configError` naming the supported
+   * targets, never a silent fallback. An absent target is degraded mode
+   * (`undefined` target).
    */
   async overlayContext(workspace) {
     const config3 = workspace ? await this.readConfig(workspace.root) : null;
+    const configPath = workspace ? getRaftersPaths(workspace.root).config : "config.rafters.json";
     const parsedPaths = OverlayPathsSchema.safeParse(config3 ?? {});
     if (!parsedPaths.success) {
       const issue3 = parsedPaths.error.issues[0];
       const field = issue3 && issue3.path.length > 0 ? issue3.path.join(".") : "a path field";
-      const configPath = workspace ? getRaftersPaths(workspace.root).config : "config.rafters.json";
       return {
         configError: `malformed config at ${configPath}: ${field} ${issue3?.message ?? "is invalid"}`
       };
     }
-    const parsedTarget = ComponentTargetSchema.safeParse(config3?.componentTarget);
+    const rawTarget = config3?.componentTarget;
+    const parsedTarget = ComponentTargetSchema.safeParse(rawTarget);
+    if (rawTarget !== void 0 && !parsedTarget.success) {
+      return { configError: new UnsupportedComponentTargetError(rawTarget, configPath).message };
+    }
     return {
       target: parsedTarget.success ? parsedTarget.data : void 0,
       installed: workspace ? await this.scanInstalled(workspace.root, parsedPaths.data) : { components: /* @__PURE__ */ new Set(), composites: /* @__PURE__ */ new Set() }
