@@ -109,6 +109,15 @@ The Astro component is data-driven (`items`), so its slot names carry the item v
 - Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 - Icons that carry meaning on their own need an accessible name, not `aria-hidden`; they do not belong in these props.
 
+## Top-level link
+
+Current choice (2026-10-19): a `NavigationMenuLink` that sits directly in a `NavigationMenuItem` in the bar matches the trigger beside it with no prop and no `className`, because the two are peer items in one bar and a props-only consumer has no other way to make them match (#2659); revisable.
+
+- The link class carries the trigger's type role, height and alignment scoped to a link directly in the item: `[li>&]:text-label-medium [li>&]:ts-label-medium [li>&]:h-11 @md:[li>&]:h-10 [li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:px-4 [li>&]:py-2`. Its font-size, font-weight, line-height and height equal the trigger's.
+- A link inside a `NavigationMenuContent` panel is not a direct child of the item, so it keeps its own type and the stacked title-over-description layout.
+- The selector is in the classes, so React, the Web Component and Astro read the same rule.
+- `navigationMenuTriggerStyle()` stays as the shadcn export; a top-level link no longer needs it.
+
 ## Keyboard
 
 - Arrow/Home/End across triggers: roving-focus effect (manual activation —
@@ -151,7 +160,7 @@ restarts the executor with fresh timers.
 | inline `visibility/height/overflow` hide-state on content | defect-do-not-port — controller-era SSR workaround; `hidden` from the projection does the job |
 | `aria-hidden` alongside `hidden` on content | simplified — `hidden` suffices |
 | Viewport / Indicator components, `forceMount` | contract (ruled 2026-07-03: shadcn surface is the floor). Declared as optional parts; chrome state projected by the score (viewport data-state open/closed, indicator visible/hidden, aria-hidden). Oracle's inline visibility/height hide-state not ported; `hidden` while closed under forceMount |
-| `navigationMenuTriggerStyle()` | contract (shadcn export; thin view over the trigger classes) |
+| `navigationMenuTriggerStyle()` | contract (shadcn export; thin view over the trigger classes). A top-level link matches the trigger without it (see Top-level link) |
 | typeahead | never existed in the oracle; menubar-pattern concern, not disclosure nav — not ported |
 
 ## Deltas that need Sean's eye

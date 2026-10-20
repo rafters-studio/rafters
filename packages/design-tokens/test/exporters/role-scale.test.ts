@@ -260,5 +260,5 @@ describe('role scale: ownership', () => {
     expect(rule('border-info-400')).toContain('var(--rafters-info-400)');
     expect(rule('ring-primary-900')).toContain('var(--rafters-primary-900)');
     expect(rule('bg-muted-100')).toContain('var(--rafters-muted-100)');
-  }, 60_000);
+  });
 });
