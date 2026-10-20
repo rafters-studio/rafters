@@ -16,7 +16,7 @@
  *
  * @example
  * ```tsx
- * <div className="flex items-center gap-2">
+ * <div className="flex">
  *   <Switch id="notifications" />
  *   <Label htmlFor="notifications">Enable notifications</Label>
  * </div>

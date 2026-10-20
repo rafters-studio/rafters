@@ -13,7 +13,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
  * progressbar's attributes.
  *
  * ARIA disposition (the three oracle a11y approaches unified): the old React
- * and Astro targets rendered an sr-only native `<progress>` PLUS a visual div;
+ * and Astro targets rendered a screen-reader-only native `<progress>` PLUS a visual div;
  * the old Web Component used `role="progressbar"` with aria-value*. The
  * behavior layer projects ONE progressbar (`role="progressbar"` +
  * aria-valuemin/max/now/text) across all three -- the WC oracle's approach,

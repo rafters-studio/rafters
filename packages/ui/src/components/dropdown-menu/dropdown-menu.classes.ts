@@ -36,9 +36,9 @@ const triggerClasses =
 // matrix declares two moments, and the day one is retuned a shared name would
 // drag the other with it. Collapsing distinct cells is the #2012 defect.
 //
-// NO motion-reduce:animate-none -- the generated utility zeroes
+// NO reduced-motion animation escape -- the generated utility zeroes
 // animation-duration under the media query instead, which keeps the keyframe's
-// end state. animate-none here would win destructively: `animation: none`
+// end state. An animation reset here would win destructively: `animation: none`
 // resets the shorthand and discards the zeroed duration with it.
 //
 // THE ROW (#2459): the content is a grid on grid-cols-menu-row (indicator,

@@ -50,7 +50,7 @@ const groupHeadingClasses =
 // packages/design-tokens/test/motion-cells.test.ts).
 //
 // NO component-level reduced-motion escape: the pre-existing
-// `motion-reduce:transition-none` is REMOVED, because the generated
+// reduced-motion transition escape is REMOVED, because the generated
 // `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (REDUCED_MOTION_ZEROED,
 // packages/design-tokens/src/exporters/tailwind.ts). Reduced motion is the
@@ -111,7 +111,7 @@ const dialogBackdropClasses = 'fixed inset-0 z-depth-overlay bg-foreground/80';
 // command / content / closed -> open (moderate, enter) and open -> closed
 // (fast, exit) -- motion.md:197-198, emitted as `command-content-open` /
 // `-close`. FADE ALONE, no zoom: command is the one anchored-popup row that
-// declares no `extent-pop`, so there is no `scale-*` here and that absence is
+// declares no pop extent, so there is no `scale-*` here and that absence is
 // the matrix's judgement, not an omission.
 //
 // ONE KNOWN LIMIT, reported not papered over: neither cell can run today.

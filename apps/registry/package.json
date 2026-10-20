@@ -17,6 +17,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@rafters/design-tokens": "workspace:*",
+    "@tailwindcss/node": "4.1.18",
+    "@tailwindcss/oxide": "4.1.18",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",

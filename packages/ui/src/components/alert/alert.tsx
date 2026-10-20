@@ -20,7 +20,7 @@
  * ```tsx
  * // Error alert
  * <Alert variant="destructive">
- *   <AlertCircle className="h-4 w-4" />
+ *   <AlertCircle />
  *   <AlertTitle>Error</AlertTitle>
  *   <AlertDescription>
  *     Your session has expired. Please log in again.
@@ -29,7 +29,7 @@
  *
  * // Success alert
  * <Alert variant="success">
- *   <CheckCircle className="h-4 w-4" />
+ *   <CheckCircle />
  *   <AlertTitle>Success</AlertTitle>
  *   <AlertDescription>
  *     Your changes have been saved.
@@ -38,7 +38,7 @@
  *
  * // Informational alert
  * <Alert variant="info">
- *   <Info className="h-4 w-4" />
+ *   <Info />
  *   <AlertTitle>Note</AlertTitle>
  *   <AlertDescription>
  *     This feature is in beta.

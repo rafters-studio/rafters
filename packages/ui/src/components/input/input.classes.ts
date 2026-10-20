@@ -20,11 +20,11 @@ export interface InputClassSet {
 //
 // Two rows, two properties, one element:
 //   input / root / focus -- ring -- duration-micro, ease-linear
-//   input / root / valid <-> invalid -- color -- duration-fast, ease-standard
+//   input / root / valid <-> invalid -- color -- fast, standard
 //
 // The ring rides `box-shadow` (Tailwind's `ring-*` is a shadow), validity rides
-// `border-color`, so both are named in the transition list -- `transition-shadow`
-// alone left the border snapping.
+// `border-color`, so both are named in the transition list -- a shadow-only
+// transition left the border snapping.
 //
 // PARTIAL ROW: the validity row assigns background, text and border, but only
 // the border has a moment here -- `aria-invalid:border-destructive` is the whole

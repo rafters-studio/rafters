@@ -22,7 +22,7 @@ const plotClasses = 'block w-full h-full';
 // computeBars applies to its own geometry, bar-chart.behavior.ts). Two
 // keyframes/cells/rows, never one keyframe driven by an inline numeric or a
 // runtime CSS variable computed here. One reference per cell, no raw
-// duration/easing, and no motion-reduce:animate-none -- reduced motion is
+// duration/easing, and no reduced-motion animation escape -- reduced motion is
 // handled INSIDE the generated utility, which zeroes animation-duration
 // under the media query (05-authoring.md "Motion: a matrix cell").
 // `data-state` is projected by `barAria` (bar-chart.behavior.ts); every bar

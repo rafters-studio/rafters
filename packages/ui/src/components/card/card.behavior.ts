@@ -35,7 +35,7 @@ export interface CardConfig {
    * role words pair their foreground: fill="primary"), `word/alpha`
    * (Tailwind slash-opacity: fill="muted/50"), or `word-to-word` (two-stop
    * gradient: fill="primary-to-primary/0"). When it resolves, the fill
-   * surface replaces the default `bg-card` surface; an invalid signature
+   * surface replaces the default card surface; an invalid signature
    * resolves to nothing and the default surface stays. Fill, never a raw
    * background prop -- that legacy channel is dropped.
    */

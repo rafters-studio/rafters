@@ -10,6 +10,7 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import {
   generateNamespaces,
   type Plugin,
@@ -115,27 +116,17 @@ type CarriedMotionOverride = {
 };
 
 /**
- * Read the overrides worth carrying out of a stored motion namespace file.
+ * Read the overrides worth carrying out of a stored motion namespace's tokens.
  *
  * Parsing is per token, never per file: the whole premise here is that most of
  * a pre-0.3.0 motion file no longer satisfies TokenSchema, so a token that
  * fails to parse is skipped rather than allowed to abort the read.
  */
-function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotionOverride> {
+function readStoredMotionOverrides(
+  entries: readonly unknown[],
+): Map<string, CarriedMotionOverride> {
   const carried = new Map<string, CarriedMotionOverride>();
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(motionFile, 'utf8'));
-  } catch {
-    // No stored motion namespace, or unreadable JSON: nothing to carry.
-    return carried;
-  }
-
-  const file = z.object({ tokens: z.array(z.unknown()) }).safeParse(raw);
-  if (!file.success) return carried;
-
-  for (const entry of file.data.tokens) {
+  for (const entry of entries) {
     const parsed = StoredMotionTokenSchema.safeParse(entry);
     if (!parsed.success) continue;
     const { name, value, userOverride } = parsed.data;
@@ -228,14 +219,15 @@ function renameRetiredOverrides(
  * {@link renameRetiredOverrides}), which throws before any write on a conflict.
  *
  * Writing before the registry load is what lets the reload see the regenerated
- * namespace with no further surgery.
+ * namespace with no further surgery. A regenerated token equal to its stored
+ * twin apart from `generatedAt` is kept as stored, and when every token is, the
+ * file is not written at all (#2799).
  *
  * Callers must check {@link hasStoredTokens} first.
  */
 export function regenerateMotionNamespace(tokensDir: string, plugins: readonly Plugin[]): void {
-  const carried = renameRetiredOverrides(
-    readStoredMotionOverrides(join(tokensDir, 'motion.rafters.json')),
-  );
+  const stored = readStoredMotionTokens(join(tokensDir, 'motion.rafters.json'));
+  const carried = renameRetiredOverrides(readStoredMotionOverrides(stored));
 
   const tokens = generateNamespaces(['motion']).allTokens.map((token) => {
     const override = carried.get(token.name);
@@ -256,5 +248,49 @@ export function regenerateMotionNamespace(tokensDir: string, plugins: readonly P
     return { ...token, ...override };
   });
 
-  saveRegistryToDir(tokensDir, new TokenRegistry(tokens, plugins));
+  const regenerated = new TokenRegistry(tokens, plugins).list();
+  // A token whose content matches its stored twin is kept as stored, so its
+  // `generatedAt` holds; a namespace with nothing changed is not written (#2799).
+  const kept = regenerated.map((token, index) => {
+    const inPlace = stored[index];
+    if (inPlace !== undefined && sameExceptStamp(inPlace, token)) {
+      return { token: inPlace, unchanged: true };
+    }
+    const twin = stored.find((entry) => sameExceptStamp(entry, token));
+    return { token: twin ?? token, unchanged: false };
+  });
+  if (kept.length === stored.length && kept.every((entry) => entry.unchanged)) return;
+
+  saveRegistryToDir(
+    tokensDir,
+    new TokenRegistry(
+      kept.map((entry) => entry.token),
+      plugins,
+    ),
+  );
+}
+
+/**
+ * The stored motion tokens as raw entries. An absent file or unreadable JSON
+ * yields none: nothing to carry and nothing to compare against.
+ */
+function readStoredMotionTokens(motionFile: string): unknown[] {
+  try {
+    const file = z
+      .object({ tokens: z.array(z.unknown()) })
+      .safeParse(JSON.parse(readFileSync(motionFile, 'utf8')));
+    return file.success ? file.data.tokens : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Whether two tokens are the same on disk once their `generatedAt` stamps are set aside. */
+function sameExceptStamp(stored: unknown, token: unknown): boolean {
+  const unstamped = (entry: unknown): unknown => {
+    const plain: unknown = JSON.parse(JSON.stringify(entry));
+    if (typeof plain !== 'object' || plain === null) return plain;
+    return Object.fromEntries(Object.entries(plain).filter(([key]) => key !== 'generatedAt'));
+  };
+  return isDeepStrictEqual(unstamped(stored), unstamped(token));
 }

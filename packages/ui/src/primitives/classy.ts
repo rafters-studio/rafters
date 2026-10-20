@@ -9,7 +9,7 @@
  *
  * Tailwind class structure: [modifier:]...[modifier:]utility[-value]
  * - Modifiers can contain brackets: data-[state=open]:, aria-[checked]:, min-[320px]:
- * - Utility values with brackets are arbitrary: w-[100px], bg-[#fff], text-[14px]
+ * - Utility values with brackets are arbitrary: a bracketed width, colour or font size
  */
 
 // ============================================================================
@@ -32,7 +32,7 @@ export type TokenMap = (key: string) => string | null;
 export interface ClassyOptions {
   /** Resolve token references to class strings */
   tokenMap?: TokenMap;
-  /** Allow arbitrary values like w-[10px] (default: false) */
+  /** Allow arbitrary (bracketed) values (default: false) */
   allowArbitrary?: boolean;
   /** Custom warning handler */
   warn?: (msg: string) => void;
@@ -50,7 +50,7 @@ export interface ParsedClass {
   original: string;
   /** Modifier chain (e.g., ['hover', 'dark', 'data-[state=open]']) */
   modifiers: string[];
-  /** The utility part (e.g., 'bg-blue-500', 'w-[100px]') */
+  /** The utility part (e.g., 'bg-example', 'utility-[value]') */
   utility: string;
   /** Whether the utility contains an arbitrary value */
   isArbitrary: boolean;
@@ -79,11 +79,11 @@ function isTokenRef(v: unknown): v is TokenRef {
  * Handles bracket content correctly (brackets in modifiers vs arbitrary values).
  *
  * Examples:
- * - "hover:bg-blue-500" → modifiers: ['hover'], utility: 'bg-blue-500', isArbitrary: false
- * - "data-[state=open]:flex" → modifiers: ['data-[state=open]'], utility: 'flex', isArbitrary: false
- * - "w-[100px]" → modifiers: [], utility: 'w-[100px]', isArbitrary: true
- * - "hover:w-[100px]" → modifiers: ['hover'], utility: 'w-[100px]', isArbitrary: true
- * - "supports-[display:grid]:grid" → modifiers: ['supports-[display:grid]'], utility: 'grid', isArbitrary: false
+ * - "hover:bg-example" → modifiers: ['hover'], utility: 'bg-example', isArbitrary: false
+ * - "data-[state=open]:example" → modifiers: ['data-[state=open]'], utility: 'example', isArbitrary: false
+ * - "utility-[value]" → modifiers: [], utility: 'utility-[value]', isArbitrary: true
+ * - "hover:utility-[value]" → modifiers: ['hover'], utility: 'utility-[value]', isArbitrary: true
+ * - "supports-[example]:example" → modifiers: ['supports-[example]'], utility: 'example', isArbitrary: false
  */
 export function parseTailwindClass(className: string): ParsedClass {
   const original = className;
@@ -148,7 +148,7 @@ export function parseTailwindClass(className: string): ParsedClass {
 /**
  * Check if a class contains an arbitrary value in the utility portion.
  * Brackets in modifiers (data-[state=open]:) are NOT arbitrary.
- * Brackets in the utility (w-[100px]) ARE arbitrary.
+ * Brackets in the utility (utility-[value]) ARE arbitrary.
  */
 export function hasArbitraryValue(className: string): boolean {
   return parseTailwindClass(className).isArbitrary;

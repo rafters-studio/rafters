@@ -17,10 +17,10 @@
  * @example
  * ```tsx
  * // Text skeleton
- * <Skeleton className="h-4 w-48" />
+ * <Skeleton style={{ height: '1rem', width: '12rem' }} />
  *
  * // Avatar skeleton
- * <Skeleton className="h-12 w-12 rounded-full" />
+ * <Skeleton style={{ height: '3rem', width: '3rem', borderRadius: '9999px' }} />
  * ```
  */
 import * as React from 'react';

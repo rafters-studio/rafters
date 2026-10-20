@@ -151,7 +151,7 @@ export interface ContextSubMenuState {
    * or the ArrowRight/Enter/Space keyboard open. `undefined` when the panel
    * has never gone through an in-score `open` dispatch (initial/controlled
    * `open: true`). `context-menu.classes.ts` reads this back as
-   * `data-open-source` to decide whether `delay-hover-intent` applies --
+   * `data-open-source` to decide whether the hover-intent delay applies --
    * a genuine hover still gets the intent filter, a click or keyboard open
    * (declared intent) does not. Optional so existing `{ open: boolean }`
    * state literals stay valid.
@@ -208,7 +208,7 @@ const contextSubMenuSlice: Slice<
         // a hidden node cannot transition, so it can never fade or scale in.
         //
         // Which input opened the panel, read back by context-menu.classes.ts
-        // as `data-[open-source=pointer]` to scope `delay-hover-intent` to a
+        // as `data-[open-source=pointer]` to scope the hover-intent delay to a
         // genuine hover -- undefined (removed) while closed, or on a
         // controlled/never-dispatched open, so a forced open carries no delay
         // either (the tooltip/hover-card #2148 doctrine: a consumer forcing
@@ -445,7 +445,7 @@ export function directSubMenus(container: HTMLElement): HTMLElement[] {
 
 /**
  * Bind ONE submenu (recursing into nested submenus). The sub-content is moved to
- * document.body on bind so it escapes the parent's `overflow-hidden` AND leaves
+ * document.body on bind so it escapes the parent's overflow clipping AND leaves
  * the parent's roving/keyboard scope (nested menuitems would otherwise pollute
  * the parent's item list). Opens on ArrowRight/Enter/Space/click or hover-intent,
  * closes on ArrowLeft/Escape/hover-leave; selecting an item calls `onSelect` to
@@ -526,7 +526,7 @@ export function bindContextSubMenu(
 
   // Hover open/close is a direct, undelayed state update (#2152): the visual
   // reveal's hover-intent delay is a CSS `transition-delay` on the sub-content
-  // rule (context-menu.classes.ts, consuming `--rafters-delay-hover-intent`),
+  // rule (context-menu.classes.ts, consuming the hover-intent delay token),
   // not a JS timer. `data-state` and aria-expanded flip the instant the pointer
   // crosses the boundary; the stylesheet decides when that becomes visible --
   // and it only decides to delay it for a genuine pointerenter ('pointer'

@@ -37,7 +37,7 @@ const headingClasses = 'flex';
 // `transition-colors duration-fast ease-standard` below is the row's timing
 // written out, but it has no colour change to carry, so the row is not
 // consumed. Reported, not faked: no hover colour is invented to give it one.
-// The timing replaces `motion-hover`, one of the 13 semantic motion tokens
+// The timing replaces the hover motion class, one of the 13 semantic motion tokens
 // deleted by ruling (2026-08-02) that kept compiling.
 //
 // NO ROW for the trigger's focus ring or for `hover:underline`: the ring is a
@@ -53,8 +53,8 @@ const triggerClasses =
 // motion.jsonl `accordion / chevron / open <-> closed` -- rotate
 // (transform: rotate), moderate, standard, extent structural (180deg). A
 // rotation on an element that stays put, so it is a transition; the 180deg is
-// mechanics, which is why it is written as `rotate-180` and not as an extent.
-// Replaces `motion-toggle` (retired), which also named the WRONG curve for this
+// mechanics, which is why it is written as a 180-degree rotate utility and not as an extent.
+// Replaces the toggle motion class (retired), which also named the WRONG curve for this
 // row -- spring-snappy where the row assigns standard.
 const triggerIconClasses =
   'h-4 w-4 shrink-0 transition-transform duration-moderate ease-standard ' +

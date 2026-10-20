@@ -17,15 +17,15 @@ export interface ColorPickerClassSet {
 //
 // Both are presence changes, so both are keyframes named as one class each and
 // keyed off the state that drives them. The two triples the rows assign are
-// already emitted -- `animate-fade-in-moderate-enter` and
-// `animate-fade-out-fast-exit` -- because the cell keys are deduplicated by the
+// already emitted -- fade-in (moderate, enter) and fade-out (fast, exit) --
+// because the cell keys are deduplicated by the
 // MOTION, not by the moment (packages/design-tokens/src/exporters/tailwind.ts):
 // sharing a name with command/content or avatar/image is the mechanism working,
 // not a borrowed cell.
 //
 // The old semantic dropdown-in / dropdown-out motion pair is gone (a
 // per-component motion token is the thing the matrix replaced), and the
-// unconditional `opacity-0` base went with it: it was the transition's start
+// unconditional zero-opacity base went with it: it was the transition's start
 // value, and with a keyframe carrying its own `from`, it would otherwise leave
 // the picker permanently invisible wherever nothing sets `data-state`. Neither
 // deleted utility is spelled out here -- Tailwind extracts candidates from this

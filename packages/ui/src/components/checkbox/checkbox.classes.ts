@@ -19,8 +19,8 @@ export interface CheckboxClassSet {
 // and indeterminate fills ride data-[state] variants, the disabled dimming
 // rides both native `disabled` and the projected `data-disabled`.
 //
-// `inline-grid place-items-center`, not `inline-flex items-center
-// justify-center`: the two glyphs must STACK in one cell rather than sit side by
+// `inline-grid place-items-center`, not an inline flex row centred on both
+// axes: the two glyphs must STACK in one cell rather than sit side by
 // side, because the indicator row (below) animates them with opacity + scale and
 // a `display` swap cannot transition. Both glyphs are painted at all times and
 // `col-start-1 row-start-1` puts them in the same grid cell, so the box keeps its
@@ -29,7 +29,7 @@ export interface CheckboxClassSet {
 // TWO ROWS SHARE THIS ELEMENT and they carry different tiers, so the press row
 // rides `active:` variants over the colour row's base assignment:
 //   root / unchecked <-> checked -- color -- duration-moderate, ease-standard
-//   root / press -- zoom + color -- duration-micro, ease-spring-snappy, extent-press
+//   root / press -- zoom + color -- duration-micro, ease-spring-snappy, extent press
 // `scale` is in the transition list for the press zoom; Tailwind v4 writes the
 // individual `scale` property, never `transform`, so naming `transform` here
 // would transition nothing.
@@ -124,22 +124,22 @@ const sizeClasses: Record<CheckboxSize, { box: string; icon: string }> = {
 // grid cell, and each reveals itself when the root reaches its data-state.
 //
 //   checkbox / indicator / unchecked <-> checked -- swap (check draw) + fade
-//     -- duration-fast, ease-standard, extent-draw
-//   checkbox / root-indicator / check sequence -- delay -- delay-choreo-step
+//     -- duration-fast, ease-standard, extent draw
+//   checkbox / root-indicator / check sequence -- delay -- delay choreo step
 //
 // THE CHECK-SEQUENCE ROW'S `duration` AND `curve` ARE BOTH `{"kind":"none"}`, AND
 // THAT IS NOT AN EMPTY ROW. Its MOVEMENT is `delay`, which by construction has no
 // duration and no curve -- the delay generic is the entire assignment. Every one
 // of the matrix's seven `duration.kind === "none"` rows is this shape (the other
 // six are the collection popups' `items / enter` rows carrying
-// `delay-stagger-step`), so a reading that treats `none` as "assigns nothing"
+// the stagger-step delay), so a reading that treats `none` as "assigns nothing"
 // leaves both delay generics with no consumer anywhere in the system, against the
-// matrix's own Choreography note: "parts sequence via `delay-choreo-step` between
+// matrix's own Choreography note: "parts sequence via the choreo-step delay between
 // their rows". Do not delete the delay below on the strength of the `none`.
 //
 // EXTENT-DRAW SITS ON THE PRESENT STATE, not the absent one. `draw` is the
 // COMPLETED fraction of a drawn indicator (1 = full travel), so the checked glyph
-// scales TO it from `scale-0`. That is the opposite placement from `extent-pop`,
+// scales TO it from `scale-0`. That is the opposite placement from the pop extent,
 // which is the scale a surface enters FROM and therefore sits on the absent state
 // (see radio-group's dot).
 //
@@ -149,8 +149,8 @@ const sizeClasses: Record<CheckboxSize, { box: string; icon: string }> = {
 // THE DASH HAS NO ROW. Both rows above name unchecked <-> checked only; the dash's
 // reveal on data-state=indeterminate (and the check/dash swap between checked and
 // indeterminate) is a moment no matrix row covers. It shares the check glyph's
-// timing through indicatorBaseClasses and repeats its extent-draw and
-// delay-choreo-step in dashStateClasses, not by any row's assignment --
+// timing through indicatorBaseClasses and repeats its draw extent and
+// choreo-step delay in dashStateClasses, not by any row's assignment --
 // reported here, not claimed as consumed.
 const indicatorBaseClasses =
   'col-start-1 row-start-1 text-current opacity-0 scale-0 ' +

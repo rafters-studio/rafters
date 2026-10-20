@@ -13,7 +13,7 @@
  * universally learned and never disruptive.
  * @attention-economics Secondary navigation: supports content discovery without
  * competing with primary content. Use sparingly at the bottom of paginated
- * lists; the current page is the sole emphasis (`bg-primary`), every other
+ * lists; the current page is the sole emphasis (the primary background), every other
  * control stays low-attention.
  * @trust-building Predictable navigation builds confidence: clear current-page
  * indication prevents disorientation, and disabled Previous/Next at the

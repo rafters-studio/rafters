@@ -24,24 +24,24 @@
  *
  * // With icon and description
  * <Item
- *   icon={<UserIcon className="h-4 w-4" />}
+ *   icon={<UserIcon />}
  *   description="Manage your account settings"
  * >
  *   Profile
  * </Item>
  *
  * // Selected state for navigation
- * <Item selected icon={<HomeIcon className="h-4 w-4" />}>
+ * <Item selected icon={<HomeIcon />}>
  *   Dashboard
  * </Item>
  *
  * // Disabled option
- * <Item disabled icon={<LockIcon className="h-4 w-4" />}>
+ * <Item disabled icon={<LockIcon />}>
  *   Admin Panel
  * </Item>
  *
  * // Interactive item with handler
- * <Item onClick={handleSelect} icon={<SettingsIcon className="h-4 w-4" />}>
+ * <Item onClick={handleSelect} icon={<SettingsIcon />}>
  *   Settings
  * </Item>
  * ```

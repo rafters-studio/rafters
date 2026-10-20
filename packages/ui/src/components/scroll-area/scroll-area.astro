@@ -20,8 +20,8 @@
  * @example
  * ```tsx
  * // Vertical scroll area
- * <ScrollArea className="h-72 w-48 rounded-md border">
- *   <div className="p-4">
+ * <ScrollArea className="border" style={{ height: '18rem', width: '12rem' }}>
+ *   <div>
  *     {items.map(item => (
  *       <div key={item.id}>{item.name}</div>
  *     ))}
@@ -29,10 +29,10 @@
  * </ScrollArea>
  *
  * // Horizontal scroll area
- * <ScrollArea orientation="horizontal" className="w-96 whitespace-nowrap">
- *   <div className="flex gap-4 p-4">
+ * <ScrollArea orientation="horizontal" style={{ width: '24rem', whiteSpace: 'nowrap' }}>
+ *   <div className="flex">
  *     {images.map(img => (
- *       <img key={img.id} src={img.src} className="w-40" />
+ *       <img key={img.id} src={img.src} width={160} />
  *     ))}
  *   </div>
  * </ScrollArea>

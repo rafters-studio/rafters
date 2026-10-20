@@ -65,7 +65,7 @@ const iconWrapperClasses = 'inline-grid place-items-center';
 // The zoom rides `extent-pop`: the class picks the member (writing the
 // `--rafters-consumed-extent` alias) and `scale-(--rafters-consumed-extent)`
 // reads that alias back, as context-menu's subContent does. Closed the part
-// rests at the pop extent and opacity 0; open it is scale-100 and opacity 100.
+// rests at the pop extent and opacity 0; open it is at full scale and opacity 100.
 //
 // The part stays present: closed, it is `inert` (set by the performance, not
 // here) and `pointer-events-none`, never `hidden`, because `display: none`
@@ -75,8 +75,8 @@ const iconWrapperClasses = 'inline-grid place-items-center';
 //
 // The transition utility is the bare `transition`: it is the one named utility
 // that covers both opacity and scale and leaves out `left`/`top`, so the
-// placement never animates. `transition-all` would animate the placement;
-// `transition-opacity` drops the zoom; an arbitrary property list is a
+// placement never animates. Transitioning every property would animate the
+// placement; an opacity-only transition drops the zoom; an arbitrary property list is a
 // bracketed value React's `classy()` drops (#2396).
 const contentClasses =
   'fixed z-depth-popover w-auto rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none ' +

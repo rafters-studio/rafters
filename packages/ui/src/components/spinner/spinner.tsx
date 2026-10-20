@@ -4,7 +4,7 @@
  * @cognitive-load 2/10 - Simple activity indicator, brief attention capture
  * @attention-economics Activity feedback: indicates system is working, maintains user confidence
  * @trust-building Immediate feedback that action is processing, prevents double-submission anxiety
- * @accessibility aria-label for screen readers, motion-reduce respects preferences, sr-only text
+ * @accessibility aria-label for screen readers, motion-reduce respects preferences, screen-reader-only text
  * @semantic-meaning Processing state: indeterminate loading for actions without progress measurement
  *
  * @usage-patterns

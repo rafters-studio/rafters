@@ -18,7 +18,7 @@
  * DO: Place a Container directly in a Grid and give it colSpan/rowSpan -- no Grid.Item wrapper needed
  * NEVER: Nest containers unnecessarily
  * NEVER: Use margins for spacing - let parent Grid handle gaps
- * NEVER: Use @container without w-full in flex/grid contexts (causes width collapse in Tailwind v4)
+ * NEVER: Use a container query context without full width in flex/grid contexts (causes width collapse in Tailwind v4)
  * NEVER: Write raw sticky/fixed/z-* utilities -- use position and depth props
  *
  * @example

@@ -19,6 +19,12 @@
  * below are empty now, and this is what keeps them that way.
  */
 
+import { createRequire } from 'node:module';
+import { dirname, extname } from 'node:path';
+import { compile } from '@tailwindcss/node';
+import { Scanner } from '@tailwindcss/oxide';
+import ts from 'typescript';
+
 /**
  * Packages a delivered file (packages/ui/src/{components,primitives,<substrate
  * kind>}/**) may declare as a real npm dependency. Every other `@rafters/*`
@@ -222,3 +228,98 @@ export function findShadowMathViolations(filePath: string, content: string): Gua
 export const KNOWN_IMPORT_VIOLATIONS: ReadonlySet<string> = new Set([]);
 
 export const KNOWN_SHADOW_MATH_VIOLATIONS: ReadonlySet<string> = new Set([]);
+
+/**
+ * A class-like candidate holds one of `-`, `:`, `[`, `/`, `@` or `(`. Bare
+ * English words that are also utility names (`static`, `hidden`, `container`)
+ * are left to prose (#2800, out of scope).
+ */
+const CLASS_LIKE = /[-:[/@(]/;
+
+const commentPrinter = ts.createPrinter({ removeComments: true });
+
+function stripScriptComments(code: string, scriptKind: ts.ScriptKind): string {
+  const source = ts.createSourceFile('x', code, ts.ScriptTarget.Latest, true, scriptKind);
+  return commentPrinter.printFile(source);
+}
+
+/**
+ * The file with its comments removed: the TypeScript printer for `.ts`/`.tsx`;
+ * for `.astro`, HTML comments, the frontmatter, `<script>` bodies and `{/* *\/}`
+ * template comments.
+ */
+function stripComments(extension: string, content: string): string {
+  if (extension === 'tsx') return stripScriptComments(content, ts.ScriptKind.TSX);
+  if (extension !== 'astro') return stripScriptComments(content, ts.ScriptKind.TS);
+  let out = content.replace(/<!--[\s\S]*?-->/g, '');
+  out = out.replace(
+    /^---\n([\s\S]*?)\n---/,
+    (_, body: string) => `---\n${stripScriptComments(body, ts.ScriptKind.TS)}\n---`,
+  );
+  out = out.replace(
+    /(<script[^>]*>)([\s\S]*?)(<\/script>)/g,
+    (_, open: string, body: string, close: string) =>
+      open + stripScriptComments(body, ts.ScriptKind.TS) + close,
+  );
+  return out.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '');
+}
+
+function scanCandidates(extension: string, content: string): Set<string> {
+  return new Set(new Scanner({}).scanFiles([{ content, extension }]));
+}
+
+/**
+ * Delivered-file scan for Tailwind classes that only a comment names (#2800).
+ * Tailwind's scanner reads comments as well as code, so a class named in a
+ * comment compiles into the consumer's CSS though nothing uses it. Each file is
+ * scanned as shipped and with its comments removed; every class-like candidate
+ * in the difference that compiles to CSS against `themeCss` (the rafters.css
+ * body, without its `@import "tailwindcss"`) is a violation.
+ */
+export async function findCommentOnlyClassViolations(
+  files: readonly { path: string; content: string }[],
+  themeCss: string,
+): Promise<GuardrailViolation[]> {
+  const base = dirname(createRequire(import.meta.url).resolve('@tailwindcss/node'));
+  const entry = `@import "tailwindcss";\n${themeCss}`;
+  const fresh = () => compile(entry, { base, onDependency: () => {} });
+  const emptyLength = (await fresh()).build([]).length;
+  const compiles = new Map<string, boolean>();
+  const violations: GuardrailViolation[] = [];
+  const scanned = new Set<string>();
+  for (const file of files) {
+    const extension = extname(file.path).slice(1);
+    if (scanned.has(file.path) || !['ts', 'tsx', 'astro'].includes(extension)) continue;
+    scanned.add(file.path);
+    const inCode = scanCandidates(extension, stripComments(extension, file.content));
+    for (const candidate of scanCandidates(extension, file.content)) {
+      if (inCode.has(candidate) || !CLASS_LIKE.test(candidate)) continue;
+      let generates = compiles.get(candidate);
+      if (generates === undefined) {
+        generates = (await fresh()).build([candidate]).length !== emptyLength;
+        compiles.set(candidate, generates);
+      }
+      if (!generates) continue;
+      violations.push({
+        file: file.path,
+        found: candidate,
+        message:
+          `${file.path}: a comment names '${candidate}', which Tailwind compiles into the ` +
+          `consumer's CSS though the file's code does not use it; reword the comment`,
+      });
+    }
+  }
+  return violations;
+}
+
+/**
+ * Dated exception (2026-10-20, #2800). `typography.classes.ts` builds its
+ * colour classes at runtime (`resolveFillName(v, 'text')`), so its own install
+ * has no literal `text-foreground`; the comment naming `text-foreground` and
+ * `text-accent` is what compiles them today. Rewording it would drop
+ * `text-foreground` from a typography-only consumer, so it stays until the
+ * fills redesign makes those classes literal, which removes this entry.
+ */
+export const KNOWN_COMMENT_CLASS_VIOLATIONS: ReadonlySet<string> = new Set([
+  'components/ui/typography.classes.ts',
+]);
