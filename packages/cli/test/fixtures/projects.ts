@@ -19,7 +19,6 @@ export type FixtureType =
   | 'remix-shadcn-v4'
   | 'react-router-shadcn-v4'
   | 'astro-shadcn-v4'
-  | 'wc-no-shadcn'
   | 'vanilla-no-shadcn'
   | 'empty-project'
   | 'tailwind-v3-error';
@@ -248,23 +247,6 @@ const TEMPLATES: Record<FixtureType, FixtureTemplate> = {
     },
   },
 
-  'wc-no-shadcn': {
-    packageJson: {
-      name: 'test-wc',
-      version: '0.1.0',
-      dependencies: {
-        lit: '^3.0.0',
-      },
-      devDependencies: {
-        tailwindcss: '^4.0.0',
-        typescript: '^5.9.0',
-      },
-    },
-    files: {
-      'src/index.css': '@import "tailwindcss";\n',
-    },
-  },
-
   'vanilla-no-shadcn': {
     packageJson: {
       name: 'test-vanilla',
@@ -415,9 +397,6 @@ export function getExpectedDetection(type: FixtureType): {
       };
     case 'astro-shadcn-v4':
       return { framework: 'astro', hasShadcn: true, tailwindVersion: '4.0.0', isTailwindV3: false };
-    // `wc` detects from `lit` (or `@lit/*`) without React.
-    case 'wc-no-shadcn':
-      return { framework: 'wc', hasShadcn: false, tailwindVersion: '4.0.0', isTailwindV3: false };
     // `vanilla` has no package.json signature; it stays a `--framework` / prompt pick.
     case 'vanilla-no-shadcn':
       return {
@@ -444,7 +423,6 @@ export const ALL_FIXTURE_TYPES: FixtureType[] = [
   'remix-shadcn-v4',
   'react-router-shadcn-v4',
   'astro-shadcn-v4',
-  'wc-no-shadcn',
   'vanilla-no-shadcn',
   'empty-project',
   'tailwind-v3-error',
@@ -465,6 +443,5 @@ export const INSTALL_FRESH_FIXTURES: FixtureType[] = [
   'remix-shadcn-v4',
   'react-router-shadcn-v4',
   'astro-shadcn-v4',
-  'wc-no-shadcn',
   'vanilla-no-shadcn',
 ];

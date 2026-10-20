@@ -15,7 +15,12 @@ import {
   resolveContentSources,
 } from '@rafters/design-tokens';
 import { RegistryClient } from '../registry/client.js';
-import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
+import {
+  ComponentTargetSchema,
+  type RegistryFile,
+  type RegistryItem,
+  type RegistryItemType,
+} from '../registry/types.js';
 import {
   type ComponentTarget,
   resolveComponentTarget,
@@ -31,7 +36,11 @@ import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebu
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
-import { migrateConfig, type RaftersConfig } from '../config/rafters-config.js';
+import {
+  migrateConfig,
+  type RaftersConfig,
+  UnsupportedComponentTargetError,
+} from '../config/rafters-config.js';
 
 export interface AddOptions {
   list?: boolean;
@@ -103,9 +112,10 @@ async function isInitialized(cwd: string): Promise<boolean> {
  */
 async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
   const paths = getRaftersPaths(cwd);
+  let config: RaftersConfig;
   try {
     const content = await readFile(paths.config, 'utf-8');
-    return migrateConfig(
+    config = migrateConfig(
       JSON.parse(content) as Record<string, unknown>,
     ) as unknown as RaftersConfig;
   } catch (err) {
@@ -119,6 +129,11 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
     }
     return null;
   }
+  const target: unknown = config.componentTarget;
+  if (target !== undefined && !ComponentTargetSchema.safeParse(target).success) {
+    throw new UnsupportedComponentTargetError(target, paths.config);
+  }
+  return config;
 }
 
 /**
@@ -204,7 +219,7 @@ const SHARED_EXTENSIONS = new Set(['.behavior.ts', '.classes.ts']);
  * target-specific component file (.tsx = React, .astro = Astro, etc.).
  * Everything else is framework-agnostic and installs for all targets.
  */
-const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
+const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
 
 /**
  * Check if a file path is a shared/auxiliary file that installs regardless of
@@ -228,8 +243,6 @@ function isSharedFile(path: string): boolean {
 /**
  * Targets where falling back to .tsx is reasonable -- the framework can render
  * React components (Astro with @astrojs/react, future Vue/Svelte wrappers).
- * WC projects cannot use React components, so a missing .element.ts must error,
- * not silently install unusable .tsx files.
  */
 const REACT_FALLBACK_TARGETS = new Set<ComponentTarget>(['astro', 'vue', 'svelte']);
 
@@ -257,19 +270,11 @@ export function selectFilesForFramework(
   }
 
   // Fallback: use .tsx files only for targets that can render React components.
-  // WC projects cannot use React components -- return only shared files so the
-  // caller can detect the missing component and error.
   if (REACT_FALLBACK_TARGETS.has(target)) {
     const fallbackFiles = files.filter((f) => f.path.endsWith('.tsx'));
     if (fallbackFiles.length > 0) {
       return { files: [...fallbackFiles, ...shared], fallback: true };
     }
-  }
-
-  // Target has no matching files and no React fallback -- return only shared
-  // files. For targets like `wc`, this signals the component is unavailable.
-  if (target !== 'react' && !REACT_FALLBACK_TARGETS.has(target)) {
-    return { files: shared, fallback: false };
   }
 
   // React target or react-fallback target with no .tsx either -- return everything

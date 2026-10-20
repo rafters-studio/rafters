@@ -10,17 +10,17 @@ import type { Facet, RegistryItem } from '../../src/registry/types.js';
 
 // One RegistryItem[] feeds assembleGraph; the graph node carries each item's
 // per-target facets, so the overlay reads rendersForTarget straight off the node.
-//   button (ui): facets for astro + wc, but NO vue (the real manifest gap).
+//   button (ui): facets for astro + svelte, but NO vue (the real manifest gap).
 //   modal  (ui): no facets at all.
-// astro and wc carry DIFFERENT props -- proof that the expanded payload is
+// astro and svelte carry DIFFERENT props -- proof that the expanded payload is
 // target-lensed, not just that the stamp landed on a shared empty fixture.
 const astroFacet: Facet = {
   props: { size: { type: 'enum', values: ['sm', 'md', 'lg'] } },
   snippet: '<Button size="md" />',
 };
-const wcFacet: Facet = {
+const svelteFacet: Facet = {
   props: { variant: { type: 'enum', values: ['solid', 'outline'] } },
-  snippet: '<raf-button variant="solid"></raf-button>',
+  snippet: '<Button variant="solid" />',
 };
 
 const items = [
@@ -31,7 +31,7 @@ const items = [
     files: [],
     rules: [],
     composites: [],
-    facets: { astro: astroFacet, wc: wcFacet },
+    facets: { astro: astroFacet, svelte: svelteFacet },
   },
   {
     name: 'modal',
@@ -72,7 +72,7 @@ vdescribe('describeWithOverlay -- single-node stamping', () => {
     };
     const button = describeWithOverlay('button', graph, ctxVue) as OverlayNodeResult;
     expect(button.presence).toBe('installed');
-    expect(button.rendersForTarget).toBe(false); // button has astro + wc, no vue
+    expect(button.rendersForTarget).toBe(false); // button has astro + svelte, no vue
   });
 
   it('degraded mode: no configured target echoes undefined and never renders', () => {
@@ -113,7 +113,7 @@ vdescribe('describeWithOverlay -- expanded-node stamping (#2101)', () => {
     expect(button.presence).toBe('installed');
     expect(button.target).toBe('astro');
     expect(button.rendersForTarget).toBe(true);
-    // Target-lensed: astro's facet ('size'), never wc's ('variant').
+    // Target-lensed: astro's facet ('size'), never svelte's ('variant').
     expect(button.props).toHaveProperty('size');
     expect(button.props).not.toHaveProperty('variant');
   });

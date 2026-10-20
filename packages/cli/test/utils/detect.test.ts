@@ -58,23 +58,26 @@ describe('detectProject', () => {
       expect((await detectProject(testDir)).framework).toBe('astro');
     });
 
-    it('detects wc from lit without React', async () => {
+    it('falls through to unknown for lit without React', async () => {
       await writeFile(
         join(testDir, 'package.json'),
         JSON.stringify({ dependencies: { lit: '^3.0.0' } }),
       );
-      expect((await detectProject(testDir)).framework).toBe('wc');
+      expect((await detectProject(testDir)).framework).toBe('unknown');
     });
 
-    it('detects wc from @lit/* scoped packages without React', async () => {
+    it('falls through to vite for lit without React in a vite project', async () => {
       await writeFile(
         join(testDir, 'package.json'),
-        JSON.stringify({ dependencies: { '@lit/reactive-element': '^2.0.0' } }),
+        JSON.stringify({
+          dependencies: { '@lit/reactive-element': '^2.0.0' },
+          devDependencies: { vite: '^6.0.0' },
+        }),
       );
-      expect((await detectProject(testDir)).framework).toBe('wc');
+      expect((await detectProject(testDir)).framework).toBe('vite');
     });
 
-    it('prefers React over wc when lit + react are both present', async () => {
+    it('detects vite when lit + react are both present', async () => {
       await writeFile(
         join(testDir, 'package.json'),
         JSON.stringify({
@@ -90,8 +93,7 @@ describe('detectProject', () => {
         join(testDir, 'package.json'),
         JSON.stringify({ dependencies: { lit: '^3.0.0', react: '^19.0.0' } }),
       );
-      // Confirms the wc gate is `!react`, not "no vite". With react present
-      // and no other framework signal, neither branch matches -- expect unknown.
+      // lit is not a framework signal, and react alone is not one either.
       expect((await detectProject(testDir)).framework).toBe('unknown');
     });
 
@@ -363,11 +365,11 @@ describe('findCssPath', () => {
   });
 
   it('returns the first existing path in framework order', async () => {
-    // wc cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css']
+    // vanilla cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css']
     await mkdir(join(testDir, 'src'), { recursive: true });
     await writeFile(join(testDir, 'src/main.css'), '');
     await writeFile(join(testDir, 'src/styles.css'), '');
-    expect(findCssPath(testDir, 'wc')).toBe('src/main.css');
+    expect(findCssPath(testDir, 'vanilla')).toBe('src/main.css');
   });
 
   it('returns null when no candidate exists', async () => {

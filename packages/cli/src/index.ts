@@ -27,7 +27,7 @@ program
   .option('--reset', 'Re-run generators fresh, replacing persisted tokens')
   .option(
     '--framework <name>',
-    'Override framework detection (next|vite|remix|react-router|astro|wc|vanilla)',
+    'Override framework detection (next|vite|remix|react-router|astro|vanilla)',
   )
   .option('--agent', 'Output JSON for machine consumption')
   .option(
