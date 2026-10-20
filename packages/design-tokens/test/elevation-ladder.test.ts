@@ -45,8 +45,8 @@ function buildDefaultRegistry(): TokenRegistry {
   const semanticNames = new Set(semantic.tokens.map((t) => t.name));
   const familyNames = new Set<string>();
   for (const mapping of Object.values(DEFAULT_SEMANTIC_COLOR_MAPPINGS)) {
-    familyNames.add(mapping.light.family);
-    familyNames.add(mapping.dark.family);
+    if (mapping.light) familyNames.add(mapping.light.family);
+    if (mapping.dark) familyNames.add(mapping.dark.family);
   }
   const familyTokens = [...familyNames]
     .filter((name) => !semanticNames.has(name))
@@ -126,7 +126,7 @@ describe('elevation ladder -- designed dark positions (#1638)', () => {
     const table: Record<string, { light: string; dark: string }> = {};
     for (const role of ELEVATION_ROLES) {
       const m = DEFAULT_SEMANTIC_COLOR_MAPPINGS[role];
-      if (!m) continue;
+      if (!m?.light || !m.dark) continue;
       table[role] = { light: m.light.position, dark: m.dark.position };
     }
     expect(table).toMatchSnapshot();

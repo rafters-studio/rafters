@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 import {
   CircularDependencyError,
   contrastPlugin,
+  DEFAULT_SEMANTIC_COLOR_MAPPINGS,
   generateBaseSystem,
+  generateSemanticTokens,
   invertPlugin,
   mirrorPlugin,
   scalePlugin,
@@ -526,5 +528,53 @@ describe('semantic colour roles', () => {
     newFamily(reg, 'test-family', 200);
     reg.set(role, { family: 'test-family', position: position(reg, role) }, { reason: 'test' });
     for (const n of moved) expect(JSON.stringify(reg.get(n)?.value)).not.toBe(before.get(n));
+  });
+});
+
+describe('derived semantic colours have one value (#2662)', () => {
+  it('generates what the registry keeps', () => {
+    const generated = generateBaseSystem().allTokens;
+    // REGISTRY_PLUGINS: the generated set also binds shadow-rung tokens.
+    const reg = new TokenRegistry(generated, REGISTRY_PLUGINS);
+    const moved = generated.filter(
+      (t) =>
+        t.namespace === 'semantic' &&
+        JSON.stringify(t.value) !== JSON.stringify(reg.get(t.name)?.value),
+    );
+    expect(moved.map((t) => t.name)).toEqual([]);
+    for (const t of generated.filter(
+      (x) => x.binding?.plugin === 'contrast' || x.binding?.plugin === 'state',
+    )) {
+      const m = DEFAULT_SEMANTIC_COLOR_MAPPINGS[t.name.replace(/--dark$/, '')];
+      expect(m?.light).toBeUndefined();
+      expect(m?.dark).toBeUndefined();
+    }
+    for (const t of generated.filter((x) => x.binding?.plugin === 'scale')) {
+      const m = DEFAULT_SEMANTIC_COLOR_MAPPINGS[t.name];
+      expect(String((t.value as { position: unknown }).position)).toBe(m?.light?.position);
+      const twin = generated.find((x) => x.name === `${t.name}--dark`);
+      expect(String((twin?.value as { position: unknown }).position)).toBe(m?.dark?.position);
+    }
+  });
+
+  it('writes a derived token description from its settled value', () => {
+    const generated = generateBaseSystem().allTokens;
+    const fg = generated.find((t) => t.name === 'primary-foreground');
+    const value = fg?.value as ColorReference;
+    expect(fg?.description).toBe(
+      `${fg?.semanticMeaning}. Light: ${value.family}-${value.position}.`,
+    );
+  });
+
+  it('throws naming a top-of-tree mapping without a light step', () => {
+    const { light: _light, ...noLight } = DEFAULT_SEMANTIC_COLOR_MAPPINGS.background ?? {
+      meaning: '',
+      contexts: [],
+      do: [],
+      never: [],
+    };
+    expect(() => generateSemanticTokens({} as never, { 'lonely-surface': noLight })).toThrow(
+      /"lonely-surface"/,
+    );
   });
 });
