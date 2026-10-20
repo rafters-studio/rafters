@@ -23,6 +23,7 @@ import {
 } from '../registry/types.js';
 import {
   type ComponentTarget,
+  FRAMEWORK_SPECS,
   resolveComponentTarget,
   targetToExtension,
 } from '../utils/detect.js';
@@ -886,6 +887,9 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     components,
     overwrite: options.overwrite ?? false,
   });
+
+  const frameworkNote = config ? FRAMEWORK_SPECS[config.framework].note : undefined;
+  if (frameworkNote) log({ event: 'add:framework_note', message: frameworkNote });
 
   // Resolve all items and their dependencies
   const allItems: RegistryItem[] = [];

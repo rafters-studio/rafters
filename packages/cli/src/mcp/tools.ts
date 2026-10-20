@@ -115,7 +115,7 @@ const ConfigWiringSchema = z
   .object({
     // Closed set -- excludes 'unknown', which is a detection sentinel, not a
     // valid target a caller may set.
-    framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'vanilla']),
+    framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'preact', 'vanilla']),
     // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
     // is tracked as a follow-up -- see the registryUrl SSRF issue.)
     registryUrl: z

@@ -33213,7 +33213,7 @@ var SafePathFieldSchema = PathFieldSchema.refine(
 var ConfigWiringSchema = external_exports.object({
   // Closed set -- excludes 'unknown', which is a detection sentinel, not a
   // valid target a caller may set.
-  framework: external_exports.enum(["next", "vite", "remix", "react-router", "astro", "vanilla"]),
+  framework: external_exports.enum(["next", "vite", "remix", "react-router", "astro", "preact", "vanilla"]),
   // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
   // is tracked as a follow-up -- see the registryUrl SSRF issue.)
   registryUrl: external_exports.string().url().refine((u) => /^https?:$/.test(new URL(u).protocol), {

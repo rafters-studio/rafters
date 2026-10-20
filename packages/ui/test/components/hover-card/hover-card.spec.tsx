@@ -16,10 +16,13 @@
  * test/motion/hover-reveal.spec.ts.
  *
  * Interaction is driven by dispatching the real native events the browser
- * itself would fire, not a synthetic-event library: `pointerover`/`pointerout`
- * (bubbling) are what React infers its non-bubbling `onPointerEnter`/
- * `onPointerLeave` from, and real `.focus()`/`.blur()` calls raise the matching
- * `focus`/`blur` pair natively. No real mouse ever moves here, so
+ * itself would fire, not a synthetic-event library. A pointer crossing a
+ * boundary fires a bubbling `pointerover`/`pointerout` on the element and a
+ * non-bubbling `pointerenter`/`pointerleave` on each element it enters or
+ * leaves; React infers its `onPointerEnter`/`onPointerLeave` from the former,
+ * renderers that listen natively (Preact) hear the latter, so the helpers fire
+ * both. Real `.focus()`/`.blur()` calls raise the matching `focus`/`blur` pair
+ * natively. No real mouse ever moves here, so
  * `:hover`-based checks inside the component (the focus/hover dismissal
  * handoff) resolve exactly as they did under jsdom: never matching.
  */
@@ -83,18 +86,40 @@ function rootEl(root: ParentNode): HTMLElement | null {
   return root.querySelector<HTMLElement>('[data-part="root"][data-hover-card]');
 }
 
-/** React infers its non-bubbling onPointerEnter/onPointerLeave from the
- *  bubbling pointerover/pointerout pair, comparing target and relatedTarget --
- *  dispatching pointerenter/pointerleave directly never reaches it. */
+/** The helpers fire what a real pointer fires: a bubbling `pointerover`/
+ *  `pointerout` on `el` (React infers onPointerEnter/onPointerLeave from these,
+ *  comparing target and relatedTarget), then a non-bubbling `pointerenter`/
+ *  `pointerleave` on `el` and each ancestor that does not contain the other end
+ *  of the move (renderers that listen to these natively hear them). */
+function boundaryChain(el: HTMLElement, other: EventTarget | null): Element[] {
+  const otherNode = other instanceof Node ? other : null;
+  const chain: Element[] = [el];
+  let node = el.parentElement;
+  while (node && !(otherNode && node.contains(otherNode))) {
+    chain.push(node);
+    node = node.parentElement;
+  }
+  return chain;
+}
+
+/** The pointer enters `el`, coming from `relatedTarget` (null = from outside the document). */
 function enterScope(el: HTMLElement, relatedTarget: EventTarget | null = null): void {
   el.dispatchEvent(
     new PointerEvent('pointerover', { bubbles: true, cancelable: true, relatedTarget }),
   );
+  for (const node of boundaryChain(el, relatedTarget).reverse()) {
+    node.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false, relatedTarget }));
+  }
 }
+
+/** The pointer leaves `el`, going to `relatedTarget` (null = out of the document). */
 function leaveScope(el: HTMLElement, relatedTarget: EventTarget | null = null): void {
   el.dispatchEvent(
     new PointerEvent('pointerout', { bubbles: true, cancelable: true, relatedTarget }),
   );
+  for (const node of boundaryChain(el, relatedTarget)) {
+    node.dispatchEvent(new PointerEvent('pointerleave', { bubbles: false, relatedTarget }));
+  }
 }
 function pressEscape(el: HTMLElement): void {
   el.dispatchEvent(
