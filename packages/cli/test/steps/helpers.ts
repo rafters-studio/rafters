@@ -5,7 +5,9 @@
  */
 
 import { type ChildProcess, spawn } from 'node:child_process';
-import { join } from 'node:path';
+import { readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -123,4 +125,25 @@ export async function waitFor(
   }
 
   throw new Error(`Condition not met within ${timeoutMs}ms`);
+}
+
+/** File contents keyed by project-relative path; node_modules and .rafters are skipped. */
+export type Snapshot = Map<string, Buffer>;
+
+/** Project-relative paths of every file outside node_modules and .rafters. */
+export function listFiles(root: string, dir = root): string[] {
+  const files: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === '.rafters') continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...listFiles(root, full));
+    else files.push(relative(root, full).split('\\').join('/'));
+  }
+  return files;
+}
+
+export async function snapshot(root: string): Promise<Snapshot> {
+  const snap: Snapshot = new Map();
+  for (const file of listFiles(root)) snap.set(file, await readFile(join(root, file)));
+  return snap;
 }

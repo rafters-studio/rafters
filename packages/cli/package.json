@@ -49,6 +49,7 @@
     "ora": "^9.0.0"
   },
   "devDependencies": {
+    "@astrojs/compiler-rs": "0.4.0",
     "@playwright/test": "catalog:",
     "@rafters/color-utils": "workspace:*",
     "@rafters/composites": "workspace:*",

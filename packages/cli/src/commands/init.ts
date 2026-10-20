@@ -7,9 +7,9 @@
  */
 
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
 import { SCALE_POSITIONS } from '@rafters/color-utils';
 import {
@@ -98,168 +98,129 @@ interface InitOptions {
   scripts?: string;
 }
 
-async function backupCss(cssPath: string): Promise<string> {
-  const backupPath = cssPath.replace(/\.css$/, '.backup.css');
-  await copyFile(cssPath, backupPath);
-  return backupPath;
+const RAFTERS_CSS = '.rafters/output/rafters.css';
+
+/** An `.old.css` already sits where init would move the entry CSS (#2798). */
+class EntryCssConflictError extends Error {
+  override name = 'EntryCssConflictError';
+}
+
+/** `src/index.css` -> `src/index.old.css`: where init moves the original. */
+function oldCssPath(cssPath: string): string {
+  return cssPath.replace(/\.css$/, '.old.css');
+}
+
+/** The entry CSS init found, with its content before init touched it. */
+interface ExistingEntryCss {
+  cssPath: string;
+  original: string;
+}
+
+/** Relative import specifier from one project file to another. */
+function importSpecifier(fromFile: string, toFile: string): string {
+  const rel = relative(dirname(fromFile), toFile).split(sep).join('/');
+  return rel.startsWith('../') ? rel : `./${rel}`;
 }
 
 /**
- * Block-level source cleaning after an applied import (#1647).
- *
- * Values now live in .rafters/tokens and emit through rafters.css, so token
- * layers left in the source override the system in the cascade:
- * - `@theme inline` blocks are removed entirely -- they are token bridges by
- *   definition, and rafters.css emits the canonical bridge.
- * - `:root` blocks (anywhere, including under @media) lose ALL custom-property
- *   declarations; non-custom-prop declarations (color-scheme, ...) survive.
- *   A block left with no content is removed; an at-rule shell emptied by that
- *   removal is removed too.
- * Plain `@theme` blocks are untouched: non-imported props there (custom
- * fonts, ...) are intentional user tokens. Pre-strip backup is the recovery
- * path. Brace matching is character-depth based; brace characters inside
- * string values are not handled (acceptable for token layers).
+ * Refuse before anything is written when the entry CSS is not wired yet and
+ * its `.old.css` exists: moving the original there would overwrite it.
  */
-export function cleanSourceCssBlocks(content: string): string {
-  type Block = {
-    headerStart: number;
-    bodyStart: number;
-    end: number;
-    header: string;
-  };
-
-  function parseBlocks(src: string): Block[] {
-    const blocks: Block[] = [];
-    let depth = 0;
-    const headerStack: number[] = [];
-    let segmentStart = 0;
-    for (let i = 0; i < src.length; i++) {
-      const ch = src.charAt(i);
-      if (ch === '{') {
-        headerStack.push(segmentStart);
-        depth++;
-        if (depth >= 1) {
-          blocks.push({
-            headerStart: segmentStart,
-            bodyStart: i + 1,
-            end: -1,
-            header: src.slice(segmentStart, i).trim(),
-          });
-        }
-        segmentStart = i + 1;
-      } else if (ch === '}') {
-        depth--;
-        const open = blocks
-          .slice()
-          .reverse()
-          .find((b) => b.end === -1);
-        if (open) open.end = i + 1;
-        headerStack.pop();
-        segmentStart = i + 1;
-      } else if (ch === ';') {
-        segmentStart = i + 1;
-      }
-    }
-    return blocks.filter((b) => b.end !== -1);
-  }
-
-  function isContentEmpty(body: string): boolean {
-    return body.replace(/\/\*[\s\S]*?\*\//g, '').trim().length === 0;
-  }
-
-  let out = content;
-  // Iterate until stable: removing inner blocks can empty outer shells.
-  for (let pass = 0; pass < 10; pass++) {
-    const blocks = parseBlocks(out);
-    let edited = false;
-    // Walk innermost-last so splices don't invalidate earlier ranges;
-    // process one edit per pass for simplicity and re-parse.
-    for (const block of blocks.sort((a, b) => b.headerStart - a.headerStart)) {
-      const header = block.header;
-      if (/^@theme\s+inline$/.test(header)) {
-        out = out.slice(0, block.headerStart) + out.slice(block.end);
-        edited = true;
-        break;
-      }
-      if (header === ':root' || /(^|,)\s*:root\s*$/.test(header)) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        const cleanedBody = body.replace(/--[\w-]+\s*:[^;{}]*;?/g, '');
-        if (isContentEmpty(cleanedBody)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-        if (cleanedBody !== body) {
-          out = out.slice(0, block.bodyStart) + cleanedBody + out.slice(block.end - 1);
-          edited = true;
-          break;
-        }
-        continue;
-      }
-      if (header.startsWith('@media') || header.startsWith('@supports')) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        if (isContentEmpty(body)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-      }
-    }
-    if (!edited) break;
-  }
-  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+function assertEntryCssMovable(cwd: string, existing: ExistingEntryCss | null): void {
+  if (existing === null || existing.original.includes(RAFTERS_CSS)) return;
+  const { cssPath } = existing;
+  const oldPath = oldCssPath(cssPath);
+  if (!existsSync(join(cwd, oldPath))) return;
+  throw new EntryCssConflictError(
+    `${oldPath} already exists. Init moves the original ${cssPath} there before writing a new ${cssPath} that imports rafters.css, and will not overwrite it. Rename or delete ${oldPath}, then run rafters init again.`,
+  );
 }
 
-async function stripImportedDeclarations(
+/**
+ * Import the created entry CSS from the app entry init found, once. With no
+ * entry file, nothing is written and the caller reports the line to add.
+ */
+async function importFromAppEntry(
   cwd: string,
   cssPath: string,
-  importedNames: string[],
-): Promise<void> {
-  if (importedNames.length === 0) return;
-  const fullPath = join(cwd, cssPath);
-  const content = await readFile(fullPath, 'utf-8');
-  const pattern = new RegExp(importedNames.map((n) => `^\\s*--${n}[^;]*;\\s*$`).join('|'), 'gm');
-  const cleaned = cleanSourceCssBlocks(content.replace(pattern, ''));
-  const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
-  await writeFile(fullPath, collapsed);
+  framework: Framework,
+  found: string | undefined,
+): Promise<{ entryPoint: string; importLine: string; entryWired: boolean }> {
+  const entryPoint = found ?? FRAMEWORK_SPECS[framework].entryPoints[0] ?? 'src/main.ts';
+  const specifier = importSpecifier(entryPoint, cssPath);
+  const importLine = `import '${specifier}';`;
+  if (found === undefined) return { entryPoint, importLine, entryWired: false };
+  const content = await readFile(join(cwd, found), 'utf-8');
+  if (!content.includes(specifier)) {
+    let next: string;
+    if (found.endsWith('.astro')) {
+      next = content.startsWith('---')
+        ? content.replace(/^---.*\n/, (fence) => `${fence}${importLine}\n`)
+        : `---\n${importLine}\n---\n${content}`;
+    } else {
+      const directive = content.match(/^\s*(['"])use [\w-]+\1;?[^\n]*\n/)?.[0] ?? '';
+      next = `${directive}${importLine}\n${content.slice(directive.length)}`;
+    }
+    await writeFile(join(cwd, found), next);
+  }
+  return { entryPoint, importLine, entryWired: true };
 }
 
-async function updateMainCss(cwd: string, cssPath: string, themePath: string): Promise<void> {
-  const fullCssPath = join(cwd, cssPath);
-  const cssContent = await readFile(fullCssPath, 'utf-8');
-
-  // Calculate relative path from CSS file to theme.css
-  const cssDir = join(cwd, cssPath, '..');
-  const themeFullPath = join(cwd, themePath);
-  const relativeThemePath = relative(cssDir, themeFullPath);
-
-  // Check if already imported
-  if (cssContent.includes('.rafters/output/rafters.css')) {
-    log({ event: 'init:css_already_imported', cssPath });
-    return;
+/**
+ * Wire rafters.css into the project's entry CSS (#2798) and return its path.
+ * An entry that already imports rafters.css is left alone. An existing entry
+ * moves to `<name>.old.css`, byte for byte and not imported; with none, the
+ * framework's canonical file is created (`src/index.css` when unknown). The
+ * new entry imports Tailwind once in the chain: the shadcn rafters.css
+ * carries no `@import "tailwindcss"`, every other one does.
+ */
+async function wireEntryCss(
+  cwd: string,
+  existing: ExistingEntryCss | null,
+  source: string | undefined,
+  framework: Framework,
+): Promise<string> {
+  if (existing?.original.includes(RAFTERS_CSS)) {
+    log({ event: 'init:css_already_imported', cssPath: existing.cssPath });
+    return existing.cssPath;
   }
-
-  // Backup the original
-  await backupCss(fullCssPath);
-
-  // The theme.css already includes @import "tailwindcss", so we just need to import it
-  // Replace the tailwindcss import with our theme import
-  let newContent: string;
-  if (cssContent.includes('@import "tailwindcss"')) {
-    newContent = cssContent.replace('@import "tailwindcss";', `@import "${relativeThemePath}";`);
-  } else if (cssContent.includes("@import 'tailwindcss'")) {
-    newContent = cssContent.replace("@import 'tailwindcss';", `@import "${relativeThemePath}";`);
-  } else {
-    // No tailwind import found, prepend the theme import
-    newContent = `@import "${relativeThemePath}";\n\n${cssContent}`;
+  // A created file goes in the same root as the app entry init found
+  // (`app/layout.tsx` -> `app/globals.css`); `cssLocations[0]` otherwise.
+  const spec = FRAMEWORK_SPECS[framework];
+  const found = spec.entryPoints.find((p) => existsSync(join(cwd, p)));
+  const entryRoot = found?.split('/')[0];
+  const entryPath =
+    existing?.cssPath ??
+    (framework === 'unknown'
+      ? undefined
+      : (spec.cssLocations.find((l) => l.split('/')[0] === entryRoot) ?? spec.cssLocations[0])) ??
+    'src/index.css';
+  const fullPath = join(cwd, entryPath);
+  const content = `${source === 'shadcn' ? '@import "tailwindcss";\n' : ''}@import "${importSpecifier(entryPath, RAFTERS_CSS)}";\n`;
+  if (existing === null) {
+    await mkdir(dirname(fullPath), { recursive: true });
+    await writeFile(fullPath, content);
+    const entry = await importFromAppEntry(cwd, entryPath, framework, found);
+    log({
+      event: 'init:css_created',
+      cssPath: entryPath,
+      ...entry,
+      message: entry.entryWired
+        ? `Created ${entryPath}, imported from ${entry.entryPoint}.`
+        : `Created ${entryPath}. Add ${entry.importLine} to ${entry.entryPoint} so the app loads it.`,
+    });
+    return entryPath;
   }
-
-  await writeFile(fullCssPath, newContent);
+  const oldPath = oldCssPath(entryPath);
+  await rename(fullPath, join(cwd, oldPath));
+  await writeFile(fullPath, content);
   log({
-    event: 'init:css_updated',
-    cssPath,
-    themePath: relativeThemePath,
+    event: 'init:css_replaced',
+    cssPath: entryPath,
+    oldPath,
+    message: `Replaced ${entryPath}; its original content is in ${oldPath}, which is not imported. Carry over anything you still need from it.`,
   });
+  return entryPath;
 }
 
 /**
@@ -991,6 +952,31 @@ export async function init(options: InitOptions): Promise<void> {
     log({ event: 'init:exports_selected', exports });
   }
 
+  // Source CSS resolution priority for both pre-generation base detection
+  // AND the later sense/apply flow:
+  //   1. shadcn's components.json `tailwind.css` IF the file actually exists
+  //   2. framework's canonical CSS location (findCssPath)
+  // shadcn configs often carry a stale Next.js path (`src/app/globals.css`)
+  // after a project migrates to Astro / Vite. Silently trusting the
+  // configured path means init reads ENOENT and skips the whole import
+  // flow without surfacing what went wrong. The file is read once, here:
+  // wiring rafters.css (#2798) moves it aside, and both base detection and
+  // sensing read this original content. A conflicting `.old.css` refuses
+  // before anything is written.
+  const entryCssPath = resolveSourceCssPath(
+    cwd,
+    framework,
+    detectedFramework,
+    project.cssPath,
+    shadcn?.tailwind?.css,
+    log,
+  );
+  const existingEntry =
+    entryCssPath === null || !existsSync(join(cwd, entryCssPath))
+      ? null
+      : { cssPath: entryCssPath, original: await readFile(join(cwd, entryCssPath), 'utf-8') };
+  if (exports.tailwind) assertEntryCssMovable(cwd, existingEntry);
+
   // Writing systems (#2742). Resolved, validated and their fonts installed
   // before any file is written; the stack of the installed fonts lands in
   // baseConfig so the typography generator writes `font-sans`.
@@ -1010,75 +996,52 @@ export async function init(options: InitOptions): Promise<void> {
   // See legion reflection 019e57d8 for the full invariant.
   const adapter = getAdapter(source ?? 'tailwind');
   const baseConfig: Partial<BaseSystemConfig> = { fontFamily: fontStackFor(installedScripts) };
-  // Source CSS resolution priority for both pre-generation base detection
-  // AND the later sense/apply flow:
-  //   1. shadcn's components.json `tailwind.css` IF the file actually exists
-  //   2. framework's canonical CSS location (findCssPath)
-  // shadcn configs often carry a stale Next.js path (`src/app/globals.css`)
-  // after a project migrates to Astro / Vite. Silently trusting the
-  // configured path means init reads ENOENT and skips the whole import
-  // flow without surfacing what went wrong.
-  const sourceCssPathForBase = resolveSourceCssPath(
-    cwd,
-    framework,
-    detectedFramework,
-    project.cssPath,
-    shadcn?.tailwind?.css,
-    log,
-  );
-  if (sourceCssPathForBase !== null && cssImportPlan === undefined) {
-    try {
-      const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
-      // Per-detector wiring: each adapter method returns an object with
-      // an optional key; if the value is present, it lands on the matching
-      // BaseSystemConfig override and fires its own `init:import_*_applied`
-      // event for telemetry.
-      const baseSlots = [
-        {
-          detect: () => adapter.detectSpacing(cssForBase).base,
-          field: 'baseSpacingUnit',
-          event: 'init:import_spacing_applied',
-          eventKey: 'baseSpacingUnit',
-        },
-        {
-          detect: () => adapter.detectRadius(cssForBase).base,
-          field: 'baseRadiusOverride',
-          event: 'init:import_radius_applied',
-          eventKey: 'baseRadius',
-        },
-        {
-          detect: () => adapter.detectFontSize(cssForBase).base,
-          field: 'baseFontSizeOverride',
-          event: 'init:import_font_size_applied',
-          eventKey: 'baseFontSize',
-        },
-        {
-          detect: () => adapter.detectFocusRing(cssForBase).width,
-          field: 'focusRingWidthOverride',
-          event: 'init:import_focus_ring_applied',
-          eventKey: 'focusRingWidth',
-        },
-        // Motion duration is intentionally not imported -- rafters' motion
-        // system is research-backed and most projects' `--duration-base`
-        // values are unresearched defaults. See importers/bases.ts for the
-        // policy note; designers can `rafters set motion-duration-base ...`
-        // after init to override explicitly.
-      ] as const;
-      for (const slot of baseSlots) {
-        const value = slot.detect();
-        if (value === undefined) continue;
-        baseConfig[slot.field] = value;
-        log({
-          event: slot.event,
-          cssPath: sourceCssPathForBase,
-          [slot.eventKey]: value,
-        });
-      }
-    } catch (err) {
-      // ENOENT is a soft skip -- the later sensing pass will surface the
-      // missing-file state via its own log. Any other read failure
-      // propagates so the user sees it.
-      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
+  if (existingEntry !== null && cssImportPlan === undefined) {
+    const cssForBase = existingEntry.original;
+    // Per-detector wiring: each adapter method returns an object with
+    // an optional key; if the value is present, it lands on the matching
+    // BaseSystemConfig override and fires its own `init:import_*_applied`
+    // event for telemetry.
+    const baseSlots = [
+      {
+        detect: () => adapter.detectSpacing(cssForBase).base,
+        field: 'baseSpacingUnit',
+        event: 'init:import_spacing_applied',
+        eventKey: 'baseSpacingUnit',
+      },
+      {
+        detect: () => adapter.detectRadius(cssForBase).base,
+        field: 'baseRadiusOverride',
+        event: 'init:import_radius_applied',
+        eventKey: 'baseRadius',
+      },
+      {
+        detect: () => adapter.detectFontSize(cssForBase).base,
+        field: 'baseFontSizeOverride',
+        event: 'init:import_font_size_applied',
+        eventKey: 'baseFontSize',
+      },
+      {
+        detect: () => adapter.detectFocusRing(cssForBase).width,
+        field: 'focusRingWidthOverride',
+        event: 'init:import_focus_ring_applied',
+        eventKey: 'focusRingWidth',
+      },
+      // Motion duration is intentionally not imported -- rafters' motion
+      // system is research-backed and most projects' `--duration-base`
+      // values are unresearched defaults. See importers/bases.ts for the
+      // policy note; designers can `rafters set motion-duration-base ...`
+      // after init to override explicitly.
+    ] as const;
+    for (const slot of baseSlots) {
+      const value = slot.detect();
+      if (value === undefined) continue;
+      baseConfig[slot.field] = value;
+      log({
+        event: slot.event,
+        cssPath: existingEntry.cssPath,
+        [slot.eventKey]: value,
+      });
     }
   }
 
@@ -1118,33 +1081,10 @@ export async function init(options: InitOptions): Promise<void> {
     scriptImports,
   );
 
-  // Find and update the main CSS file (if not using shadcn which has its own CSS path).
-  // `project.cssPath` is computed against the auto-detected framework; if the
-  // resolved framework differs, re-walk under the new framework.
-  let detectedCssPath: string | null = null;
-  // Same resolution helper as pre-generation. When shadcn's components.json
-  // points at a missing file (common after a project migrates frameworks
-  // without updating the config) we fall back to the framework's canonical
-  // CSS location and warn loudly.
-  detectedCssPath = resolveSourceCssPath(
-    cwd,
-    framework,
-    detectedFramework,
-    project.cssPath,
-    shadcn?.tailwind?.css,
-    log,
-  );
-  if (source !== 'shadcn' && exports.tailwind) {
-    if (detectedCssPath) {
-      await updateMainCss(cwd, detectedCssPath, '.rafters/output/rafters.css');
-    } else {
-      log({
-        event: 'init:css_not_found',
-        message: 'No main CSS file found. Add @import ".rafters/output/rafters.css" manually.',
-        searchedLocations: FRAMEWORK_SPECS[framework].cssLocations,
-      });
-    }
-  }
+  // Wire rafters.css into the entry CSS (#2798); the config records it.
+  const detectedCssPath = exports.tailwind
+    ? await wireEntryCss(cwd, existingEntry, source, framework)
+    : (existingEntry?.cssPath ?? null);
 
   // Determine component target (which file variant to install)
   let componentTarget: ComponentTarget = frameworkToTarget(framework);
@@ -1194,15 +1134,9 @@ export async function init(options: InitOptions): Promise<void> {
   // ColorReference at family@500. Defining a new family avoids the
   // blast-radius of remapping an existing one (e.g. neutral) where every
   // dependent semantic would re-color.
-  if (detectedCssPath && cssImportPlan === undefined) {
-    let sourceCss: string | null = null;
-    try {
-      sourceCss = await readFile(join(cwd, detectedCssPath), 'utf-8');
-    } catch (err) {
-      // File vanishing between detection and now is a legitimate soft skip.
-      // Other failures (permission, IO) propagate so the user sees them.
-      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
-    }
+  if (existingEntry !== null && detectedCssPath !== null && cssImportPlan === undefined) {
+    // The original content: the entry on disk may be the new wired file.
+    const sourceCss: string | null = existingEntry.original;
     if (sourceCss !== null) {
       const summary = senseShadcnCss(sourceCss);
       if (summary.totalDeclarations > 0) {
@@ -1300,11 +1234,6 @@ export async function init(options: InitOptions): Promise<void> {
             null,
             config.fonts?.imports ?? [],
           );
-          const importedNames = [
-            ...toImportColors.map((c) => c.name),
-            ...toImportNonColors.map((d) => d.name),
-          ];
-          await stripImportedDeclarations(cwd, detectedCssPath, importedNames);
           log({
             event: 'init:import_applied',
             count: toImportColors.length + toImportNonColors.length - skipped.length,
@@ -1407,10 +1336,6 @@ export async function init(options: InitOptions): Promise<void> {
               null,
               config.fonts?.imports ?? [],
             );
-            const themeImportedNames = families.flatMap((f) =>
-              SCALE_POSITIONS.map((p) => `color-${f.name}-${p}`).concat([`color-${f.name}`]),
-            );
-            await stripImportedDeclarations(cwd, detectedCssPath, themeImportedNames);
             log({
               event: 'init:import_palettes_applied',
               cssPath: detectedCssPath,
