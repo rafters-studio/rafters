@@ -1,8 +1,10 @@
 /**
  * Custom-property resolver for the explicit stylesheet import (#2763).
  *
- * Reads every `--name: value` declaration the importers read (`:root` rules
- * and `@theme` blocks; last declaration wins, as in `bases.ts`) and follows
+ * Reads every `--name: value` declaration in top-level `:root` rules and
+ * `@theme` blocks (last declaration wins, as in `bases.ts`). A `:root`
+ * nested in any at-rule (`@media (prefers-color-scheme: dark)`, `@layer`)
+ * is not read, so a dark-mode value never becomes the import. Follows
  * each value's `var()` references inside the same file to a literal. A
  * `var(--x, fallback)` whose `--x` is not declared resolves to its fallback,
  * as CSS does. A reference to an undeclared property with no fallback, or a
@@ -12,7 +14,8 @@
  * each resolved value becomes.
  */
 
-import { extractShadcnRoot } from './shadcn.js';
+import * as csstree from 'css-tree';
+import type { CssDeclaration } from './shapes.js';
 import { extractThemeBlocks } from './theme.js';
 
 export type ResolvedCustomProperty =
@@ -20,6 +23,26 @@ export type ResolvedCustomProperty =
   | { readonly property: `--${string}`; readonly value: null; readonly reason: string };
 
 class UnresolvedReference extends Error {}
+
+/** `--name: value` declarations of `:root` rules at the top level of the sheet. */
+function topLevelRoot(css: string): CssDeclaration[] {
+  const out: CssDeclaration[] = [];
+  const ast = csstree.parse(css);
+  if (ast.type !== 'StyleSheet') return out;
+  for (const node of ast.children) {
+    if (node.type !== 'Rule') continue;
+    const selectors = csstree
+      .generate(node.prelude)
+      .split(',')
+      .map((s) => s.trim());
+    if (!selectors.includes(':root')) continue;
+    for (const decl of node.block.children) {
+      if (decl.type !== 'Declaration' || !decl.property.startsWith('--')) continue;
+      out.push({ name: decl.property.slice(2), value: csstree.generate(decl.value).trim() });
+    }
+  }
+  return out;
+}
 
 /** Split `--x, fallback` at its first top-level comma. */
 function splitVarArgs(inner: string): { name: string; fallback: string | null } {
@@ -37,7 +60,7 @@ function splitVarArgs(inner: string): { name: string; fallback: string | null } 
 
 export function resolveCustomProperties(css: string): readonly ResolvedCustomProperty[] {
   const declared = new Map<string, string>();
-  for (const decl of [...extractShadcnRoot(css), ...extractThemeBlocks(css)]) {
+  for (const decl of [...topLevelRoot(css), ...extractThemeBlocks(css)]) {
     declared.set(decl.name, decl.value.trim());
   }
 

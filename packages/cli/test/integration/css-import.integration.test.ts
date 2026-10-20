@@ -4,7 +4,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, readlink, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupFixture, createFixture } from '../fixtures/projects.js';
@@ -19,6 +19,12 @@ const LEGACY_CSS = `:root {
   --face: "Inter", sans-serif;
   --unused: red;
   --dangling: var(--nowhere);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cc-blue: oklch(0.8 0.1 250);
+    --dark-only: black;
+  }
 }
 `;
 
@@ -60,7 +66,8 @@ async function snapshot(root: string): Promise<Map<string, string>> {
   const walk = async (dir: string): Promise<void> => {
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
-      if (entry.isDirectory()) await walk(full);
+      if (entry.isSymbolicLink()) out.set(relative(root, full), `-> ${await readlink(full)}`);
+      else if (entry.isDirectory()) await walk(full);
       else {
         const hash = createHash('sha256')
           .update(await readFile(full))
@@ -209,6 +216,28 @@ describe('rafters init --css-import', () => {
     expect(props.get('--dangling')).toBeNull();
     expect(await snapshot(p)).toEqual(before);
   });
+});
+
+describe('rafters init --css-import on an existing project', () => {
+  it.each([['--rebuild'], ['--reset']])(
+    'fails with %s before writing, naming rafters import',
+    async (flag) => {
+      const p = await legacyFixture(true);
+      const before = await snapshot(p);
+      const result = await execCli(p, [
+        'init',
+        '--agent',
+        flag,
+        '--css-import',
+        'legacy.css',
+        '--map',
+        '{"primary":"--brand"}',
+      ]);
+      expect(result.exitCode).not.toBe(0);
+      expect(errorMessage(result.stderr)).toContain('rafters import');
+      expect(await snapshot(p)).toEqual(before);
+    },
+  );
 });
 
 describe('rafters import', () => {

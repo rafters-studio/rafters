@@ -888,6 +888,15 @@ export async function init(options: InitOptions): Promise<void> {
   setAgentMode(options.agent ?? false);
   const isAgentMode = options.agent ?? false;
 
+  if (
+    (options.rebuild || options.reset) &&
+    (options.cssImport !== undefined || (options.map ?? []).length > 0)
+  ) {
+    throw new Error(
+      '--css-import and --map do not combine with --rebuild or --reset. Use rafters import --css-import <path> --map ... for an existing project.',
+    );
+  }
+
   const cssImport =
     options.cssImport === undefined ? undefined : await readCssImport(options.cssImport);
   if (cssImport !== undefined && (options.map ?? []).length === 0) {

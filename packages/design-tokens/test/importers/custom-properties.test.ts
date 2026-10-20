@@ -33,6 +33,14 @@ describe('resolveCustomProperties', () => {
     expect(r.get('--a')).toMatchObject({ value: null, reason: expect.stringContaining('cycle') });
   });
 
+  it('does not read a :root nested in an at-rule', () => {
+    const r = byProperty(
+      ':root { --bg: white; } @media (prefers-color-scheme: dark) { :root { --bg: black; --only-dark: red; } }',
+    );
+    expect(r.get('--bg')?.value).toBe('white');
+    expect(r.has('--only-dark')).toBe(false);
+  });
+
   it('reads @theme blocks and lets the last declaration win', () => {
     const r = byProperty(':root { --x: 1rem; } @theme { --x: 2rem; --y: red; }');
     expect(r.get('--x')?.value).toBe('2rem');
