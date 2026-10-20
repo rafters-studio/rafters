@@ -218,12 +218,18 @@ export interface ComponentPaths {
  *     (absent for `unknown`).
  *   - `cssLocations`: candidate paths for the user's main CSS file --
  *     where init injects the `@import ".rafters/output/rafters.css"`.
+ *   - `entryPoints`: candidate app entry files that import that CSS.
  *   - `components`: default install paths for `rafters add`.
  *   - `note`: a setup requirement init and add print once per run.
  */
 export interface FrameworkSpec {
   label?: string;
   cssLocations: readonly string[];
+  /**
+   * Candidate app entry files, in order. When init creates the CSS file, it
+   * imports it from the first one that exists; with none, it names the first.
+   */
+  entryPoints: readonly string[];
   components: ComponentPaths;
   /** One line init and add print for this framework, when it needs setup rafters does not do. */
   note?: string;
@@ -233,6 +239,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   next: {
     label: 'Next.js',
     cssLocations: ['src/app/globals.css', 'app/globals.css', 'styles/globals.css'],
+    entryPoints: ['src/app/layout.tsx', 'app/layout.tsx', 'src/app/layout.jsx', 'app/layout.jsx'],
     components: {
       components: 'components/ui',
       primitives: 'lib/primitives',
@@ -243,6 +250,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   vite: {
     label: 'Vite',
     cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'src/app.css'],
+    entryPoints: ['src/main.tsx', 'src/main.ts', 'src/main.jsx', 'src/main.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
@@ -253,6 +261,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   remix: {
     label: 'Remix',
     cssLocations: ['app/styles/global.css', 'app/globals.css', 'app/root.css'],
+    entryPoints: ['app/root.tsx', 'app/root.jsx'],
     components: {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
@@ -263,6 +272,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   'react-router': {
     label: 'React Router v7',
     cssLocations: ['app/app.css', 'app/root.css', 'app/styles.css', 'app/globals.css'],
+    entryPoints: ['app/root.tsx', 'app/root.jsx'],
     components: {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
@@ -273,6 +283,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   astro: {
     label: 'Astro',
     cssLocations: ['src/styles/global.css', 'src/styles/globals.css', 'src/global.css'],
+    entryPoints: ['src/layouts/Layout.astro'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
@@ -283,6 +294,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   preact: {
     label: 'Preact',
     cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'src/app.css'],
+    entryPoints: ['src/main.tsx', 'src/main.ts', 'src/main.jsx', 'src/main.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
@@ -294,6 +306,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   vanilla: {
     label: 'Vanilla (plain HTML/TS, no framework)',
     cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css'],
+    entryPoints: ['src/main.ts', 'src/main.js', 'src/index.ts', 'src/index.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
@@ -303,6 +316,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   },
   unknown: {
     cssLocations: ['src/styles/global.css', 'src/index.css', 'styles/globals.css'],
+    entryPoints: ['src/main.ts', 'src/main.js', 'src/index.ts', 'src/index.js'],
     components: {
       components: 'components/ui',
       primitives: 'lib/primitives',

@@ -6,7 +6,7 @@
 
 import type { ChildProcess } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -140,6 +140,12 @@ Given('component {string} is already installed', async ({}, component: string) =
 // Command execution steps
 When('I run {string}', async ({}, command: string) => {
   const { execRafters } = await import('./helpers.js');
+  // "rm -rf .rafters, then rafters init" (#2798): a fresh re-init.
+  const removeFirst = 'rm -rf .rafters, then ';
+  if (command.startsWith(removeFirst)) {
+    await rm(join(context.fixturePath, '.rafters'), { recursive: true, force: true });
+    command = command.slice(removeFirst.length);
+  }
   // Parse "rafters init --force" into ["init", "--force"]
   const parts = command.split(' ');
   if (parts[0] === 'rafters') {

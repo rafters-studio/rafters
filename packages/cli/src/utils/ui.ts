@@ -61,11 +61,11 @@ export function log(event: Record<string, unknown>): void {
       context.spinner?.succeed(`Saved ${event.namespaceCount} namespaces`);
       break;
 
-    case 'init:css_updated':
-      console.log(`  Updated: ${event.cssPath}`);
+    case 'init:css_replaced':
+    case 'init:css_created':
+      console.log(`  ${event.message}`);
       break;
 
-    case 'init:css_not_found':
     case 'init:framework_note':
     case 'add:framework_note':
       console.log(`\n  Note: ${event.message}`);

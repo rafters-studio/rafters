@@ -145,11 +145,14 @@ describe('rafters init - fresh initialization', () => {
     expect(css).not.toContain('@import "tailwindcss"');
   });
 
-  it('creates CSS backup when modifying main CSS', async () => {
+  it('moves the original main CSS to .old.css, with no .backup.css (#2798)', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
     await execCli(fixturePath, ['init']);
 
-    expect(fixtureFileExists(fixturePath, 'src/index.backup.css')).toBe(true);
+    expect(await readFixtureFile(fixturePath, 'src/index.old.css')).toBe(
+      '@import "tailwindcss";\n',
+    );
+    expect(fixtureFileExists(fixturePath, 'src/index.backup.css')).toBe(false);
   });
 
   it('fails on second init without --rebuild flag', async () => {
