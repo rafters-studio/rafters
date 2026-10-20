@@ -65,6 +65,24 @@ describe('pagination classes', () => {
     expect(paginationLinkSizeClasses.default).toBe('h-10 min-w-10 px-4 py-2');
   });
 
+  // pagination.md: a page-number link is square at every size. For one digit
+  // (about 8px) the inline padding stays under the min-width, so the min-width
+  // wins and the box is height x height; a wider number grows in width only.
+  it('sm, default and lg page links are square for a single digit', () => {
+    expect(paginationLinkSizeClasses.sm).toBe('h-9 min-w-9 px-3');
+    expect(paginationLinkSizeClasses.default).toBe('h-10 min-w-10 px-4 py-2');
+    expect(paginationLinkSizeClasses.lg).toBe('h-11 min-w-11 px-4');
+  });
+
+  it('a multi-digit page number grows the link instead of clipping', () => {
+    for (const size of ['sm', 'default', 'lg']) {
+      const cls = paginationLinkSizeClasses[size] ?? '';
+      expect(cls).toMatch(/\bmin-w-/);
+      expect(cls).not.toMatch(/(^|\s)w-/);
+      expect(`${paginationLinkBaseClasses} ${cls}`).not.toContain('overflow-hidden');
+    }
+  });
+
   it('Previous/Next add a directional gap and the disabled dimmer greys the control', () => {
     expect(paginationPreviousClasses).toBe('gap-1 ps-2.5');
     expect(paginationNextClasses).toBe('gap-1 pe-2.5');

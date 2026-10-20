@@ -144,8 +144,15 @@ const contentClasses =
 // hover is the same movement, properties, tier and curve the `trigger / hover`
 // row assigns -- so it carries that row rather than a value invented for it. The
 // matrix has no separate `link` row; reported on #2293.
+//
+// A link that sits directly in a bar item (`li > a`) is the trigger's peer, so
+// it takes the trigger's type role, height and alignment with no prop and no
+// className (#2659). A panel link sits inside the content `div`, never directly
+// in the `li`, so it keeps the stacked title-over-description layout.
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
+  '[li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:h-11 @md:[li>&]:h-10 ' +
+  '[li>&]:px-4 [li>&]:py-2 [li>&]:text-label-medium [li>&]:ts-label-medium ' +
   'has-data-[icon]:grid has-data-[icon]:grid-flow-col has-data-[icon]:items-center ' +
   'has-data-[icon]:justify-start has-data-[icon]:gap-2 has-data-[icon]:space-y-0 ' +
   'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
