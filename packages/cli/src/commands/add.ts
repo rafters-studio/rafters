@@ -351,7 +351,7 @@ export function isInstalledOnDisk(
       : item.files;
 
   for (const file of filesToCheck) {
-    if (fileExists(cwd, transformPath(file.path, config, cwd))) return true;
+    if (fileExists(cwd, fileProjectPath(file, item, config, cwd))) return true;
   }
   return false;
 }
@@ -456,6 +456,37 @@ export function substrateProjectPath(
 ): string {
   const sourceRoot = sourceRootFor(config, cwd);
   return sourceRoot ? join(sourceRoot, registryPath) : registryPath;
+}
+
+/**
+ * Where a served file installs in the project. A file carrying an explicit
+ * `target` (#2022) installs at that path under the configured directory its
+ * `type` names; every other file keeps the placement its served path implies
+ * (substrate under the source root, the rest via transformPath).
+ */
+export function fileProjectPath(
+  file: RegistryFile,
+  item: RegistryItem,
+  config: RaftersConfig | null,
+  cwd: string = process.cwd(),
+): string {
+  if (file.target !== undefined && file.type !== undefined) {
+    const sourceRoot = sourceRootFor(config, cwd);
+    const bases = {
+      'registry:ui': () => rootFor(config?.componentsPath, cwd, 'components/ui'),
+      'registry:block': () => rootFor(config?.compositesPath, cwd, 'composites'),
+      'registry:file': () => rootFor(config?.rulesPath, cwd, 'lib/rules'),
+      'registry:hook': () => join(sourceRoot, 'hooks'),
+      'registry:lib': () =>
+        item.type === 'primitive'
+          ? rootFor(config?.primitivesPath, cwd, 'lib/primitives')
+          : join(sourceRoot, 'lib'),
+    } satisfies Record<NonNullable<RegistryFile['type']>, () => string>;
+    return join(bases[file.type](), file.target);
+  }
+  return item.type === 'substrate'
+    ? substrateProjectPath(file.path, config, cwd)
+    : transformPath(file.path, config, cwd);
 }
 
 /**
@@ -661,12 +692,7 @@ async function installItem(
   }
 
   for (const file of filesToInstall) {
-    // Transform the path based on project config. Substrate carries its kind in
-    // the path (`<kind>/<name>.ts`) and installs under the source root.
-    const projectPath =
-      item.type === 'substrate'
-        ? substrateProjectPath(file.path, config, cwd)
-        : transformPath(file.path, config, cwd);
+    const projectPath = fileProjectPath(file, item, config, cwd);
     const targetPath = join(cwd, projectPath);
 
     // Check if file exists and handle overwrite
@@ -902,7 +928,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
           const composite = await client.fetchComposite(itemName);
           seen.add(itemName);
           allItems.push(composite);
-          for (const dep of composite.primitives) {
+          for (const dep of composite.registryDependencies ?? composite.primitives) {
             if (!seen.has(dep)) {
               const depItems = await client.resolveDependencies(dep, seen);
               allItems.push(...depItems);

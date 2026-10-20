@@ -8,6 +8,20 @@
 import { z } from 'zod';
 
 /**
+ * Per-file registry type (#2022): components `registry:ui`, primitives and lib
+ * substrate `registry:lib`, hooks `registry:hook`, composites `registry:block`,
+ * rules `registry:file`. The type picks the configured directory a file's
+ * `target` is relative to.
+ */
+const RegistryFileTypeSchema = z.enum([
+  'registry:ui',
+  'registry:lib',
+  'registry:hook',
+  'registry:block',
+  'registry:file',
+]);
+
+/**
  * A single file in a registry item
  * Framework inferred from extension: .tsx=React, .vue=Vue, .svelte=Svelte
  */
@@ -16,6 +30,9 @@ export const RegistryFileSchema = z.object({
   content: z.string(),
   dependencies: z.array(z.string()), // e.g., ["lodash@4.17.21"] - versioned
   devDependencies: z.array(z.string()).default([]), // e.g., ["vitest"] - from @devDependencies JSDoc
+  type: RegistryFileTypeSchema.optional(),
+  /** Install path relative to the configured directory for `type`, where `path` does not imply it. */
+  target: z.string().optional(),
 });
 
 export type RegistryFile = z.infer<typeof RegistryFileSchema>;
@@ -142,7 +159,12 @@ export const RegistryItemSchema = z.object({
   name: z.string(),
   type: RegistryItemTypeSchema,
   description: z.string().optional(),
+  /** Legacy dependency list, still served for released CLIs; read only when registryDependencies is absent. */
   primitives: z.array(z.string()),
+  /** Every registry item this item's files import (components, primitives, substrate). */
+  registryDependencies: z.array(z.string()).optional(),
+  /** npm dependencies hoisted from files[].dependencies. */
+  dependencies: z.array(z.string()).optional(),
   files: z.array(RegistryFileSchema),
   rules: z.array(z.string()).default([]),
   intelligence: RegistryItemIntelligenceSchema.optional(),

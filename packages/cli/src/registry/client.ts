@@ -204,7 +204,7 @@ export class RegistryClient {
     resolved.add(name);
 
     const deps: RegistryItem[] = [];
-    for (const dep of item.primitives) {
+    for (const dep of item.registryDependencies ?? item.primitives) {
       if (!resolved.has(dep)) {
         deps.push(...(await this.resolveDependencies(dep, resolved)));
       }
