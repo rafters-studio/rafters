@@ -148,3 +148,26 @@ describe('combobox [astro]', () => {
     expect(toggle().getAttribute('aria-label')).toBe('Open');
   });
 });
+
+describe('combobox seeded value fills the input [astro]', () => {
+  const ssr = async (value: string): Promise<Document> => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(Combobox, { props: { id: 'cb', options, value } });
+    return new DOMParser().parseFromString(html, 'text/html');
+  };
+
+  it('SSR, no script run: the input carries the seeded option label', async () => {
+    const doc = await ssr('react');
+    expect(doc.querySelector('[data-part="input"]')?.getAttribute('value')).toBe('React');
+  });
+
+  it('SSR: a seeded value that matches no option leaves the input empty', async () => {
+    const doc = await ssr('ember');
+    expect(doc.querySelector<HTMLInputElement>('[data-part="input"]')?.value).toBe('');
+  });
+
+  it('binding keeps the seeded label in the input', async () => {
+    await mount({ value: 'react' });
+    expect(input().value).toBe('React');
+  });
+});

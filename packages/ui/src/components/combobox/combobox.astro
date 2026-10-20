@@ -79,7 +79,11 @@ const {
 } = Astro.props;
 
 const config: ComboboxConfig = { defaultValue: value, disabled };
-const state = combobox.initialState(config);
+// A seeded value shows its option's label in the input, as a select of it does.
+const state = {
+  ...combobox.initialState(config),
+  query: (value === '' ? undefined : options.find((o) => o.value === value)?.label) ?? '',
+};
 const classes = comboboxClasses(config, state);
 
 const ids = {} as PartIds<ComboboxPart>;
