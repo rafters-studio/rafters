@@ -95,7 +95,7 @@ behaviour the score neither adds to nor removes.
 | Nine semantic colour variants (`default`…`accent`, each a `text-{role}` token) | contract -- rafters extension over the shadcn base; carried forward verbatim |
 | `htmlFor` / `for` association (IDREF to a control's id) | contract -- native pass-through; the port preserves the mechanism exactly |
 | `text-label-medium leading-none` base decoration | contract (verbatim from the oracle's settled decoration) |
-| `peer-disabled:cursor-not-allowed peer-disabled:opacity-70` | contract -- the sibling-`.peer` disabled affordance; verbatim |
+| `peer-disabled:cursor-not-allowed peer-disabled:opacity-70`, plus `has-disabled:cursor-not-allowed has-disabled:opacity-70` | contract -- the disabled affordance. `peer-disabled:` (verbatim) dims the label when a preceding sibling `.peer` control is disabled; `has-disabled:` (rafters extension, #2656) dims it when the label CONTAINS a `:disabled` control, the wrapping composition under "Pairing a choice control" |
 | WC `for` forwarding onto the inner shadow `<label>` | contract -- preserved verbatim; the shadow-boundary caveat below applies |
 | `{...props}` / `{...attrs}` spread on the root | framework affordance (React/WC/Astro pass consumer attributes through) |
 
@@ -106,6 +106,35 @@ behaviour the score neither adds to nor removes.
    file. No behaviour changed: the projection is empty and there is no bind.
 2. Classes moved into `label.classes.ts` as `labelClasses(config)` returning a
    `{ root }` class set, the same shape Card and Container use.
+
+## Pairing a choice control
+
+The composition a choice control pairs with its label in is the wrapping one:
+the control sits inside the label, and the native `for`/`id` association is
+unchanged.
+
+```tsx
+<Label htmlFor="card">
+  <RadioGroupItem id="card" value="card" disabled /> Credit card
+</Label>
+<Label htmlFor="audit">
+  <Switch id="audit" disabled /> Audit log
+</Label>
+```
+
+When the wrapped control is disabled (a disabled `RadioGroupItem`, any item of
+a `<RadioGroup disabled>`, or a disabled `Switch`), the label renders at
+`opacity-70` with `cursor-not-allowed` through `has-disabled:`. A label
+wrapping an enabled control does not dim. The sibling `.peer` layout keeps its
+`peer-disabled:` affordance as before.
+
+Current choice (2026-10-19): the label dims when it contains a disabled
+control (option A of #2656), because the props-only previews wrap the control
+in the label, and neither a `peer` marker on RadioGroupItem (sibling layout
+only) nor #2519's composition (still open) dims that markup; revisable. The
+label's opacity multiplies with the control's own `disabled:opacity-50`, so a
+wrapped disabled control reads at about 0.35, dimmer than in the sibling
+layout.
 
 ## shadcn drop-in parity
 
