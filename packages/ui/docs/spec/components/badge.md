@@ -9,7 +9,7 @@ Files (`src/components/badge/`):
 badge.classes.ts    badge.behavior.ts    badge.tsx
 ```
 
-Tests mirror into `test/components/badge/`. WC and Astro not yet written.
+Tests mirror into `test/components/badge/`. Astro not yet written.
 
 ## Purpose
 
@@ -72,12 +72,11 @@ equally empty and nobody wrote one down.
 
 | Oracle feature | Disposition |
 | --- | --- |
-| `variant` (12-value vocabulary, all three targets) | contract |
+| `variant` (12-value vocabulary, both targets) | contract |
 | `size` (`sm \| default \| lg`) | contract |
 | Base shape: `inline-flex w-fit items-center justify-center rounded-full transition-colors duration-fast ease-standard` | contract |
 | `forwardRef<HTMLSpanElement>` | contract -- badges are frequently wrapped by Tooltip/Popover anchors; ref forwarding is load-bearing, not decoration |
-| `asChild` | deferred, not framework affordance yet. shadcn's Badge supports `asChild` via Slot; the oracle React/Astro/WC targets never did. Every asChild implementation in this tree so far (`DialogTrigger`, `DialogClose`, `NavigationMenuLink`) is a plain function component using `mergeProps`; none combines `forwardRef` with `asChild`, and Badge needs the ref. Bespoke ref-composition for one leaf component would be new shared machinery grown outside the adapter layer (boundary 00 rule 3) -- out of scope for this port. Revisit once a `composeRefs` primitive exists, or once a second forwardRef+asChild component forces the adapter to grow one. |
-| `link` variant present in React/Astro but absent from the oracle's WC (`badge.element.ts`) | not ported forward as a gap -- the React target here carries the full 12-value vocabulary; the WC binding (not yet written) should carry it too when built, closing the drift rather than repeating it |
+| `asChild` | deferred, not framework affordance yet. shadcn's Badge supports `asChild` via Slot; the oracle React/Astro targets never did. Every asChild implementation in this tree so far (`DialogTrigger`, `DialogClose`, `NavigationMenuLink`) is a plain function component using `mergeProps`; none combines `forwardRef` with `asChild`, and Badge needs the ref. Bespoke ref-composition for one leaf component would be new shared machinery grown outside the adapter layer (boundary 00 rule 3) -- out of scope for this port. Revisit once a `composeRefs` primitive exists, or once a second forwardRef+asChild component forces the adapter to grow one. |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `badge.tsx` verbatim as the recorded designer decision (boundary 1: traceable, not agent-invented) |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags | dropped from `badge.tsx` -- the issue's four required tags (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) are the registry's parsed surface; the extra tags were prose, not contract, and are recoverable from the oracle file if a future pass wants them |
 | `data-icon` slot support (shadcn v4's `Badge` accepts icon children with `data-icon="inline-start\|inline-end"`) | restored through props (#2465) -- `startIcon` / `endIcon` render wrappers that carry `data-icon` and `aria-hidden="true"`; see Icons beside a label. A bare `data-icon` child still lays out, but hiding it is the author's job |
@@ -90,7 +89,6 @@ Two optional props place decorative icons beside the label, in reading order, as
 | --- | --- | --- |
 | React | `startIcon: ReactNode` | `endIcon: ReactNode` |
 | Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
-| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
 
 ```html
 <span data-part="root" class="inline-grid grid-flow-col items-center gap-1 ...">
@@ -130,7 +128,7 @@ Two optional props place decorative icons beside the label, in reading order, as
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
+- Astro performance (same debt as the other articles).
 - `asChild` (see dispositions table above).
 - Static-score conformance is thinner than interactive articles: element +
   classes assertions + axe, scoped to the render container rather than

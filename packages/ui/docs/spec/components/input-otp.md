@@ -7,11 +7,11 @@ Files (`src/components/input-otp/`):
 
 ```
 input-otp.classes.ts    input-otp.behavior.ts    input-otp.tsx
-input-otp.element.ts    input-otp.astro
+input-otp.astro
 ```
 
 Tests mirror into `test/components/input-otp/` (behavior, classes, and React /
-WC / Astro conformance on the shared harness).
+Astro conformance on the shared harness).
 
 ## Composition
 
@@ -30,7 +30,7 @@ input-events       IME composition tracking (the composition guard only)
 
 `composeInputOtpInteractions({ root, input, getConfig, getState, requestValue,
 requestActive })` folds them plus the paste interception and the focus-on-click
-into one teardown, shared verbatim by `bindInputOtp` (WC + Astro) and the React
+into one teardown, shared verbatim by `bindInputOtp` (Astro) and the React
 controller's effect.
 
 The value math — the per-character pattern filter, truncation to `maxLength`,
@@ -109,7 +109,7 @@ twice. They are also not tab stops — the field is one tab stop, not N.
 Every slot state is projected as a `data-` attribute and styled from it
 (`data-[active=true]:ring-1`, `data-[filled=true]:text-foreground`, and
 `group-data-[disabled=true]:*` reading the root). No framework recomposes a
-class string, so the three performances cannot drift in presentation.
+class string, so the two performances cannot drift in presentation.
 
 ## Keyboard
 
@@ -126,7 +126,7 @@ part claim `setActive`. The bind computes the target index via `activeForKey`.
 Arrows `preventDefault` so the native caret does not move inside the flat string
 and desync from the lit slot. Focus never leaves the input.
 
-## Events (WC / Astro)
+## Events (Astro)
 
 | Event | When |
 | --- | --- |
@@ -166,12 +166,8 @@ user's preference. Slot state transitions still honour
 | `sr-only` input carrying `aria-label`, `inputmode=numeric`, `autocomplete=one-time-code` | contract |
 | the complete-code OR: last slot stays lit while the code is full, so a full field can show TWO active slots | contract — preserved verbatim (`isSlotActive`). Deliberately NOT re-derived into a single-active rule |
 | `rafters-otp-complete` CustomEvent + `change` at max length | contract (now latched to the EDGE; the oracle re-fired on every input while full) |
-| WC `ElementInternals` form association, `setValidity({tooShort})`, `formResetCallback`, `formStateRestoreCallback`, `checkValidity` etc. | framework-affordance — a WC-only surface the React oracle never had. The behavior-layer control is a real native `<input>`, so `name`, submission, reset and constraint validation come from the platform |
-| WC `<rafters-input-otp>` auto-rendering `maxLength` slots into shadow DOM | framework-affordance — the behavior-layer WC is a light-DOM enhancer (Spec 05); Astro server-renders the slots, and `groups={[3,3]}` is the SSR equivalent of the React compound children |
-| WC `composeInputOtpSlotClasses` / `composeInputOtpContainerClasses` recomposing class strings per state | dropped — state now rides projected `data-` attributes the CSS reads, so no framework recomposes classes and the three cannot drift |
-| WC text-node surgery inside the slot (remove every child but the caret, insert a text node) | dropped — the slot has a dedicated `[data-otp-char]` element, so painting a character is one `textContent` write |
-| React default pattern `/^[0-9]*$/` vs WC default `^[0-9]$` | dropped — the two oracles disagreed; the per-character WC form is canonical (`^[0-9]$`). Both accept exactly the digits, so no behavior changes |
-| React `aria-label` "Enter N digit code" vs WC "Enter N character code" | dropped — the two oracles disagreed; "character" is canonical because `pattern` is configurable and the code need not be digits |
+| React default pattern `/^[0-9]*$/` | dropped — the per-character form is canonical (`^[0-9]$`). Both accept exactly the digits, so no behavior changes |
+| React `aria-label` "Enter N digit code" | dropped — "Enter N character code" is canonical because `pattern` is configurable and the code need not be digits |
 | slots exposed to AT (no `aria-hidden`, no roles) | contract — preserved as-is. Marking the mirror `aria-hidden` was considered and rejected: the oracle and shadcn both leave it, and the container holds the focusable input, so hiding it would itself be an axe violation |
 | `onComplete` re-firing on every input event while the code is full | defect-do-not-port — the completion edge is now latched in both the bind and React |
 | container `opacity-50` applied via a JS-composed class on the disabled edge | dropped — `group-data-[disabled=true]:opacity-50` on the slots reads the root's projection with no JS |
@@ -180,7 +176,7 @@ user's preference. Slot state transitions still honour
 
 - 1.3.1 / 4.1.2: one real `<input>` carries the name, role and value; the
   segmented slots are presentational and asserted against the score's projection
-  by the harness across React / WC / Astro.
+  by the harness across React / Astro.
 - 2.1.1 Keyboard: the whole code is enterable, editable and pasteable from the
   keyboard; the field is ONE tab stop, and arrows move the lit slot without
   moving focus. Disabled gates every entry path.

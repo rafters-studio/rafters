@@ -6,11 +6,11 @@ actions, no keymap, no effects. One constant ARIA projection.
 Files (`src/components/spinner/`):
 
 ```
-spinner.classes.ts   spinner.behavior.ts   spinner.tsx   spinner.element.ts   spinner.astro
+spinner.classes.ts   spinner.behavior.ts   spinner.tsx   spinner.astro
 ```
 
 Tests mirror into `test/components/spinner/`: behavior (pure), classes parity,
-and React + Web Component + Astro conformance through the shared harness.
+and React + Astro conformance through the shared harness.
 
 ## Purpose
 

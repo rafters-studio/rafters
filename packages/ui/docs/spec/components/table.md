@@ -43,11 +43,6 @@ no ARIA, and each `row` instance projects its selected state.
 ## Framework scope
 
 React and Astro, matching the oracle (`frameworks.oldTree: [astro, react]`).
-The Web Component surface is deferred: a table's styled elements
-(`thead`/`tbody`/`tr`/`td`) must be real table descendants, so the pure-static
-shadow+slot model (Card, Container) cannot wrap them without breaking table
-layout and the shared-classes premise. The WC row of the matrix stays
-`missing`; adding it is a separate disposition, not this port's.
 
 ## Composition
 
@@ -125,7 +120,6 @@ a decoration intent; its duration comes from tokens, never a hardcoded utility.
 | `[&:has([role=checkbox])]:pr-0` / `[&>[role=checkbox]]:translate-y-0.5` cell selectors | contract -- shadcn checkbox flush |
 | `duration-150` on the row transition | dropped -- redundant with `transition-colors` (Tailwind's default duration), and durations come from tokens (docs/MOTION.md) |
 | Astro `data-table=""` marker attributes | dropped -- replaced by the `data-part`/`data-slot` vocabulary the harness reads |
-| Web Component surface | deferred -- oldTree ships no WC; the shadow+slot static model cannot wrap real table descendants (see Framework scope) |
 
 ## Deltas from the oracle
 

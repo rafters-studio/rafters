@@ -55,6 +55,6 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
+- Astro performance (same debt as the other articles).
 - Static-score conformance is thinner than interactive articles: element
   contract + classes assertions + axe. No interaction tier exists to run.

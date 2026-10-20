@@ -8,12 +8,12 @@ Files (`src/components/radio-group/`):
 
 ```
 radio-group.classes.ts   radio-group.behavior.ts   radio-group.tsx
-radio-group.element.ts   radio-group.astro
+radio-group.astro
 ```
 
 Tests mirror into `test/components/radio-group/`: `.behavior.test.ts` (pure),
 `.classes.test.ts` (parity), `.conformance.test.tsx` (React),
-`.element.conformance.test.ts` (WC), `.astro.conformance.test.ts` (Astro).
+`.astro.conformance.test.ts` (Astro).
 
 ## Composition
 
@@ -100,12 +100,10 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 | group + item `disabled`; roving skips disabled | contract |
 | click selects; Space/Enter select the focused item | contract |
 | aria-checked / data-state reflection on items | contract |
-| `group` marker + `group-data-[state=unchecked]:hidden` indicator | contract (React parity: indicator always rendered, CSS-hidden — the old WC's render-only-when-checked is dropped for one class contract across all three) |
-| arrow keys move focus ONLY (old controller + old WC) | defect-do-not-port — improved to WAI-ARIA APG "arrow moves AND selects" (the ticket's stated behavior); old move-only was the deviation |
+| `group` marker + `group-data-[state=unchecked]:hidden` indicator | contract (React parity: indicator always rendered, CSS-hidden — one class contract across both performances) |
+| arrow keys move focus ONLY (old controller) | defect-do-not-port — improved to WAI-ARIA APG "arrow moves AND selects" (the ticket's stated behavior); old move-only was the deviation |
 | roving seeded to the checked item's index (`startIndex`) | dropped — the roving-focus effect starts at index 0; Tab enters at the first item, not the checked one. Minor APG divergence pending a seedable roving effect (Spec 03) |
-| WC form-association via ElementInternals (`setFormValue`, `valueMissing`, `formResetCallback`, `formDisabledCallback`, `formStateRestoreCallback`, `name`/`required` validity) | dropped — deferred to the `form-value` primitive, which does not yet exist (planned across the whole checkbox/switch/select family). `name`/`required` are preserved as an INERT surface (`data-name`, `aria-required`) so the wiring exists when form-value lands. The old React tsx never rendered hidden inputs either; form participation was WC-only |
-| WC `input`/`change` events on selection | dropped — same deferral; the selection contract is `onValueChange` (React) and the projected `aria-checked`/`data-state` (all three) |
-| shadow-DOM `<rafters-radio-group>` + `<rafters-radio-item>` pair | defect-do-not-port — replaced by a single light-DOM enhancer (`bindRadioGroup`), matching button/navigation-menu; the host provides real `role="radiogroup"`/`role="radio"` markup so roving and focus act on real document DOM |
+| form association (`name`/`required` validity) | dropped — deferred to the `form-value` primitive, which does not yet exist (planned across the whole checkbox/switch/select family). `name`/`required` are preserved as an INERT surface (`data-name`, `aria-required`) so the wiring exists when form-value lands. The old React tsx never rendered hidden inputs either |
 | `createSelectionGroup` primitive for single-select state | framework-affordance — expressed instead as reducer state (`{ value }`), the behavior-layer equivalent, exactly as navigation-menu expresses its active-item selection as reducer state rather than composing the primitive |
 
 ## Deltas from the oracle
@@ -114,8 +112,8 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 2. Selection is reducer state driven through the effect runner + roving-focus
    effect, not the imperative `createRadioGroup` controller.
 3. The indicator dot is always rendered and hidden via
-   `group-data-[state=unchecked]:hidden` in all three performances (one class
-   contract), rather than conditionally rendered in the WC.
+   `group-data-[state=unchecked]:hidden` in both performances (one class
+   contract).
 
 ## WCAG 2.1 AA obligations
 

@@ -8,11 +8,11 @@ Files (`src/components/accordion/`):
 
 ```
 accordion.behavior.ts   accordion.classes.ts   accordion.tsx
-accordion.element.ts    accordion.astro
+accordion.astro
 ```
 
 Tests mirror into `test/components/accordion/`: behavior (pure), classes
-(parity), and conformance across React, WC, and Astro on the shared harness.
+(parity), and conformance across React and Astro on the shared harness.
 
 ## Composition
 
@@ -175,7 +175,7 @@ depended on a Radix-owned content-height variable this system never sets.
 - 1.3.1/4.1.2: each header button is contained by a `role="heading"` element
   carrying `aria-level`, projects `aria-expanded`, and references its panel by
   real DOM id; each panel is a `role="region"` named by `aria-labelledby` back to
-  its header. Asserted by the harness across all three performances, plus axe.
+  its header. Asserted by the harness across both performances, plus axe.
 - 2.1.1: every section is fully operable from the keyboard -- Enter/Space
   activate natively, ArrowUp/ArrowDown/Home/End move focus. No pointer-only path.
 - 2.4.3: roving tabindex keeps exactly one header in the tab order, so Tab enters

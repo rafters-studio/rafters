@@ -7,11 +7,11 @@ Files (`src/components/combobox/`):
 
 ```
 combobox.behavior.ts   combobox.classes.ts
-combobox.tsx           combobox.element.ts   combobox.astro
+combobox.tsx           combobox.astro
 ```
 
 Tests mirror into `test/components/combobox/`: a pure behavior test, a classes
-parity test, and conformance across React, WC, and Astro through the shared
+parity test, and conformance across React and Astro through the shared
 harness.
 
 ## Archetype
@@ -90,7 +90,7 @@ input with its option's label, the same text a `select` of that option writes;
 each performance reads the label from its own options. A seed matching no
 option leaves the input empty.
 
-The filter predicate is pure and shared by all three performances:
+The filter predicate is pure and shared by both performances:
 `matchesQuery(label, value, query)` matches on label OR value, case-insensitively,
 with an empty query matching everything.
 
@@ -133,7 +133,6 @@ One optional prop places a decorative icon at the start of the input and at the 
 | --- | --- | --- |
 | React | `<Combobox.Input startIcon={node} />` | `<Combobox.Item startIcon={node} />` |
 | Astro | `<slot name="start-icon" />` | `<slot name="start-icon-{value}" />` |
-| Web Component | child of the host with `slot="start-icon"` | child of the option with `slot="start-icon"` |
 
 ```html
 <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
@@ -175,7 +174,7 @@ and was NOT read; dispositions are taken from `combobox.tsx` and the archetype.
 | option group + separator surface | contract (thin view wrappers) |
 | collision positioning against the input, width-matched | contract (composed collision-detector; select had dropped positioning, combobox keeps it) |
 | outside-pointerdown dismissal sparing the input wrapper | contract (`outside-click`, sparing input + toggle) |
-| portal of the listbox to `document.body` | dropped — the listbox lives in light DOM present-but-hidden (select precedent), so all three performances share one bind; portaling is a framework affordance not needed for behavior |
+| portal of the listbox to `document.body` | dropped — the listbox lives in light DOM present-but-hidden (select precedent), so both performances share one bind; portaling is a framework affordance not needed for behavior |
 | selecting fills the input with the option's label, then closes | reconstructed from the archetype: the exact post-select display lived in the off-limits controller. The standard editable-autocomplete behavior (input shows the committed label, list closes) is the sanctioned reconstruction |
 | React unmounts filtered-out options | defect-avoided — the port HIDES filtered options (`hidden`) instead of unmounting, so option ids stay stable for `aria-activedescendant` |
 

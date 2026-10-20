@@ -9,7 +9,7 @@ Files (`src/components/aspect-ratio/`):
 
 ```
 aspect-ratio.classes.ts   aspect-ratio.behavior.ts   aspect-ratio.tsx
-aspect-ratio.element.ts    aspect-ratio.astro
+aspect-ratio.astro
 ```
 
 ## Purpose
@@ -29,14 +29,14 @@ The box owns proportion and nothing else.
 
 | Channel | Value |
 | --- | --- |
-| `ratio` (config) | width ÷ height. Defaults to `1` (square). React takes a `number`; the Web Component takes a string attribute (`"16/9"`, `"1.778"`, `"1"`). |
+| `ratio` (config) | width ÷ height. Defaults to `1` (square). React takes a `number`. |
 | state | none — a static score has nothing to remember. |
 | actions | none. |
 
 `parseRatio` (the score) normalises any input to a positive number: it divides a
 fraction string, reads a decimal or integer, and falls back to `1` for missing,
 empty, non-numeric, or non-positive input. `resolveRatio(config)` applies that
-parse to `config.ratio`. Both are pure and shared by all three performances.
+parse to `config.ratio`. Both are pure and shared by both performances.
 
 ## Parts + ARIA
 
@@ -44,30 +44,27 @@ parse to `config.ratio`. Both are pure and shared by all three performances.
 | --- | --- | --- |
 | `root` | none | none — the box projects an empty contract; the slotted content (`<img>`, `<iframe>`, `<video>`) carries its own name and role. |
 
-The conformance harness asserts the empty projection identically across React,
-the Web Component, and Astro.
+The conformance harness asserts the empty projection identically across React
+and Astro.
 
 ## Keyboard + effects
 
 None. The box claims no keys and runs no effects, so there is no
-`bindAspectRatio`: the React performance uses no `useBehavior`/`useMemory`, the
-Astro performance ships no `<script>`, and the Web Component performs no binding.
+`bindAspectRatio`: the React performance uses no `useBehavior`/`useMemory`, and the
+Astro performance ships no `<script>`.
 
 ## The one style channel
 
 `ratio` is a data-driven value, and an arbitrary `aspect-ratio` cannot be a
 literal utility class, so it rides the inline `style` — the same narrow channel
 Container uses for its `container-name`. React serialises `aspectRatio` unitless
-(`aspect-ratio: 1.777`, no `px`); Astro writes the same string; the Web
-Component sets it on the inner wrapper via `style.setProperty('aspect-ratio', …)`.
+(`aspect-ratio: 1.777`, no `px`); Astro writes the same string.
 
-## Fill across the shadow boundary
+## Fill
 
 React and Astro fill the box with `aspectRatioChildFillClasses`
 (`[&>*]:absolute [&>*]:inset-0 [&>*]:h-full [&>*]:w-full`) — Tailwind child
-selectors on the wrapper. Those selectors cannot cross the shadow boundary, so
-the Web Component encodes the same fill natively as a `::slotted(*)` rule in
-`static styles`. All three leave `object-fit` to the consumer.
+selectors on the wrapper. Both leave `object-fit` to the consumer.
 
 ## Oracle dispositions (boundary 9)
 
@@ -75,9 +72,7 @@ the Web Component encodes the same fill natively as a `::slotted(*)` rule in
 | --- | --- |
 | `ratio` prop / attribute (number, decimal string, fraction string, fallback to 1) | contract |
 | `parseRatio` fraction/decimal/fallback parsing | contract — moved verbatim into the score as an earned semantic |
-| React child fill via `[&>*]` utilities; WC fill via `::slotted(*)` | contract — unified: both fill absolute/inset-0/full, object-fit left to the consumer |
-| old WC `::slotted(*) { object-fit: cover }` | dropped — a forced fit mode the box does not own; React and Astro never applied it, and shadcn/Radix leave object-fit to the child (its own example passes `object-cover` on the image). Unified down for drop-in parity. |
-| old WC per-instance `CSSStyleSheet` for the ratio | framework-affordance — replaced by the inner wrapper's inline `aspect-ratio` style, matching Container's one-style-channel precedent and dropping the per-instance-sheet machinery |
+| React child fill via `[&>*]` utilities | contract — fills absolute/inset-0/full, object-fit left to the consumer |
 | old React `style` spread letting a consumer override `aspect-ratio` | contract, tightened — the component ratio is applied last so the box's proportion always wins; consumer style otherwise merges |
 
 ## shadcn parity

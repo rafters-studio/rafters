@@ -11,7 +11,7 @@ Files (`src/components/typography/`):
 
 ```
 typography.behavior.ts   typography.classes.ts   typography.tsx
-typography.element.ts     typography.astro
+typography.astro
 ```
 
 ## Purpose
@@ -28,9 +28,6 @@ the resolver.
   (`List` aliases `Ul` for shadcn parity), plus a generic `Typography` with
   `as`/`variant`. A factory builds each named component (DRY construction, not a
   decision surface).
-- **Web Component**: `<rafters-typography variant="…">` renders the variant's
-  tag inside a shadow root (RaftersElement), carrying the shared composed
-  classes. Unknown `variant` falls back to `p` — never throws.
 - **Astro**: exports the same named components (`H1`–`H6`, `P`, `Lead`,
   `Large`, `Muted`, `Small`, `Code`, `CodeBlock`, `Blockquote`, `Mark`,
   `Abbr`, `Ul`, `Ol`, `Li`, `List`) from the single `typography.astro` file

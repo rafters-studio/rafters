@@ -12,11 +12,11 @@ Files (`src/components/menubar/`):
 
 ```
 menubar.classes.ts   menubar.behavior.ts
-menubar.tsx          menubar.element.ts   menubar.astro
+menubar.tsx          menubar.astro
 ```
 
 Tests mirror into `test/components/menubar/`: behavior (pure), classes, and a
-`.spec` and `.a11y` file per framework (React, WC, Astro), each asserting the
+`.spec` and `.a11y` file per framework (React, Astro), each asserting the
 rendered ARIA against the score's projection.
 
 ## Composition
@@ -56,7 +56,7 @@ disclosable projection is evaluated from it.
 
 `startMenubarBar` (the bar rove plus following) and `startMenubarMenu`
 (position one open menu, then dropdown-menu's trio) are the composition
-functions. `bindMenubar` (WC and Astro) and the React `useEffect`s call the same
+functions. `bindMenubar` (Astro) and the React `useEffect`s call the same
 two.
 
 ### The menus live outside the bar
@@ -101,9 +101,9 @@ following siblings. Alternatives considered and not taken:
   the relocation this doc already makes. The only difference would be an
   extra wrapper element for the row, and the menus would still need
   positioning under their triggers, so it adds a part and buys nothing. For
-  Astro and WC, authored markup could place the menus beside the row, but
+  Astro, authored markup could place the menus beside the row, but
   keeping one markup contract (menus next to their triggers, moved on bind)
-  keeps the three performances the same.
+  keeps both performances the same.
 
 Right after the bar, not the end of the body, keeps each menu inside whatever
 landmark holds the bar (axe `region`). The cost: the bind rearranges author
@@ -216,7 +216,6 @@ One optional prop places a decorative icon at the start of a trigger's label and
 | --- | --- | --- |
 | React | `<Menubar.Trigger startIcon={node} />` | `<Menubar.Item startIcon={node} />` |
 | Astro | `<slot name="start-icon-{menu}" />` | `<slot name="start-icon-{menu}-{index}" />` |
-| Web Component | child of the trigger with `slot="start-icon"` | child of the item with `slot="start-icon"` |
 
 ```html
 <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
@@ -246,7 +245,7 @@ with no pose of its own.
 | one menu open at a time, closable | contract (`active` axis) |
 | Trigger / Content / Group / Label / Item / Separator / Shortcut surface + `Menubar.*` namespace | contract |
 | `MenubarMenu` identity from `useId` | contract; `value` is now an optional prop (the controlled `value` names menus), `useId` when omitted |
-| CheckboxItem / RadioGroup / RadioItem | contract (React); `checked`/`value` are consumer-controlled, not score state. In WC/Astro `aria-checked` is author markup the bind does not own |
+| CheckboxItem / RadioGroup / RadioItem | contract (React); `checked`/`value` are consumer-controlled, not score state. In Astro `aria-checked` is author markup the bind does not own |
 | Arrow Left/Right + Home/End across triggers, roving tabindex | contract (`createRovingFocus` on the bar) |
 | open menu follows focus across triggers | contract (`onNavigate` -> `open` while a menu is open) |
 | hover switches the open menu, never opens the first | contract (`follow`, on pointermove) |
@@ -275,7 +274,7 @@ with no pose of its own.
 
 - 1.3.1 / 4.1.2: `role="menubar"` with `menuitem` triggers owning only the bar;
   each menu `role="menu"` + `aria-orientation`, wired by `aria-controls` /
-  `aria-labelledby` to real ids. Asserted against rendered markup in all three
+  `aria-labelledby` to real ids. Asserted against rendered markup in both
   frameworks, and axe runs closed and open scenes per framework (plus the Astro
   server markup before the script).
 - 2.1.1: full keyboard operation -- rove the bar, open, rove the menu, Home/End,

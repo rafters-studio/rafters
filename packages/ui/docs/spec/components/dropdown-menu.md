@@ -12,11 +12,11 @@ Files (`src/components/dropdown-menu/`):
 
 ```
 dropdown-menu.classes.ts   dropdown-menu.behavior.ts
-dropdown-menu.tsx          dropdown-menu.element.ts   dropdown-menu.astro
+dropdown-menu.tsx          dropdown-menu.astro
 ```
 
 Tests mirror into `test/components/dropdown-menu/`: behavior (pure), classes
-parity, and conformance across React + WC + Astro via the shared harness.
+parity, and conformance across React + Astro via the shared harness.
 
 ## Composition
 
@@ -36,7 +36,7 @@ The impure work is composed directly by the bindings (there is no effect
 runner): `startDropdownMenuEffects({ content, getTrigger, onDismiss })` starts
 `createRovingFocus` (vertical) + `createTypeahead` + `onPointerDownOutside`
 (sparing the trigger) on the open transition and tears them down on close.
-`bindDropdownMenu` (WC/Astro) and a React `useEffect` call the same function.
+`bindDropdownMenu` (Astro) and a React `useEffect` call the same function.
 
 ### Highlighted item = roving-focus current item (not score state)
 
@@ -99,7 +99,6 @@ One optional prop places a decorative icon at the start of an item: `startIcon`,
 | --- | --- |
 | React | `<DropdownMenu.Item startIcon={node} />` |
 | Astro | `<slot name="start-icon-{index}" />`, index being the item's position in `items` |
-| Web Component | child of the item with `slot="start-icon"` |
 
 ```html
 <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
@@ -134,7 +133,7 @@ from/to values and a presence adapter to keep the exiting node mounted.
 | focus first item on open | contract |
 | Enter/Space activates a menu item | contract (div-as-button click path; state effect is the score's `close`) |
 | asChild on Trigger / Content / Item | framework affordance (React) |
-| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); in WC/Astro `aria-checked` is author markup the bind does not own |
+| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); in Astro `aria-checked` is author markup the bind does not own |
 | Sub / SubTrigger / SubContent (nested submenus) | dropped -- the issue's state model is "open, highlighted item" (no submenu-open axis); faithful submenu open-on-hover needs `hover-delay` (the issue adds no primitives) or the oracle's raw `setTimeout` (a forbidden half-solution); neither cited reference has submenus. Tracked for a later wave |
 | collision-aware positioning (computePosition on scroll/resize) | dropped -- positioning is not behavior state and not modelled here (same disposition select took); reduced positioning fidelity vs the old React-only path |
 | Portal (portals the content to `document.body`) | framework affordance -> pass-through: the menu lives in light DOM present-but-hidden, so there is no portal to open; the API is preserved |
@@ -144,7 +143,7 @@ from/to values and a presence adapter to keep the exiting node mounted.
 
 - 1.3.1 / 4.1.2: `aria-haspopup="menu"`, `role="menu"` + `aria-orientation`,
   `aria-controls`/`aria-labelledby` wired to real DOM ids, asserted by the
-  harness against rendered markup in all three frameworks.
+  harness against rendered markup in both frameworks.
 - 2.1.1: full keyboard operation -- open, arrow-rove, Home/End, typeahead,
   activate, Escape.
 - 2.4.3 Focus Order: opening moves focus to the first item; Escape/activate

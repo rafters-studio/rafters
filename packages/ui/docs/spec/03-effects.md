@@ -27,7 +27,7 @@ the behavior file; each framework boundary calls it and nothing more:
 - The composition (start the primitives, hold their cleanups) lives in `x.behavior.ts` — a
   plain function (e.g. `startDialogModalEffects({ content, getTrigger, onDismiss })`) when
   it composes more than one primitive, or an inline call when it is one.
-- **WC / Astro**: `bindX` calls it on the relevant transition, holds the cleanup, tears down.
+- **Astro**: `bindX` calls it on the relevant transition, holds the cleanup, tears down.
 - **React**: a `useEffect` calls the SAME function, returns its cleanup.
 
 There is no `EffectSpec`, no `effects()` member, no `createEffectRunner`, no `EffectHost`,

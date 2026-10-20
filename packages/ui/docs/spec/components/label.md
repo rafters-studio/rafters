@@ -2,17 +2,16 @@
 
 Status: DRAFT. Wave-2 port. Static score (imitates Card and Container). No
 state, no actions, no keymap, no effects, no motion block. The composition
-archetype: a pure static performed across all three frameworks (React, the
-`<rafters-label>` web component, and Astro).
+archetype: a pure static performed across both frameworks (React and Astro).
 
 Files (`src/components/label/`):
 
 ```
-label.behavior.ts   label.classes.ts   label.tsx   label.element.ts   label.astro
+label.behavior.ts   label.classes.ts   label.tsx   label.astro
 ```
 
 Tests mirror into `test/components/label/`: behavior (pure, no DOM), classes
-parity, and conformance across React + WC + Astro.
+parity, and conformance across React + Astro.
 
 ## Purpose
 
@@ -33,9 +32,6 @@ there is **nothing to bind**:
   children through, `htmlFor` passed to the native `<label>`.
 - `label.astro` ships **no** `<script>` -- server-rendered markup with the
   shared classes and a default slot; the native `for` passes through.
-- `label.element.ts` performs **no** binding -- the web component renders the
-  inner `<label>` with the shared classes and a default slot, once, and
-  forwards the host `for` onto that inner label.
 
 The score is declared only so the conformance harness can assert the one real
 contract (the `root` part renders and projects no ARIA) identically across
@@ -96,13 +92,12 @@ behaviour the score neither adds to nor removes.
 | `htmlFor` / `for` association (IDREF to a control's id) | contract -- native pass-through; the port preserves the mechanism exactly |
 | `text-label-medium leading-none` base decoration | contract (verbatim from the oracle's settled decoration) |
 | `peer-disabled:cursor-not-allowed peer-disabled:opacity-70`, plus `has-disabled:cursor-not-allowed has-disabled:opacity-70` | contract -- the disabled affordance. `peer-disabled:` (verbatim) dims the label when a preceding sibling `.peer` control is disabled; `has-disabled:` (rafters extension, #2656) dims it when the label CONTAINS a `:disabled` control, the wrapping composition under "Pairing a choice control" |
-| WC `for` forwarding onto the inner shadow `<label>` | contract -- preserved verbatim; the shadow-boundary caveat below applies |
-| `{...props}` / `{...attrs}` spread on the root | framework affordance (React/WC/Astro pass consumer attributes through) |
+| `{...props}` / `{...attrs}` spread on the root | framework affordance (React/Astro pass consumer attributes through) |
 
 ## Deltas from the oracle
 
 1. The score is declared (`label.behavior.ts`) so the conformance harness can
-   assert the empty contract across three frameworks -- the oracle had no score
+   assert the empty contract across both frameworks -- the oracle had no score
    file. No behaviour changed: the projection is empty and there is no bind.
 2. Classes moved into `label.classes.ts` as `labelClasses(config)` returning a
    `{ root }` class set, the same shape Card and Container use.
@@ -153,7 +148,7 @@ faithful port does not add it -- an explicit disposition, not a regression.
 - 1.3.1 Info and Relationships / 4.1.2 Name, Role, Value: the label associates
   with its control via the native `for`/`htmlFor` IDREF, so assistive tech
   announces the label when the control takes focus. The root projects no ARIA;
-  the empty contract is asserted against real DOM across React, WC, and Astro.
+  the empty contract is asserted against real DOM across React and Astro.
 - 1.4.1 Use of Colour: the `variant` colour is never the sole carrier of
   meaning -- an error-state label pairs its colour with the control's own
   `aria-invalid` and error text; colour alone never signals validity.
@@ -161,14 +156,3 @@ faithful port does not add it -- an explicit disposition, not a regression.
   raw colour, so the label stays legible on the surrounding surface.
 - 2.5.3 Label in Name: the visible label text is the accessible name (it is the
   label's own content), so they cannot diverge.
-
-### Known caveat (not a regression)
-
-Inside the web component's shadow root, the inner label's `for` IDREF resolves
-within that tree, so it does NOT associate across the shadow boundary to a
-light-DOM control -- the same shadow-boundary limitation the oracle recorded
-for its `peer-disabled` utilities. The forwarding is preserved verbatim;
-consumers wanting cross-boundary association wrap the control or mirror the
-association outside the shadow root. Repointing this (a light-DOM association
-strategy for the WC) is a tracked follow-up, not an agent call to make in a
-faithful port.
