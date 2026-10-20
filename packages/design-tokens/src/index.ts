@@ -23,6 +23,10 @@ export {
 export { classifyDeclarations } from './importers/classify.js';
 export { importColorFamily } from './importers/color.js';
 export { colorsFromClassification } from './importers/colors.js';
+export {
+  type ResolvedCustomProperty,
+  resolveCustomProperties,
+} from './importers/custom-properties.js';
 export { detectFamilySeeds } from './importers/family-seeds.js';
 export {
   type DetectedFont,

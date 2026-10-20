@@ -60,6 +60,13 @@ import {
 import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
+import {
+  applyCssImport,
+  type CssImportPlan,
+  planCssImport,
+  printCssImportReport,
+  readCssImport,
+} from './import.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
 // The config shape and its migration now live in a leaf module with no
 // `@rafters/design-tokens` edge, so the MCP plugin bundle can reach them
@@ -72,6 +79,10 @@ export type { FontsConfig, RaftersConfig };
 
 interface InitOptions {
   rebuild?: boolean;
+  /** Stylesheet to import by `map` (#2763); replaces source CSS sensing. */
+  cssImport?: string;
+  /** `--map` values: JSON objects or `target=--property` pairs. */
+  map?: string[];
   reset?: boolean;
   agent?: boolean;
   /**
@@ -877,6 +888,22 @@ export async function init(options: InitOptions): Promise<void> {
   setAgentMode(options.agent ?? false);
   const isAgentMode = options.agent ?? false;
 
+  if (
+    (options.rebuild || options.reset) &&
+    (options.cssImport !== undefined || (options.map ?? []).length > 0)
+  ) {
+    throw new Error(
+      '--css-import and --map do not combine with --rebuild or --reset. Use rafters import --css-import <path> --map ... for an existing project.',
+    );
+  }
+
+  const cssImport =
+    options.cssImport === undefined ? undefined : await readCssImport(options.cssImport);
+  if (cssImport !== undefined && (options.map ?? []).length === 0) {
+    printCssImportReport(cssImport);
+    return;
+  }
+
   const cwd = process.cwd();
   const paths = getRaftersPaths(cwd);
 
@@ -942,6 +969,14 @@ export async function init(options: InitOptions): Promise<void> {
 
   // Fresh initialization
 
+  // The map is checked against a throwaway base system before anything,
+  // the font install included, is written.
+  let cssImportPlan: CssImportPlan | undefined;
+  if (cssImport !== undefined) {
+    const probe = new TokenRegistry(generateBaseSystem({}).allTokens, REGISTRY_PLUGINS);
+    cssImportPlan = planCssImport(probe, cssImport, options.map ?? []);
+  }
+
   // Prompt for export formats (use defaults in agent mode or non-interactive)
   let exports: ExportConfig;
   if (isAgentMode) {
@@ -991,7 +1026,7 @@ export async function init(options: InitOptions): Promise<void> {
     shadcn?.tailwind?.css,
     log,
   );
-  if (sourceCssPathForBase !== null) {
+  if (sourceCssPathForBase !== null && cssImportPlan === undefined) {
     try {
       const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
       // Per-detector wiring: each adapter method returns an object with
@@ -1049,6 +1084,7 @@ export async function init(options: InitOptions): Promise<void> {
 
   const system = generateBaseSystem(baseConfig);
   const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+  if (cssImportPlan !== undefined) applyCssImport(registry, cssImportPlan);
 
   log({
     event: 'init:generated',
@@ -1158,7 +1194,7 @@ export async function init(options: InitOptions): Promise<void> {
   // ColorReference at family@500. Defining a new family avoids the
   // blast-radius of remapping an existing one (e.g. neutral) where every
   // dependent semantic would re-color.
-  if (detectedCssPath) {
+  if (detectedCssPath && cssImportPlan === undefined) {
     let sourceCss: string | null = null;
     try {
       sourceCss = await readFile(join(cwd, detectedCssPath), 'utf-8');
