@@ -32424,12 +32424,14 @@ var UnsupportedComponentTargetError = class extends Error {
   }
 };
 var BLOCKED_REGISTRY_RANGES = new BlockList();
+BLOCKED_REGISTRY_RANGES.addSubnet("0.0.0.0", 8, "ipv4");
 BLOCKED_REGISTRY_RANGES.addSubnet("127.0.0.0", 8, "ipv4");
 BLOCKED_REGISTRY_RANGES.addSubnet("10.0.0.0", 8, "ipv4");
 BLOCKED_REGISTRY_RANGES.addSubnet("172.16.0.0", 12, "ipv4");
 BLOCKED_REGISTRY_RANGES.addSubnet("192.168.0.0", 16, "ipv4");
 BLOCKED_REGISTRY_RANGES.addSubnet("169.254.0.0", 16, "ipv4");
 BLOCKED_REGISTRY_RANGES.addAddress("::1", "ipv6");
+BLOCKED_REGISTRY_RANGES.addSubnet("fc00::", 7, "ipv6");
 BLOCKED_REGISTRY_RANGES.addSubnet("fe80::", 10, "ipv6");
 function isBlockedRegistryHost(url3) {
   let hostname3;
