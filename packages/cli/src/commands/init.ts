@@ -902,6 +902,9 @@ export async function init(options: InitOptions): Promise<void> {
     });
   }
 
+  const frameworkNote = FRAMEWORK_SPECS[framework].note;
+  if (frameworkNote) log({ event: 'init:framework_note', message: frameworkNote });
+
   // Error if Tailwind v3 is detected
   if (isTailwindV3(tailwindVersion)) {
     throw new Error('Tailwind v3 detected. Rafters requires Tailwind v4.');

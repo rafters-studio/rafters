@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
@@ -35,17 +36,20 @@ import { a11yOnly } from './vitest.astro.shared';
  * its own `exclude`.
  */
 
-const chromium = {
+// A function, not a shared object: Vitest writes each instance's name
+// (`<project> (chromium)`) onto the instance it is given.
+const chromium = () => ({
   enabled: true,
   provider: playwright(),
   instances: [{ browser: 'chromium' as const }],
   headless: true,
   commands: { compileCss },
-};
+});
 
 /**
  * React specifiers mapped onto Preact. Regexes are anchored so `react` does
- * not prefix-match `react/jsx-runtime` or `react-dom/client`.
+ * not prefix-match `react/jsx-runtime` or `react-dom/client`. `react` itself
+ * goes to a shim that adds `act` (see test/preact/react-shim.ts).
  */
 const preactAliases = [
   { find: /^react\/jsx-runtime$/, replacement: 'preact/jsx-runtime' },
@@ -53,11 +57,14 @@ const preactAliases = [
   { find: /^react-dom\/test-utils$/, replacement: 'preact/test-utils' },
   { find: /^react-dom\/client$/, replacement: 'preact/compat/client' },
   { find: /^react-dom$/, replacement: 'preact/compat' },
-  { find: /^react$/, replacement: 'preact/compat' },
+  {
+    find: /^react$/,
+    replacement: fileURLToPath(new URL('./test/preact/react-shim.ts', import.meta.url)),
+  },
 ];
 
 export default defineConfig({
-  // Inherited by the two inline projects (extends: true); the astro project
+  // Inherited by the inline projects (extends: true); the astro project
   // opts out with extends: false so Astro's own transform owns its plugins.
   plugins: [react()],
   test: {
@@ -131,7 +138,7 @@ export default defineConfig({
           // without it the v6 matrix install's own node_modules gets scanned.
           exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
           setupFiles: ['./test/a11y/setup.ts'],
-          browser: chromium,
+          browser: chromium(),
         },
       },
       {
@@ -146,7 +153,7 @@ export default defineConfig({
           include: a11yOnly ? ['test/**/*.a11y.tsx'] : ['test/**/*.spec.tsx', 'test/**/*.a11y.tsx'],
           exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
           setupFiles: ['./test/a11y/setup.ts'],
-          browser: chromium,
+          browser: chromium(),
         },
       },
       './vitest.config.astro.ts',

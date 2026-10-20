@@ -14,6 +14,7 @@ describe('SELECTABLE_FRAMEWORKS', () => {
       'remix',
       'react-router',
       'astro',
+      'preact',
       'wc',
       'vanilla',
     ]);
