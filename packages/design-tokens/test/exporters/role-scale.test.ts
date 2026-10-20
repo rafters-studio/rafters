@@ -189,10 +189,15 @@ describe('role scale: ownership', () => {
   });
 
   it('throws when the CSS step and the registry step disagree', () => {
-    const tokens = generateBaseSystem().allTokens.map((t) =>
+    const generated = generateBaseSystem().allTokens;
+    const stepOf = (name: string): string =>
+      String((generated.find((t) => t.name === name)?.value as { position: unknown }).position);
+    const tokens = generated.map((t) =>
       t.name === 'primary-hover' ? { ...t, dependsOn: ['primary', 'primary-active--dark'] } : t,
     );
-    expect(() => tokensToTailwind(tokens)).toThrow(/"primary-hover" \(dark\).*200.*300/);
+    expect(() => tokensToTailwind(tokens)).toThrow(
+      `"primary-hover" (dark): CSS step ${stepOf('primary-hover--dark')} disagrees with registry step ${stepOf('primary-active--dark')}`,
+    );
   });
 
   describe('renders what the registry stores', () => {
