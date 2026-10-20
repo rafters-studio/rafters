@@ -11,7 +11,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { transform } from '@astrojs/compiler-rs';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
@@ -19,7 +19,6 @@ import { context } from './common.steps.js';
 import { execRafters } from './helpers.js';
 
 const { Given, When, Then } = createBdd();
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const RAFTERS_CSS = '.rafters/output/rafters.css';
 const LAYER_STATEMENT = '@layer theme, base, components, utilities;';
@@ -329,17 +328,6 @@ Then('{string} imports {string} exactly once', async ({}, file: string, specifie
 Then(
   "{string} parses with Astro's compiler and imports {string} in its frontmatter",
   async ({}, file: string, specifier: string) => {
-    // Astro's compiler, as the workspace's Astro (packages/ui) depends on it.
-    const ui = createRequire(join(__dirname, '../../../ui/package.json'));
-    const astro = createRequire(ui.resolve('astro/package.json'));
-    const compiler: unknown = await import(astro.resolve('@astrojs/compiler-rs'));
-    expect(compiler).toMatchObject({ transform: expect.any(Function) });
-    const { transform } = compiler as {
-      transform: (
-        input: string,
-        options: { filename: string },
-      ) => { code: string; diagnostics: Array<{ severity: string }> };
-    };
     const result = transform(await readFile(join(context.fixturePath, file), 'utf-8'), {
       filename: file,
     });
