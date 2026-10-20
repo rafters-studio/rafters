@@ -10,10 +10,10 @@ Files (`src/components/field/`):
 
 ```
 field.classes.ts    field.behavior.ts    field.tsx
-field.element.ts     field.astro
+field.astro
 ```
 
-Tests mirror into `test/components/field/`. React, WC, and Astro are all
+Tests mirror into `test/components/field/`. React and Astro are both
 conformance-verified against the shared harness.
 
 ## The archetype question
@@ -37,12 +37,9 @@ control it locates so the harness and any re-query can find it.
   with the native `for` association (using the Label score's own decoration),
   and paints the required marker + disabled dim from `field.classes.ts`. No
   bind.
-- **WC** (`field.element.ts`): a light-DOM enhancer. The author supplies the
-  label / control / helper markup; the element defers one microtask (children
-  may not have parsed) and calls `bindField`.
 - **Astro** (`field.astro`): SSR-renders label + `<slot/>` control +
-  helper/error, then the `<script>` hands each instance to the SAME
-  `bindField`. One score, three performances, zero drift.
+  helper/error, then the `<script>` hands each instance to
+  `bindField`. One score, two performances, zero drift.
 
 ## Config, state, actions
 
@@ -105,8 +102,7 @@ hide-while-error rule reconcile with no dangle.
 
 ## Oracle dispositions
 
-Field's old tree shipped React + a shadow-DOM WC (`field.element.ts`) driven by
-host attributes. The semantics carried across; the shadow machinery did not.
+Field's old-tree semantics carried across.
 
 | Item | Disposition |
 | --- | --- |
@@ -116,17 +112,14 @@ host attributes. The semantics carried across; the shadow machinery did not.
 | `aria-invalid` on error, `aria-required` on required | contract -- the control ARIA projection |
 | `disabled` propagation to the control | contract -- native attribute + property (a decorator/client concern, not ARIA) |
 | required marker (`aria-hidden`), `role="alert"` on the error, description-hidden-while-error | contract -- markup/PartDecl role + the decorators' view rule |
-| shadow-DOM render (label/desc/error built from host attributes) | dropped -- field is now a light-DOM enhancer; the author/SSR supplies markup, the client only wires (per the authoring guide) |
-| `aria-label` mirror onto the control (the shadow label could not cross the tree-scope boundary via `for`/`id`) | defect-do-not-port -- a shadow-boundary workaround; a light-DOM `for`/`id` association needs no mirror |
-| runtime attribute re-toggling on the WC (`error`/`disabled` observed, re-wired on change) | framework-affordance -- React re-renders declaratively; the light-DOM client binds once (input/radio-group parity) |
-| respecting an author-supplied `aria-describedby` on the control | dropped -- the field OWNS the control's validity/description wiring, so the score's projection is authoritative across all three performances (zero drift). Consumers extend description via the field's `description`, not a manual attribute |
+| respecting an author-supplied `aria-describedby` on the control | dropped -- the field OWNS the control's validity/description wiring, so the score's projection is authoritative across both performances (zero drift). Consumers extend description via the field's `description`, not a manual attribute |
 | raw `text-sm` on helper/error text | replaced -- the `text-body-small` typography role token (semantic classes only) |
 
 ## WCAG 2.1 AA obligations
 
 - 1.3.1 / 4.1.2: the label<->control association (`for`/`id`), `aria-invalid`,
   `aria-required`, and `aria-describedby` are asserted against real DOM ids by
-  the harness across React / WC / Astro; `aria-describedby` never dangles.
+  the harness across React / Astro; `aria-describedby` never dangles.
 - 3.3.1 / 3.3.3 (error identification): the error is a real element the invalid
   control references, carrying `role="alert"` so it announces on appearance.
 - 1.4.1: the required state is not colour-only -- the visual `*` marker is

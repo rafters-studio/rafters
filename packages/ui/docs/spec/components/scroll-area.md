@@ -7,11 +7,11 @@ Files (`src/components/scroll-area/`):
 
 ```
 scroll-area.classes.ts   scroll-area.behavior.ts   scroll-area.tsx
-scroll-area.element.ts    scroll-area.astro
+scroll-area.astro
 ```
 
 Tests mirror into `test/components/scroll-area/`: behavior (pure, no DOM),
-classes parity, and conformance across React + WC + Astro.
+classes parity, and conformance across React + Astro.
 
 ## Composition
 
@@ -23,10 +23,10 @@ ScrollBar (companion)  decorative custom-scrollbar track; literal classes, not a
 
 ScrollArea is a pure static: native scroll owns every semantic (momentum,
 keyboard scrolling, focus order), so the score projects nothing and needs no
-client. There is no `bindScrollArea`, no `useBehavior`/`useMemory`, no Astro
-`<script>`, and the Web Component performs no binding. The score is declared
+client. There is no `bindScrollArea`, no `useBehavior`/`useMemory`, and no Astro
+`<script>`. The score is declared
 only so the conformance harness asserts the one real contract (root renders,
-projects no ARIA) identically across the three frameworks.
+projects no ARIA) identically across both frameworks.
 
 The oracle was CSS-only -- no handlers, no
 state, no scroll-position tracking, no `scroll-area.controller.ts`. Porting a
@@ -76,12 +76,12 @@ declared part (boundary 5): it carries `data-slot="scroll-bar"` and a
 | `duration-150` / `w-2.5` / raw scrollbar sizing | contract (verbatim from the oracle's settled decoration; a designer pass may repoint at motion/spacing tokens, flagged, not an agent call) |
 | `motion-reduce:transition-none` on the ScrollBar transition | contract |
 | native keyboard scrolling / momentum / focus order | contract (left to the platform; the score adds nothing) |
-| `{...props}` spread on the root | framework affordance (React/WC/Astro pass consumer attributes through) |
+| `{...props}` spread on the root | framework affordance (React/Astro pass consumer attributes through) |
 
 ## WCAG 2.1 AA obligations
 
 - 1.3.1/4.1.2: the root projects no ARIA; the empty contract is asserted
-  against real DOM by the harness across React, WC, and Astro.
+  against real DOM by the harness across React and Astro.
 - 1.4.13 / never hide scrollbars: the custom scrollbar is styled, never
   hidden -- scroll affordance stays visible when content overflows.
 - 2.1.1 Keyboard: native keyboard scrolling is preserved untouched; the score

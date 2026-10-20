@@ -7,11 +7,11 @@ Files (`src/components/color-picker/`):
 
 ```
 color-picker.classes.ts    color-picker.behavior.ts    color-picker.tsx
-color-picker.element.ts    color-picker.astro
+color-picker.astro
 ```
 
 Tests mirror into `test/components/color-picker/` (behavior, classes, and
-React / WC / Astro conformance on the shared harness).
+React / Astro conformance on the shared harness).
 
 ## Composition
 
@@ -31,7 +31,7 @@ memory             nanostores atom for reactive color state
 `composeColorPickerInteractions({ areaCanvas, areaContainer, areaThumb,
 hueCanvas, hueContainer, hueThumb, inputs, preview, getConfig, request,
 commit })` wraps `createColorPickerState` into one teardown, shared verbatim
-by `bindColorPicker` (WC + Astro) and the React controller's effect.
+by `bindColorPicker` (Astro) and the React controller's effect.
 
 Dual-state: the composition primitive owns its own nanostores atom. The
 BehaviorSpec's memory (via `createBehavior`) maintains a parallel
@@ -134,7 +134,7 @@ already decided.
 
 - 1.3.1 / 4.1.2: `role="group"` on root with `aria-label`; hue surface
   carries `aria-valuemin/max/now`; asserted against real DOM by the harness
-  across React / WC / Astro.
+  across React / Astro.
 - 2.1.1 Keyboard: both interaction surfaces operable by arrow keys; numeric
   inputs provide keyboard-precise entry; disabled removes interaction.
 - 2.4.7 Focus Visible: token focus ring on inputs

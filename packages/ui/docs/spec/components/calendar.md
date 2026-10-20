@@ -1,16 +1,16 @@
 # Component Spec — Calendar
 
 Status: PORTED (wave-3). Archetype: simple-interactive (imitates button; adds a
-grid-navigated day surface). Ships React + Web Component + Astro.
+grid-navigated day surface). Ships React + Astro.
 
 Files (`src/components/calendar/`):
 
 ```
-calendar.classes.ts   calendar.behavior.ts   calendar.tsx   calendar.element.ts   calendar.astro
+calendar.classes.ts   calendar.behavior.ts   calendar.tsx   calendar.astro
 ```
 
 Tests mirror into `test/components/calendar/`: behavior (pure), classes parity,
-and conformance across React + WC + Astro via the shared harness.
+and conformance across React + Astro via the shared harness.
 
 ## Composition
 
@@ -38,7 +38,7 @@ pure helpers              date math, month-grid layout, key->date, selection tra
   the exact local half-solution Spec 05 forbids.
 - Selection is score state with a **controlled shadow** (slider's
   ownership-of-truth boundary): `config.selected` shadows `state.selected`,
-  effective via `effectiveSelected`. WC and Astro have no reactive prop, so their
+  effective via `effectiveSelected`. Astro has no reactive prop, so its
   intrinsic state is seeded from the server markup (`data-selected`) and drives
   selection with no consumer.
 
@@ -117,7 +117,7 @@ them.
 The score's `aria-disabled` projection reflects the serializable
 `fromDate`/`toDate` bounds only; the React `disabled` predicate (below) is a
 React-only affordance layered on top of that projection in the decorator, so the
-score's total function stays serializable and the WC/Astro paths keep the bounds
+score's total function stays serializable and the Astro path keeps the bounds
 alone. Known limitation (LOW): shown outside-month days are visually muted
 (`data-outside`, `opacity-50`) and functionally inert (click blocked, never a
 tabstop) but carry no `aria-disabled`, so a screen-reader user gets no non-visual
@@ -147,14 +147,14 @@ re-render.
 | Oracle feature | Disposition |
 | --- | --- |
 | single / multiple / range selection | contract |
-| controlled selection + onSelect | contract (extended: intrinsic state + controlled shadow, so WC/Astro select without a consumer) |
+| controlled selection + onSelect | contract (extended: intrinsic state + controlled shadow, so Astro selects without a consumer) |
 | currentMonth / focusedDate navigation state | contract |
 | Arrow/Home/End/PageUp/PageDown/Shift+Page keyboard map | contract |
 | arrow keys cross the month boundary and re-page currentMonth | contract (the reason roving-focus is not composed) |
 | prev/next month controls with aria-labels | contract |
 | showOutsideDays / fixedWeeks / weekStartsOn / fromDate / toDate | contract |
 | Enter/Space activate the focused date | contract |
-| `disabled(date)` predicate function | contract, framework-affordance (React): implemented as the `disabled?: (date: Date) => boolean` prop, layered over the serializable `fromDate`/`toDate` bounds -- a predicate-disabled day gets `aria-disabled`/`data-disabled` and refuses selection on click and keyboard-activate. A function is not serializable, so WC/Astro use the bounds alone (that asymmetry is by design) |
+| `disabled(date)` predicate function | contract, framework-affordance (React): implemented as the `disabled?: (date: Date) => boolean` prop, layered over the serializable `fromDate`/`toDate` bounds -- a predicate-disabled day gets `aria-disabled`/`data-disabled` and refuses selection on click and keyboard-activate. A function is not serializable, so Astro uses the bounds alone (that asymmetry is by design) |
 | day rendered as `<button>` with `aria-selected` | defect-do-not-port — `aria-selected` is not an allowed attribute on `role=button`; ported to a focusable `role="gridcell"` (APG date-grid) |
 | `role="application"` on the root | dropped — the grid table is the widget (`role="grid"`); `application` suppresses AT reading mode with no benefit here |
 | grid left with no tabstop when nothing focused/selected | defect-do-not-port — `tabbableDate` always yields one tabbable cell (focus > selection > today > first) so the grid is reachable by Tab |

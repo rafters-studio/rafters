@@ -9,26 +9,21 @@ Files (new grain, `src/components/button/`):
 
 ```
 button.classes.ts    button.behavior.ts (score + bindButton)
-button.tsx           button.element.ts       button.astro
+button.tsx           button.astro
 ```
 
 Tests mirror into `test/components/button/`.
 
-## Three-framework performances (settled pattern)
+## Two-framework performances (settled pattern)
 
 The score is a single `pressable` slice. `button.behavior.ts` also exports
-`bindButton(root)` -- the DOM-native client the Web Component and the Astro
-`<script>` both perform; only React (retained-mode) reads the projections
-declaratively instead. One binding, three performances, zero drift.
+`bindButton(root)` -- the DOM-native client the Astro `<script>` performs;
+React (retained-mode) reads the projections declaratively instead. One
+score, two performances, zero drift.
 
 - **React** (`button.tsx`): thin controller over `createBehavior` + `useMemory`
   + `useBehaviorEffects` -- no `useBehavior`. Reads the aria projection
   declaratively and spreads it onto the `<button>`.
-- **WC** (`button.element.ts`): renders its own inner
-  `<button data-part="root">` in light DOM, with the view from
-  `button.classes.ts`, so native Enter/Space survive; `connectedCallback` defers
-  the bind one microtask (children may not be parsed yet) and hands the inner
-  root to `bindButton`.
 - **Astro** (`button.astro`): server-renders the `<button>` with the initial
   projection already applied (correct before JS), then a `<script>` hands each
   `button[data-part="root"]` to `bindButton`.
@@ -43,7 +38,7 @@ click's default. The aria projection is applied through aria-manager with
 `{ validate: false }` so the resolved string `'false'` is not re-coerced to
 truthy.
 
-### The three gotchas (encoded)
+### The two gotchas (encoded)
 
 1. **Controlled callback** (`button.tsx`): `onPressedChange` compares the
    effective value BEFORE (the `pressed` prop when controlled) against the
@@ -51,14 +46,12 @@ truthy.
    controlled prop would pin flat.
 2. **aria-manager coercion** (`bindButton`): the resolved projection is applied
    with `{ validate: false }`; author-input validation would flip `'false'`.
-3. **WC bind deferred one microtask** (`button.element.ts`):
-   `connectedCallback` can fire before the host's children are parsed.
 
 ### The announce effect is edge-triggered
 
 `announce` (loading) is a one-shot effect. The effect runner's first `apply()`
 is baseline: a button whose markup renders already-loading projects `aria-busy`
-but does NOT announce. The DOM-native bind (WC/Astro) proves that baseline
+but does NOT announce. The DOM-native bind (Astro) proves that baseline
 suppression only -- config is read once from markup, so there is no runtime
 transition to observe. The loading transition (false -> true) that DOES
 announce is the retained-mode surface, proven in the React-only conformance
@@ -74,8 +67,8 @@ added, plus the new states.
   info | muted | accent`) -- 12 total.
 - `size`: shadcn's 4 (`default | sm | lg | icon`) plus oracle's additions
   (`xs | icon-xs | icon-sm | icon-lg`) -- 8 total.
-- `asChild`: supported (React affordance; slot.ts mergeProps). WC/Astro
-  equivalents are slots, not asChild.
+- `asChild`: supported (React affordance; slot.ts mergeProps). The Astro
+  equivalent is slots, not asChild.
 - `buttonVariants({ variant, size })` is exported from the component with a
   cva-compatible call signature, returning the class string. It is a thin
   view over `buttonClasses` (the Spec 01 classes projection) at default
@@ -160,8 +153,8 @@ Corrections over the oracle (defects, not features -- do not port):
 ## Keyboard
 
 `keymap(event, state, 'root')`: `Enter` and `Space` map to `press`. Native
-`<button>` hosts fulfill this natively; asChild non-button hosts and the WC
-inner button are bound by the framework file. The harness asserts the
+`<button>` hosts fulfill this natively; asChild non-button hosts are bound
+by the framework file. The harness asserts the
 behavior on every binding either way.
 
 ## Effects
@@ -179,7 +172,6 @@ Two optional props place decorative icons around the label, in reading order (MU
 | --- | --- | --- |
 | React | `startIcon: ReactNode` | `endIcon: ReactNode` |
 | Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
-| Web Component | child with `slot="start-icon"` | child with `slot="end-icon"` |
 
 ```html
 <button class="inline-grid grid-flow-col items-center gap-2 ...">
@@ -205,8 +197,8 @@ type IconSize = 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
 // size: IconSize => props must include aria-label OR aria-labelledby
 ```
 
-via a discriminated union on `size`. WC/Astro cannot enforce at compile time:
-the WC warns in dev mode and the conformance harness fails the case in CI.
+via a discriminated union on `size`. Astro cannot enforce at compile time:
+the conformance harness fails the case in CI.
 
 ## classes.ts
 
@@ -244,8 +236,6 @@ degenerate fold is exercised end to end.
 
 ## Conformance matrix
 
-Bindings: React (button.tsx), WC (button.element.ts), Astro (button.astro --
+Bindings: React (button.tsx), Astro (button.astro --
 server-rendered; interaction tiers apply only where a client runtime exists,
-static tiers apply always). The old WC lacked loading/aria-busy entirely --
-the exact drift class this architecture eliminates; the harness makes it
-structurally impossible to reintroduce.
+static tiers apply always).

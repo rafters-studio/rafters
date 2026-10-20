@@ -3,18 +3,17 @@
 Status: DRAFT. Static score (imitates Card, Container, and Breadcrumb). No
 state, no actions, no keymap, no effects, no motion block beyond the link's
 hover-colour intent. The page-navigation archetype: a pure static performed
-across all three frameworks (React, the `<rafters-pagination>` web component,
-and Astro).
+across both frameworks (React and Astro).
 
 Files (`src/components/pagination/`):
 
 ```
 pagination.behavior.ts   pagination.classes.ts   pagination.tsx
-pagination.element.ts     pagination.astro
+pagination.astro
 ```
 
 Tests mirror into `test/components/pagination/` (behavior, classes, React
-conformance, Astro conformance, WC conformance).
+conformance, Astro conformance).
 
 ## Purpose
 
@@ -37,8 +36,6 @@ score projects no ARIA, holds no state, and runs no effects. There is therefore
   out, slots through.
 - `pagination.astro` ships **no** `<script>` -- server-rendered markup with the
   fixed landmark and a default slot; nothing to hydrate.
-- `pagination.element.ts` performs **no** binding -- the web component renders
-  the nav landmark with a default slot, once.
 
 The score is declared only so the conformance harness can assert the one real
 contract (the `root` part renders and projects no ARIA) identically across every
@@ -97,12 +94,12 @@ consumer composes inside" (boundary 5).
 
 ### Framework slot model
 
-React composes freely: the consumer nests the family by hand. The web component
-and Astro performances own only the nav landmark and expose a single default
+React composes freely: the consumer nests the family by hand. The Astro
+performance owns only the nav landmark and expose a single default
 slot; the consumer composes plain semantic children (the `ul`/`li`/`a`/current
 marker) into it. The visual rhythm lives on those slotted children via the
 shared class strings in `pagination.classes.ts`, resolved from the compiled
-utility sheet -- so there is no shadow-scoped descendant CSS to maintain.
+utility sheet -- so there is no scoped descendant CSS to maintain.
 
 `PaginationEllipsis` renders its `span` via `React.createElement` rather than JSX
 -- the same raw-element disposition Card, Alert, and Breadcrumb record while the
@@ -168,16 +165,12 @@ native anchors (native focus + activation); button-style controls are native
 
 ## Deltas from the oracle
 
-1. `data-part="root"` added to the nav across all three performances so the
+1. `data-part="root"` added to the nav across both performances so the
    conformance harness can locate the single declared part.
-2. A `<rafters-pagination>` web component performance is added (the oracle
-   shipped only React + Astro); its host is `display: contents` so the nav
-   landmark inside the shadow is the box, matching React and Astro (Container's
-   disposition).
-3. `PaginationEllipsis` renders its span via `createElement`
+2. `PaginationEllipsis` renders its span via `createElement`
    (Typography-pending disposition), semantics unchanged; the sr-only label is
    carried verbatim as "More pages".
-4. The disabled dimmer moves from an inline `disabled && '...'` string to the
+3. The disabled dimmer moves from an inline `disabled && '...'` string to the
    named `paginationDisabledClasses` in `pagination.classes.ts`; the resolved
    classes are identical.
 

@@ -6,11 +6,11 @@ Files (`src/components/resizable/`):
 
 ```
 resizable.classes.ts   resizable.behavior.ts   resizable.tsx
-resizable.element.ts    resizable.astro
+resizable.astro
 ```
 
 Tests mirror into `test/components/resizable/` (behavior, classes, and
-conformance across React + WC + Astro via the shared harness).
+conformance across React + Astro via the shared harness).
 
 ## Composition
 
@@ -114,7 +114,7 @@ ring and the `data-dragging` colour swap apply instantly. Reinstate a
 Astro forbids a dynamic `slot name`, so per-panel content rides the `panels`
 prop data (`content?: string`), the same shape `navigation-menu.astro` uses for
 its structured items -- not N named slots. The React performance keeps the full
-compositional children API; the WC is a light-DOM enhancer over author markup.
+compositional children API.
 
 ## WCAG 2.1 AA obligations
 

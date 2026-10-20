@@ -7,10 +7,10 @@ the overlay effects of dialog (roving, typeahead, outside dismissal).
 Files (`src/components/select/`):
 
 ```
-select.classes.ts    select.behavior.ts    select.tsx    select.element.ts    select.astro
+select.classes.ts    select.behavior.ts    select.tsx    select.astro
 ```
 
-Tests mirror into `test/components/select/` (behavior, classes, React + WC +
+Tests mirror into `test/components/select/` (behavior, classes, React +
 Astro conformance).
 
 ## Composition
@@ -90,7 +90,6 @@ Two optional props place decorative icons beside the value on the trigger and be
 | --- | --- | --- |
 | React | `<SelectTrigger startIcon endIcon>` (`ReactNode`) | `<SelectItem startIcon endIcon>` (`ReactNode`) |
 | Astro | slots `start-icon`, `end-icon` | slots `item-start-icon-<value>`, `item-end-icon-<value>` (an option is data, so each option's icons are named by its value) |
-| Web Component | child of the trigger with `slot="start-icon"` / `slot="end-icon"` | child of the item with the same slot names |
 
 ```html
 <button data-part="trigger" class="grid grid-cols-menu-row ...">

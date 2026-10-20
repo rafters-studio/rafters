@@ -7,11 +7,11 @@ Files (`src/components/carousel/`):
 
 ```
 carousel.classes.ts   carousel.behavior.ts   carousel.tsx
-carousel.element.ts   carousel.astro
+carousel.astro
 ```
 
 Tests mirror into `test/components/carousel/`: behavior (pure), classes, and
-conformance across React + WC + Astro via the shared harness.
+conformance across React + Astro via the shared harness.
 
 ## Composition
 
@@ -129,7 +129,7 @@ drives them.
 
 - 1.3.1 / 4.1.2: `role="region"` + `aria-roledescription="carousel"`, each slide
   a labelled `role="group"`, and the prev/next/indicator names are asserted
-  against real DOM by the harness across all three performances.
+  against real DOM by the harness across both performances.
 - 2.1.1 Keyboard: axis arrows advance the carousel while a control holds focus;
   every control is a native `<button>`.
 - 2.4.7 Focus Visible: token focus ring on the controls
