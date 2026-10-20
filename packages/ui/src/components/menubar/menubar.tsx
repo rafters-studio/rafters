@@ -93,6 +93,9 @@ interface MenubarContextValue {
   /** The portal target for the menus, once mounted. */
   menuHost: HTMLElement | null;
   classes: MenubarClassSet;
+  /** Drive the score from a keydown on the bar or inside a menu. Returns early
+   *  when the event is already defaultPrevented. */
+  driveKey: (event: React.KeyboardEvent<HTMLElement>) => void;
 }
 
 const MenubarContext = React.createContext<MenubarContextValue | null>(null);
@@ -240,11 +243,12 @@ export function Menubar({
     return stop;
   }, [active, menuHost, byId, request]);
 
-  // One root keydown handler drives the score for the triggers AND the portaled
-  // menus (React events bubble through the portal), so the part wrappers stay
-  // pure click adapters.
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(event);
+  // The score's keydown half, run from the root for the triggers and from each
+  // menu for its own keys: a menu is portaled out of the bar, so each menu
+  // drives the score from its own keydown, under every renderer, as the bind
+  // does. A key one level claims is preventDefaulted, so the other level skips
+  // it and every key is handled once.
+  const driveKey = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
     const part = partEl?.dataset['part'] as MenubarPart | undefined;
@@ -278,6 +282,11 @@ export function Menubar({
     request(action, { values: menubarValues(bar), from: currentActive(), loop });
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    driveKey(event);
+  };
+
   const classes = menubarClasses(config, state);
   const aria = menubar.aria(state, config, NO_IDS);
 
@@ -291,6 +300,7 @@ export function Menubar({
     instanceId,
     menuHost,
     classes,
+    driveKey,
   };
 
   return (
@@ -419,8 +429,15 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * until that host mounts). Present but inert while closed: the closed pose is
  * CSS off data-state, so the exit can play.
  */
-export function MenubarContent({ className, children, asChild, ...props }: MenubarContentProps) {
-  const { state, config, active, menuHost, classes } = useMenubarContext('MenubarContent');
+export function MenubarContent({
+  className,
+  children,
+  asChild,
+  onKeyDown,
+  ...props
+}: MenubarContentProps) {
+  const { state, config, active, menuHost, classes, driveKey } =
+    useMenubarContext('MenubarContent');
   const { value, triggerId, contentId } = useMenuContext('MenubarContent');
   const aria = menubarInstanceAria('content', value, state, config, {
     trigger: triggerId,
@@ -441,6 +458,10 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
     // of the accessibility tree and the tab order. Never `hidden`: display:
     // none would stop the transition.
     inert: !shown,
+    onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event);
+      driveKey(event);
+    },
   };
 
   const content =

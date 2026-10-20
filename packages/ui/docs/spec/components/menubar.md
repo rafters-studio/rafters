@@ -109,8 +109,9 @@ Right after the bar, not the end of the body, keeps each menu inside whatever
 landmark holds the bar (axe `region`). The cost: the bind rearranges author
 markup (restored on teardown), and a consumer styling the menubar's parent sees
 the menus as its children. Outside the bar the menus no longer
-bubble native events to the root, so the bind listens on each menu too; React
-events still bubble through the portal to the root's `onKeyDown`. An open menu
+bubble native events to the root, so the bind listens on each menu too, and the
+React component does the same: each menu drives the score from its own keydown,
+under every renderer, as the bind does. An open menu
 is anchored under its trigger by `positionMenubarContent`
 (`collision-detector`'s `computePosition`, side bottom, align start, fixed
 left/top).

@@ -66,6 +66,8 @@ export function log(event: Record<string, unknown>): void {
       break;
 
     case 'init:css_not_found':
+    case 'init:framework_note':
+    case 'add:framework_note':
       console.log(`\n  Note: ${event.message}`);
       break;
 

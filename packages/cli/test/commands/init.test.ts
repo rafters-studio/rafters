@@ -574,3 +574,34 @@ describe('promptScripts (#2742)', () => {
     expect(choices.flatMap((c) => c.value)).toEqual(Object.keys(SCRIPT_FONTS));
   });
 });
+
+describe('rafters init -- preact (#2744)', () => {
+  let projectDir = '';
+  let originalCwd = '';
+
+  beforeEach(async () => {
+    originalCwd = process.cwd();
+    projectDir = await createFixture('vite-no-shadcn');
+    process.chdir(projectDir);
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    process.chdir(originalCwd);
+    await cleanupFixture(projectDir);
+    projectDir = '';
+  });
+
+  it('prints the preact/compat alias requirement once', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await init({ agent: true, framework: 'preact' });
+
+    const notes = logSpy.mock.calls
+      .map(([line]) => (typeof line === 'string' ? line : ''))
+      .filter((line) => line.includes('"init:framework_note"'));
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toContain('preact/compat');
+    expect(notes[0]).toContain('@preact/preset-vite');
+  }, 60000);
+});
