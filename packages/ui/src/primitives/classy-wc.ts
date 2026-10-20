@@ -95,10 +95,10 @@ function renderDeclarations(props: CSSProperties, indent = '  '): string {
  * @example
  * ```ts
  * composeDeclarations(
- *   { 'background-color': 'var(--color-card)', 'color': 'var(--color-card-foreground)' },
+ *   { 'background-color': 'var(--card)', 'color': 'var(--card-foreground)' },
  *   { 'border-radius': 'var(--radius-lg)' }
  * );
- * // "background-color: var(--color-card);\n  color: var(--color-card-foreground);\n  border-radius: var(--radius-lg);"
+ * // "background-color: var(--card);\n  color: var(--card-foreground);\n  border-radius: var(--radius-lg);"
  * ```
  */
 export function composeDeclarations(...inputs: StyleInput[]): string {
@@ -121,11 +121,11 @@ export function composeDeclarations(...inputs: StyleInput[]): string {
  *
  * @example
  * ```ts
- * styleRule(':host', { display: 'block', 'background-color': 'var(--color-card)' });
- * // ":host {\n  display: block;\n  background-color: var(--color-card);\n}"
+ * styleRule(':host', { display: 'block', 'background-color': 'var(--card)' });
+ * // ":host {\n  display: block;\n  background-color: var(--card);\n}"
  *
- * styleRule(':host(:hover)', { 'background-color': 'var(--color-card-hover)' });
- * // ":host(:hover) {\n  background-color: var(--color-card-hover);\n}"
+ * styleRule(':host(:hover)', { 'background-color': 'var(--card-hover)' });
+ * // ":host(:hover) {\n  background-color: var(--card-hover);\n}"
  * ```
  */
 export function styleRule(selector: string, ...inputs: StyleInput[]): string {
@@ -171,8 +171,8 @@ export function when(condition: unknown, ...inputs: StyleInput[]): StyleInput {
  * @example
  * ```ts
  * const variants = {
- *   default: { 'background-color': 'var(--color-primary)', color: 'var(--color-primary-foreground)' },
- *   destructive: { 'background-color': 'var(--color-destructive)', color: 'var(--color-destructive-foreground)' },
+ *   default: { 'background-color': 'var(--primary)', color: 'var(--primary-foreground)' },
+ *   destructive: { 'background-color': 'var(--destructive)', color: 'var(--destructive-foreground)' },
  * };
  * styleRule(':host', baseStyles, pick(variants, variant));
  * ```
@@ -216,7 +216,7 @@ export function atRule(query: string, ...rules: string[]): string {
  * ```ts
  * const focusRing = mixin({
  *   outline: 'none',
- *   'box-shadow': '0 0 0 2px var(--color-ring)',
+ *   'box-shadow': '0 0 0 2px var(--ring)',
  * });
  * styleRule(':host(:focus-visible)', baseStyles, focusRing);
  * ```
@@ -235,8 +235,8 @@ export function mixin(properties: CSSProperties): CSSProperties {
  *
  * @example
  * ```ts
- * tokenVar('color-primary');        // "var(--color-primary)"
- * tokenVar('color-card', '#fff');   // "var(--color-card, #fff)"
+ * tokenVar('primary');              // "var(--primary)"
+ * tokenVar('card', '#fff');         // "var(--card, #fff)"
  * ```
  */
 export function tokenVar(name: string, fallback?: string): string {

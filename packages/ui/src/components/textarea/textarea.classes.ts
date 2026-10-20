@@ -12,11 +12,11 @@ export interface TextareaClassSet {
 // the destructive border with no extra class.
 // Two rows, two properties, one element -- the same pair input carries:
 //   textarea / root / focus -- ring -- duration-micro, ease-linear
-//   textarea / root / valid <-> invalid -- color -- duration-fast, ease-standard
+//   textarea / root / valid <-> invalid -- color -- fast, standard
 //
 // The ring rides `box-shadow` (Tailwind's `ring-*` is a shadow), validity rides
-// `border-color`, so both are named in the transition list -- `transition-shadow`
-// alone left the border snapping.
+// `border-color`, so both are named in the transition list -- a shadow-only
+// transition left the border snapping.
 //
 // HONEST LIMIT, identical to input's: one `transition-duration` per rule means the
 // two rows cannot carry different tiers per property, so the return to VALID runs

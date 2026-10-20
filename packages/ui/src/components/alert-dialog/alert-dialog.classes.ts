@@ -43,12 +43,13 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // Enter/exit is PRESENCE (#1996): the node MOUNTS with its keyframe attached
 // and runs it, and usePresence holds the unmount until the exit keyframe ends.
 //
-// NO extent-pop CLASS. The extent rides with the SHAPE -- the scale-in and
+// NO POP EXTENT CLASS. The extent rides with the SHAPE -- the scale-in and
 // scale-out keyframes read the pop extent themselves -- so naming it here would
 // be a second writer for one knob.
 //
-// NO motion-reduce:animate-none. Reduced motion is handled on the duration
-// leaf, which the generated animation reads through it. animate-none here would
+// NO reduced-motion animation escape. Reduced motion is handled on the
+// duration leaf, which the generated animation reads through it. An animation
+// reset here would
 // reset the shorthand, discard the zeroed duration with it, and strand the
 // element short of the keyframe's end state.
 const contentClasses =

@@ -13,7 +13,7 @@ import { createKeyboardHandler } from '../../primitives/keyboard-handler';
  * InputOTP: a segmented one-time-code field. One character per visible slot,
  * auto-advance as the code is typed, paste splits across every slot.
  *
- * The archetype is text-input (Spec 05): the primary state is a VALUE. The
+ * The archetype is text input (Spec 05): the primary state is a VALUE. The
  * segmented look is a MIRROR -- a single real <input> holds the code, owns the
  * caret, IME and selection, and carries the accessible name; the slots are
  * painted from the value. That is the oracle's shape and it is preserved: a

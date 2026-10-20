@@ -15,7 +15,7 @@ export interface SwitchClassSet {
 // rides `active:` variants over the colour row's base assignment.
 //   switch / track / off <-> on -- color -- duration-moderate, ease-standard
 //   switch / root / press -- zoom + color -- duration-micro, ease-spring-snappy,
-//     extent-press
+//     extent press
 // `scale` is named in the transition list because Tailwind v4 writes the
 // individual `scale` property; `transform` would transition nothing.
 // Unassigned moment: the focus-visible ring on the root has no switch row in

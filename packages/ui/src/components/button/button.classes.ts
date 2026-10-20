@@ -92,9 +92,9 @@ const sizeClasses: Record<ButtonSize, string> = {
 //
 // ROOT / PRESS -- "zoom + color" at duration-micro, ease-spring-snappy,
 // extent-press. The zoom half rides the extent namespace exactly as
-// context-menu's subContent rides extent-pop: `extent-press` picks the member
+// context-menu's subContent rides the pop extent: `extent-press` picks the member
 // (writing the `--rafters-consumed-extent` alias) and
-// `scale-(--rafters-consumed-extent)` reads the alias back, never the leaf.
+// the scale utility over that alias reads it back, never the leaf.
 // `scale-100` is the resting geometry so there is a value to interpolate from.
 //
 // Duration and curve are scoped to `active:` and the transition-property list

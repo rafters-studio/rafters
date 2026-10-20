@@ -78,7 +78,7 @@ const triggerClasses = 'inline-flex';
 // never broken.
 //
 // The close delay is scoped `:not([data-state=open])` rather than stated
-// unconditionally, and that scope is load-bearing: `delay-linger` on the naked
+// unconditionally, and that scope is load-bearing: the linger delay on the naked
 // base rule is the delay a CONTROLLED open would inherit, since the data-state
 // path deliberately carries no delay of its own (hover-intent filters accidental
 // pointer transit; a consumer forcing `open` true has declared intent, and the

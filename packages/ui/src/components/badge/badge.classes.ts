@@ -43,14 +43,14 @@ const iconClasses = 'inline-grid place-items-center';
  * tier `fast` and curve role `standard` to a colour change (`background, text,
  * border`) on a part that stays put -- a TRANSITION, named as composed
  * generics, not a keyframe. `duration-fast ease-standard` is that row and
- * nothing else; the `duration-150` this replaces was a literal wearing a
+ * nothing else; the literal 150ms duration this replaces was a literal wearing a
  * token's name, which is the defect docs/MOTION.md names outright.
  *
  * NO component-level reduced-motion escape. The generated `duration-*` and
  * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
  * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
  * sheet's responsibility and never a component-level media query. The
- * `motion-reduce:transition-none` this drops was redundant with that law.
+ * reduced-motion transition escape this drops was redundant with that law.
  *
  * The row's provenance is `baseline`.
  */

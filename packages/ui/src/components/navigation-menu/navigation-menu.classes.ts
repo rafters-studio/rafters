@@ -30,7 +30,7 @@ const itemClasses = 'relative group/navigation-item';
 
 // motion.jsonl `navigation-menu / trigger / hover` -- color (background, text,
 // border), fast, standard. Composed generics on a transition. Replaces
-// `motion-hover`, one of the 13 semantic motion tokens deleted by ruling
+// the hover motion class, one of the 13 semantic motion tokens deleted by ruling
 // (2026-08-02) that kept compiling by accident.
 //
 // NO ROW for the trigger's open state. `data-[state=open]:bg-accent-subtle` is a
@@ -50,7 +50,7 @@ const triggerClasses =
   'data-[state=open]:bg-accent-subtle';
 
 // NO ROW. The matrix gives accordion and select a `chevron / open <-> closed`
-// rotate row; navigation-menu has none, so the flip is instant. `motion-toggle`
+// rotate row; navigation-menu has none, so the flip is instant. The toggle motion class
 // used to sit here, borrowing the panel's item-change tier on the reasoning that
 // "the chevron turns with the panel it announces" -- which is deriving an
 // assignment nobody made, on top of a retired token. A moment with no row does
@@ -70,7 +70,7 @@ const triggerChevronClasses = 'h-3 w-3 group-data-[state=open]:rotate-180';
 //
 // PARTIAL: both rows name the movement `fade + zoom`, and only the FADE runs
 // here. The zoom half would need a scale on a reveal that has to work with
-// JavaScript disabled, and the rows' `extent-pop` is carried by the scale-in /
+// JavaScript disabled, and the rows' pop extent is carried by the scale-in /
 // scale-out KEYFRAMES rather than named by a class -- so on a transition path
 // there is nothing to attach it to, and nothing here should name it. The
 // generator still emits `navigation-menu-panel-open`/`-close` as scale cells;
@@ -191,7 +191,7 @@ const viewportClasses =
 
 // NO ROW. The indicator is a marker that mounts while some panel is open and
 // unmounts when none is (navigation-menu.tsx:437-452); nothing computes a
-// position for it, so there is no travel to time. It carried `motion-toggle`
+// position for it, so there is no travel to time. It carried the toggle motion class
 // (retired) on the claim that it consumed the item-change row -- see the
 // viewport note above for why that row has no moment here. Reported on #2293.
 const indicatorClasses =

@@ -51,7 +51,7 @@ import { tooltipClasses, type TooltipClassSet } from './tooltip.classes';
 
 /**
  * The delay props are GONE (#2148). Hover-intent timing is `transition-delay`
- * on `--rafters-delay-hover-intent` in tooltip.classes.ts -- a system decision,
+ * on the hover-intent delay token in tooltip.classes.ts -- a system decision,
  * not a per-instance or per-provider tuning knob. What is left here is the one
  * genuinely per-tree default: whether the pointer may travel onto the tip.
  */

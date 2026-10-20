@@ -17,7 +17,7 @@ export const aspectRatioBaseClasses = 'relative w-full';
 /**
  * Child fill: every direct child stretches to cover the ratio box. The
  * consumer supplies `object-fit` on the child (matching shadcn/Radix, whose
- * examples pass `className="object-cover"` on the image) -- the box never
+ * examples set `object-fit: cover` on the image) -- the box never
  * forces a fit mode on content it does not own.
  */
 export const aspectRatioChildFillClasses = '[&>*]:absolute [&>*]:inset-0 [&>*]:h-full [&>*]:w-full';

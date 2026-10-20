@@ -6,9 +6,9 @@
  * them directly (no context/provider needed for a flat static).
  *
  * All colour and typography come through semantic role tokens
- * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, `bg-muted`,
+ * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, the muted background,
  * `border-b`/`border-t`) -- no raw colour or arbitrary values. The one delta
- * from the oracle is motion: its literal `duration-150` is replaced by the
+ * from the oracle is motion: its literal 150ms duration is replaced by the
  * generics the matrix assigns, `duration-fast ease-standard` (see the row
  * on `tableRowClasses`). Leaving the timing off entirely, as this file did
  * before, took Tailwind's stock default rather than the token -- which is the
@@ -41,7 +41,7 @@ export const tableFooterClasses =
  * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
  * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
  * sheet's responsibility and never a component-level media query. The
- * `motion-reduce:transition-none` this drops was redundant with that law.
+ * reduced-motion transition escape this drops was redundant with that law.
  *
  * TWO ROWS, ONE TRANSITION. `table / row / hover` (provenance `baseline`) and
  * `table / row / selected <-> unselected` (provenance `proposed`) both assign

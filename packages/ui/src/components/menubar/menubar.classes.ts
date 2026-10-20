@@ -73,9 +73,9 @@ const triggerClasses =
 //   reads that alias back, so the closed pose sits at the pop extent and the
 //   open pose at full size.
 //
-// `transition`, not `transition-all`: the named default set covers opacity and
+// `transition`, not the all-properties transition: the named default set covers opacity and
 // scale but not the inset properties, and positionMenubarContent rewrites
-// `left`/`top` on every open. Under `transition-all` a menu reopened after a
+// `left`/`top` on every open. Transitioning every property, a menu reopened after a
 // scroll would slide from its old place, a movement no row assigns.
 const contentClasses =
   'grid grid-cols-menu-row fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +

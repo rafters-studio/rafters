@@ -25,9 +25,9 @@ export interface SelectClassSet {
 // Touch floor at h-11, scaling down via the container query (repo CQ
 // convention) rather than the viewport. Fill, not background.
 //
-// THE ROW: select / trigger / hover -- color, duration-fast, ease-standard
+// THE ROW: select / trigger / hover -- color, fast, standard
 // (motion.md:250). It governs the `hover:border-input-hover` change below, which
-// until now was not transitioned at all: the class carried `transition-shadow`
+// until now was not transitioned at all: the class carried a shadow transition
 // only, so the border snapped. A transition, not a keyframe (`select | trigger |
 // hover`, EXCLUDED_ROWS.noIntersectingProperty in
 // packages/design-tokens/test/motion-cells.test.ts).
@@ -50,7 +50,7 @@ export interface SelectClassSet {
 // box-shadow from the list entirely and killed the ring's transition outright.
 //
 // NO component-level reduced-motion escape here or on the chevron below. The
-// pre-existing `motion-reduce:transition-none` on both is REMOVED: the
+// pre-existing reduced-motion transition escape on both is REMOVED: the
 // generated `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (REDUCED_MOTION_ZEROED,
 // packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
@@ -102,7 +102,7 @@ const chevronClasses =
 // animated at all. popover.classes.test.ts pins their absence for the same
 // reason.
 //
-// NO motion-reduce:animate-none -- the generated utility zeroes
+// NO reduced-motion animation escape -- the generated utility zeroes
 // animation-duration under the media query, keeping the keyframe's end state.
 //
 // ONE KNOWN LIMIT, reported not papered over: the exit keyframe cannot run

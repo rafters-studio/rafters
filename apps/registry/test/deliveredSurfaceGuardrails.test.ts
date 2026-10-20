@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import {
+  generateBaseSystem,
+  REGISTRY_PLUGINS,
+  registryToTailwind,
+  TokenRegistry,
+} from '@rafters/design-tokens';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   listComponentNames,
   listPrimitiveNames,
@@ -9,9 +15,11 @@ import {
   type RegistryFile,
 } from '../src/lib/registry/componentService';
 import {
+  findCommentOnlyClassViolations,
   findInternalImportViolations,
   findShadowMathViolations,
   isDisallowedWorkspaceImport,
+  KNOWN_COMMENT_CLASS_VIOLATIONS,
   KNOWN_IMPORT_VIOLATIONS,
   KNOWN_SHADOW_MATH_VIOLATIONS,
 } from '../src/lib/registry/deliveredSurfaceGuardrails';
@@ -164,5 +172,51 @@ describe('the block-comment strip is string-literal-aware', () => {
     ].join('\n');
     const violations = findInternalImportViolations('lib/primitives/fixture.ts', content);
     expect(violations.map((v) => v.found)).toEqual(['@rafters/design-tokens']);
+  });
+});
+
+describe('no delivered comment names a class its code does not use (#2800)', () => {
+  let themeCss = '';
+
+  beforeAll(() => {
+    const system = generateBaseSystem({});
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+    themeCss = registryToTailwind(registry, { includeImport: false });
+  });
+
+  it('every component/primitive/substrate file is clean or a dated exception', async () => {
+    const files = deliveredFiles().filter((f) => !KNOWN_COMMENT_CLASS_VIOLATIONS.has(f.path));
+    const violations = await findCommentOnlyClassViolations(files, themeCss);
+    expect(violations.map((v) => v.message)).toEqual([]);
+  }, 120_000);
+
+  it('every KNOWN_COMMENT_CLASS_VIOLATIONS entry still names a real, currently-violating file', async () => {
+    const files = deliveredFiles().filter((f) => KNOWN_COMMENT_CLASS_VIOLATIONS.has(f.path));
+    const violating = new Set(
+      (await findCommentOnlyClassViolations(files, themeCss)).map((v) => v.file),
+    );
+    for (const path of KNOWN_COMMENT_CLASS_VIOLATIONS) {
+      expect(violating.has(path), `exception ${path} no longer violates -- delete it`).toBe(true);
+    }
+  });
+
+  it('fails on a comment-only class, naming the file and the class', async () => {
+    const content = `/** Pass a class such as bg-blue-500 to override. */\nexport const x = 'flex';\n`;
+    const violations = await findCommentOnlyClassViolations(
+      [{ path: 'lib/primitives/fixture.ts', content }],
+      themeCss,
+    );
+    expect(violations.map((v) => v.found)).toEqual(['bg-blue-500']);
+    expect(violations[0].message).toContain('lib/primitives/fixture.ts');
+    expect(violations[0].message).toContain('bg-blue-500');
+  });
+
+  it('does not flag a class the code also uses', async () => {
+    const content = `/** Defaults to bg-blue-500. */\nexport const x = 'bg-blue-500';\n`;
+    const violations = await findCommentOnlyClassViolations(
+      [{ path: 'lib/primitives/fixture.ts', content }],
+      themeCss,
+    );
+    expect(violations).toEqual([]);
   });
 });

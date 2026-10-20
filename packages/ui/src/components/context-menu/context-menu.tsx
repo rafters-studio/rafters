@@ -677,7 +677,7 @@ export function ContextMenuSub({
   // Hover open/close dispatches `request` directly, with no JS timer (#2152):
   // the hover-intent delay the submenu's `closed -> open` cell assigns is a
   // CSS `transition-delay` on `subContent` (context-menu.classes.ts, consuming
-  // `--rafters-delay-hover-intent`), not a value this component reads or sets.
+  // the hover-intent delay token), not a value this component reads or sets.
   // `source` (only meaningful for 'open') is that delay's disambiguator: the
   // score projects it as `data-open-source`, and the CSS scopes the delay to
   // `'pointer'` so a click or keyboard open (marked 'discrete' by its caller

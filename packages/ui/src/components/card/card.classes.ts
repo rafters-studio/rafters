@@ -18,7 +18,7 @@ export interface CardClassSet {
  * belong to. `CardConfig` is `as` + `fill`, `CardElement` is
  * `div | article | section | aside` (never `a` or `button`), and no hover
  * elevation exists anywhere in the component: the shadow is the constant
- * `shadow-sm` above. A `transition-shadow duration-fast ease-standard` here
+ * `shadow-sm` above. A shadow transition at the fast tier on the standard curve here
  * would time a property that never changes -- the same dead emission the
  * chart-tooltip cells were excluded for. The disagreement between the row and
  * the component is the finding, reported here and not resolved.
@@ -37,10 +37,10 @@ const cardSurfaceClasses = 'bg-card text-card-foreground';
  * gap-6 py-6`) and each part owns only its horizontal inset (`px-6`). That is
  * what lets an arbitrary child dropped straight into a Card -- not wrapped in
  * CardContent -- pick up the same rhythm as the declared parts, which the old
- * per-part `p-6 pt-0` could not do.
+ * per-part padding with the top inset zeroed could not do.
  *
  * `text-title-medium ts-title-medium` / `text-body-small ts-body-small` are OURS, not shadcn's raw
- * `font-semibold` / `text-sm`: the semantic typography role tokens are the
+ * semibold weight and small size: the semantic typography role tokens are the
  * product, and they are invisible to a swap (same element, same slot, same
  * rendered role).
  */

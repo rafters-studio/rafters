@@ -437,7 +437,7 @@ export const lineChart: BehaviorSpec<
   // moment -- the line's "enter" -- is a row in
   // docs/spec/matrix/motion.jsonl (component: line-chart, part: line,
   // transition: enter), consumed below via line-chart.classes.ts's
-  // generated animate-fade-in-moderate-enter utility, the assignment this cell shares with every
+  // generated fade-in (moderate, enter) cell utility, the assignment this cell shares with every
   // other moment on the same shape, tier and curve.
 };
 
