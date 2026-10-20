@@ -36,6 +36,19 @@ describe('tabs classes', () => {
     expect(classesFor({ orientation: 'vertical' }).list).toContain('flex-col');
   });
 
+  it('the horizontal rail keeps its content width at the start edge of the root', () => {
+    // The root is a flex column, which stretches its children (#2661).
+    expect(classesFor({}).list.split(' ')).toContain('self-start');
+    expect(classesFor({ orientation: 'horizontal' }).list.split(' ')).toContain('self-start');
+    expect(classy(classesFor({}).list).split(' ')).toContain('self-start');
+  });
+
+  it('the vertical rail is unchanged', () => {
+    expect(classesFor({ orientation: 'vertical' }).list).toBe(
+      'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground h-auto flex-col',
+    );
+  });
+
   it('the rail carries the muted trough the active pill sits in', () => {
     const list = classesFor({}).list;
     expect(list).toContain('bg-muted');
@@ -164,6 +177,8 @@ describe('tabs icon candidates compile', () => {
     );
     const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
     expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+    expect(css).toContain(escapeCandidate('self-start'));
+    expect(css).toMatch(/align-self:\s*flex-start/);
     expect(css).toMatch(/padding-inline-start/);
     expect(css).toMatch(/padding-inline-end/);
   }, 120_000);

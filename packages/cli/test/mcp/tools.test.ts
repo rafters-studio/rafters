@@ -516,6 +516,22 @@ describe('presence is measured from disk, not read from config.installed', () =>
     await cleanup();
   });
 
+  it('a removed componentTarget returns the removal error, not a silent fallback', async () => {
+    const { root, cleanup } = await configWorkspace({ componentTarget: 'wc' });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    for (const [tool, args] of [
+      ['rafters_describe', { address: 'button' }],
+      ['rafters_generate', { intent: 'button' }],
+    ] as const) {
+      const result = await handler.handleToolCall(tool, args);
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toContain('componentTarget "wc"');
+      expect(data.error).toContain('Web Component target (wc) was removed');
+      expect(data.error).toContain('Supported targets: react, astro, vue, svelte');
+    }
+    await cleanup();
+  });
+
   it('rafters_generate returns the same structured error, not a throw, on a malformed path field', async () => {
     // overlayContext's guard is shared across the three call sites (describe,
     // generate, the deprecated aliases) -- this covers the generate one.
