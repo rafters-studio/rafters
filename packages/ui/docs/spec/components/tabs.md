@@ -88,6 +88,10 @@ Ids are shared across the three performances through `tabsIds(baseId, value)`
 `useId`, Astro from the author's `id` prop, and the DOM-native bind reads the
 resulting ids back off the markup rather than minting its own.
 
+## Rail width
+
+Current choice (2026-10-19; revisable): a horizontal list is content width. It is as wide as its triggers plus its `p-1` padding, and sits at the start edge of the root (the right edge on a `dir="rtl"` page), with no empty rail on either side of the triggers. The root is a flex column, which stretches its children, so the list carries `self-start`. A vertical list is unchanged.
+
 ## Icons beside a label
 
 Two optional props place decorative icons around a trigger's label, in reading order (MUI's names): `startIcon` and `endIcon`.

@@ -20,7 +20,9 @@ const rootVerticalClasses = 'flex flex-row gap-2';
 
 const listBaseClasses =
   'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground';
-const listHorizontalClasses = 'h-10';
+// The root is a flex column, which stretches its children; `self-start` keeps
+// the horizontal rail at its content width, on the start edge (#2661).
+const listHorizontalClasses = 'h-10 self-start';
 const listVerticalClasses = 'h-auto flex-col';
 
 const triggerBaseClasses = [
