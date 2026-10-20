@@ -53,7 +53,11 @@ import {
 // node-fs adapter lives behind the server-only subpath (it imports node:fs).
 import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
-import { migrateConfig, type RaftersConfig } from '../config/rafters-config.js';
+import {
+  migrateConfig,
+  type RaftersConfig,
+  UnsupportedComponentTargetError,
+} from '../config/rafters-config.js';
 import { RegistryClient, registryClient } from '../registry/client.js';
 import {
   type ComponentTarget,
@@ -111,7 +115,7 @@ const ConfigWiringSchema = z
   .object({
     // Closed set -- excludes 'unknown', which is a detection sentinel, not a
     // valid target a caller may set.
-    framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'wc', 'vanilla']),
+    framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'vanilla']),
     // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
     // is tracked as a follow-up -- see the registryUrl SSRF issue.)
     registryUrl: z
@@ -121,7 +125,7 @@ const ConfigWiringSchema = z
         message: 'registryUrl must be an http(s) URL',
       }),
     // Closed set derived from the framework (see ComponentTarget in detect.ts).
-    componentTarget: z.enum(['react', 'astro', 'vue', 'svelte', 'wc']),
+    componentTarget: z.enum(['react', 'astro', 'vue', 'svelte']),
     source: z.string().min(1),
     cssPath: z.union([z.string(), z.null()]).refine((v) => v === null || isSafeRelPath(v), {
       message: 'cssPath must be relative and stay inside the workspace',
@@ -729,9 +733,10 @@ export class RaftersToolHandler {
    *
    * `componentTarget` comes off unvalidated on-disk config (`readConfig` is a raw
    * `JSON.parse`), so it is run through `ComponentTargetSchema` here rather than
-   * trusted as a `ComponentTarget` -- a stale or typo'd value falls back to
-   * degraded mode (`undefined` target) instead of silently forcing
-   * `rendersForTarget` false for every node.
+   * trusted as a `ComponentTarget` -- a value outside the schema (the removed
+   * Web Component target, or a typo) is a `configError` naming the supported
+   * targets, never a silent fallback. An absent target is degraded mode
+   * (`undefined` target).
    */
   private async overlayContext(
     workspace: Workspace | null,
@@ -745,17 +750,21 @@ export class RaftersToolHandler {
     // number). The union return type is the guard all three call sites
     // inherit: skipping the `'configError' in ctx` narrowing fails to
     // typecheck, not just at runtime.
+    const configPath = workspace ? getRaftersPaths(workspace.root).config : 'config.rafters.json';
     const parsedPaths = OverlayPathsSchema.safeParse(config ?? {});
     if (!parsedPaths.success) {
       const issue = parsedPaths.error.issues[0];
       const field = issue && issue.path.length > 0 ? issue.path.join('.') : 'a path field';
-      const configPath = workspace ? getRaftersPaths(workspace.root).config : 'config.rafters.json';
       return {
         configError: `malformed config at ${configPath}: ${field} ${issue?.message ?? 'is invalid'}`,
       };
     }
 
-    const parsedTarget = ComponentTargetSchema.safeParse(config?.componentTarget);
+    const rawTarget: unknown = config?.componentTarget;
+    const parsedTarget = ComponentTargetSchema.safeParse(rawTarget);
+    if (rawTarget !== undefined && !parsedTarget.success) {
+      return { configError: new UnsupportedComponentTargetError(rawTarget, configPath).message };
+    }
     return {
       target: parsedTarget.success ? parsedTarget.data : undefined,
       installed: workspace

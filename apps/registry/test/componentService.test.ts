@@ -529,7 +529,6 @@ const SERVED_EXTS = [
   '.astro',
   '.vue',
   '.svelte',
-  '.element.ts',
   '.behavior.ts',
   '.classes.ts',
   '.types.ts',

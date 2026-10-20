@@ -264,6 +264,22 @@ export function generateTypographyTokens(
     });
   }
 
+  // Named tracking for the shortcut composite (keyboard-shortcut labels at xs).
+  // 0.1em matches the CSS exporter's NAMED_TRACKING.widest; it resolves against
+  // font-size-xs, the size shortcut sets.
+  tokens.push({
+    name: 'letter-spacing-widest',
+    value: '0.1em',
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Widest named letter spacing, for keyboard shortcut labels',
+    dependsOn: ['font-size-xs'],
+    description: 'Letter spacing 0.1em (widest), used by the shortcut composite.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    userOverride: null,
+  });
+
   // Generate font weight tokens
   for (const [name, def] of Object.entries(fontWeights)) {
     tokens.push({

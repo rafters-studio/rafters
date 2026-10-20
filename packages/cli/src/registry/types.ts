@@ -60,10 +60,10 @@ export type RegistryItemIntelligence = z.infer<typeof RegistryItemIntelligenceSc
 /**
  * The framework targets a component can be built for. One target == one source
  * extension (`.tsx` -> react, `.astro` -> astro, `.vue` -> vue, `.svelte` ->
- * svelte, `.element.ts` -> wc). See COMPONENT_EXTENSIONS in the registry
+ * svelte). See COMPONENT_EXTENSIONS in the registry
  * generator (apps/registry/src/lib/registry/componentService.ts).
  */
-export const ComponentTargetSchema = z.enum(['react', 'astro', 'vue', 'svelte', 'wc']);
+export const ComponentTargetSchema = z.enum(['react', 'astro', 'vue', 'svelte']);
 export type ComponentTarget = z.infer<typeof ComponentTargetSchema>;
 
 /**
