@@ -357,8 +357,8 @@ export function createControlledTypeahead(options: Omit<TypeaheadOptions, 'enabl
  * Highlight matching text in an element
  * Utility for visual feedback during typeahead
  *
- * Note: Uses innerHTML for highlight rendering. Input is derived from
- * the element's own textContent, not from external/untrusted sources.
+ * The highlighted content is built from text nodes and a created <mark>
+ * element, never parsed as HTML, so no text in the element can become markup.
  *
  * @example
  * ```typescript
@@ -389,15 +389,19 @@ export function highlightMatch(
     return () => {};
   }
 
-  const originalHTML = element.innerHTML;
+  const originalNodes = Array.from(element.childNodes);
 
-  const before = text.slice(0, matchIndex);
-  const match = text.slice(matchIndex, matchIndex + searchString.length);
-  const after = text.slice(matchIndex + searchString.length);
+  const mark = document.createElement('mark');
+  mark.className = highlightClass;
+  mark.textContent = text.slice(matchIndex, matchIndex + searchString.length);
 
-  element.innerHTML = `${before}<mark class="${highlightClass}">${match}</mark>${after}`;
+  element.replaceChildren(
+    document.createTextNode(text.slice(0, matchIndex)),
+    mark,
+    document.createTextNode(text.slice(matchIndex + searchString.length)),
+  );
 
   return () => {
-    element.innerHTML = originalHTML;
+    element.replaceChildren(...originalNodes);
   };
 }

@@ -620,3 +620,13 @@ describe('composites runtime (#2441)', () => {
     expect(paths).toContain('lib/composites/embed.ts');
   });
 });
+
+describe('select ships a typeahead primitive without innerHTML (#2193)', () => {
+  it('serves typeahead as a select dependency with no innerHTML assignment', () => {
+    expect(loadComponent('select')?.primitives).toContain('typeahead');
+    const typeahead = loadPrimitive('typeahead');
+    const source = typeahead?.files.map((f) => f.content).join('\n') ?? '';
+    expect(source).toContain('export function highlightMatch');
+    expect(source).not.toMatch(/\.innerHTML\s*=/);
+  });
+});
