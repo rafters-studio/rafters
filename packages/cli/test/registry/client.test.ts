@@ -41,6 +41,13 @@ const GRAPH: Record<string, RegistryItem> = {
   'primitives/memory': item('memory', 'primitive', [], 'lib/primitives/memory.ts'),
   'substrate/contract': item('contract', 'substrate', ['memory'], 'lib/contract.ts'),
   'substrate/use-memory': item('use-memory', 'substrate', ['memory'], 'hooks/use-memory.ts'),
+  // #2022: sidebar imports ../sheet/sheet. The edge is declared only in
+  // registryDependencies; the legacy primitives list (as served before) lacks it.
+  'components/sidebar': {
+    ...item('sidebar', 'ui', ['classy'], 'components/ui/sidebar.tsx'),
+    registryDependencies: ['classy', 'sheet'],
+  },
+  'components/sheet': item('sheet', 'ui', [], 'components/ui/sheet.tsx'),
 };
 
 beforeEach(() => {
@@ -97,6 +104,20 @@ describe('RegistryClient resolves the substrate closure', () => {
     // "contract" 404s as component and primitive, resolves under substrate/.
     const contract = await client.fetchItem('contract');
     expect(contract.type).toBe('substrate');
+  });
+});
+
+describe('RegistryClient walks registryDependencies (#2022)', () => {
+  it('installs the cross-component dependency registryDependencies declares', async () => {
+    const client = new RegistryClient(BASE);
+    const names = (await client.resolveDependencies('sidebar')).map((i) => i.name);
+    expect(names).toEqual(['classy', 'sheet', 'sidebar']);
+  });
+
+  it('falls back to primitives when a registry does not serve registryDependencies', async () => {
+    const client = new RegistryClient(BASE);
+    const names = (await client.resolveDependencies('button')).map((i) => i.name);
+    expect(names).toContain('classy');
   });
 });
 

@@ -620,3 +620,79 @@ describe('composites runtime (#2441)', () => {
     expect(paths).toContain('lib/composites/embed.ts');
   });
 });
+
+/**
+ * #2022: the dependency graph is declarative data. Every cross-component import
+ * in served source (`../sheet/sheet`, `../grid/grid.classes`, type-only too)
+ * must appear in the importing item's registryDependencies, or `rafters add`
+ * writes a file whose import does not resolve (#2020, the sidebar install).
+ */
+describe('registryDependencies carries the complete cross-component graph (#2022)', () => {
+  const CROSS_COMPONENT =
+    /(?:import|export)\s[^'"]*?from\s+['"]\.\.\/([^./'"][^/'"]*)\/[^'"]+['"]|import\s+['"]\.\.\/([^./'"][^/'"]*)\/[^'"]+['"]/g;
+  const componentDirs = new Set(
+    readdirSync(COMPONENTS).filter((d) => statSync(join(COMPONENTS, d)).isDirectory()),
+  );
+
+  it('every cross-component import in served source is a declared dependency', () => {
+    const missing: Record<string, string[]> = {};
+    for (const name of listComponentNames()) {
+      const item = loadComponent(name);
+      if (!item) continue;
+      for (const file of item.files) {
+        for (const match of file.content.matchAll(CROSS_COMPONENT)) {
+          const owner = match[1] ?? match[2];
+          if (!owner || !componentDirs.has(owner) || owner === name) continue;
+          if (!item.registryDependencies.includes(owner)) {
+            missing[name] = [...new Set([...(missing[name] ?? []), owner])];
+          }
+        }
+      }
+    }
+    expect(missing).toEqual({});
+  });
+
+  it('declares the four edges the #2020 audit found', () => {
+    expect(loadComponent('sidebar')?.registryDependencies).toContain('sheet');
+    expect(loadComponent('container')?.registryDependencies).toContain('grid');
+    expect(loadComponent('field')?.registryDependencies).toContain('label');
+    expect(loadComponent('button-group')?.registryDependencies).toContain('button');
+  });
+
+  it('keeps primitives beside registryDependencies for released CLIs', () => {
+    for (const item of [
+      loadComponent('sidebar'),
+      loadPrimitive('classy'),
+      loadSubstrate('contract'),
+    ]) {
+      expect(item?.primitives).toEqual(item?.registryDependencies);
+    }
+  });
+});
+
+describe('registry type values, per-file type and target (#2022)', () => {
+  it('keeps the old item-level type and puts the registry:* value on each file', () => {
+    const button = loadComponent('button');
+    expect(button?.type).toBe('ui');
+    expect(new Set(button?.files.map((f) => f.type))).toEqual(new Set(['registry:ui']));
+    expect(loadPrimitive('classy')?.files.map((f) => f.type)).toEqual(['registry:lib']);
+    expect(loadSubstrate('contract')?.files.map((f) => f.type)).toEqual(['registry:lib']);
+    expect(loadSubstrate('use-memory')?.files.map((f) => f.type)).toEqual(['registry:hook']);
+    expect(new Set(loadCompositesRuntime().files.map((f) => f.type))).toEqual(
+      new Set(['registry:block']),
+    );
+  });
+
+  it('gives .astro component files an explicit target relative to componentsPath', () => {
+    const files = loadComponent('button')?.files ?? [];
+    expect(files.find((f) => f.path === 'components/ui/button.astro')?.target).toBe('button.astro');
+    expect(files.find((f) => f.path === 'components/ui/button.tsx')?.target).toBeUndefined();
+  });
+
+  it('hoists npm dependencies from files onto the item, versions kept', () => {
+    const item = loadComponent('button');
+    const fromFiles = new Set(item?.files.flatMap((f) => f.dependencies));
+    expect(new Set(item?.dependencies)).toEqual(fromFiles);
+    expect(item?.dependencies.some((d) => /@\d/.test(d))).toBe(true);
+  });
+});

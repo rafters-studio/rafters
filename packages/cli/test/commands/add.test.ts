@@ -16,6 +16,7 @@ import { z } from 'zod';
 import {
   type AddOptions,
   collectDependencies,
+  fileProjectPath,
   getInstalledNames,
   installComponent,
   isAlreadyInstalled,
@@ -325,6 +326,63 @@ describe('substrate install-path routing', () => {
 
   it('transformPath still routes primitives to the configured primitives path', () => {
     expect(transformPath('lib/primitives/classy.ts', config)).toBe('src/lib/primitives/classy.ts');
+  });
+});
+
+describe('fileProjectPath places a file by its type and target (#2022)', () => {
+  const config: RaftersConfig = {
+    framework: 'vite',
+    componentsPath: 'app/ui',
+    primitivesPath: 'app/prims',
+    compositesPath: 'app/comps',
+    rulesPath: 'app/rules',
+    cssPath: null,
+    exports: { tailwind: true, typescript: true, dtcg: false, compiled: false },
+  };
+  const file = (type: RegistryItem['files'][number]['type'], target?: string) => ({
+    path: 'served/elsewhere.ts',
+    content: '',
+    dependencies: [],
+    devDependencies: [],
+    type,
+    target,
+  });
+  const itemOf = (type: RegistryItem['type']): RegistryItem => ({
+    name: 'x',
+    type,
+    primitives: [],
+    files: [],
+    rules: [],
+  });
+
+  it('resolves target against the configured directory the file type names', () => {
+    expect(fileProjectPath(file('registry:ui', 'button.astro'), itemOf('ui'), config)).toBe(
+      'app/ui/button.astro',
+    );
+    expect(fileProjectPath(file('registry:block', 'a.json'), itemOf('composite'), config)).toBe(
+      'app/comps/a.json',
+    );
+    expect(fileProjectPath(file('registry:file', 'r.ts'), itemOf('rule'), config)).toBe(
+      'app/rules/r.ts',
+    );
+  });
+
+  it('routes registry:lib to primitivesPath for primitives, else <source root>/lib', () => {
+    const src: RaftersConfig = { ...config, componentsPath: 'src/components/ui' };
+    expect(fileProjectPath(file('registry:lib', 'm.ts'), itemOf('primitive'), src)).toBe(
+      'app/prims/m.ts',
+    );
+    expect(fileProjectPath(file('registry:lib', 'c.ts'), itemOf('substrate'), src)).toBe(
+      'src/lib/c.ts',
+    );
+    expect(fileProjectPath(file('registry:hook', 'u.ts'), itemOf('substrate'), src)).toBe(
+      'src/hooks/u.ts',
+    );
+  });
+
+  it('keeps path-implied placement for a file with no target', () => {
+    const served = { ...file('registry:ui'), path: 'components/ui/button.tsx' };
+    expect(fileProjectPath(served, itemOf('ui'), config)).toBe('app/ui/button.tsx');
   });
 });
 

@@ -32313,13 +32313,23 @@ async function discoverFromDirs(...directories) {
 }
 
 // src/registry/types.ts
+var RegistryFileTypeSchema = external_exports.enum([
+  "registry:ui",
+  "registry:lib",
+  "registry:hook",
+  "registry:block",
+  "registry:file"
+]);
 var RegistryFileSchema = external_exports.object({
   path: external_exports.string(),
   content: external_exports.string(),
   dependencies: external_exports.array(external_exports.string()),
   // e.g., ["lodash@4.17.21"] - versioned
-  devDependencies: external_exports.array(external_exports.string()).default([])
+  devDependencies: external_exports.array(external_exports.string()).default([]),
   // e.g., ["vitest"] - from @devDependencies JSDoc
+  type: RegistryFileTypeSchema.optional(),
+  /** Install path relative to the configured directory for `type`, where `path` does not imply it. */
+  target: external_exports.string().optional()
 });
 var RegistryItemTypeSchema = external_exports.enum(["ui", "primitive", "composite", "rule", "substrate"]);
 var RegistryItemIntelligenceSchema = external_exports.object({
@@ -32387,7 +32397,12 @@ var RegistryItemSchema = external_exports.object({
   name: external_exports.string(),
   type: RegistryItemTypeSchema,
   description: external_exports.string().optional(),
+  /** Legacy dependency list, still served for released CLIs; read only when registryDependencies is absent. */
   primitives: external_exports.array(external_exports.string()),
+  /** Every registry item this item's files import (components, primitives, substrate). */
+  registryDependencies: external_exports.array(external_exports.string()).optional(),
+  /** npm dependencies hoisted from files[].dependencies. */
+  dependencies: external_exports.array(external_exports.string()).optional(),
   files: external_exports.array(RegistryFileSchema),
   rules: external_exports.array(external_exports.string()).default([]),
   intelligence: RegistryItemIntelligenceSchema.optional()
@@ -32582,7 +32597,7 @@ var RegistryClient = class {
     const item = await this.fetchItem(name);
     resolved.add(name);
     const deps = [];
-    for (const dep of item.primitives) {
+    for (const dep of item.registryDependencies ?? item.primitives) {
       if (!resolved.has(dep)) {
         deps.push(...await this.resolveDependencies(dep, resolved));
       }
