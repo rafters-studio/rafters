@@ -128,7 +128,9 @@ export function planCssImport(
     const entry = `${target}=${property}`;
     const found = resolved.get(property as `--${string}`);
     if (found === undefined) {
-      throw new CssImportError(`--map ${entry}: ${property} is not declared in ${cssPath}`);
+      throw new CssImportError(
+        `--map ${entry}: ${property} is not declared in a :root rule or @theme block of ${cssPath}`,
+      );
     }
     if (found.value === null) {
       throw new CssImportError(`--map ${entry}: ${found.reason}`);
