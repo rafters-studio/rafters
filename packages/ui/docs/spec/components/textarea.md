@@ -11,10 +11,10 @@ Files (`src/components/textarea/`):
 
 ```
 textarea.classes.ts    textarea.behavior.ts    textarea.tsx
-textarea.element.ts     textarea.astro
+textarea.astro
 ```
 
-Tests mirror into `test/components/textarea/`. React, WC, and Astro are
+Tests mirror into `test/components/textarea/`. React and Astro are
 conformance-verified against the shared harness.
 
 ## The archetype question
@@ -59,7 +59,7 @@ for an edit the field would not have accepted.
 | error | consumer renders | referenced by `aria-describedby`; carries no aria of its own (like dialog's title/description -- an id target only) |
 
 The `error` id is sourced deterministically, NOT from a mounted child: React
-takes it from the `errorId` prop, the WC/Astro bind reads
+takes it from the `errorId` prop, the Astro bind reads
 `getPart('error')?.id`. Because the id never comes from a rendered child,
 React needs no presence tracking -- the thin-React justification carries over
 from Input unchanged.
@@ -91,8 +91,7 @@ special-cases the controlled textarea, same as the controlled input).
 
 ## Oracle dispositions
 
-The oracle shipped a React target (`textarea.tsx`) and a form-associated Web
-Component (`textarea.element.ts`) far richer than Input's. Each feature is
+The oracle shipped a React target (`textarea.tsx`). Each feature is
 dispositioned:
 
 | Item | Disposition |
@@ -107,8 +106,6 @@ dispositioned:
 | 3-way `size` class map (`sm`/`default`/`lg`, `bg-background`) | dropped -- one control on token spacing; size is the consumer's class override, not a variant axis |
 | `resize` CSS property (`none`/`vertical`/`horizontal`/`both`) | dropped -- a presentational editor prop; the native `resize` is the consumer's `className` concern, not score behavior |
 | `wrap` (`soft`/`hard`/`off`) | dropped -- native attribute the consumer sets directly via passthrough when needed; no sanitization layer ported |
-| `cols` / `maxlength` sanitization (positive-int parse, silent drop) | dropped -- native passthrough props; the WC's bespoke sanitizer is not behavior the score owns |
-| form-association via `ElementInternals` (`formAssociated`, `syncFormValue`, reset/restore) | framework-affordance -- the native `<textarea>` is form-associated already inside a `<form>`; no `ElementInternals` shim needed, mirroring Input's `form-value` disposition |
 | `input-events` primitive (`beforeinput`/IME tracking) | not ported -- the native `input` event is sufficient; the score does not re-implement composition tracking |
 | autosize / auto-grow height | dropped -- "optional" per the matrix `does`; shadcn Textarea has none, and adding it would force an effect and break the effect-free symmetry with Input. Deferred as a future decoration, not score behavior |
 
@@ -119,8 +116,8 @@ dispositioned:
 2. `min-h-20` rather than a per-size min-height map: the multi-line control
    starts with room and the native element grows from there.
 3. Validity styling keys off the projected `aria-invalid`
-   (`aria-invalid:border-destructive`), so light-DOM markup, the WC, and React
-   all pick up the destructive border with no extra class.
+   (`aria-invalid:border-destructive`), so the Astro markup and React
+   both pick up the destructive border with no extra class.
 
 ## WCAG 2.1 AA obligations
 

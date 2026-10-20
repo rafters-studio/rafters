@@ -6,11 +6,11 @@ Files (`src/components/checkbox/`):
 
 ```
 checkbox.classes.ts    checkbox.behavior.ts    checkbox.tsx
-checkbox.element.ts     checkbox.astro
+checkbox.astro
 ```
 
 Tests mirror into `test/components/checkbox/` (behavior, classes, and React +
-WC + Astro conformance via the shared harness).
+Astro conformance via the shared harness).
 
 ## Composition
 
@@ -90,13 +90,11 @@ input mechanism.
 | --- | --- |
 | controlled/uncontrolled + onCheckedChange | contract |
 | variant/size class maps | contract (ported to `checkbox.classes.ts`) |
-| Space toggles (React onKeyDown + WC host keydown) | contract (Space claimed by the score keymap) |
+| Space toggles (React onKeyDown) | contract (Space claimed by the score keymap) |
 | Enter activates (native `<button>` click in both old targets) | framework affordance — the native button click drives toggle; not a score keymap claim |
 | `role="checkbox"` + `aria-checked` on the inner button | contract |
-| `name`/`value`, submit-when-checked, `required` valueMissing | contract, re-expressed through `form-value` + a mirrored hidden input (was ElementInternals `setFormValue`/`setValidity` in the WC) |
-| ElementInternals form-associated WC (validity, reset, restore) | dropped — the behavior-layer WC is a light-DOM enhancer sharing `bindCheckbox`, not a shadow-DOM ElementInternals control; validity/reset/restore are framework machinery, not earned checkbox semantics, and the hidden-input mirror carries submission in every framework |
-| indeterminate / `aria-checked="mixed"` | contract — NEW capability; the old tree (react + wc) was binary, this port adds the mixed axis |
-| shadow-scoped `:host { inline-flex }` + `setUtilityCSS` | dropped — light-DOM enhancer needs no shadow layout shim; utility classes ride the light-DOM button |
+| `name`/`value`, submit-when-checked, `required` valueMissing | contract, re-expressed through `form-value` + a mirrored hidden input |
+| indeterminate / `aria-checked="mixed"` | contract — NEW capability; the old tree was binary, this port adds the mixed axis |
 
 ## Deltas from the oracle
 

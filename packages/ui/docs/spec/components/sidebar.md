@@ -5,7 +5,7 @@ Status: DRAFT. Compound archetype. Collapsible application navigation rail.
 Files (`src/components/sidebar/`):
 
 ```
-sidebar.classes.ts    sidebar.behavior.ts    sidebar.tsx    sidebar.element.ts    sidebar.astro
+sidebar.classes.ts    sidebar.behavior.ts    sidebar.tsx    sidebar.astro
 ```
 
 Plus one `.astro` part file per sub-component `sidebar.tsx` exports (#2324;
@@ -20,7 +20,7 @@ see Astro composition below): `sidebar-header.astro`, `sidebar-footer.astro`,
 `sidebar-rail.astro`. `Sidebar` itself is `sidebar.astro`; `SidebarProvider`
 has no Astro equivalent (see Astro composition).
 
-Tests mirror into `test/components/sidebar/` (behavior + classes + React/WC/Astro
+Tests mirror into `test/components/sidebar/` (behavior + classes + React/Astro
 conformance; the part files' own conformance is
 `sidebar-subcomponents.astro.conformance.test.ts`).
 
@@ -37,7 +37,7 @@ the merged `sheet` -- matching shadcn's architecture.
 sidebar (bespoke slice)   state {open, openMobile}, actions open/close/openMobile/closeMobile,
                           parts root/trigger/rail/panel, aria + Escape keymap
 sheet (merged component)  the mobile overlay: React renders <Sheet>/<SheetContent>;
-                          WC/Astro compose startSheetModalEffects on the panel
+                          Astro composes startSheetModalEffects on the panel
 ```
 
 The slice is bespoke, not `disclosable`: the sidebar has TWO independent axes
@@ -54,7 +54,7 @@ enters the score's state.
 
 The mobile overlay COMPOSES the merged `sheet` rather than re-deriving modality:
 the React performance renders `<Sheet open={openMobile}>` + `<SheetContent>`; the
-WC/Astro binds compose `startSheetModalEffects` (sheet's own exported modal trio)
+Astro bind composes `startSheetModalEffects` (sheet's own exported modal trio)
 on the panel. `openMobile` drives the sheet's open state either way.
 
 ## Config, state, actions
@@ -89,7 +89,7 @@ mobile prop, so `openMobile` is always intrinsic and has no change callback.
 | trigger | optional | `aria-controls` (desktop panel id, only when real; dropped on mobile where the panel is the Sheet), `data-state` |
 | rail | optional | `aria-label="Toggle Sidebar"`, `data-state` |
 | panel | always | `data-state` (expanded/collapsed), `data-collapsible` (mode, only while collapsed and not `none`), `data-mobile` (open/closed) |
-| dialog | optional (WC/Astro only) | `role="dialog"` + `aria-modal` + `aria-label` while the mobile overlay is open, bind-managed (#2324, Decision 6, 2026-09-09) |
+| dialog | optional (Astro only) | `role="dialog"` + `aria-modal` + `aria-label` while the mobile overlay is open, bind-managed (#2324, Decision 6, 2026-09-09) |
 | startIcon, endIcon | optional, one per menu button or sub button given an icon | `aria-hidden="true"`, in the server markup (#2475) |
 
 `role="dialog"` + `aria-modal` + `aria-label="Sidebar"` are NOT in the score's
@@ -98,14 +98,11 @@ depend on the viewport signal, which the score does not hold), mirroring the
 React `SheetContent` surface. **They live on the `dialog` part, never on the
 panel** (corrected #2324, Decision 6, 2026-09-09): `role="dialog"` is not an
 allowed ARIA role on `<nav>` (axe `aria-allowed-role`; found by the #2222
-sweep, filed as #2338). WC/Astro render the panel (`<nav>`) INSIDE a `dialog`
-wrapper `<div>` (Astro: `sidebar.astro`'s own markup; WC: authored by the
-consumer, since a WC light-DOM enhancer has no template of its own) -- the
-wrapper carries the dialog
+sweep, filed as #2338). Astro renders the panel (`<nav>`) INSIDE a `dialog`
+wrapper `<div>` (`sidebar.astro`'s own markup) -- the wrapper carries the dialog
 identity, the `<nav>` stays a `<nav>` on every viewport. The wrapper is
-optional in the score (`sidebar.parts.dialog.optional`) so hand-authored WC
-markup predating this fix degrades to no dialog role rather than reintroducing
-it on the nav. On mobile in React the panel is not rendered at all (the
+optional in the score (`sidebar.parts.dialog.optional`) so markup without it
+degrades to no dialog role rather than reintroducing it on the nav. On mobile in React the panel is not rendered at all (the
 overlay is the portaled Sheet), so the trigger drops its `aria-controls` there
 to avoid a dangling reference.
 
@@ -118,7 +115,7 @@ the projection emits `undefined` rather than a dangling reference.
 The panel is a single `<nav>`. On desktop the view keys the width collapse off
 `data-state`/`data-collapsible` (scoped `md:`). On mobile: in React the `Sidebar`
 renders the merged `<Sheet>` instead of the nav (one runtime branch on
-`isMobile`, no duplicated children); in WC/Astro the one `<nav>` renders inside
+`isMobile`, no duplicated children); in Astro the one `<nav>` renders inside
 a `dialog` wrapper and is `hidden` when the overlay is closed -- the bind puts
 the dialog identity on the WRAPPER (never the `<nav>`) and composes the sheet
 modal trio's focus-trap on the wrapper too, so a click on the nav's own links
@@ -132,7 +129,6 @@ is INSIDE the trap boundary, never a dismiss.
 | --- | --- | --- |
 | React | `startIcon: ReactNode` | `endIcon: ReactNode` |
 | Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
-| Web Component | child of the button with `slot="start-icon"` | child of the button with `slot="end-icon"` |
 
 ```html
 <button data-sidebar="menu-button" class="inline-grid w-full grid-flow-col items-center gap-2 ...">
@@ -157,7 +153,7 @@ The action and badge sit at `end-*`, the sub-menu indents with `ms-*`, `ps-*` an
 ## Keyboard and dismissal
 
 - **Cmd/Ctrl+B**: an imperative window listener (the shortcut is global, not
-  part-scoped) routed through `toggleIntent`. Wired in `bindSidebar` (WC/Astro)
+  part-scoped) routed through `toggleIntent`. Wired in `bindSidebar` (Astro)
   and a React effect.
 - **Escape** on the panel -> `closeMobile`. The bind resolves the keydown part by
   CONTAINMENT (`panel.contains(target)`), never `target.closest('[data-part]')`:
@@ -172,7 +168,7 @@ The action and badge sit at `end-*`, the sub-menu indents with `ms-*`, `ps-*` an
 The mobile overlay is MODAL, via the composed `sheet`: focus is trapped inside,
 body scroll is locked, an outside pointerdown dismisses, and -- decisively for
 focus management -- the overlay content is UNREACHABLE while closed (React
-unmounts `SheetContent`; the WC/Astro bind `hidden`s the panel), so its links
+unmounts `SheetContent`; the Astro bind `hidden`s the panel), so its links
 leave the tab order and a11y tree.
 
 ## Motion
@@ -220,9 +216,9 @@ had no way to bound the sidebar.
   container with no set height the percentage resolves to auto, so the sidebar
   grows to its content.
 
-The classes live once in `sidebar.classes.ts`, so React, WC and Astro share
+The classes live once in `sidebar.classes.ts`, so React and Astro share
 them. Astro's `sidebar.astro` (the provider root there) takes the same
-`contained` prop; WC markup sets `data-contained="true"` on the root. The mobile
+`contained` prop. The mobile
 overlay is a modal and still covers the viewport.
 
 ## Astro composition (#2324, 2026-09-09)
@@ -324,7 +320,7 @@ recompute the SAME projection from the SAME exported pure
 `open`/`defaultOpen`) matching the parent `<Sidebar id="...">` -- the honest
 cost of no runtime; a mismatched id produces a trigger whose `aria-controls`
 does not resolve. `bindSidebar` resolves parts by
-`root.querySelector('[data-part="trigger"]')` inside the `<rafters-sidebar>`
+`root.querySelector('[data-part="trigger"]')` inside the sidebar
 root, so a `<SidebarTrigger>` rendered as a DESCENDANT of that root is found
 and kept live by the same bind the built-in inline trigger uses; placed
 OUTSIDE the root (shadcn's common pattern of a trigger living in the page
@@ -347,19 +343,19 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 | `isMobile` as a local media-query signal, not state | contract; kept OUTSIDE the score, consumed via pure `toggleIntent` |
 | `toggleSidebar` routing to a viewport-appropriate axis | contract; moved into pure `toggleIntent(state, config, isMobile)` |
 | cookie persistence: write on `open` change, seed from `defaultOpen`, never read back | contract; replicated write-only via `memory.select` in the bind and a React effect |
-| Cmd/Ctrl+B window shortcut | contract; window listener routed through `toggleIntent` in all three performances |
+| Cmd/Ctrl+B window shortcut | contract; window listener routed through `toggleIntent` in both performances |
 | mobile overlay = plain scrim button + sliding panel (the rafters oracle's non-modal divergence) | defect-do-not-port; replaced by the merged modal `sheet` -- the non-modal scrim is exactly what left closed-overlay links tab-reachable |
 | mobile overlay had NO focus-trap / scroll-lock / outside-dismiss | defect-do-not-port; the composed sheet modal trio supplies all three (WCAG 2.2 AAA focus management) |
-| shadcn wraps the mobile sidebar in a modal `Sheet` | contract; now composed -- React renders `<Sheet>`/`<SheetContent>`, WC/Astro compose `startSheetModalEffects` on a `dialog` wrapper around the panel (#2324, Decision 6, 2026-09-09 -- corrected from an earlier build that put `role="dialog"` on the panel/`<nav>` itself, an axe `aria-allowed-role` violation, #2338) |
+| shadcn wraps the mobile sidebar in a modal `Sheet` | contract; now composed -- React renders `<Sheet>`/`<SheetContent>`, Astro composes `startSheetModalEffects` on a `dialog` wrapper around the panel (#2324, Decision 6, 2026-09-09 -- corrected from an earlier build that put `role="dialog"` on the panel/`<nav>` itself, an axe `aria-allowed-role` violation, #2338) |
 | `side` / `variant` / `collapsible` props | contract; positional/surface decoration as `data-*` + classes, never ARIA |
 | `collapsible="none"` non-collapsible branch | contract; `data-collapsible` is never projected for `none` |
 | desktop "gap" element for a smooth width transition | dropped; it existed only to animate width, and desktop motion is undeclared |
 | Rail (desktop toggle, `tabIndex=-1`, labelled) | contract |
 | Inset (`<main>` landmark) | contract |
-| Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior; importable on every target under shadcn's flat names per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part files (see Astro composition); the WC surface has no issue carrying it yet |
+| Header/Footer/Content/Group(+Label/Action/Content)/Menu(+Item/Button/Action/Badge/Skeleton/Sub/SubItem/SubButton)/Separator | contract; pure decoration (classes + `data-sidebar` attrs), no behavior; importable on every target under shadcn's flat names per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part files (see Astro composition) |
 | `asChild` on GroupLabel/GroupAction/MenuButton/MenuAction/MenuSubButton | contract; React expresses it via `cloneElement`+`mergeProps`, Astro via render-then-inject (#2324, Decision 2, 2026-09-09 -- see Astro composition). React's `SidebarTrigger` also carries `asChild` (`sidebar.tsx:273`); Decision 2 named only these five for Astro and Trigger is not one of them, a discrepancy flagged rather than resolved here |
 | MenuButton `variant`/`size`, MenuSubButton `size`, `isActive` (`data-active`) | contract; decoration variants |
-| MenuSkeleton random bar width (`Math.random`) | contract; `MenuSkeleton` itself is importable on every target under shadcn's flat name per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part file (a fresh per-render server value, close enough to the React mount-once value that neither jitters within its own lifetime); the WC surface has no issue carrying it yet |
+| MenuSkeleton random bar width (`Math.random`) | contract; `MenuSkeleton` itself is importable on every target under shadcn's flat name per the 00-boundaries shadcn-parity guideline. #2324 carries the Astro part file (a fresh per-render server value, close enough to the React mount-once value that neither jitters within its own lifetime) |
 | JSDoc claimed a "nav role" landmark but rendered a `<div>` | defect-do-not-port; this port actually delivers `<nav>` for the panel (the landmark the oracle only aspired to) |
 | trigger had no `aria-controls`/`aria-expanded` | contract, hardened: desktop `aria-controls` -> panel added (dropped on mobile, where the panel is the Sheet); `aria-expanded` deliberately omitted (viewport-ambiguous) |
 | raw `duration-200 ease-linear`/`ease-in-out` desktop collapse transition | defect-do-not-port; raw numeric durations, dropped -- desktop motion undeclared pending horizontal tokens (#1899/#1902) |
@@ -371,7 +367,7 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
    state-correct but unanimated until a horizontal-slide / width motion token
    lands (#1899/#1902). The mobile overlay's enter/exit is animated by the merged
    `sheet` (its own concern).
-2. **`SidebarTrigger`/`SidebarRail` placed outside the `<rafters-sidebar>`
+2. **`SidebarTrigger`/`SidebarRail` placed outside the sidebar
    root do not receive live updates.** `bindSidebar` resolves parts by
    `root.querySelector`, scoped to its own root; a standalone trigger in the
    page header (shadcn's common pattern) server-renders correctly but its
@@ -389,7 +385,7 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
 - 1.3.1 / 4.1.2: on desktop the panel is a `<nav>` landmark and the trigger is a
   labelled control wired by real id (`aria-controls`) to it; on mobile the overlay
   is `role="dialog"` + `aria-modal` with an accessible name (`aria-label="Sidebar"`)
-  -- on the `dialog` wrapper in WC/Astro (never the `<nav>`, which does not allow
+  -- on the `dialog` wrapper in Astro (never the `<nav>`, which does not allow
   `role="dialog"`; the merged `<SheetContent>` in React). Asserted against real
   DOM by the conformance suites.
 - 2.1.1 / 2.1.2: Escape dismisses the mobile overlay and restores focus to the
@@ -398,6 +394,6 @@ surface; `dropped` = intentionally not ported; `defect-do-not-port` = oracle bug
   `inert`).
 - 2.4.3 Focus Order (AAA-grade management): the mobile overlay traps focus while
   open and, while CLOSED, is unreachable -- its links are not in the tab order or
-  a11y tree (React unmounts the content; WC/Astro `hidden` the panel), each
+  a11y tree (React unmounts the content; Astro `hidden`s the panel), each
   asserted per framework in the conformance suites.
 - 2.4.7: token focus ring on the menu controls.

@@ -8,16 +8,16 @@ assignees: ""
 
 ## Goal
 
-Port `[name]`. Deliverable: one behavior, three decorators.
+Port `[name]`. Deliverable: one behavior, two decorators.
 
 - `[name].behavior.ts` — the score: pure reducers, aria/keymap projections, plus
   `bind[Name](root)` (the DOM-native client).
 - `[name].classes.ts` — the view. Class strings, no logic.
-- `[name].tsx` (React) + `[name].element.ts` (WC) + `[name].astro` (Astro) — three thin
-  decorators over the one behavior, all driving the same `bind[Name]`.
+- `[name].tsx` (React) + `[name].astro` (Astro) — two thin decorators over the
+  one behavior, both driving the same `bind[Name]`.
 - Tests + `docs/spec/components/[name].md`.
 
-Build all three performances. Spec 05 states the three-framework mandate with no
+Build both performances. Spec 05 states the two-framework mandate with no
 per-component carve-out; it is independent of what the old tree happened to ship.
 
 ## What it is
@@ -91,7 +91,7 @@ The `.tsx` JSDoc carries `@cognitive-load` (five dimensions), `@attention-econom
 - [ ] JSDoc intelligence tags present
 - [ ] Behavior test (pure, no DOM)
 - [ ] Classes parity test
-- [ ] Conformance GREEN across React + WC + Astro via the shared harness (aria + keymap
+- [ ] Conformance GREEN across React + Astro via the shared harness (aria + keymap
       against rendered DOM)
 - [ ] shadcn drop-in parity where the component exists in shadcn
 - [ ] `pnpm --filter @rafters/ui test:unit` green, `pnpm preflight` green

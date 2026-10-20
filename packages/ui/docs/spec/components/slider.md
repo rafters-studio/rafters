@@ -7,10 +7,10 @@ Files (`src/components/slider/`):
 
 ```
 slider.classes.ts    slider.behavior.ts    slider.tsx
-slider.element.ts     slider.astro
+slider.astro
 ```
 
-Tests mirror into `test/components/slider/` (behavior, classes, and React / WC /
+Tests mirror into `test/components/slider/` (behavior, classes, and React /
 Astro conformance on the shared harness).
 
 ## Composition
@@ -26,7 +26,7 @@ form-value         the hidden mirrored inputs a <form> submits under `name`
 
 `composeSliderInteractions({ root, getConfig, getValues, getFocusedIndex,
 request, setDragging })` folds `createInteractive` + `createKeyboardHandler` into
-one teardown, shared verbatim by `bindSlider` (WC + Astro) and the React
+one teardown, shared verbatim by `bindSlider` (Astro) and the React
 controller's effect. The value math that turns interactive's raw point (or a key)
 into a stepped, clamped value is COMPONENT-INTERNAL pure state — the exported
 `valueFromPoint` / `stepForKey` / `clampToStep` / `nearestThumbIndex` helpers,
@@ -122,7 +122,7 @@ come from tokens.
 
 - 1.3.1 / 4.1.2: `role="slider"` with `aria-valuemin/max/now` and
   `aria-orientation` per thumb, asserted against real DOM by the harness across
-  React / WC / Astro.
+  React / Astro.
 - 2.1.1 Keyboard: every thumb is operable by Arrow / Page / Home / End; disabled
   removes the thumbs from the tab order and gates all movement.
 - 2.4.7 Focus Visible: token focus ring on the thumb

@@ -3,17 +3,16 @@
 Status: DRAFT. Static score (imitates Container/Card, with a datum like
 Progress). No actions, no keymap, no effects, no motion. The image-load
 `status` is CONFIG, not state; presence is a total function of it. Performed
-across all three frameworks (React, the `<rafters-avatar>` web component, and
-Astro).
+in React and Astro.
 
 Files (`src/components/avatar/`):
 
 ```
-avatar.behavior.ts   avatar.classes.ts   avatar.tsx   avatar.element.ts   avatar.astro
+avatar.behavior.ts   avatar.classes.ts   avatar.tsx   avatar.astro
 ```
 
 Tests mirror into `test/components/avatar/` (behavior, classes, React
-conformance, WC conformance, Astro conformance).
+conformance, Astro conformance).
 
 ## Purpose
 
@@ -37,22 +36,18 @@ total function from `status` to which part is present, computed once in
 
 The transition BETWEEN statuses is a runtime concern the retained-mode (React)
 performance owns -- an `<img>` `load`/`error` listener flips React state, which
-feeds back through `resolveAvatar`. The DOM-native performances are
-caller-decides statics (see the finding below), so there is **no universal
+feeds back through `resolveAvatar`. The Astro performance is a
+caller-decides static (see the finding below), so there is **no universal
 `bindAvatar`**: the score is score-only, exactly like Card.
 
 ## The finding: caller-decides statics reprise the Card no-bind result
 
 The oracle already drew the boundary this port keeps. The old `avatar.astro`
-was zero-JS (`src ? <img> : <fallback>`), and the old `avatar.element.ts`
-explicitly **deferred** image-load coordination to a follow-up. So:
+was zero-JS (`src ? <img> : <fallback>`). So:
 
 - `avatar.behavior.ts` is the score plus `resolveAvatar`; there is no
   `bindAvatar`. A binding exists to run effects and apply projections
   imperatively; a static with an empty projection and no effects has neither.
-- `avatar.element.ts` performs no binding -- the web component renders the
-  surface once from its attributes, and the caller declares the outcome via
-  `status` (defaulted from `src`).
 - `avatar.astro` ships no `<script>` -- server-rendered markup, caller-decides.
 - `avatar.tsx` alone owns the runtime transition, because retained-mode is the
   only surface that observes the live `load`/`error` events.
@@ -67,8 +62,8 @@ AvatarFallback  span, data-part="fallback"; initials/icon; delayMs flash guard
 
 The React surface is the shadcn/radix compound, preserved exactly:
 `Avatar` / `AvatarImage` / `AvatarFallback`, `onLoadingStatusChange`, `delayMs`.
-The WC and Astro performances cannot observe live load events, so they take a
-`status` attribute/prop (defaulted from `src`) and a fallback `slot`/`fallback`
+The Astro performance cannot observe live load events, so it takes a
+`status` prop (defaulted from `src`) and a fallback `slot`/`fallback`
 prop.
 
 ## Config, state, actions
@@ -85,7 +80,7 @@ type AvatarState = Record<never, never>;
 type AvatarActions = Record<never, never>;
 ```
 
-`resolveAvatar(config)` is the one computation the classes and all three
+`resolveAvatar(config)` is the one computation the classes and both
 performances read: it resolves the size, resolves the status, and derives
 `imageHidden` (status is `error`) and `fallbackHidden` (status is `loaded`).
 
@@ -116,8 +111,7 @@ gate, or execute. Motion: none.
 | `onLoadingStatusChange` callback | contract (React) -- the load-status report |
 | `delayMs` fallback-flash guard | framework-affordance -- React-only nicety on top of the score's decision |
 | React context sharing status | framework-affordance -- the retained-mode transition surface |
-| old WC deferred image coordination | resolved -- the WC is now a caller-decides static via the `status` attribute |
-| old Astro `src ? img : fallback` zero-JS | contract -- the caller-decides default the WC also adopts |
+| old Astro `src ? img : fallback` zero-JS | contract -- the caller-decides default |
 
 ## WCAG obligations
 

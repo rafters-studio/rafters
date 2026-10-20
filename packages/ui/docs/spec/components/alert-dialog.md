@@ -10,17 +10,17 @@ through Cancel, the action, or Escape. The modal overlay pair (focus-trap +
 scroll-lock) is composed DIRECTLY -- a `startAlertDialogModalEffects({ content,
 getCancel })` function in `alert-dialog.behavior.ts` starts `createFocusTrap` +
 `preventBodyScroll` on open and tears them down on close, called by both
-`bindAlertDialog` (WC/Astro) and a React `useEffect`. There is no effect list
+`bindAlertDialog` (Astro) and a React `useEffect`. There is no effect list
 and, unlike dialog, no `onPointerDownOutside`/`onInteractOutside` surface.
 
 Files (`src/components/alert-dialog/`):
 
 ```
 alert-dialog.classes.ts    alert-dialog.behavior.ts    alert-dialog.tsx
-alert-dialog.element.ts     alert-dialog.astro
+alert-dialog.astro
 ```
 
-Tests mirror into `test/components/alert-dialog/` across React, WC, and Astro.
+Tests mirror into `test/components/alert-dialog/` across React and Astro.
 
 ## Composition
 

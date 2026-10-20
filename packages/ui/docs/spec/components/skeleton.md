@@ -7,11 +7,11 @@ Files (`src/components/skeleton/`):
 
 ```
 skeleton.classes.ts   skeleton.behavior.ts   skeleton.tsx
-skeleton.element.ts    skeleton.astro
+skeleton.astro
 ```
 
 Tests mirror into `test/components/skeleton/`: behavior (pure, no DOM), classes
-parity, and conformance across React + WC + Astro.
+parity, and conformance across React and Astro.
 
 ## Composition
 
@@ -23,7 +23,7 @@ skeleton classes    a single constant string: rounded, muted surface that pulses
 Skeleton is a loading placeholder: it reserves the layout a piece of content
 will occupy while that content loads, shown as a shimmer. It is a pure static
 -- there is no `bindSkeleton`, no `useBehavior`/`useMemory`, no Astro
-`<script>`, and the Web Component performs no binding. It is also a decorative
+`<script>`. It is also a decorative
 LEAF: no slot, no children.
 
 Unlike Container, Card, and ScrollArea -- whose aria projections are EMPTY
@@ -31,7 +31,7 @@ because the semantic element they choose carries the contract -- Skeleton has no
 element that marks it decorative. A bare `div` is exposed to assistive tech, so
 Skeleton's one real contract is a CONSTANT `aria-hidden="true"` on its root.
 That lives in the score, not in the markup, so the conformance harness enforces
-it identically across React, the Web Component, and Astro. This is the one
+it identically across React and Astro. This is the one
 static whose projection is non-empty.
 
 ## Config, state, actions
@@ -81,14 +81,14 @@ still loading.
 | `motion-reduce:animate-none` reduced-motion opt-out | contract at port time, REMOVED by #2155: period-kind cells are exempt from the reduced-motion zeroing law by design, so the loop never stops |
 | `rounded-md` + `bg-muted` default surface | contract (verbatim decoration; `bg-muted` is a semantic token, not a raw colour utility) |
 | `variant` prop (default/primary/secondary/destructive/success/warning/info/muted/accent -> `bg-*-subtle`) | dropped (a background channel; the port rule is "fill, not background", and the sanctioned `fill-resolver` primitive is not in this component's `uses`; superseded by `className`/fill, and shadcn's Skeleton has no variant) |
-| `aria-hidden="true"` on the placeholder (Web Component only in the oracle) | contract, promoted to the score so React + WC + Astro all project it (closes the oracle's cross-framework drift) |
-| `{...props}` / `{...attrs}` spread on the root | framework affordance (React/WC/Astro pass consumer attributes through) |
+| `aria-hidden="true"` on the placeholder | contract, promoted to the score so React and Astro both project it (closes the oracle's cross-framework drift) |
+| `{...props}` / `{...attrs}` spread on the root | framework affordance (React/Astro pass consumer attributes through) |
 | `className` sizing surface (`h-4 w-48`, `rounded-full`) | contract (the shadcn drop-in surface; the component owns its base classes, the consumer sizes and shapes) |
 
 ## WCAG 2.1 AA obligations
 
 - 1.3.1/4.1.2: the root projects a constant `aria-hidden="true"`; the harness
-  asserts it against real DOM across React, WC, and Astro, so the decorative
+  asserts it against real DOM across React and Astro, so the decorative
   placeholder is reliably absent from the accessibility tree.
 - 1.4.13 Animation from interactions / 2.3.3: the shimmer runs continuously
   and does NOT stop under `prefers-reduced-motion` (#2155) -- a work loop is

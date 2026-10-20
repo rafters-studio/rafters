@@ -2,13 +2,12 @@
 
 Status: DRAFT. Static score (imitates Container). No state, no actions, no
 keymap, no effects, no motion block. The composition archetype: the first pure
-static performed across all three frameworks (React, the `<rafters-card>` web
-component, and Astro).
+static performed across both frameworks (React and Astro).
 
 Files (`src/components/card/`):
 
 ```
-card.behavior.ts   card.classes.ts   card.tsx   card.element.ts   card.astro
+card.behavior.ts   card.classes.ts   card.tsx   card.astro
 card-header.astro  card-title.astro  card-action.astro
 card-content.astro card-footer.astro
 ```
@@ -17,10 +16,10 @@ card-content.astro card-footer.astro
 writing a raw `<p class=…>` in an `.astro` file, and the ruling that
 `CardDescription` is a real `p` rules out its suggested remedy. Astro consumers
 use `card.astro`'s `description` slot until the guard is given a card-family
-exemption. `CardDescription` exists normally in React and the web component.
+exemption. `CardDescription` exists normally in React.
 
 Tests mirror into `test/components/card/` (behavior, classes, React
-conformance, WC conformance, Astro conformance, Astro sub-component parity).
+conformance, Astro conformance, Astro sub-component parity).
 
 ## Purpose
 
@@ -42,8 +41,6 @@ state, and runs no effects. There is therefore **nothing to bind**:
   slots through, semantic element chosen by `as`.
 - `card.astro` ships **no** `<script>` -- it is server-rendered markup with
   the shared class strings and named slots; there is nothing to hydrate.
-- `card.element.ts` performs **no** binding -- the web component renders the
-  surface markup with the shared classes and named slots, once.
 
 The score is declared at all only so the conformance harness can assert the
 one real contract (the `root` part renders and projects no ARIA) identically
@@ -119,11 +116,6 @@ never collide -- composing sub-components yields the React tree with no phantom
 empty regions wrapped around it. That is a server-side check, not a
 `slotchange` listener: still no client JavaScript, still no bind.
 
-The web component cannot nest arbitrary children into regions without a
-runtime, so it keeps the fixed named slots and pays the honest cost: an
-unfilled region is empty space. Hiding it would require a `slotchange` listener
--- a bind -- which is precisely what a pure static must not carry.
-
 ## Config, state, actions
 
 ```ts
@@ -187,7 +179,7 @@ composition, same `data-slot` selectors, same children.
 ### `data-slot` and `data-part` are different contracts
 
 Every node emits shadcn's `data-slot` (`card`, `card-header`, `card-title`,
-`card-description`, `card-action`, `card-content`, `card-footer`) in all three
+`card-description`, `card-action`, `card-content`, `card-footer`) in both
 performances. `data-slot` is the **swap contract**: a consumer's
 `has-data-[slot=card-action]` or `[data-slot=card]` selectors have to keep
 matching after the import swap, and the header's own grid variant depends on
@@ -253,8 +245,7 @@ Two intentional differences, both stated here rather than discovered:
 
    **Scope, precisely:** this holds where the COMPONENT owns the element -- the
    React `CardTitle`/`CardDescription`, and the importable `card-title.astro`.
-   It does NOT describe `card.astro`'s named-slot regions or the web component's
-   `slotRegion` wrappers: those are class-carrying `div`s and the CONSUMER
+   It does NOT describe `card.astro`'s named-slot regions: those are class-carrying `div`s and the CONSUMER
    supplies the element, so a named-slot card is only as accessible as the tag
    passed into it (`<h3 slot="title">`). That is a property of the fixed-slot
    model, not a divergence from it -- a bind-free static cannot rewrite a
