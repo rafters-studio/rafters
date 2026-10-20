@@ -54,6 +54,7 @@ import {
 import { discoverFromDirs } from '@rafters/composites/node';
 import { z } from 'zod';
 import {
+  isBlockedRegistryHost,
   migrateConfig,
   type RaftersConfig,
   UnsupportedComponentTargetError,
@@ -116,13 +117,16 @@ const ConfigWiringSchema = z
     // Closed set -- excludes 'unknown', which is a detection sentinel, not a
     // valid target a caller may set.
     framework: z.enum(['next', 'vite', 'remix', 'react-router', 'astro', 'preact', 'vanilla']),
-    // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
-    // is tracked as a follow-up -- see the registryUrl SSRF issue.)
+    // Must be a valid http(s) URL on a public host (no loopback, private,
+    // link-local or metadata address).
     registryUrl: z
       .string()
       .url()
       .refine((u) => /^https?:$/.test(new URL(u).protocol), {
         message: 'registryUrl must be an http(s) URL',
+      })
+      .refine((u) => !isBlockedRegistryHost(u), {
+        message: 'registryUrl must not point at a localhost, private, or link-local host',
       }),
     // Closed set derived from the framework (see ComponentTarget in detect.ts).
     componentTarget: z.enum(['react', 'astro', 'vue', 'svelte']),
