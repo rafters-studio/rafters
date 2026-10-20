@@ -30,23 +30,6 @@
  *     </AlertDialogFooter>
  *   </AlertDialogContent>
  * </AlertDialog>
- *
- * // Or with namespace syntax
- * <AlertDialog>
- *   <AlertDialog.Trigger asChild>
- *     <Button variant="destructive">Delete</Button>
- *   </AlertDialog.Trigger>
- *   <AlertDialog.Content>
- *     <AlertDialog.Header>
- *       <AlertDialog.Title>Are you sure?</AlertDialog.Title>
- *       <AlertDialog.Description>This action cannot be undone.</AlertDialog.Description>
- *     </AlertDialog.Header>
- *     <AlertDialog.Footer>
- *       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
- *       <AlertDialog.Action>Delete</AlertDialog.Action>
- *     </AlertDialog.Footer>
- *   </AlertDialog.Content>
- * </AlertDialog>
  * ```
  */
 import * as React from 'react';
