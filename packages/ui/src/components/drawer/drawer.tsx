@@ -34,25 +34,6 @@
  *   </DrawerContent>
  * </Drawer>
  *
- * // Or with namespace syntax
- * <Drawer>
- *   <Drawer.Trigger asChild>
- *     <Button>Open Drawer</Button>
- *   </Drawer.Trigger>
- *   <Drawer.Content>
- *     <Drawer.Header>
- *       <Drawer.Title>Actions</Drawer.Title>
- *       <Drawer.Description>Select an action</Drawer.Description>
- *     </Drawer.Header>
- *     <div>Drawer content here</div>
- *     <Drawer.Footer>
- *       <Drawer.Close asChild>
- *         <Button variant="outline">Cancel</Button>
- *       </Drawer.Close>
- *     </Drawer.Footer>
- *   </Drawer.Content>
- * </Drawer>
- *
  * // Hide close button if needed
  * <DrawerContent showCloseButton={false}>...</DrawerContent>
  * ```

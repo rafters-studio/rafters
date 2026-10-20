@@ -21,14 +21,7 @@
  * <Input id="email" type="email" placeholder="you@example.com" />
  *
  * // Error state
- * <Input variant="error" placeholder="Invalid input" />
- *
- * // Success state
- * <Input variant="success" defaultValue="Valid input" />
- *
- * // Sizes
- * <Input size="sm" placeholder="Small" />
- * <Input size="lg" placeholder="Large" />
+ * <Input invalid placeholder="Invalid input" />
  * ```
  */
 import * as React from 'react';

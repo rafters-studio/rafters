@@ -108,6 +108,14 @@ const dialog = () => document.body.querySelector<HTMLElement>('[data-part="dialo
 beforeEach(() => setViewport(false));
 
 describe('sidebar [astro]', () => {
+  it('contained marks the root so the shared classes bound it to its container (#2657)', async () => {
+    const root = await mount({ contained: true });
+    expect(root.getAttribute('data-contained')).toBe('true');
+    expect(root.className).toBe(sidebarClasses().provider);
+    document.body.innerHTML = '';
+    expect((await mount()).hasAttribute('data-contained')).toBe(false);
+  });
+
   it('SSR default: expanded rail, present and navigable, wired to the panel by real id', async () => {
     await mount();
     expect(panel().getAttribute('data-state')).toBe('expanded');

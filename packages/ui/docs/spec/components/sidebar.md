@@ -197,6 +197,34 @@ MOBILE overlay's enter/exit is the merged `sheet`'s own concern, not the
 sidebar's. Small `duration-150` hover/press acknowledgments on the menu buttons
 are kept (docs/MOTION.md retains interaction feedback), never the layout motion.
 
+## Height: the viewport rail and the contained sidebar (#2657)
+
+Current choice (2026-10-19; revisable): an opt-in prop, because a new
+fill-by-default would break every full-page consumer (under an auto-height body a
+percentage height collapses), and the defect is only that a props-only consumer
+had no way to bound the sidebar.
+
+- **Default, `contained` unset or `false`: the viewport-height rail.** The
+  provider is `min-h-svh`, the desktop panel is a sticky `md:h-svh` rail (the
+  `floating` and `inset` variants `md:h-[calc(100svh-theme(spacing.4))]`), and
+  the inset is `min-h-svh`. Unchanged from before #2657.
+- **`contained` on `SidebarProvider`: bounded by its container.** The provider
+  renders `data-contained="true"` and fills its container (`h-full`, `min-h-0`).
+  The panel (every variant) and the inset read that attribute through the named
+  `sidebar-wrapper` group and take their height from the provider instead of
+  the viewport: the panel drops its viewport height (`h-auto`) and the
+  provider's flex row stretches it to the provider's height, less the
+  `floating`/`inset` margin; the inset drops its `min-h-svh` (`min-h-0`). The header and footer
+  stay inside the container and the content (`flex min-h-0 flex-1 ...
+  overflow-auto`) scrolls when the menu is taller than the room left. In a
+  container with no set height the percentage resolves to auto, so the sidebar
+  grows to its content.
+
+The classes live once in `sidebar.classes.ts`, so React, WC and Astro share
+them. Astro's `sidebar.astro` (the provider root there) takes the same
+`contained` prop; WC markup sets `data-contained="true"` on the root. The mobile
+overlay is a modal and still covers the viewport.
+
 ## Astro composition (#2324, 2026-09-09)
 
 Sidebar's Astro surface was, until #2324, two named slots (`trigger` and the

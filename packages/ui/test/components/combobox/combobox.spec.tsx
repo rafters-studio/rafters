@@ -390,3 +390,44 @@ describe('combobox icons [react]', () => {
     expect(input().value).toBe('React');
   });
 });
+
+describe('combobox seeded value fills the input [react]', () => {
+  it('defaultValue renders the input with its option label on first render', () => {
+    render(
+      <Combobox defaultValue="react">
+        <Combobox.Input placeholder="Select framework..." />
+        <Combobox.Content>
+          <Combobox.Item value="react">React</Combobox.Item>
+          <Combobox.Item value="vue">Vue</Combobox.Item>
+        </Combobox.Content>
+      </Combobox>,
+    );
+    expect(input()).toHaveValue('React');
+  });
+
+  it('a controlled value renders the input with its option label on first render', () => {
+    render(<TestCombobox value="vue" />);
+    expect(input()).toHaveValue('Vue');
+  });
+
+  it('finds the option inside a group', () => {
+    render(
+      <Combobox defaultValue="vue" defaultOpen>
+        <Combobox.Input />
+        <Combobox.Content>
+          <Combobox.Group>
+            <Combobox.Item value="react">React</Combobox.Item>
+            <Combobox.Item value="vue">Vue</Combobox.Item>
+          </Combobox.Group>
+        </Combobox.Content>
+      </Combobox>,
+    );
+    expect(input()).toHaveValue('Vue');
+    expect(option('vue').getAttribute('data-state')).toBe('checked');
+  });
+
+  it('a seeded value that matches no option leaves the input empty', () => {
+    render(<TestCombobox defaultValue="ember" />);
+    expect(input()).toHaveValue('');
+  });
+});

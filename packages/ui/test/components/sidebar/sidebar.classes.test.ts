@@ -8,6 +8,7 @@ import {
   sidebarMenuSubButtonClasses,
   sidebarPanelClasses,
 } from '../../../src/components/sidebar/sidebar.classes';
+import { componentSheet, escapeCandidate } from '../../motion/component-sheet';
 
 const classes = sidebarClasses();
 
@@ -249,4 +250,46 @@ describe('sidebar has no physical direction class but the side classes', () => {
     expect(classes.menuSub).toContain('ps-2.5');
     expect(classes.menuSub).toContain('border-s');
   });
+});
+
+describe('sidebar height: the viewport rail by default, the container under contained (#2657)', () => {
+  const containedCandidates = (set: string): string[] =>
+    set.split(/\s+/).filter((c) => c.includes('[contained=true]'));
+  const panels = (['sidebar', 'floating', 'inset'] as const).map((variant) =>
+    sidebarPanelClasses('left', variant),
+  );
+
+  it('keeps the viewport-height rail unless the provider is contained', () => {
+    expect(classes.provider).toContain('min-h-svh');
+    expect(classes.inset).toContain('min-h-svh');
+    expect(panels[0]).toContain('md:h-svh');
+    expect(panelVariantClasses.floating).toContain('md:h-[calc(100svh-theme(spacing.4))]');
+    expect(panelVariantClasses.inset).toContain('md:h-[calc(100svh-theme(spacing.4))]');
+  });
+
+  it('under contained the provider fills its container and the panel and inset follow it', () => {
+    expect(containedCandidates(classes.provider)).toEqual([
+      'data-[contained=true]:h-full',
+      'data-[contained=true]:min-h-0',
+    ]);
+    expect(containedCandidates(classes.inset)).toEqual([
+      'group-data-[contained=true]/sidebar-wrapper:min-h-0',
+    ]);
+    for (const panel of panels) {
+      expect(containedCandidates(panel)).toEqual([
+        'md:group-data-[contained=true]/sidebar-wrapper:h-auto',
+      ]);
+    }
+    // No svh survives in a contained candidate.
+    for (const set of [classes.provider, classes.inset, ...panels]) {
+      for (const c of containedCandidates(set)) expect(c).not.toContain('svh');
+    }
+  });
+
+  it('every contained candidate compiles to a real rule', async () => {
+    const css = await componentSheet('sidebar');
+    const candidates = [classes.provider, classes.inset, ...panels].flatMap(containedCandidates);
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+  }, 120_000);
 });

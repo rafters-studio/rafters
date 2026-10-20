@@ -28,19 +28,6 @@
  *   </SheetContent>
  * </Sheet>
  *
- * // Or with namespace syntax
- * <Sheet>
- *   <Sheet.Trigger asChild>
- *     <Button variant="outline">Open</Button>
- *   </Sheet.Trigger>
- *   <Sheet.Content side="right">
- *     <Sheet.Header>
- *       <Sheet.Title>Sheet Title</Sheet.Title>
- *     </Sheet.Header>
- *     Sheet content here
- *   </Sheet.Content>
- * </Sheet>
- *
  * // Hide close button if needed
  * <SheetContent showCloseButton={false}>...</SheetContent>
  * ```

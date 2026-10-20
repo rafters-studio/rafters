@@ -27,19 +27,6 @@
  *   </DialogContent>
  * </Dialog>
  *
- * // Or with namespace syntax
- * <Dialog>
- *   <Dialog.Trigger asChild>
- *     <Button>Open Dialog</Button>
- *   </Dialog.Trigger>
- *   <Dialog.Content>
- *     <Dialog.Header>
- *       <Dialog.Title>Dialog Title</Dialog.Title>
- *       <Dialog.Description>Dialog description here.</Dialog.Description>
- *     </Dialog.Header>
- *   </Dialog.Content>
- * </Dialog>
- *
  * // Hide close button if needed
  * <DialogContent showCloseButton={false}>...</DialogContent>
  * ```

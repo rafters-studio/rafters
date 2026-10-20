@@ -194,13 +194,17 @@ export interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 function GridItem({ priority, colSpan, rowSpan, className, ...props }: GridItemProps) {
+  // `grid` makes the item's content fill the item (grid.md, Item content):
+  // the item's own auto track stretches to the area the layout gives it, and
+  // its child stretches to the track, so a Card spans every row the item does.
   const classes = classy(
+    'grid',
     colSpan && gridColSpanClasses[colSpan],
     rowSpan && gridRowSpanClasses[rowSpan],
     className,
   );
 
-  return <div className={classes || undefined} {...gridItemAttrs(priority)} {...props} />;
+  return <div className={classes} {...gridItemAttrs(priority)} {...props} />;
 }
 
 GridRoot.displayName = 'Grid';
