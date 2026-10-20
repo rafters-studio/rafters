@@ -8,12 +8,17 @@
 import { Command } from 'commander';
 import { add } from './commands/add.js';
 import { agents } from './commands/agents.js';
+import { importCss } from './commands/import.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
 import { withErrorHandler } from './utils/ui.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
+
+const collect = (value: string, previous: string[]): string[] => [...previous, value];
+const MAP_HELP =
+  'Map a rafters target to a custom property: a JSON object or target=--property (repeatable)';
 
 program
   .name('rafters')
@@ -34,7 +39,17 @@ program
     '--scripts <codes>',
     'Writing systems to support, as comma-separated ISO 15924 codes (e.g. Latn,Arab,Jpan)',
   )
+  .option('--css-import <path>', 'Import a stylesheet by --map instead of sensing source CSS')
+  .option('--map <entry>', MAP_HELP, collect, [])
   .action(withErrorHandler(init));
+
+program
+  .command('import')
+  .description('Import a stylesheet into an existing project by mapping its custom properties')
+  .requiredOption('--css-import <path>', 'Stylesheet to import')
+  .option('--map <entry>', MAP_HELP, collect, [])
+  .option('--agent', 'Output JSON for machine consumption')
+  .action(withErrorHandler(importCss));
 
 program
   .command('add')
