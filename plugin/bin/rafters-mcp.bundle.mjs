@@ -7037,7 +7037,7 @@ var require_fast_uri = __commonJS({
         query: void 0,
         fragment: void 0
       };
-      let isIP = false;
+      let isIP2 = false;
       if (options.reference === "suffix") {
         if (options.scheme) {
           uri = options.scheme + ":" + uri;
@@ -7062,9 +7062,9 @@ var require_fast_uri = __commonJS({
           if (ipv4result === false) {
             const ipv6result = normalizeIPv6(parsed.host);
             parsed.host = ipv6result.host.toLowerCase();
-            isIP = ipv6result.isIPV6;
+            isIP2 = ipv6result.isIPV6;
           } else {
-            isIP = true;
+            isIP2 = true;
           }
         }
         if (parsed.scheme === void 0 && parsed.userinfo === void 0 && parsed.host === void 0 && parsed.port === void 0 && parsed.query === void 0 && !parsed.path) {
@@ -7081,7 +7081,7 @@ var require_fast_uri = __commonJS({
         }
         const schemeHandler = getSchemeHandler(options.scheme || parsed.scheme);
         if (!options.unicodeSupport && (!schemeHandler || !schemeHandler.unicodeSupport)) {
-          if (parsed.host && (options.domainHost || schemeHandler && schemeHandler.domainHost) && isIP === false && nonSimpleDomain(parsed.host)) {
+          if (parsed.host && (options.domainHost || schemeHandler && schemeHandler.domainHost) && isIP2 === false && nonSimpleDomain(parsed.host)) {
             try {
               parsed.host = URL.domainToASCII(parsed.host.toLowerCase());
             } catch (e) {
@@ -32312,6 +32312,9 @@ async function discoverFromDirs(...directories) {
   return discoverComposites(await adapter());
 }
 
+// src/config/rafters-config.ts
+import { BlockList, isIP } from "net";
+
 // src/registry/types.ts
 var RegistryFileSchema = external_exports.object({
   path: external_exports.string(),
@@ -32420,6 +32423,27 @@ var UnsupportedComponentTargetError = class extends Error {
     this.name = "UnsupportedComponentTargetError";
   }
 };
+var BLOCKED_REGISTRY_RANGES = new BlockList();
+BLOCKED_REGISTRY_RANGES.addSubnet("127.0.0.0", 8, "ipv4");
+BLOCKED_REGISTRY_RANGES.addSubnet("10.0.0.0", 8, "ipv4");
+BLOCKED_REGISTRY_RANGES.addSubnet("172.16.0.0", 12, "ipv4");
+BLOCKED_REGISTRY_RANGES.addSubnet("192.168.0.0", 16, "ipv4");
+BLOCKED_REGISTRY_RANGES.addSubnet("169.254.0.0", 16, "ipv4");
+BLOCKED_REGISTRY_RANGES.addAddress("::1", "ipv6");
+BLOCKED_REGISTRY_RANGES.addSubnet("fe80::", 10, "ipv6");
+function isBlockedRegistryHost(url3) {
+  let hostname3;
+  try {
+    hostname3 = new URL(url3).hostname;
+  } catch {
+    return true;
+  }
+  const host = hostname3.replace(/^\[(.*)\]$/, "$1").replace(/\.$/, "");
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+  const family = isIP(host);
+  if (family === 0) return false;
+  return BLOCKED_REGISTRY_RANGES.check(host, family === 4 ? "ipv4" : "ipv6");
+}
 
 // src/registry/client.ts
 var DEFAULT_REGISTRY_URL = "https://rafters.studio";
@@ -33214,10 +33238,12 @@ var ConfigWiringSchema = external_exports.object({
   // Closed set -- excludes 'unknown', which is a detection sentinel, not a
   // valid target a caller may set.
   framework: external_exports.enum(["next", "vite", "remix", "react-router", "astro", "preact", "vanilla"]),
-  // Must be a valid http(s) URL. (Blocking private/link-local/metadata hosts
-  // is tracked as a follow-up -- see the registryUrl SSRF issue.)
+  // Must be a valid http(s) URL on a public host (no loopback, private,
+  // link-local or metadata address).
   registryUrl: external_exports.string().url().refine((u) => /^https?:$/.test(new URL(u).protocol), {
     message: "registryUrl must be an http(s) URL"
+  }).refine((u) => !isBlockedRegistryHost(u), {
+    message: "registryUrl must not point at a localhost, private, or link-local host"
   }),
   // Closed set derived from the framework (see ComponentTarget in detect.ts).
   componentTarget: external_exports.enum(["react", "astro", "vue", "svelte"]),
