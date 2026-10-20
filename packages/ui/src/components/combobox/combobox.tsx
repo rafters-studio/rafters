@@ -99,6 +99,24 @@ function CheckIcon() {
   );
 }
 
+/** An option's display label: its text, or its value when the children are not text. */
+function itemLabel(children: React.ReactNode, itemValue: string): string {
+  return typeof children === 'string' ? children : itemValue;
+}
+
+/** The label of the Combobox.Item carrying `value`, found anywhere in `children`. */
+function seededLabel(children: React.ReactNode, value: string): string | undefined {
+  if (value === '') return undefined;
+  for (const child of React.Children.toArray(children)) {
+    if (!React.isValidElement<{ value?: unknown; children?: React.ReactNode }>(child)) continue;
+    if (child.type === ComboboxItem && child.props.value === value)
+      return itemLabel(child.props.children, value);
+    const nested = seededLabel(child.props.children, value);
+    if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
 export interface ComboboxProps {
   children: React.ReactNode;
   value?: string;
@@ -122,7 +140,14 @@ export function Combobox({
 }: ComboboxProps) {
   const config: ComboboxConfig = { value, defaultValue, open, defaultOpen, disabled };
 
-  const { memory, dispatch } = React.useMemo(() => createBehavior(combobox, config), []);
+  const { memory, dispatch } = React.useMemo(() => {
+    const behavior = createBehavior(combobox, config);
+    // A seeded value shows its option's label in the input on first render, the
+    // text a select of that option writes. No matching option: input stays empty.
+    const label = seededLabel(children, selectedValue(behavior.memory.get(), config));
+    if (label !== undefined) behavior.memory.patch({ query: label });
+    return behavior;
+  }, []);
   const state = useMemory(memory);
   const effectiveOpen = isOpen(state, config);
   const effectiveValue = selectedValue(state, config);
@@ -426,7 +451,7 @@ export function ComboboxItem({
     classes,
     aria: contextAria,
   } = useComboboxContext('Combobox.Item');
-  const label = typeof children === 'string' ? children : itemValue;
+  const label = itemLabel(children, itemValue);
   const aria = comboboxItemAria(itemValue, state, config);
   const isSelected = selectedValue(state, config) === itemValue;
   // Filter in place (hidden, not unmounted) so the option id stays stable for

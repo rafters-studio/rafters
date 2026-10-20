@@ -369,6 +369,16 @@ export function bindCombobox(root: HTMLElement): () => void {
 
   const { memory, dispatch } = createBehavior(combobox, config);
 
+  // A seeded value shows its option's label in the input, the text a select of
+  // that option writes. Before the first render, which mirrors the query into
+  // the input. A seed matching no option leaves the input empty.
+  const seeded = selectedValue(memory.get(), config);
+  for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
+    if (seeded === '' || item.dataset['value'] !== seeded) continue;
+    memory.patch({ query: optionLabel(item) });
+    break;
+  }
+
   const positionOptions: ComboboxPositionOptions = {
     side: (root.getAttribute('side') as Side | null) ?? undefined,
     align: (root.getAttribute('align') as Align | null) ?? undefined,

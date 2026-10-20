@@ -85,6 +85,11 @@ projection resolve it directly; the navigation actions take the visible
 (filtered) values the binding supplies and clamp against them purely
 (`nextHighlight`).
 
+A value seeded at mount (`defaultValue`, or a controlled `value`) fills the
+input with its option's label, the same text a `select` of that option writes;
+each performance reads the label from its own options. A seed matching no
+option leaves the input empty.
+
 The filter predicate is pure and shared by all three performances:
 `matchesQuery(label, value, query)` matches on label OR value, case-insensitively,
 with an empty query matching everything.
