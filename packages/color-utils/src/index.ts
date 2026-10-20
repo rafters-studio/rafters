@@ -9,6 +9,7 @@ export {
   calculateAPCAContrast,
   calculateWCAGContrast,
   generateAccessibilityMetadata,
+  REFERENCE_STEP_INDEX,
   rebakeAccessibility,
 } from './accessibility.js';
 

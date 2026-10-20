@@ -313,7 +313,7 @@ function groupTokens(tokens: Token[]): GroupedTokens {
 }
 
 /** Every token by name: the owner walk reads tokens outside the semantic group. */
-type TokenIndex = ReadonlyMap<string, Token>;
+export type TokenIndex = ReadonlyMap<string, Token>;
 
 const FAMILY_ROLES: ReadonlySet<string> = new Set(SEMANTIC_FAMILY_ROLES);
 const SCALE_STEPS: ReadonlySet<string> = new Set(SCALE_POSITIONS);
@@ -435,6 +435,28 @@ function rolePalette(role: string, tokens: TokenIndex, seen = new Set<string>())
 /** The palette a stored family resolves to: a role's palette, or the family itself. */
 function familyPalette(family: string, tokens: TokenIndex): string {
   return isRoleRoot(family, tokens) ? rolePalette(family, tokens) : family;
+}
+
+/**
+ * The role a token's stored palette reference renders through, by the rules
+ * above, or null when it renders the palette step as stored (or stores a role
+ * already). A role root (or its `--dark`) goes through the role its scale
+ * hangs off; any other token through its owning role, when that role's scale
+ * resolves to the stored palette. The DTCG export uses this so its edges
+ * match the CSS.
+ */
+export function roleForPaletteReference(name: string, tokens: TokenIndex): string | null {
+  const family = storedFamily(tokens.get(name));
+  if (family === null || isRoleRoot(family, tokens)) return null;
+  const base = withoutDarkSuffix(name);
+  if (isRoleRoot(base, tokens)) {
+    const source = roleScaleSource(base, tokens, new Set([base]));
+    return source.layer === 'rafters' && rolePalette(source.family, tokens) === family
+      ? source.family
+      : null;
+  }
+  const owner = findRoleOwner(name, tokens);
+  return owner !== null && rolePalette(owner, tokens) === family ? owner : null;
 }
 
 /**
@@ -950,7 +972,7 @@ function generateDepthUtilities(depthTokens: Token[]): string {
  * Named Tailwind tracking values -- used when a composite specifies a named
  * letter-spacing key rather than a scale position.
  */
-const NAMED_TRACKING: Record<string, string> = {
+export const NAMED_TRACKING: Record<string, string> = {
   tighter: '-0.05em',
   tight: '-0.025em',
   normal: '0em',

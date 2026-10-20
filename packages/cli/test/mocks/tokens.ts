@@ -94,7 +94,7 @@ export function mockColorScale(baseName: string): Array<{ name: string; token: D
         $type: 'color' as const,
         $value: {
           colorSpace: 'oklch' as const,
-          channels: [Math.max(0, Math.min(1, lightness)), 0.15, 240] as [number, number, number],
+          components: [Math.max(0, Math.min(1, lightness)), 0.15, 240],
           alpha: 1,
         },
       },
