@@ -415,17 +415,19 @@ Then('the output has no rule for {string}', async ({}, className: string) => {
 // Thens: DTCG
 
 Then(
-  'rafters.json has a top-level group {string} with members 50 through 950, each of $type {string}',
-  async ({}, group: string, type: string) => {
-    const dtcg: unknown = JSON.parse(
+  'rafters.json has the group path {string} with members 50 through 950, each of $type {string}',
+  async ({}, path: string, type: string) => {
+    let node: unknown = JSON.parse(
       await readIn(context.fixturePath, '.rafters/output/rafters.json'),
     );
-    if (typeof dtcg !== 'object' || dtcg === null || !(group in dtcg)) {
-      throw new Error(`rafters.json has no group ${group}`);
+    for (const segment of path.split(' > ')) {
+      if (typeof node !== 'object' || node === null || !(segment in node)) {
+        throw new Error(`rafters.json has no group at ${path}`);
+      }
+      node = (node as Record<string, unknown>)[segment];
     }
-    const members: unknown = (dtcg as Record<string, unknown>)[group];
-    if (typeof members !== 'object' || members === null) throw new Error(`${group} is not a group`);
-    const record = members as Record<string, unknown>;
+    if (typeof node !== 'object' || node === null) throw new Error(`${path} is not a group`);
+    const record = node as Record<string, unknown>;
     expect(Object.keys(record).filter((k) => !k.startsWith('$'))).toEqual([...SCALE_POSITIONS]);
     for (const step of SCALE_POSITIONS) {
       expect((record[step] as Record<string, unknown>).$type, step).toBe(type);

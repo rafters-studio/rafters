@@ -75,16 +75,15 @@ Feature: rafters import -- a colour family assigned to no role (#2813)
     Then the output has a rule for every colour utility root the installed Tailwind offers, at every step of "nasty-orange"
     And the output has no rule for "bg-zinc-500"
 
-  # fixme: toDTCG splits every token name on "-" into path segments, so a
-  # hyphenated family lands at nasty.orange, not at a top-level group
-  # "nasty-orange". Held for the caller (#2813 criterion 6).
-  @criterion-6 @fixme
+  # toDTCG splits every token name on "-" into path segments, so a hyphenated
+  # family sits at the same path shape as other hyphenated families.
+  @criterion-6
   Scenario: the added family is a group in the DTCG export
     Given an initialised project whose config enables the dtcg export
     And the stylesheet "brand.css"
     When I run "rafters import --agent --css-import brand.css --map color:nasty-orange=--sky"
     Then the command should succeed
-    And rafters.json has a top-level group "nasty-orange" with members 50 through 950, each of $type "color"
+    And rafters.json has the group path "nasty > orange" with members 50 through 950, each of $type "color"
 
   @criterion-7
   Scenario: rafters import adds a colour to an initialised project
