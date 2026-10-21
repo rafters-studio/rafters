@@ -621,6 +621,16 @@ describe('composites runtime (#2441)', () => {
   });
 });
 
+describe('select ships a typeahead primitive without innerHTML (#2193)', () => {
+  it('serves typeahead as a select dependency with no innerHTML assignment', () => {
+    expect(loadComponent('select')?.primitives).toContain('typeahead');
+    const typeahead = loadPrimitive('typeahead');
+    const source = typeahead?.files.map((f) => f.content).join('\n') ?? '';
+    expect(source).toContain('export function highlightMatch');
+    expect(source).not.toMatch(/\.innerHTML\s*=/);
+  });
+});
+
 /**
  * #2022: the dependency graph is declarative data. Every cross-component import
  * in served source (`../sheet/sheet`, `../grid/grid.classes`, type-only too)
