@@ -621,6 +621,30 @@ function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'cl
 }
 
 /**
+ * Every colour utility root Tailwind offers, as of 4.3.3. An older version
+ * ignores a root it does not know, without error.
+ */
+const TAILWIND_COLOR_ROOTS =
+  'accent,bg,border,border-b,border-be,border-bs,border-e,border-l,border-r,border-s,border-t,border-x,border-y,caret,decoration,divide,drop-shadow,fill,from,inset-ring,inset-shadow,mask-b-from,mask-b-to,mask-conic-from,mask-conic-to,mask-l-from,mask-l-to,mask-linear-from,mask-linear-to,mask-r-from,mask-r-to,mask-radial-from,mask-radial-to,mask-t-from,mask-t-to,mask-x-from,mask-x-to,mask-y-from,mask-y-to,outline,placeholder,ring,ring-offset,scrollbar-thumb,scrollbar-track,shadow,stroke,text,text-shadow,to,via';
+
+/**
+ * One `@source inline` per colour family marked `generateUtilityClass` (a
+ * family added by a `--map color:<name>` entry, #2813), so Tailwind generates
+ * every colour utility for its steps without seeing them in a scanned file.
+ */
+function generateFamilyInlineSources(colorTokens: readonly Token[]): string | null {
+  const lines = colorTokens
+    .filter(
+      (t) => t.generateUtilityClass === true && typeof t.value === 'object' && 'scale' in t.value,
+    )
+    .map(
+      (t) =>
+        `@source inline("{${TAILWIND_COLOR_ROOTS}}-${t.name}-{${SCALE_POSITIONS.join(',')}}");`,
+    );
+  return lines.length > 0 ? lines.join('\n') : null;
+}
+
+/**
  * Generate @theme block with raw color scales and utility tokens
  * Note: Semantic color bridges are NOT included here - they go in @theme inline
  */
@@ -1610,6 +1634,12 @@ export function tokensToTailwind(
   const themeBlock = generateThemeBlock(groups);
   sections.push(themeBlock);
   sections.push('');
+
+  const familySources = generateFamilyInlineSources(groups.color);
+  if (familySources) {
+    sections.push(familySources);
+    sections.push('');
+  }
 
   // @theme inline block for semantic color bridges (reference :root variables)
   const tokensByName = indexTokens(tokens);
