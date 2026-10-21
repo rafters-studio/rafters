@@ -18,7 +18,9 @@ const program = new Command();
 
 const collect = (value: string, previous: string[]): string[] => [...previous, value];
 const MAP_HELP =
-  'Map a rafters target to a custom property: a JSON object or target=--property (repeatable)';
+  'Map a rafters target to a custom property: a JSON object or target=--property (repeatable). ' +
+  'color:<name>=--property adds a colour family assigned to no role, seeded at 500; ' +
+  'color:<name>=--prefix-* adds one from the complete scale --prefix-50 through --prefix-950';
 
 program
   .name('rafters')

@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli): **`--map color:<name>` adds a colour family assigned to no role (#2813).** `rafters init --css-import <path>` and `rafters import` accept `--map color:<name>=--property` (or `"color:<name>": "--property"` in the JSON form): the resolved colour seeds a full family named `<name>` (its 11-step scale, accessibility pairs and colour intelligence), pinned at 500 as typed, and no role points at it. `--map color:<name>=--prefix-*` takes a complete scale instead: `--prefix-50` through `--prefix-950`, each resolved through `var()`, kept exactly as given, with the accessibility pairs and gamut tiers measured over those steps and the rest of the intelligence from the 500 step. A scale missing any step fails before anything is written, naming every missing step. `<name>` is lowercase kebab-case; a name that is one of the 11 family roles fails with a "reserved color name" error. Every other bad entry (an empty name, an undeclared property, an unresolved `var()` chain, a value or scale step that does not parse as a colour) fails before anything is written, naming the entry, and the unknown-target error now lists the `color:<name>` form. rafters.css writes the family as a palette (`--color-<name>-50` through `--color-<name>-950` in `@theme`, no `--rafters-<name>-*` role layer) and adds one `@source inline` naming every Tailwind colour utility at every step (51 roots, the `mask-*` gradients and `scrollbar-*` included; a Tailwind version that lacks a root ignores it), so `bg-<name>-500`, `text-<name>-700` and the rest are generated without any source file using them. About 160 KB uncompressed (6.5 KB gzipped) per added family; default palettes and sensed families stay scan-only. The family token carries `generateUtilityClass: true`, which is how the exporter tells it apart, and it survives `rafters init --rebuild`. `importColorFamily` in `@rafters/design-tokens` also takes a complete scale: `importColorFamily(name, scale)`.
+
 ## 0.4.5
 
 ### Breaking Changes

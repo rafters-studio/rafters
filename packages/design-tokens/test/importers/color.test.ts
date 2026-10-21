@@ -94,6 +94,35 @@ describe('importColorFamily', () => {
     }
   });
 
+  it('keeps a complete scale as given, measured per step, with intelligence from its 500 (#2813)', () => {
+    const scale: OKLCH[] = SCALE_POSITIONS.map((_, i) => ({
+      l: 0.97 - i * 0.08,
+      c: 0.02 + i * 0.01,
+      h: 140,
+      alpha: 1,
+    }));
+    const [family, ...steps] = importColorFamily('moss', scale);
+    if (!family || typeof family.value === 'string' || 'family' in family.value) {
+      throw new Error('expected ColorValue family token');
+    }
+    const imported = family.value;
+    expect(imported.name).toBe('moss');
+    expect(imported.scale).toEqual(scale);
+    expect(imported.gamut).toEqual(scale.map((step) => getGamutTier(step)));
+    expect(imported.accessibility).toEqual(rebakeAccessibility(imported).accessibility);
+    const fromSeed = importColorFamily('moss', '500', scale[5] ?? SEED)[0]?.value;
+    if (typeof fromSeed !== 'object' || 'family' in fromSeed)
+      throw new Error('expected ColorValue');
+    expect(imported.harmonies).toEqual(fromSeed.harmonies);
+    expect(imported.analysis).toEqual(fromSeed.analysis);
+    expect(imported.seedAdjusted).toBeUndefined();
+    expect(steps.map((t) => t.name)).toEqual(SCALE_POSITIONS.map((p) => `moss-${p}`));
+  });
+
+  it('throws on a scale without 11 steps', () => {
+    expect(() => importColorFamily('moss', [SEED, SEED])).toThrow(/11 steps, got 2/);
+  });
+
   it('throws on an unknown seed position', () => {
     expect(() => importColorFamily('empire', '550', SEED)).toThrow(/unknown scale position "550"/);
   });
