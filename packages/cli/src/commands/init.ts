@@ -882,6 +882,16 @@ export async function init(options: InitOptions): Promise<void> {
     hasShadcn: !!shadcn,
   });
 
+  // Refuse before any prompt or write when tailwindcss is missing (#2804)
+  if (tailwindVersion === null) {
+    const guideFramework = options.framework
+      ? await resolveFramework(detectedFramework, options.framework, isAgentMode)
+      : detectedFramework;
+    throw new Error(
+      `Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (${FRAMEWORK_SPECS[guideFramework].tailwindGuide}), then run rafters init again.`,
+    );
+  }
+
   // Resolve final framework: --framework flag > detected > interactive prompt > unknown
   const framework = await resolveFramework(detectedFramework, options.framework, isAgentMode);
 
