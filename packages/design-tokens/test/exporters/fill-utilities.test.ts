@@ -126,9 +126,9 @@ describe('bg-fill-* utilities through the compiled and documentation exports', (
 
   it('compiles a fill with arbitrary values into the standalone sheet', async () => {
     expect(await registryToCompiled(registry, { minify: false })).toContain('.bg-fill-edge');
-  }, 60_000);
+  });
 
   it('compiles a fill with arbitrary values into the documentation sheet', async () => {
     expect(await registryToDocumentation(registry)).toContain('bg-fill-edge');
-  }, 60_000);
+  });
 });
