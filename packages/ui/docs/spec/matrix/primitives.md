@@ -28,7 +28,6 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `memory` | state | pure | Light reactive state cell over a nanostores atom: get/set/patch/subscribe/select. | `createMemory` |
 | `selection-group` | state | pure | Active-item / expanded-set state behind tabs, accordion, navigation-menu, menubar. | `createSelectionGroup` |
 | `fill-resolver` | tokens | pure | Resolves a fill signature to namespaced classes + Tailwind utilities. | `resolveFillName` |
-| `resolve-tokens` | tokens | pure | DTCG token resolver: token names to CSS property values (WC shadow styling). | `MAX_REFERENCE_DEPTH`, `TokenResolver`, `createResolver` |
 | `token-sheet` | tokens | pure | Build-time extractor reducing compiled CSS to the custom-property subset WC needs. | `extractTokenSheet`, `loadTokenSheet` |
 | `types` | types | pure | Shared primitive types (CleanupFunction, Orientation, handlers). |  |
 | `rafters-element` | wc | pure | Base class for Rafters Web Components: token-aware scoped shadow DOM. | `RaftersElement` |

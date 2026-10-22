@@ -181,8 +181,10 @@ const secondLayer = (reg: TokenRegistry, name: string): string =>
 describe('shadow rungs: every part', () => {
   it('references the spacing base from --shadow-base-unit', () => {
     const css = registryToTailwind(new TokenRegistry(generateBaseSystem().allTokens, PLUGINS));
-    expect(css).toContain('--shadow-base-unit: var(--spacing-base);');
-    expect(css).toContain('--spacing-base: 0.25rem;');
+    expect(css).toContain('--rafters-shadow-base-unit: var(--rafters-spacing-base);');
+    expect(css).toContain('--rafters-spacing-base: 0.25rem;');
+    // shadow-base-unit is not a shadow: no utility reads it (#2825).
+    expect(css).not.toContain('--shadow-base-unit:');
   });
 
   it('keeps every rung and every part at its value today', () => {

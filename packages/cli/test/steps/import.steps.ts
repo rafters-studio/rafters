@@ -202,15 +202,34 @@ When(
   },
 );
 
-When('rafters.css is built by Tailwind with no scanned sources', async () => {
+/**
+ * Build the project's rafters.css with Tailwind and no scanned sources, plus
+ * any `@source` lines given (#2825). The output is what `builtCss` returns.
+ */
+export async function buildRaftersCss(sources: readonly string[] = []): Promise<string> {
   const require = createRequire(import.meta.url);
   const cli = join(dirname(require.resolve('@tailwindcss/cli/package.json')), 'dist/index.mjs');
   const input = join(context.fixturePath, 'build-input.css');
   const output = join(context.fixturePath, 'build-output.css');
-  await writeFile(input, `@import "tailwindcss" source(none);\n@import "./${RAFTERS_CSS}";\n`);
+  await writeFile(
+    input,
+    [`@import "tailwindcss" source(none);`, `@import "./${RAFTERS_CSS}";`, ...sources, ''].join(
+      '\n',
+    ),
+  );
   const result = await run([cli, '-i', input, '-o', output], context.fixturePath);
   expect(result.code, result.stderr).toBe(0);
   local.built = await readFile(output, 'utf8');
+  return local.built;
+}
+
+/** The output of the last Tailwind build of rafters.css. */
+export function builtCss(): string {
+  return local.built;
+}
+
+When('rafters.css is built by Tailwind with no scanned sources', async () => {
+  await buildRaftersCss();
 });
 
 // Thens: tokens

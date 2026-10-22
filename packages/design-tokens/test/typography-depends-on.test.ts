@@ -19,13 +19,18 @@ const EXPECTED_VALUES: Record<string, string> = {
   'line-height-7xl': '1.1',
   'line-height-8xl': '1.1',
   'line-height-9xl': '1.1',
+  // Named keys (#2825): leading-none, leading-7 and leading-relaxed at the
+  // values they compiled to before the registry carried them.
+  'line-height-none': '1',
+  'line-height-7': 'var(--rafters-spacing-7)',
+  'line-height-relaxed': '1.625',
 };
 
 describe('line-height dependencies', () => {
   const tokens = generateBaseSystem().allTokens.filter((t) => t.name.startsWith('line-height-'));
 
   it('declares no font-size-* dependency', () => {
-    expect(tokens.length).toBe(13);
+    expect(tokens.length).toBe(16);
     for (const t of tokens) {
       expect((t.dependsOn ?? []).some((d) => d.startsWith('font-size-'))).toBe(false);
     }
