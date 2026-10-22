@@ -1,4 +1,4 @@
-import { type Token, TokenSchema } from '@rafters/shared';
+import { FILL_NAME_EXCLUDES, FillValueSchema, type Token, TokenSchema } from '@rafters/shared';
 import type { z } from 'zod';
 import {
   CircularDependencyError,
@@ -37,6 +37,8 @@ export class TokenRegistry {
       this.metadata.set(result.data.name, result.data);
       parsed.push(result.data);
     }
+    const colours = colourNames(parsed);
+    for (const t of parsed) checkName(t, colours);
     // Pass 1: leaves (no binding) plus any token carrying a userOverride.
     // An overridden token is seeded with its on-disk value AND its binding
     // metadata -- the binding stays as a re-derivation hook for future
@@ -74,6 +76,7 @@ export class TokenRegistry {
       throw new TokenParseError(token, result.error.issues);
     }
     const t = result.data;
+    checkName(t, colourNames([...this.metadata.values(), t]));
     this.metadata.set(t.name, t);
     const override = toNodeOverride(t.userOverride);
     if (t.binding && !override) {
@@ -165,6 +168,59 @@ export class TokenParseError extends Error {
         : '<unnamed>';
     super(`Token "${name}" failed TokenSchema validation: ${detail}`);
     this.name = 'TokenParseError';
+  }
+}
+
+class TokenNameError extends Error {
+  constructor(
+    public readonly tokenName: string,
+    reason: string,
+  ) {
+    super(`Token "${tokenName}" is rejected: ${reason}`);
+    this.name = 'TokenNameError';
+  }
+}
+
+const FILL_NAMESPACE = 'fill';
+const COLOUR_NAMESPACE = 'color';
+// Reserved for the bg-fill-* and bg-surface-* utilities (FR-RAF-FILL-001).
+const RESERVED_COLOUR_PREFIXES = ['fill-', 'surface-'] as const;
+const KEBAB_CASE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const EXCLUDED_FILL_NAMES: ReadonlySet<string> = new Set(FILL_NAME_EXCLUDES);
+
+function colourNames(tokens: Iterable<Token>): ReadonlySet<string> {
+  const names = new Set<string>();
+  for (const t of tokens) if (t.namespace === COLOUR_NAMESPACE) names.add(t.name);
+  return names;
+}
+
+/**
+ * The naming rules of FR-RAF-FILL-001: a colour never takes a reserved
+ * prefix; a fill is a valid recipe under a kebab-case name that no colour
+ * and no excluded bg-* name already holds.
+ */
+function checkName(t: Token, colours: ReadonlySet<string>): void {
+  if (t.namespace === COLOUR_NAMESPACE) {
+    const prefix = RESERVED_COLOUR_PREFIXES.find((p) => t.name.startsWith(p));
+    if (prefix) throw new TokenNameError(t.name, `a colour name cannot begin with "${prefix}"`);
+    return;
+  }
+  if (t.namespace !== FILL_NAMESPACE) return;
+  const recipe = FillValueSchema.safeParse(t.value);
+  if (!recipe.success) {
+    throw new TokenParseError(
+      t,
+      recipe.error.issues.map((issue) => ({ ...issue, path: ['value', ...issue.path] })),
+    );
+  }
+  if (!KEBAB_CASE.test(t.name)) {
+    throw new TokenNameError(t.name, 'a fill name must be lowercase kebab-case');
+  }
+  if (colours.has(t.name)) {
+    throw new TokenNameError(t.name, `a fill name cannot equal the colour "${t.name}"`);
+  }
+  if (EXCLUDED_FILL_NAMES.has(t.name)) {
+    throw new TokenNameError(t.name, `a fill name cannot equal the excluded name "bg-${t.name}"`);
   }
 }
 

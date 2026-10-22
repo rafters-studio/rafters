@@ -426,6 +426,8 @@ class DTCGBuilder {
       const family = roleForPaletteReference(name, this.tokens) ?? value.family;
       return { kind: 'token', type: 'color', value: new Ref(`${family}-${value.position}`) };
     }
+    // A fill never reaches here (toDTCG skips the namespace until #2828).
+    if (typeof value !== 'string') return { kind: 'unrepresented', reason: 'fill recipe' };
     return this.classifyString(token, value.trim());
   }
 
@@ -940,5 +942,6 @@ export interface ToDTCGOptions {
  */
 export function toDTCG(tokens: Token[], options: ToDTCGOptions = {}): DTCGFile {
   const { includeExtensions = true } = options;
-  return new DTCGBuilder(tokens).build({ includeExtensions });
+  // Fills reach no export until #2828 teaches the exporters about them.
+  return new DTCGBuilder(tokens.filter((t) => t.namespace !== 'fill')).build({ includeExtensions });
 }

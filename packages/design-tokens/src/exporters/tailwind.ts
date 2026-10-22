@@ -1729,6 +1729,8 @@ export function tokensToTailwind(
   typographyOverrides: TypographyElementOverride[] = [],
 ): string {
   const { includeImport = true } = options;
+  // Fills reach no export until #2828 teaches the exporters about them.
+  tokens = tokens.filter((t) => t.namespace !== 'fill');
 
   if (tokens.length === 0) {
     throw new Error('Registry is empty');
@@ -1958,7 +1960,8 @@ export function registryToTailwindStatic(
   registry: TokenRegistry,
   options?: Pick<TailwindExportOptions, 'fontImports'>,
 ): string {
-  const tokens = [...registry.list()];
+  // Fills reach no export until #2828 teaches the exporters about them.
+  const tokens = registry.list().filter((t) => t.namespace !== 'fill');
 
   if (tokens.length === 0) {
     throw new Error('Registry is empty');

@@ -217,6 +217,8 @@ export function getToken<N extends TokenNamespace>(
  */
 export function tokensToTypeScript(tokens: Token[], options: TypeScriptExportOptions = {}): string {
   const { includeJSDoc = false } = options;
+  // Fills reach no export until #2828 teaches the exporters about them.
+  tokens = tokens.filter((t) => t.namespace !== 'fill');
 
   // Handle empty registry
   if (tokens.length === 0) {
