@@ -248,7 +248,7 @@ describe('rafters init -- writing systems and the Noto stack (#2742)', () => {
 
     const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
     expect(css).toContain(
-      "--font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
+      "--rafters-font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
     );
   }, 60000);
 
@@ -310,7 +310,7 @@ describe('rafters init -- writing systems and the Noto stack (#2742)', () => {
       expect(fontSans()?.value).toBe(stack);
       expect(fontSans()?.userOverride ?? null).toBeNull();
       const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
-      expect(css).toContain(`--font-sans: ${stack}`);
+      expect(css).toContain(`--rafters-font-sans: ${stack}`);
       expect((await readFonts()).imports).toEqual([
         googleUrl,
         '@fontsource-variable/noto-sans',
@@ -440,7 +440,7 @@ describe('rafters init -- writing systems and the Noto stack (#2742)', () => {
       expect(fonts.imports).toEqual([]);
       expect(fontSans()?.value).toBe('sans-serif');
       const css = await readFile(join(projectDir, '.rafters/output/rafters.css'), 'utf-8');
-      expect(css).toContain('--font-sans: sans-serif');
+      expect(css).toContain('--rafters-font-sans: sans-serif');
     }, 60000);
 
     it('interactive, no: exits with an error and writes nothing', async () => {
