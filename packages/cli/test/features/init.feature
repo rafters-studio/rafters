@@ -237,7 +237,7 @@ Feature: rafters init command
     Then each probe utility's declaration resolves through var(--rafters-<the row's token>) to the row's probe value
     And the probe utilities include "shadow" and "shadow-md"
 
-  @criterion-16
+  @criterion-16 @slow
   Scenario: every typography row reaches its utilities through --rafters- and follows its token
     Given a project with no .rafters directory
     And I have run "rafters init --agent"
