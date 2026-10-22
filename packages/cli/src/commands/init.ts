@@ -594,10 +594,10 @@ async function regenerateFromExisting(
       : await installScriptFonts(storedScripts, cwd, isAgentMode);
   const scriptStack = installedScripts === undefined ? undefined : fontStackFor(installedScripts);
 
-  // Deleted token namespaces (#1638 S2 elevation, #1637 fill): drop the
-  // stale files so their dead tokens stop reloading on every rebuild.
+  // Deleted token namespace (#1638 S2 elevation): drop the stale file so its
+  // dead tokens stop reloading on every rebuild. Fills are designer-authored
+  // tokens again (FR-RAF-FILL-001) and survive the rebuild.
   await rm(join(paths.tokens, 'elevation.rafters.json'), { force: true });
-  await rm(join(paths.tokens, 'fill.rafters.json'), { force: true });
 
   // Motion is system-generated end to end (#2208): same treatment, except the
   // namespace is still alive, so it is rewritten rather than dropped. Only for
