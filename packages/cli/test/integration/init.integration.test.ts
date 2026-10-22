@@ -206,7 +206,7 @@ describe('rafters init - fresh initialization', () => {
 
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
     expect(css).toContain(
-      "--font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
+      "--rafters-font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
     );
   });
 });
