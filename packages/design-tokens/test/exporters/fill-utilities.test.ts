@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
 import {
   generateBaseSystem,
   REGISTRY_PLUGINS,
+  registryToCompiled,
+  registryToDocumentation,
   registryToTailwindStatic,
   TokenRegistry,
 } from '../../src/index.js';
@@ -107,4 +109,26 @@ describe('bg-fill-* utilities', () => {
     expect(css).toContain('@source inline("bg-fill-glass");');
     expect(css).not.toContain('[object Object]');
   });
+});
+
+describe('bg-fill-* utilities through the compiled and documentation exports', () => {
+  const registry = new TokenRegistry(
+    [
+      ...BASE,
+      fill('edge', {
+        foreground: FG,
+        gradient: { type: 'conic', angle: -45, from: { color: FG, position: 12.5 } },
+        mask: { type: 'b', from: 12.5 },
+      }),
+    ],
+    REGISTRY_PLUGINS,
+  );
+
+  it('compiles a fill with arbitrary values into the standalone sheet', async () => {
+    expect(await registryToCompiled(registry, { minify: false })).toContain('.bg-fill-edge');
+  }, 60_000);
+
+  it('compiles a fill with arbitrary values into the documentation sheet', async () => {
+    expect(await registryToDocumentation(registry)).toContain('bg-fill-edge');
+  }, 60_000);
 });

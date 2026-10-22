@@ -427,7 +427,12 @@ When(
 When('the theme guard runs', async () => {
   await rebuild();
   const sheet = parseCompiled(await buildRaftersCss());
-  local.failures = probeRow({ ...fillRow(), utility: 'bg-paint-{1}' }, sheet);
+  // One break in what the row writes, one in the value its probe must reach.
+  const renamed = probeRow({ ...fillRow(), utility: 'bg-paint-{1}' }, sheet);
+  const revalued = probeRow({ ...fillRow(), probeValue: 'oklch(0.99 0.2 140)' }, sheet);
+  expect(renamed.length, 'renamed row').toBeGreaterThan(0);
+  expect(revalued.length, 'revalued row').toBeGreaterThan(0);
+  local.failures = [...renamed, ...revalued];
 });
 
 // Thens
