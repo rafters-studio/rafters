@@ -299,7 +299,7 @@ const menuSkeletonClasses = 'flex h-8 items-center gap-2 rounded-md px-2';
 const menuSkeletonIconClasses =
   'size-4 shrink-0 animate-pulse-shimmer rounded-md bg-sidebar-accent';
 const menuSkeletonTextClasses =
-  'h-4 max-w-[--skeleton-width] flex-1 animate-pulse-shimmer rounded-md bg-sidebar-accent';
+  'h-4 max-w-(--skeleton-width) flex-1 animate-pulse-shimmer rounded-md bg-sidebar-accent';
 
 const menuSubClasses =
   'ms-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-s border-sidebar-border py-0.5 ps-2.5 ' +

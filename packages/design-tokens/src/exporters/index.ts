@@ -15,6 +15,8 @@ export {
   registryToTailwind,
   registryToTailwindStatic,
   type TailwindExportOptions,
+  THEME_MAPPING,
+  type ThemeMappingRow,
   tokensToTailwind,
 } from './tailwind.js';
 export {

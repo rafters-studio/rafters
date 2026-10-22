@@ -30,8 +30,8 @@ describe('letter-spacing-widest', () => {
 
   it('is referenced by the shortcut CSS and resolves to 0.1em as before', () => {
     const css = tokensToTailwind(allTokens);
-    expect(css).toContain('--text-shortcut--letter-spacing: var(--letter-spacing-widest);');
-    expect(css).toContain('--letter-spacing-widest: 0.1em;');
+    expect(css).toContain('--text-shortcut--letter-spacing: var(--rafters-letter-spacing-widest);');
+    expect(css).toContain('--rafters-letter-spacing-widest: 0.1em;');
   });
 
   it('is referenced by the shortcut DTCG letterSpacing, not a literal', () => {

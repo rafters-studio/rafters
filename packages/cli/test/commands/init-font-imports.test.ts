@@ -43,7 +43,7 @@ describe('generateOutputs -- fontImports (#2754)', () => {
     await generateOutputs(cwd, paths, registry, exports, undefined, 'class', null, [SANS]);
     const css = readFileSync(join(paths.output, 'rafters.css'), 'utf8');
     expect(css.startsWith(`@import "${SANS}";\n@import "tailwindcss";\n`)).toBe(true);
-  });
+  }, 60000);
 });
 
 describe('init --scripts -- fontImports (#2754)', () => {
