@@ -240,6 +240,9 @@ export function probeRow(row: ThemeMappingRow, sheet: CompiledSheet): string[] {
     const fail = (why: string): void => {
       failures.push(`${rowLabel(row)}: ${probe.utility} ${why}`);
     };
+    if (row.utility !== undefined && !keyPattern(row.utility).test(probe.utility)) {
+      fail(`is not the row's utility ${row.utility}`);
+    }
     const found = declarationOf(sheet, probe.utility, probe.property);
     if (!found) {
       fail(`has no ${probe.property} declaration`);
