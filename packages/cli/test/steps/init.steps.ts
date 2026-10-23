@@ -73,6 +73,21 @@ Given('the project has no CSS file', async () => {
   context.before = await snapshot(context.fixturePath);
 });
 
+Given("tailwindcss is not in the project's package.json", async () => {
+  const file = join(context.fixturePath, 'package.json');
+  const parsed: unknown = JSON.parse(await readFile(file, 'utf8'));
+  if (typeof parsed !== 'object' || parsed === null)
+    throw new Error('package.json is not an object');
+  const pkg = parsed as Record<string, unknown>;
+  for (const field of ['dependencies', 'devDependencies']) {
+    const deps = pkg[field];
+    if (typeof deps === 'object' && deps !== null)
+      delete (deps as Record<string, unknown>).tailwindcss;
+  }
+  await writeFile(file, `${JSON.stringify(pkg, null, 2)}\n`);
+  context.before = await snapshot(context.fixturePath);
+});
+
 Given('{string} already exists', async ({}, file: string) => {
   await writeFile(join(context.fixturePath, file), '/* kept by the user */\n');
   context.before = await snapshot(context.fixturePath);
@@ -232,6 +247,10 @@ Then(
 Then('the error names {string} and says what to do with it', async ({}, file: string) => {
   expect(context.commandResult?.stderr).toContain(file);
   expect(context.commandResult?.stderr).toContain(`Rename or delete ${file}`);
+});
+
+Then("the project's files are byte for byte what they were before the command", async () => {
+  expect(await snapshot(context.fixturePath)).toEqual(context.before);
 });
 
 Then('no {string} directory exists', async ({}, dir: string) => {

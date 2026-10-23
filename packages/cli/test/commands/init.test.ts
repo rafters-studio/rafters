@@ -22,6 +22,7 @@ import {
 vi.mock('@inquirer/prompts', () => ({
   checkbox: vi.fn(),
   confirm: vi.fn(),
+  select: vi.fn(),
 }));
 
 vi.mock('../../src/utils/update-dependencies.js', () => ({
@@ -511,4 +512,41 @@ describe('rafters init -- preact (#2744)', () => {
     expect(notes[0]).toContain('preact/compat');
     expect(notes[0]).toContain('@preact/preset-vite');
   }, 60000);
+});
+
+describe('rafters init -- Tailwind v4 required (#2804)', () => {
+  let projectDir = '';
+  let originalCwd = '';
+  let savedStdinTTY: boolean | undefined;
+  let savedStdoutTTY: boolean | undefined;
+
+  beforeEach(async () => {
+    originalCwd = process.cwd();
+    savedStdinTTY = process.stdin.isTTY;
+    savedStdoutTTY = process.stdout.isTTY;
+    projectDir = await createFixture('empty-project');
+    process.chdir(projectDir);
+    vi.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    process.stdin.isTTY = savedStdinTTY as boolean;
+    process.stdout.isTTY = savedStdoutTTY as boolean;
+    process.chdir(originalCwd);
+    await cleanupFixture(projectDir);
+    projectDir = '';
+  });
+
+  it('init asks no question before it refuses', async () => {
+    process.stdin.isTTY = true;
+    process.stdout.isTTY = true;
+    const prompts = await import('@inquirer/prompts');
+
+    await expect(init({})).rejects.toThrow(
+      "Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (https://tailwindcss.com/docs/installation), then run rafters init again.",
+    );
+    expect(vi.mocked(prompts.select)).not.toHaveBeenCalled();
+    expect(vi.mocked(prompts.confirm)).not.toHaveBeenCalled();
+    expect(vi.mocked(prompts.checkbox)).not.toHaveBeenCalled();
+  });
 });

@@ -95,8 +95,8 @@ Feature: rafters init command
     And with tailwindcss v4 installed in the project, "<entry>" compiles
     Examples:
       | fixture          | entry               |
-      | empty-project    | src/index.css       |
-      | nextjs-no-shadcn | src/app/globals.css |
+      | vanilla-no-shadcn | src/index.css       |
+      | nextjs-no-shadcn  | src/app/globals.css |
 
   @criterion-4
   Scenario: init reports the entry file it replaced
@@ -106,7 +106,8 @@ Feature: rafters init command
 
   @criterion-4
   Scenario: init reports the entry file it created
-    Given a "empty-project" project
+    Given a "vanilla-no-shadcn" project
+    And the project has no CSS file
     When I run "rafters init --agent"
     Then the output has exactly one event naming "src/index.css" as created
 
@@ -203,6 +204,75 @@ Feature: rafters init command
     When I run "rafters init --agent"
     Then the command should succeed
     And "src/layouts/Layout.astro" parses with Astro's compiler and imports "../styles/global.css" in its frontmatter
+
+  # Tailwind v4 required (#2804)
+
+  @criterion-2804-1
+  Scenario Outline: init refuses a project without tailwindcss and names the install guide
+    Given a "<fixture>" project
+    And tailwindcss is not in the project's package.json
+    When I run "<command>"
+    Then the command should fail
+    And the error should contain "Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (<guide>), then run rafters init again."
+    And no ".rafters" directory exists
+    And no "node_modules" directory exists
+    And the project's files are byte for byte what they were before the command
+    Examples:
+      | fixture                | command                                | guide                                                                   |
+      | empty-project          | rafters init --agent                   | https://tailwindcss.com/docs/installation                               |
+      | nextjs-no-shadcn       | rafters init --agent                   | https://tailwindcss.com/docs/installation/framework-guides/nextjs       |
+      | vite-no-shadcn         | rafters init --agent                   | https://tailwindcss.com/docs/installation/using-vite                    |
+      | react-router-shadcn-v4 | rafters init --agent                   | https://tailwindcss.com/docs/installation/framework-guides/react-router |
+      | astro-shadcn-v4        | rafters init --agent                   | https://tailwindcss.com/docs/installation/framework-guides/astro        |
+      | remix-shadcn-v4        | rafters init --agent                   | https://tailwindcss.com/docs/installation                               |
+      | vanilla-no-shadcn      | rafters init --agent                   | https://tailwindcss.com/docs/installation                               |
+      | empty-project          | rafters init --agent --framework astro | https://tailwindcss.com/docs/installation/framework-guides/astro        |
+
+  @criterion-2804-2
+  Scenario: interactive init refuses with the same message and writes nothing
+    Given a "empty-project" project
+    When I run "rafters init" interactively and accept the defaults
+    Then the command should fail
+    And the error should contain "Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (https://tailwindcss.com/docs/installation), then run rafters init again."
+    And no ".rafters" directory exists
+    And the project's files are byte for byte what they were before the command
+
+  @criterion-2804-4
+  Scenario Outline: a rebuild or a reset on a project without tailwindcss refuses and leaves the tokens alone
+    Given a "nextjs-shadcn-v4" project
+    And I have run "rafters init --agent"
+    And tailwindcss is not in the project's package.json
+    When I run "<command>"
+    Then the command should fail
+    And the error should contain "Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (https://tailwindcss.com/docs/installation/framework-guides/nextjs), then run rafters init again."
+    And every file in ".rafters/tokens" is byte for byte what init left
+    And the project's files are byte for byte what they were before the command
+    Examples:
+      | command                        |
+      | rafters init --rebuild --agent |
+      | rafters init --reset --agent   |
+
+  @criterion-2804-5
+  Scenario: init still refuses Tailwind v3 with its own message
+    Given a "tailwind-v3-error" project
+    When I run "rafters init --agent"
+    Then the command should fail
+    And the error should contain "Tailwind v3 detected. Rafters requires Tailwind v4."
+    And no ".rafters" directory exists
+    And the project's files are byte for byte what they were before the command
+
+  @criterion-2804-6
+  Scenario Outline: a project with tailwindcss v4 inits as it does today
+    Given a "<fixture>" project
+    When I run "rafters init --agent"
+    Then the command should succeed
+    And the rafters config should exist
+    And "<entry>" imports ".rafters/output/rafters.css" by its relative path
+    Examples:
+      | fixture          | entry                 |
+      | nextjs-no-shadcn | src/app/globals.css   |
+      | vite-no-shadcn   | src/index.css         |
+      | astro-shadcn-v4  | src/styles/global.css |
 
   # Every token reaches its Tailwind utility through --rafters- (#2825)
 
