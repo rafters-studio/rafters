@@ -59,7 +59,7 @@ Next.js, Vite, Remix, React Router, Astro, vanilla.
 | Standalone CSS | `rafters.standalone.css` | No | Pre-built, no Tailwind required |
 | Documentation CSS | `rafters.documentation.css` | No | Complete utility surface for docs and previews |
 
-Requires Tailwind v4. Tailwind v3 projects are rejected.
+Requires Tailwind v4. `rafters init` refuses a project with no `tailwindcss` dependency, writing nothing and naming the Tailwind v4 install guide for its framework; Tailwind v3 projects are rejected too. Init does not install Tailwind for you.
 
 ## Other commands
 
