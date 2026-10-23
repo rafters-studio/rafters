@@ -51,6 +51,8 @@ every client calls it.
 
 ```ts
 interface HoverCardConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;                    // controlled
   defaultOpen?: boolean;             // uncontrolled seed
   openDelay?: number;                // hover-open delay, default 700ms
@@ -74,6 +76,18 @@ consumer.
 | --- | --- |
 | open | the card is shown (content present and unhidden, `data-state="open"`) |
 | delayed | the transient scheduling phase: intent has been registered but the `hover-delay` open timer has not yet fired. Owned by the `hover-delay` primitive, not the reducer — it never reaches `data-state` |
+
+### Fill and surface
+
+`HoverCardContent` takes `fill` and `surface`, which change the surface of its panel
+(`hover-card.classes.ts:117`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

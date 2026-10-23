@@ -41,6 +41,7 @@ real transition.
 
 ```ts
 type AlertDialogConfig = DisclosableConfig; // { open?; defaultOpen? } -- no modal
+// plus fill?: string (one bg-fill-* token) and surface?: string (a surface name), see Fill and surface
 interface AlertDialogState { open: boolean } // intrinsic only
 type AlertDialogActions = { open: undefined; close: undefined };
 ```
@@ -48,6 +49,18 @@ type AlertDialogActions = { open: undefined; close: undefined };
 No `modal` prop: an alert dialog has no non-modal mode. No `toggle` action: the
 trigger dispatches `open` or `close` computed from the effective value, so
 intrinsic state can never drift from a controlled consumer.
+
+### Fill and surface
+
+`AlertDialogContent` takes `fill` and `surface`, which change the surface of its panel
+(`alert-dialog.classes.ts:98`):
+
+- The base surface is `bg-surface-card`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

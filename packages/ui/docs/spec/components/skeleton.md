@@ -37,14 +37,29 @@ static whose projection is non-empty.
 ## Config, state, actions
 
 ```ts
-type SkeletonConfig = Record<never, never>;  // nothing to configure
+interface SkeletonConfig {
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
+}
 type SkeletonState = Record<never, never>;   // nothing to remember
 type SkeletonActions = Record<never, never>; // nothing to dispatch
 ```
 
-Skeleton takes no config props. Consumers size and shape the placeholder
+Skeleton's only config props are `fill` and `surface` (below). Consumers size and shape the placeholder
 through `className` (`h-4 w-48`, `h-12 w-12 rounded-full`, ...), the shadcn
 drop-in surface. Multiple skeletons compose a list or card placeholder.
+
+### Fill and surface
+
+`Skeleton` takes `fill` and `surface`, which change the surface of its root
+(`skeleton.classes.ts:55`):
+
+- The base surface is `bg-muted`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 
@@ -80,7 +95,7 @@ still loading.
 | `animate-pulse` shimmer | contract, then migrated onto `animate-skeleton-root-waiting` once #2154 gave the cell a utility to consume (#2155) |
 | `motion-reduce:animate-none` reduced-motion opt-out | contract at port time, REMOVED by #2155: period-kind cells are exempt from the reduced-motion zeroing law by design, so the loop never stops |
 | `rounded-md` + `bg-muted` default surface | contract (verbatim decoration; `bg-muted` is a semantic token, not a raw colour utility) |
-| `variant` prop (default/primary/secondary/destructive/success/warning/info/muted/accent -> `bg-*-subtle`) | dropped (a background channel; the port rule is "fill, not background", and superseded by `className` and the `fill` prop (one `bg-fill-*` token), and shadcn's Skeleton has no variant) |
+| `variant` prop (default/primary/secondary/destructive/success/warning/info/muted/accent -> `bg-*-subtle`) | dropped -- a background channel; the surface changes through `fill` (one `bg-fill-*` token) or `surface` (a surface name), and shadcn's Skeleton has no variant |
 | `aria-hidden="true"` on the placeholder | contract, promoted to the score so React and Astro both project it (closes the oracle's cross-framework drift) |
 | `{...props}` / `{...attrs}` spread on the root | framework affordance (React/Astro pass consumer attributes through) |
 | `className` sizing surface (`h-4 w-48`, `rounded-full`) | contract (the shadcn drop-in surface; the component owns its base classes, the consumer sizes and shapes) |

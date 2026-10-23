@@ -57,9 +57,15 @@ the resolver.
   non-size override leaves the CQ default surviving. This dodges the Tailwind
   alphabetical-cascade trap (`text-accent` would otherwise lose to
   `text-foreground`).
-- **`color` is a fill signature** (#1637), not a raw utility: a plain word emits
-  `text-{word}`; an invalid signature emits nothing. Same contract as
-  Container/Card.
+- **`color` is a literal map**, like every other dimension: each key is a text
+  colour token and its value is the whole class (`color="muted-foreground"`
+  renders `text-muted-foreground`). The keys are `foreground`,
+  `muted-foreground`, `accent-foreground`, `card-foreground`,
+  `popover-foreground`, `primary`, `primary-foreground`,
+  `secondary-foreground`, `destructive`, `success`, `warning` and `info`
+  (`COLOR` in `typography.classes.ts`). A value with no entry renders no colour
+  class. `muted` is not a key: it is a surface token, and its text rendered
+  near invisible (#2528). Typography takes no `fill` or `surface`.
 - **h5/h6 borrow h4.** The variant scale stops at h4; `H5`/`H6` (and `as="h5"`
   /`"h6"`) render their own tag with h4's classes. `span` reads as body (`p`).
 
@@ -80,13 +86,13 @@ and (Spec 03 is gone) no effects. The score composes no primitives.
 | --- | --- |
 | variant vocabulary (h1–h4, p, lead, large, small, muted, code, codeblock, blockquote, mark, abbr, ul, ol, li) | contract — ported verbatim in `typography.classes.ts` |
 | dimensional token props (size/weight/color/line/tracking/family/align/transform) | contract |
-| `color` as a fill signature (#1637) | contract |
+| `color` | contract -- a literal map of text colour tokens; an unmapped value renders no class |
 | variant → tag map + `p` fallback (`resolveVariant`) | contract — moved onto the score |
 | `as`-element → variant derivation (span→p, h5/h6→h4) | contract — moved onto the score as `variantForElement` |
 | h5/h6 as tags (no own variant scale) | ported as-is — h5/h6 render their tag with h4 classes |
 | generic `<Typography as … variant …>` | contract |
 | named per-tag components (H1…, P, Code, …) | contract — React factory; Astro exports the same named components from the single `typography.astro` file as hoisted `createComponent` exports (#2325) |
-| editable / contenteditable / `onChange` / `onEnter` / `onBackspaceAtStart` / placeholder | **stripped** — block-editor concern, belongs in a studio-layer wrapper (matches Container's editable strip). `Fill, not background. No editor props.` |
+| editable / contenteditable / `onChange` / `onEnter` / `onBackspaceAtStart` / placeholder | **stripped** — block-editor concern, belongs in a studio-layer wrapper (matches Container's editable strip). No editor props. |
 | `InlineToolbar` / `SlashMenu` / `SelectionInfo` / inline-mark rich text | **stripped** — editor surface, not the text set |
 | `CodeBlock` `language` / `showLineNumbers` | dropped — syntax highlighting + gutter are a studio/highlighter concern; `CodeBlock` renders `pre > code` only |
 | `Lead`/`Large`/`Muted`/`Mark`/`Abbr` presentational variants | contract — exposed as React named components; present in every framework's class vocabulary |

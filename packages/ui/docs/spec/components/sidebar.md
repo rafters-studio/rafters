@@ -81,6 +81,24 @@ mobile axis) makes `onOpenChange` fire once per real desktop transition and make
 Only the desktop `open` axis is controllable; the oracle exposed no controlled
 mobile prop, so `openMobile` is always intrinsic and has no change callback.
 
+### Fill and surface
+
+`Sidebar` takes `fill` and `surface`, decoration the score never reads. They
+apply to the panel, on the desktop rail and the mobile overlay alike
+(`sidebarPanelClasses`, `sidebar.classes.ts:136-143` and `:361`):
+
+- The panel's base surface is `bg-surface-sidebar`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`bg-surface-<name>`) and replaces the
+  base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base. `variant`
+  (`sidebar`/`floating`/`inset`) is layout, not colour, so it does not take
+  part.
+- On mobile the panel renders inside `SheetContent`, whose own base is
+  `bg-background`; `Sidebar` passes `surface={surface ?? 'sidebar'}` to it so
+  the sheet's base never shows through (`sidebar.tsx:258`).
+
 ## Parts and ARIA
 
 | Part | Presence | ARIA / data |

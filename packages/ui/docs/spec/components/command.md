@@ -39,6 +39,8 @@ only the pure matcher is a seam.
 
 ```ts
 interface CommandConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled query
   defaultValue?: string; // uncontrolled seed
   label?: string;        // accessible name for the listbox (default 'Suggestions')
@@ -67,6 +69,18 @@ DOM-derived (fuzzy match against the live option list) and the score is pure —
 
 There is **no open axis**: the palette list is always present. Open/close lives
 only in the `CommandDialog` wrapper.
+
+### Fill and surface
+
+`Command` takes `fill` and `surface`, which change the surface of its root
+(`command.classes.ts:137`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

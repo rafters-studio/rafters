@@ -142,6 +142,8 @@ cursor. A stress run under CPU load reproduced exactly that with `pointerover`.
 
 ```ts
 interface MenubarConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled open menu ('' = none)
   defaultValue?: string; // uncontrolled seed
   loop?: boolean;        // wrap at the ends of the trigger row, default true
@@ -167,6 +169,18 @@ pure function (`stepMenu`). `canDispatch`: `open` and `toggle` always; `close`,
 neither hover nor focus movement). The React `onValueChange` compares the
 effective value before against the intrinsic value after (the controlled
 callback gotcha).
+
+### Fill and surface
+
+`MenubarContent` takes `fill` and `surface`, which change the surface of each menu panel (the bar itself takes no fill)
+(`menubar.classes.ts:161`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

@@ -4,6 +4,8 @@ One line per component: what it is, what it does, what it uses (current primitiv
 Generated 2026-07-09 from live index evidence (sym tree, import scan) + authored semantics. Excluded: editor, color-picker, color-inspector.
 Behavior-layer support: only the five articles have react (verified). Old tree availability listed for interim use.
 
+Current state (2026-10-23): the old tree is deleted, and the Web Component target was removed in 0.4.5 (#2747), so the `wc` entries in the "old tree" column are history, not something that ships. Every component directory under `src/components/` now ships a React `.tsx` and an Astro `.astro` performance. The "layer" column is the 2026-07-09 snapshot and is not kept current.
+
 ## static (21)
 
 | component | is | does | states | uses (current) | uses (planned) | motion | old tree | layer |
@@ -13,12 +15,12 @@ Behavior-layer support: only the five articles have react (verified). Old tree a
 | **avatar** | User image with fallback | Shows image; falls back to initials on load failure | loaded, error->fallback | - | - | none | astro/react/wc | none |
 | **badge** | Small label chip | Displays a short status/count label inline | - | - | - | transition-colors | astro/react/wc | none |
 | **breadcrumb** | Hierarchical location trail | Renders nav landmark of ancestor links with current page marked | - | - | - | transition-colors | astro/react/wc | none |
-| **card** | Content surface with a fill | Groups related content on an elevated surface | - | classy | - | transition-shadow | astro/react/wc | none |
+| **card** | Content surface (takes `fill` and `surface`) | Groups related content on an elevated surface | - | classy | - | transition-shadow | astro/react/wc | none |
 | **container** A | Layout keystone (ARTICLE) | Owns negative space: stack/grid/block modes, landmarks, CQ provider | - | classy | - | none | astro/react/wc | react OK |
 | **embed** | External media frame | Wraps third-party iframes with title and aspect control | loading, loaded | - | - | none | react/wc | none |
 | **empty** | Empty-state placeholder | Communicates absence of content with icon/title/action slots | - | - | - | none | astro/react/wc | none |
 | **grid** A | 12-column grid (ARTICLE) | Linear/preset columns; spans; conditional grid-roving when role=grid | - | - | - | none | astro/react/wc | react OK |
-| **image** | Token-aware img wrapper | Renders responsive image with radius/fill tokens | loading, error | - | - | none | astro/react/wc | none |
+| **image** | Token-aware img wrapper | Renders responsive image with radius tokens; the frame takes `fill` and `surface` | loading, error | - | - | none | astro/react/wc | none |
 | **item** | Generic list row | Lays out leading/content/trailing in a row | - | - | - | transition-colors | astro/react/wc | none |
 | **kbd** | Keyboard key cap | Displays a key or shortcut visually | - | - | - | none | astro/react/wc | none |
 | **label** | Form control label | Associates text with a control (htmlFor) | - | - | - | none | astro/react/wc | none |

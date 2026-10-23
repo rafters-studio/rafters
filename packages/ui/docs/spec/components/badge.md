@@ -28,8 +28,15 @@ Small label chip. Displays a short status/count label inline.
   every string is a literal in `badge.classes.ts`, the same pattern as
   `button.classes.ts`.
 - `fill` takes exactly one `bg-fill-*` token. It replaces the variant's
-  surface (fill > variant, FR-RAF-FILL-003); any other value is dropped with
-  a warning.
+  surface (background, foreground and border colour); the variant's structure
+  classes stay. Any other value is dropped with a console warning and the
+  variant's surface stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`). It replaces the default variant's surface only when no
+  `variant` prop is given; an explicit `variant`, `"default"` included, beats
+  it. An unknown name is ignored.
+- Precedence: fill, then an explicit variant, then surface, then the default
+  variant (`badge.classes.ts:66-77`).
 - `size` selects the label-text scale (`text-label-small` /
   `text-label-medium`), never a raw font-size utility.
 
@@ -44,6 +51,8 @@ type BadgeSize = 'sm' | 'default' | 'lg';
 interface BadgeConfig {
   variant?: BadgeVariant;
   size?: BadgeSize;
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
 }
 type BadgeState = Record<never, never>;
 type BadgeActions = Record<never, never>;

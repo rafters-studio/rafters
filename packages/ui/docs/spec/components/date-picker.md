@@ -84,6 +84,8 @@ containment (anything inside the popup is `content`), then asks the keymap.
 type DatePickerMode = 'single' | 'range';
 
 interface DatePickerConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   mode: DatePickerMode;
   value?: CalendarSelection;        // controlled committed value
   defaultValue?: CalendarSelection; // uncontrolled seed
@@ -121,6 +123,18 @@ label), `serializeValue` (the form value), `isComplete`, `isEmpty`, and
 The form value uses calendar's own serialization, `yyyy-mm-dd` or
 `from..to`, so one string seeds the picker, the nested calendar and the hidden
 input, and `parseSelection` reads it back.
+
+### Fill and surface
+
+`DatePicker` takes `fill` and `surface`, which change the surface of its calendar content panel
+(`date-picker.classes.ts:103`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

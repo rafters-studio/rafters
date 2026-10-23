@@ -46,6 +46,8 @@ per real transition.
 ```ts
 type DrawerSide = 'top' | 'right' | 'bottom' | 'left';
 interface DrawerConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;        // controlled
   defaultOpen?: boolean; // uncontrolled seed
   modal?: boolean;       // default true
@@ -57,6 +59,18 @@ type DrawerActions = { open: undefined; close: undefined };
 
 No `toggle` action: the trigger dispatches `open` or `close` computed from the
 effective value, so intrinsic state can never drift from a controlled consumer.
+
+### Fill and surface
+
+`DrawerContent` takes `fill` and `surface`, which change the surface of its panel
+(`drawer.classes.ts:123`):
+
+- The base surface is `bg-background text-foreground border-card-border`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

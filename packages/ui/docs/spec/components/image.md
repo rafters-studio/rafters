@@ -39,6 +39,7 @@ interface ImageConfig {
   alignment?: 'left' | 'center' | 'right';                  // auto margins, default center
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'; // frame corners, default lg
   fill?: string;              // one bg-fill-* token painted behind the image
+  surface?: string;           // a surface name painted behind the image
   status?: 'loading' | 'loaded' | 'error'; // default 'loaded'
   errorMessage?: string;      // default 'Failed to load image'
   loadingLabel?: string;      // default 'Loading image'
@@ -86,7 +87,7 @@ parity).
 | size preset (token max-width) | contract |
 | alignment (auto margins) | contract |
 | radius (oracle's fixed `rounded-lg`) | contract, lifted to a `radius` token, default `lg` |
-| fill behind the image | contract (one bg-fill-* token through classy; fill, not background) |
+| fill behind the image | contract -- the frame takes `fill` (one `bg-fill-*` token) or `surface` (a surface name); the frame has no base surface, so with neither it paints none; fill beats surface (`image.classes.ts:122`) |
 | load/error handling | contract — `status` config + React's onLoad/onError flip |
 | loading / error overlays | contract, reduced: a single token-surface live region, no spinner (motion none) |
 | upload (onUpload, file input, "Replace image") | dropped — editor surface, out of scope |
