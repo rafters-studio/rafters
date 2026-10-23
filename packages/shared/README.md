@@ -24,7 +24,7 @@ import {
   DTCGColorTokenSchema,
   oklchToDTCG,
   parseJSDocIntelligence,
-  parseFillSignature,
+  FillValueSchema,
   ImportPendingSchema,
   RAFTERS_VERSION,
 } from '@rafters/shared';
@@ -54,6 +54,14 @@ validate against.
 - `ComponentIntelligenceSchema`, `ColorIntelligenceSchema`, `IntelligenceSchema`
   and friends — the shapes the MCP and Studio read when they describe a
   component or a color.
+- `FillValueSchema` / `FillValue` — a fill recipe, the value of a token in the
+  `fill` namespace: background, gradient, mask, backdrop, blend, foreground
+  and border, with an optional `dark` block and `hover`, `active`, `focus`
+  and `disabled` state blocks. `foreground` is required. Every colour in a
+  recipe is a registry reference (`{ family, position }` or
+  `TokenReferenceSchema`'s `{ token }`), never a literal colour.
+- `FILL_NAME_EXCLUDES` — the names a fill cannot take: Tailwind's own `bg-*`
+  utility names and keywords, without the `bg-` prefix.
 - `COMPUTED` — a sentinel symbol. Set a token to it and the system reverts that
   token to its computed value instead of a hardcoded override.
 
