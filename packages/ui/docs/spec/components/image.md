@@ -38,7 +38,7 @@ interface ImageConfig {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full'; // token max-width
   alignment?: 'left' | 'center' | 'right';                  // auto margins, default center
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'; // frame corners, default lg
-  fill?: string;              // fill signature painted behind the image
+  fill?: string;              // one bg-fill-* token painted behind the image
   status?: 'loading' | 'loaded' | 'error'; // default 'loaded'
   errorMessage?: string;      // default 'Failed to load image'
   loadingLabel?: string;      // default 'Loading image'
@@ -86,7 +86,7 @@ parity).
 | size preset (token max-width) | contract |
 | alignment (auto margins) | contract |
 | radius (oracle's fixed `rounded-lg`) | contract, lifted to a `radius` token, default `lg` |
-| fill behind the image | contract (fill-resolver; fill, not background) |
+| fill behind the image | contract (one bg-fill-* token through classy; fill, not background) |
 | load/error handling | contract — `status` config + React's onLoad/onError flip |
 | loading / error overlays | contract, reduced: a single token-surface live region, no spinner (motion none) |
 | upload (onUpload, file input, "Replace image") | dropped — editor surface, out of scope |

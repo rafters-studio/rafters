@@ -6,7 +6,7 @@ import type { BehaviorSpec } from '../../lib/contract';
  * EMPTY, structural aria projection. A `div`/`section`/`article`/`aside`
  * carries its own native semantics, so the score projects nothing; the
  * surface is pure decoration (an elevated, bordered, rounded panel) plus an
- * optional `fill` signature over the colour vocabulary.
+ * optional `fill`: one `bg-fill-*` token that replaces the base surface.
  *
  * Because the projection is empty and there is nothing to react to, Card
  * needs NO client at all: there is no `bindCard`, the React controller uses
@@ -31,13 +31,9 @@ export type CardElement = 'div' | 'article' | 'section' | 'aside';
 export interface CardConfig {
   as?: CardElement | undefined;
   /**
-   * Fill signature over the colour vocabulary (#1637): `word` (solid --
-   * role words pair their foreground: fill="primary"), `word/alpha`
-   * (Tailwind slash-opacity: fill="muted/50"), or `word-to-word` (two-stop
-   * gradient: fill="primary-to-primary/0"). When it resolves, the fill
-   * surface replaces the default card surface; an invalid signature
-   * resolves to nothing and the default surface stays. Fill, never a raw
-   * background prop -- that legacy channel is dropped.
+   * Exactly one `bg-fill-*` token (FR-RAF-FILL-003). It replaces the card's
+   * base surface; any other value is dropped with a warning and the base
+   * surface stays.
    */
   fill?: string | undefined;
 }

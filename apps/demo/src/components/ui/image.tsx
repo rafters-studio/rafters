@@ -101,7 +101,7 @@ export interface ImageProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onL
   alignment?: ImageAlignment;
   /** Corner radius token. Default 'lg'. */
   radius?: ImageRadius;
-  /** Fill signature painted behind the image (the frame placeholder). */
+  /** Exactly one `bg-fill-*` token painted behind the image (the frame placeholder). */
   fill?: string;
   /** Initial load status. Seeds the state React owns; the img's load/error
    *  events flip it from there. Default 'loaded'. */

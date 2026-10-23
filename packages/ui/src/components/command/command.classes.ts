@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { CommandConfig, CommandState } from './command.behavior';
 
 export interface CommandClassSet {
@@ -18,8 +19,10 @@ export interface CommandClassSet {
   dialogContent: string;
 }
 
-const rootClasses =
-  'flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground';
+/** The palette's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const rootSurfaceClasses = 'bg-popover text-popover-foreground';
+
+const rootClasses = 'flex h-full w-full flex-col overflow-hidden rounded-md';
 
 const inputWrapperClasses = 'flex items-center gap-2 border-b px-3';
 
@@ -129,9 +132,9 @@ const dialogContentClasses =
   'data-[state=closed]:animate-fade-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
-export function commandClasses(_config: CommandConfig, _state: CommandState): CommandClassSet {
+export function commandClasses(config: CommandConfig, _state: CommandState): CommandClassSet {
   return {
-    root: rootClasses,
+    root: `${rootClasses} ${classy.fill(config.fill, rootSurfaceClasses)}`,
     inputWrapper: inputWrapperClasses,
     inputIcon: inputIconClasses,
     input: inputClasses,

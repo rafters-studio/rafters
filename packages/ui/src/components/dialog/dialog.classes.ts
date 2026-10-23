@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { DialogConfig, DialogState } from './dialog.behavior';
 
 export interface DialogClassSet {
@@ -34,6 +35,9 @@ const overlayClasses =
 
 const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-center p-4';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'border-card-border bg-card text-card-foreground';
+
 // data-[state=closed]:pointer-events-none -- the ratified motion ruling's
 // taste residue: while a closing overlay is held present through its exit
 // window (usePresence defers the unmount), it must not swallow clicks.
@@ -57,7 +61,7 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // element short of the keyframe's end state, which a zeroed duration reaches
 // instantly.
 const contentClasses =
-  'relative w-full max-w-lg rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
+  'relative w-full max-w-lg rounded-lg border p-6 shadow-lg ' +
   'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
@@ -87,11 +91,11 @@ const closeClasses =
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
-export function dialogClasses(_config: DialogConfig, _state: DialogState): DialogClassSet {
+export function dialogClasses(config: DialogConfig, _state: DialogState): DialogClassSet {
   return {
     overlay: overlayClasses,
     container: containerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     header: headerClasses,
     footer: footerClasses,
     title: titleClasses,

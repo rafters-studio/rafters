@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SelectConfig, SelectState } from './select.behavior';
 
 export interface SelectClassSet {
@@ -92,6 +93,9 @@ const chevronClasses =
   'col-start-5 ms-2 size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard ' +
   'group-data-[state=open]:rotate-180';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // select / content / closed -> open (moderate, enter, extent pop) and
 // open -> closed (fast, exit, extent pop) -- motion.md:186-187, emitted as
@@ -118,8 +122,8 @@ const chevronClasses =
 // item pass it down as `grid-cols-subgrid col-span-full`, so every label aligns
 // whichever items carry an icon.
 const contentClasses =
-  'z-depth-dropdown grid grid-cols-menu-row max-h-96 min-w-32 overflow-hidden rounded-md border bg-popover ' +
-  'text-popover-foreground shadow-md ' +
+  'z-depth-dropdown grid grid-cols-menu-row max-h-96 min-w-32 overflow-hidden rounded-md border ' +
+  'shadow-md ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -188,12 +192,12 @@ const itemEndIconClasses = `col-start-4 ${iconClasses}`;
 const triggerStartIconClasses = `col-start-2 me-2 ${iconClasses}`;
 const triggerEndIconClasses = `col-start-4 ms-2 ${iconClasses}`;
 
-export function selectClasses(_config: SelectConfig, _state: SelectState): SelectClassSet {
+export function selectClasses(config: SelectConfig, _state: SelectState): SelectClassSet {
   return {
     trigger: triggerClasses,
     value: valueClasses,
     chevron: chevronClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     viewport: viewportClasses,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,

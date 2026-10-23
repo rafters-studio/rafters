@@ -5,15 +5,14 @@
  * tracking, family, align, transform) rather than as flat utility strings.
  * Token-prop overrides replace the matching dimension at emit time, so defaults
  * never fight overrides in the Tailwind cascade (which orders utilities
- * alphabetically and thus cannot be trusted for overrides: `text-accent` would
- * lose to `text-foreground` on 'a' < 'f').
+ * alphabetically and thus cannot be trusted for overrides: `text-destructive` would
+ * lose to `text-foreground` on 'd' < 'f').
  *
  * Ported from the oracle verbatim; the
  * TypographyVariant / TypographyTokenProps types now live on the score
  * (typography.behavior.ts) so the pure behavior test imports them with no DOM.
  */
 
-import { resolveFillName } from '../../primitives/fill-resolver';
 import type { TypographyTokenProps, TypographyVariant } from './typography.behavior';
 
 /** The dimensions a container-query default can set. */
@@ -179,6 +178,28 @@ const TRANSFORM: Readonly<Record<string, string>> = {
   'normal-case': 'normal-case',
 };
 
+/*
+ * Text colour is a literal map like every other dimension (FR-RAF-FILL-003):
+ * the key is the colour token, the value its whole text utility. A value with
+ * no entry renders no class. `muted` is not a key: it is a surface token, and
+ * its text would render near-invisible (#2528) -- muted text is
+ * `muted-foreground`.
+ */
+export const COLOR: Readonly<Record<string, string>> = {
+  foreground: 'text-foreground',
+  'muted-foreground': 'text-muted-foreground',
+  'accent-foreground': 'text-accent-foreground',
+  'card-foreground': 'text-card-foreground',
+  'popover-foreground': 'text-popover-foreground',
+  primary: 'text-primary',
+  'primary-foreground': 'text-primary-foreground',
+  'secondary-foreground': 'text-secondary-foreground',
+  destructive: 'text-destructive',
+  success: 'text-success',
+  warning: 'text-warning',
+  info: 'text-info',
+};
+
 const fromMap =
   (map: Readonly<Record<string, string>>) =>
   (v: string): string =>
@@ -192,10 +213,7 @@ const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
   family: fromMap(FAMILY),
   align: fromMap(ALIGN),
   transform: fromMap(TRANSFORM),
-  // Fill signature in text context: plain words emit text-{word}; a
-  // word-to-word signature emits gradient text via bg-clip-text. Invalid
-  // signatures emit nothing -- same contract as Container/Card (#1637).
-  color: (v) => resolveFillName(v, 'text'),
+  color: fromMap(COLOR),
 };
 
 const DIM_KEYS = Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[];

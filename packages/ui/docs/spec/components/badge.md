@@ -25,9 +25,11 @@ Small label chip. Displays a short status/count label inline.
 - `variant` selects a token class pair (`bg-<word> text-<word>-foreground`)
   for the semantic fills, or a structural treatment (`outline`, `ghost`,
   `link`) for the shadcn-compatible non-fill variants. Selection only --
-  every string is a literal in `badge.classes.ts`; no `fill` prop, no
-  `resolveFillName` (that primitive is for Container's free-form signature;
-  Badge has a closed variant enum, same pattern as `button.classes.ts`).
+  every string is a literal in `badge.classes.ts`, the same pattern as
+  `button.classes.ts`.
+- `fill` takes exactly one `bg-fill-*` token. It replaces the variant's
+  surface (fill > variant, FR-RAF-FILL-003); any other value is dropped with
+  a warning.
 - `size` selects the label-text scale (`text-label-small` /
   `text-label-medium`), never a raw font-size utility.
 

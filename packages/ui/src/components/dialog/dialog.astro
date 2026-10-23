@@ -66,11 +66,13 @@ interface Props {
   defaultOpen?: boolean;
   title?: string;
   description?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, modal = true, defaultOpen = false, title, description } = Astro.props;
+const { id, modal = true, defaultOpen = false, title, description, fill } = Astro.props;
 
-const config: DialogConfig = { modal, defaultOpen };
+const config: DialogConfig = { modal, defaultOpen, fill };
 const state = dialog.initialState(config);
 const classes = dialogClasses(config, state);
 

@@ -39,7 +39,8 @@ describe('card [astro]', () => {
     expect(root).not.toBeNull();
     expect(root.className).toContain('bg-card');
     expect(root.className).toContain('rounded-xl');
-    expect(root.className).toContain('border border-card-border');
+    expect(root.classList.contains('border')).toBe(true);
+    expect(root.classList.contains('border-card-border')).toBe(true);
   });
 
   it('root carries the data-slot swap contract alongside its data-part', async () => {
@@ -101,11 +102,11 @@ describe('card [astro]', () => {
   });
 
   it('fill mirrors the React/WC prop through the same class projection', async () => {
-    const body = await render({ fill: 'primary' });
+    const body = await render({ fill: 'bg-fill-glass' });
     const root = partElement(body, 'root') as HTMLElement;
-    expect(root.className).toContain('bg-primary');
-    expect(root.className).not.toContain('bg-card');
-    expect(root.getAttribute('data-fill')).toBe('primary');
+    expect(root.classList.contains('bg-fill-glass')).toBe(true);
+    expect(root.classList.contains('bg-card')).toBe(false);
+    expect(root.hasAttribute('data-fill')).toBe(false);
   });
 
   it('an unfilled named slot renders NO region -- composition is not wrapped in phantoms', async () => {

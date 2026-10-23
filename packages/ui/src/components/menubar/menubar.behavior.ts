@@ -41,6 +41,8 @@ import {
  * disclosable projection is dropdown-menu's, evaluated at `active === value`.
  */
 export interface MenubarConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
   /** Controlled open menu ('' = none). Passed fresh, never stored. */
   value?: string | undefined;
   /** Uncontrolled seed. */

@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { NavigationMenuConfig, NavigationMenuState } from './navigation-menu.behavior';
 
 export interface NavigationMenuClassSet {
@@ -57,6 +58,9 @@ const triggerClasses =
 // not move (docs/MOTION.md:150). Reported on #2293: if the chevron should turn,
 // motion.jsonl needs the row.
 const triggerChevronClasses = 'h-3 w-3 group-data-[state=open]:rotate-180';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // MOTION IS CSS AND TOKENS ONLY (#2148). The hover-intent delay that used to be
 // a JavaScript timer reading the `hover-intent` delay token through the DOM is
@@ -121,7 +125,7 @@ const triggerChevronClasses = 'h-3 w-3 group-data-[state=open]:rotate-180';
 // responsibility (the exporter's REDUCED_MOTION_ZEROED set), never a
 // component-level media query.
 const contentClasses =
-  'absolute start-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
+  'absolute start-0 top-full w-max rounded-md border p-2 shadow-lg ' +
   'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
   'duration-fast ease-exit ' +
   'group-hover/navigation-item:opacity-100 group-hover/navigation-item:pointer-events-auto ' +
@@ -200,7 +204,7 @@ const indicatorClasses =
 const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
 
 export function navigationMenuClasses(
-  _config: NavigationMenuConfig,
+  config: NavigationMenuConfig,
   _state: NavigationMenuState,
 ): NavigationMenuClassSet {
   return {
@@ -211,7 +215,7 @@ export function navigationMenuClasses(
     triggerChevron: triggerChevronClasses,
     startIcon: iconClasses,
     endIcon: iconClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     link: linkClasses,
     viewportWrapper: viewportWrapperClasses,
     viewport: viewportClasses,

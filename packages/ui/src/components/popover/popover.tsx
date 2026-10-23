@@ -259,9 +259,12 @@ export interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function PopoverContent({
+  fill,
   forceMount,
   side = 'bottom',
   align = 'center',
@@ -345,7 +348,10 @@ export function PopoverContent({
       // tailwindcss-animate vocabulary (see popover.classes.ts).
       data-side={side}
       data-align={align}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill ? popoverClasses({ ...config, fill }, state).content : classes.content,
+        className,
+      )}
       hidden={present ? undefined : true}
       {...aria.content}
       onKeyDown={handleKeyDown}

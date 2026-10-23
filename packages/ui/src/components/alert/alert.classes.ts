@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { AlertConfig, AlertState, AlertVariant } from './alert.behavior';
 
 export interface AlertClassSet {
@@ -68,6 +69,6 @@ export function alertClasses(config: AlertConfig, _state: AlertState): AlertClas
   // The class set carries only declared parts (Spec 01: Partial<Record<Part,
   // string>>); the sub-component literals above are the direct imports.
   return {
-    root: `${baseClasses} ${variantClasses[variant]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, variantClasses[variant])}`,
   };
 }

@@ -51,6 +51,8 @@ export { badgeVariants } from './badge.classes';
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Visual variant. Oracle's full vocabulary (contract, boundary 9). */
   variant?: BadgeVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
   size?: BadgeSize;
   /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
   startIcon?: React.ReactNode;
@@ -60,10 +62,19 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   (
-    { variant = 'default', size = 'default', className, startIcon, endIcon, children, ...props },
+    {
+      variant = 'default',
+      size = 'default',
+      fill,
+      className,
+      startIcon,
+      endIcon,
+      children,
+      ...props
+    },
     ref,
   ) => {
-    const classes = badgeClasses({ variant, size }, {});
+    const classes = badgeClasses({ variant, size, fill }, {});
     const uid = React.useId();
     const ids = {} as PartIds<BadgePart>;
     for (const part of Object.keys(badge.parts) as BadgePart[]) ids[part] = `${uid}-${part}`;

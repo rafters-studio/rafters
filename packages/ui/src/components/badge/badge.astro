@@ -59,12 +59,14 @@ import { badgeClasses } from './badge.classes';
 interface Props extends Omit<HTMLAttributes<'span'>, 'class'> {
   /** Visual variant. The oracle's full vocabulary (contract, boundary 9). */
   variant?: BadgeVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
   size?: BadgeSize;
 }
 
-const { variant, size, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { variant, size, fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = badgeClasses({ variant, size }, {});
+const classes = badgeClasses({ variant, size, fill }, {});
 const rootClass = classy(classes.root);
 const uid = attrs.id ?? 'badge';
 const ids = {} as PartIds<BadgePart>;

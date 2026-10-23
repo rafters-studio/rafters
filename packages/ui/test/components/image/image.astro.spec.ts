@@ -118,8 +118,9 @@ test('consumer class is discarded silently -- not merged onto the root', async (
 });
 
 // The #2001 pairing: config is data-* in the markup AND read through dataset
-// in the bind. `size` and `fill` are real platform attributes elsewhere, so
-// the bare spellings must not appear on the <figure> at all.
+// in the bind. `size` is a real platform attribute elsewhere, so the bare
+// spelling must not appear on the <figure> at all. `fill` is a class, never an
+// attribute: neither spelling renders.
 test('config crosses the SSR/bind seam as data-* only, and rehydration still works', async () => {
   const root = await mount({
     src: SRC,
@@ -127,7 +128,7 @@ test('config crosses the SSR/bind seam as data-* only, and rehydration still wor
     size: 'md',
     alignment: 'left',
     radius: '2xl',
-    fill: 'muted',
+    fill: 'bg-fill-glass',
     status: 'error',
     errorMessage: 'Gone',
     loadingLabel: 'Wait',
@@ -137,7 +138,6 @@ test('config crosses the SSR/bind seam as data-* only, and rehydration still wor
     size: 'md',
     alignment: 'left',
     radius: '2xl',
-    fill: 'muted',
     status: 'error',
     errorMessage: 'Gone',
     loadingLabel: 'Wait',
@@ -147,6 +147,9 @@ test('config crosses the SSR/bind seam as data-* only, and rehydration still wor
     const bare = key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
     expect(root.hasAttribute(bare), `bare attribute "${bare}" must not be rendered`).toBe(false);
   }
+  expect(root.hasAttribute('data-fill')).toBe(false);
+  expect(root.hasAttribute('fill')).toBe(false);
+  expect((part(root, 'frame') as HTMLElement).classList.contains('bg-fill-glass')).toBe(true);
 
   // Rehydration: wipe the projected role, re-bind, and it comes back -- which
   // it can only do by reconstructing `status` from dataset.

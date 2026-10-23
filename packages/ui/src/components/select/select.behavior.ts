@@ -35,6 +35,8 @@ import { createTypeahead } from '../../primitives/typeahead';
  * positioning fidelity vs the old React-only computePosition).
  */
 export interface SelectConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
   /** Controlled value ('' = no selection). */
   value?: string | undefined;
   /** Uncontrolled seed. */

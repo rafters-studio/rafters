@@ -73,19 +73,6 @@ it back out.
   for what's missing or malformed.
 - `toDisplayName(name)` — turn a component id into its display name.
 
-### Fill signatures (`fill-signature.ts`)
-
-`fill=` is a compact color vocabulary, not a styling grammar. `fill="muted/50"`
-is the muted color at 50% alpha; `fill="barbie-pink-to-ken-brown"` is a two-stop
-gradient. `to`, `via`, and `from` are reserved segments.
-
-- `parseFillSignature(input)` — parse a fill string into stops and alpha.
-- `validateFillSignature(signature, hasWord)` — check every stop word against a
-  vocabulary predicate; returns the first unresolvable word, or `null`.
-- `expandFillSignature(signature, context, hasWord?)` — expand a signature into
-  the classes it sets, for the given context (`surface` or `text`).
-- `foregroundWordFor(...)` — pick the readable foreground word for a surface fill.
-
 ### Import pending (`import-pending.ts`)
 
 The schema for tokens found during `rafters init` detection and left awaiting

@@ -41,8 +41,8 @@
  * the SAME DOM-native client the Web Component uses. One score, three
  * decorators, zero drift.
  *
- * Config travels as `data-*` and nothing else (#2001): `size`/`fill` are real
- * platform attributes elsewhere and none of these are valid on a <figure>, so
+ * Config travels as `data-*` and nothing else (#2001): `size` is a real
+ * platform attribute elsewhere and none of these are valid on a <figure>, so
  * the whole config block is `data-*` and readImageConfig reads `dataset`.
  *
  * Zero client-side load tracking: `status` is config (default 'loaded'), so a
@@ -109,7 +109,6 @@ const statusAria = projection.status ?? {};
   data-size={size}
   data-alignment={alignment}
   data-radius={radius}
-  data-fill={fill}
   data-status={status}
   data-error-message={errorMessage}
   data-loading-label={loadingLabel}

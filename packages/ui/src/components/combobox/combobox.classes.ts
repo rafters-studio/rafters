@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { ComboboxConfig, ComboboxState } from './combobox.behavior';
 
 export interface ComboboxClassSet {
@@ -70,6 +71,9 @@ const chevronClasses =
   'size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard ' +
   'group-data-[state=open]:rotate-180';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // combobox / content / closed -> open (moderate, enter, extent pop) and
 // open -> closed (fast, exit, extent pop) -- motion.jsonl:59-60, emitted as
@@ -93,8 +97,8 @@ const chevronClasses =
 // dropdown-menu shows the fix (usePresence gating `hidden`,
 // dropdown-menu.tsx:288-290); it belongs to the view layer, not this file.
 const contentClasses =
-  'grid grid-cols-menu-row z-depth-dropdown max-h-60 min-w-32 overflow-auto rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-md ' +
+  'grid grid-cols-menu-row z-depth-dropdown max-h-60 min-w-32 overflow-auto rounded-md border p-1 ' +
+  'shadow-md ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -151,7 +155,7 @@ const groupLabelClasses =
 
 const separatorClasses = 'col-span-full -mx-1 my-1 h-px bg-muted';
 
-export function comboboxClasses(_config: ComboboxConfig, _state: ComboboxState): ComboboxClassSet {
+export function comboboxClasses(config: ComboboxConfig, _state: ComboboxState): ComboboxClassSet {
   return {
     root: rootClasses,
     field: fieldClasses,
@@ -160,7 +164,7 @@ export function comboboxClasses(_config: ComboboxConfig, _state: ComboboxState):
     chevron: chevronClasses,
     startIcon: startIconClasses,
     itemStartIcon: itemStartIconClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,
     itemText: itemTextClasses,

@@ -77,14 +77,17 @@ interface Props {
   defaultOpen?: boolean;
   title?: string;
   description?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, side = 'right', modal = true, defaultOpen = false, title, description } = Astro.props;
+const { id, side = 'right', modal = true, defaultOpen = false, title, description, fill } =
+  Astro.props;
 
 const config: SheetConfig = { modal, defaultOpen };
 const state = sheet.initialState(config);
 const classes = sheetClasses(config, state);
-const contentClass = sheetContentClasses(side);
+const contentClass = sheetContentClasses(side, fill);
 const Title = 'h2';
 
 // Optional cross-ref sources resolve to empty when their slot is absent, so the

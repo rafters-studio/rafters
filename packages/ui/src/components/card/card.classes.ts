@@ -1,4 +1,4 @@
-import { resolveFillName } from '../../primitives/fill-resolver';
+import classy from '../../primitives/classy';
 import type { CardConfig, CardState } from './card.behavior';
 
 export interface CardClassSet {
@@ -7,8 +7,8 @@ export interface CardClassSet {
 
 /**
  * Structure the surface always carries: an elevated, bordered, rounded
- * panel. Colour is kept separate so a resolved `fill` can replace the
- * default `bg-card` surface without leaving a competing `bg-*` behind.
+ * panel. Colour is kept separate so a `fill` can replace the default
+ * `bg-card` surface without leaving a competing `bg-*` behind.
  *
  * NO MOTION, AND THE ROW SAYS WHY IT IS MISSING RATHER THAN THIS FILE FAKING
  * ONE. `card / root / hover (when interactive)` in
@@ -23,11 +23,10 @@ export interface CardClassSet {
  * chart-tooltip cells were excluded for. The disagreement between the row and
  * the component is the finding, reported here and not resolved.
  */
-const cardStructureClasses =
-  'flex flex-col gap-6 rounded-xl border border-card-border py-6 shadow-sm';
+const cardStructureClasses = 'flex flex-col gap-6 rounded-xl border py-6 shadow-sm';
 
-/** Default surface token pairing -- card's identity when no fill resolves. */
-const cardSurfaceClasses = 'bg-card text-card-foreground';
+/** Base surface -- card's identity when no fill wins. */
+const cardSurfaceClasses = 'bg-card text-card-foreground border-card-border';
 
 /**
  * Sub-part classes are config-independent literals, so the framework files
@@ -71,10 +70,8 @@ export const cardFooterClasses = 'flex items-center px-6';
 export const cardActionClasses = 'col-start-2 row-span-2 row-start-1 self-start justify-self-end';
 
 export function cardClasses(config: CardConfig, _state: CardState): CardClassSet {
-  // A resolved fill REPLACES the default surface (bg + paired foreground),
-  // so the two never coexist -- no reliance on compiled source-order to pick
-  // a winner. An invalid/empty signature keeps the default card surface.
-  const fillClasses = config.fill ? resolveFillName(config.fill, 'surface') : '';
-  const surface = fillClasses || cardSurfaceClasses;
-  return { root: `${surface} ${cardStructureClasses}` };
+  // A fill REPLACES the base surface (bg, foreground and border colour), so
+  // the two never coexist -- no reliance on compiled source order to pick a
+  // winner. Anything but one bg-fill-* token is dropped and the base stands.
+  return { root: `${classy.fill(config.fill, cardSurfaceClasses)} ${cardStructureClasses}` };
 }

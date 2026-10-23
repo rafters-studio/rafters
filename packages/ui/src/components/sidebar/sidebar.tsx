@@ -216,10 +216,20 @@ export function SidebarProvider({
 export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   side?: SidebarSide;
   variant?: SidebarVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
 }
 
-export function Sidebar({ side, variant, className, children, onKeyDown, ...props }: SidebarProps) {
-  const { state, config, aria, ids, request, isMobile, classes } = useSidebar();
+export function Sidebar({
+  side,
+  variant,
+  fill,
+  className,
+  children,
+  onKeyDown,
+  ...props
+}: SidebarProps) {
+  const { state, config, aria, ids, request, isMobile } = useSidebar();
   const resolvedSide = side ?? config.side ?? 'left';
   const resolvedVariant = variant ?? config.variant ?? 'sidebar';
 
@@ -239,7 +249,8 @@ export function Sidebar({ side, variant, className, children, onKeyDown, ...prop
           aria-label="Sidebar"
           data-sidebar="sidebar"
           showCloseButton={false}
-          className={classy(classes.mobilePanel, className)}
+          {...(fill !== undefined && { fill })}
+          className={classy(sidebarClasses(fill).mobilePanel, className)}
           {...props}
         >
           {children}
@@ -265,7 +276,7 @@ export function Sidebar({ side, variant, className, children, onKeyDown, ...prop
       id={ids.panel}
       data-side={resolvedSide}
       data-variant={resolvedVariant}
-      className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant), className)}
+      className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant, fill), className)}
       onKeyDown={handleKeyDown}
       {...aria.panel}
       {...props}
