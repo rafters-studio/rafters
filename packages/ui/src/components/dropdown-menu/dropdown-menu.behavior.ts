@@ -36,7 +36,10 @@ import { dropdownMenuClasses } from './dropdown-menu.classes';
  * over the ONE createBehavior cell, controlled config shadowing intrinsic state,
  * idempotence-gated so consumer callbacks fire once per real transition.
  */
-export type DropdownMenuConfig = DisclosableConfig;
+export interface DropdownMenuConfig extends DisclosableConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+}
 export type DropdownMenuState = DisclosableState;
 export type DropdownMenuActions = DisclosableActions;
 

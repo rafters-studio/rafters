@@ -81,9 +81,12 @@ interface Props {
   fixedWeeks?: boolean;
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   today?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 const {
+  fill,
   id,
   mode = 'single',
   value = '',
@@ -101,6 +104,7 @@ const {
 
 const config: DatePickerConfig = {
   mode,
+  fill,
   defaultValue: parseSelection(mode, value || null),
   disabled,
 };

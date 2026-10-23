@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { MenubarConfig, MenubarState } from './menubar.behavior';
 
 export interface MenubarClassSet {
@@ -55,6 +56,9 @@ const triggerClasses =
   'data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
 // color. The menu's coordinates are written by positionMenubarContent, not
 // here. `fixed` is here because every menu is now present while closed: out
@@ -78,8 +82,8 @@ const triggerClasses =
 // `left`/`top` on every open. Transitioning every property, a menu reopened after a
 // scroll would slide from its old place, a movement no row assigns.
 const contentClasses =
-  'grid grid-cols-menu-row fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'grid grid-cols-menu-row fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg ' +
   'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
   'transition duration-fast ease-exit ' +
   'data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
@@ -150,11 +154,11 @@ const insetClasses = 'ps-8';
 // inside are fixed-positioned under their triggers.
 const menuHostClasses = 'contents';
 
-export function menubarClasses(_config: MenubarConfig, _state: MenubarState): MenubarClassSet {
+export function menubarClasses(config: MenubarConfig, _state: MenubarState): MenubarClassSet {
   return {
     root: rootClasses,
     trigger: triggerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

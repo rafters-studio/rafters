@@ -101,11 +101,13 @@ interface Props {
   id: string;
   items: Item[];
   orientation?: 'horizontal' | 'vertical';
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, items, orientation = 'horizontal' } = Astro.props;
+const { fill, id, items, orientation = 'horizontal' } = Astro.props;
 
-const config: NavigationMenuConfig = { orientation };
+const config: NavigationMenuConfig = { orientation, fill };
 const state = navigationMenu.initialState(config);
 const classes = navigationMenuClasses(config, state);
 

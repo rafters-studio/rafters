@@ -70,9 +70,12 @@ interface Props {
   sideOffset?: number;
   alignOffset?: number;
   showClose?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 const {
+  fill,
   id,
   defaultOpen = false,
   side = 'bottom',
@@ -82,7 +85,7 @@ const {
   showClose = false,
 } = Astro.props;
 
-const config: PopoverConfig = { defaultOpen };
+const config: PopoverConfig = { defaultOpen, fill };
 const state = popover.initialState(config);
 const classes = popoverClasses(config, state);
 

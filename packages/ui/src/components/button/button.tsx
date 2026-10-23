@@ -71,6 +71,8 @@ type AccessibleName = { 'aria-label': string } | { 'aria-labelledby': string };
  */
 interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
+  fill?: string;
   loading?: boolean;
   softDisabled?: boolean;
   toggle?: boolean;
@@ -92,6 +94,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
   const {
     className,
     variant = 'default',
+    fill,
     size = 'default',
     disabled = false,
     loading = false,
@@ -112,6 +115,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
 
   const config: ButtonConfig = {
     variant,
+    fill,
     size,
     toggle,
     defaultPressed,

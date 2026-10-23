@@ -28,11 +28,14 @@ import classy from '../../primitives/classy';
 import { skeleton, type SkeletonConfig } from './skeleton.behavior';
 import { skeletonClasses } from './skeleton.classes';
 
-export type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
+export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+}
 
 export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, ...props }, ref) => {
-    const config: SkeletonConfig = {};
+  ({ fill, className, ...props }, ref) => {
+    const config: SkeletonConfig = { fill };
     const classes = skeletonClasses(config, {});
 
     // A static score: aria-hidden is a constant, no state, no ids, no effects.

@@ -337,9 +337,12 @@ export interface HoverCardContentProps extends React.HTMLAttributes<HTMLDivEleme
   side?: Side;
   align?: Align;
   sideOffset?: number;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function HoverCardContent({
+  fill,
   side,
   align,
   sideOffset,
@@ -347,7 +350,7 @@ export function HoverCardContent({
   children,
   ...props
 }: HoverCardContentProps) {
-  const { config, effectiveOpen, ids, aria, classes, triggerRef } =
+  const { config, state, effectiveOpen, ids, aria, classes, triggerRef } =
     useHoverCardContext('HoverCardContent');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -386,7 +389,10 @@ export function HoverCardContent({
       id={ids.content}
       ref={contentRef}
       data-state={dataState}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill ? hoverCardClasses({ ...config, fill }, state).content : classes.content,
+        className,
+      )}
       {...aria.content}
       {...props}
     >

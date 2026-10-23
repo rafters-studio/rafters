@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavior';
 
 /**
@@ -35,6 +36,9 @@ export interface ContextMenuClassSet {
 
 const trigger = 'inline-block';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurface = 'bg-popover text-popover-foreground';
+
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // context-menu / content / closed -> open (moderate, enter, extent pop) and
 // open -> closed (fast, exit, extent pop) -- motion.md:173-174, emitted as
@@ -58,8 +62,8 @@ const trigger = 'inline-block';
 // behavior/view layer, not to this file; the class is correct and starts
 // running the moment that wiring lands.
 const content =
-  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg outline-none ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg outline-none ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -235,12 +239,12 @@ const shortcut = 'col-start-4 ms-4 justify-self-end text-shortcut ts-shortcut op
 const group = 'grid grid-cols-subgrid col-span-full';
 
 export function contextMenuClasses(
-  _config: ContextMenuConfig,
+  config: ContextMenuConfig,
   _state: ContextMenuState,
 ): ContextMenuClassSet {
   return {
     trigger,
-    content,
+    content: `${classy.fill(config.fill, contentSurface)} ${content}`,
     subContent,
     item,
     checkboxItem,

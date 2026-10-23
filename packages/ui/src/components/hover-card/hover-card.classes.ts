@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { HoverCardConfig, HoverCardState } from './hover-card.behavior';
 
 export interface HoverCardClassSet {
@@ -16,6 +17,9 @@ export interface HoverCardClassSet {
 // link keeps its own type, underline, and focus affordances, and hover-card
 // adds no chrome to it.
 const triggerClasses = 'inline-flex';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // MOTION IS CSS AND TOKENS ONLY (#2148). No TypeScript reads a motion token, no
 // timer implements a delay, and the whole reveal works with JavaScript turned
@@ -88,7 +92,7 @@ const triggerClasses = 'inline-flex';
 // unaffected either way: its reveal selector computes at (0,4,0) against this
 // rule's (0,2,0).
 const contentClasses =
-  'fixed z-depth-popover w-64 rounded-md border bg-popover p-4 text-popover-foreground ' +
+  'fixed z-depth-popover w-64 rounded-md border p-4 ' +
   'shadow-lg outline-none ' +
   'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
   'duration-fast ease-exit [&:not([data-state=open])]:delay-linger ' +
@@ -105,11 +109,11 @@ const contentClasses =
   '[[data-hover-card][data-dismissed=true]>&]:pointer-events-none!';
 
 export function hoverCardClasses(
-  _config: HoverCardConfig,
+  config: HoverCardConfig,
   _state: HoverCardState,
 ): HoverCardClassSet {
   return {
     trigger: triggerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
   };
 }

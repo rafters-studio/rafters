@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { BadgeConfig, BadgeSize, BadgeState, BadgeVariant } from './badge.behavior';
 
 export interface BadgeClassSet {
@@ -21,9 +22,15 @@ const variantClasses: Record<BadgeVariant, string> = {
   info: 'bg-info text-info-foreground',
   muted: 'bg-muted text-muted-foreground',
   accent: 'bg-accent text-accent-foreground',
-  outline: 'bg-transparent border border-input text-foreground',
+  outline: 'bg-transparent border-input text-foreground',
   ghost: 'hover:bg-muted hover:text-muted-foreground',
-  link: 'text-primary underline-offset-4 hover:underline',
+  link: 'text-primary',
+};
+
+/** What a variant carries besides its surface; it stays when a fill wins. */
+const variantStructureClasses: Partial<Record<BadgeVariant, string>> = {
+  outline: 'border',
+  link: 'underline-offset-4 hover:underline',
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
@@ -61,7 +68,7 @@ export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClas
   const variant = config.variant ?? 'default';
   const size = config.size ?? 'default';
   return {
-    root: `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, variantClasses[variant])} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[size]}`,
     startIcon: iconClasses,
     endIcon: iconClasses,
   };
@@ -71,5 +78,6 @@ export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClas
  *  elements (`<a className={badgeVariants({...})}>`), the standard reach
  *  while `asChild` is deferred. Mirrors `buttonVariants`. */
 export function badgeVariants(options: { variant?: BadgeVariant; size?: BadgeSize } = {}): string {
-  return `${baseClasses} ${variantClasses[options.variant ?? 'default']} ${sizeClasses[options.size ?? 'default']}`;
+  const variant = options.variant ?? 'default';
+  return `${baseClasses} ${variantClasses[variant]} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[options.size ?? 'default']}`;
 }

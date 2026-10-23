@@ -78,12 +78,12 @@ describe('card [react]', () => {
     expect(body().querySelector('h2')?.textContent).toBe('Level two');
   });
 
-  it('a resolved fill replaces the surface and records data-fill', () => {
-    render(<Card fill="primary">x</Card>);
+  it('a bg-fill- fill replaces the surface and renders no data-fill', () => {
+    render(<Card fill="bg-fill-glass">x</Card>);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
-    expect(root.className).toContain('bg-primary');
-    expect(root.className).not.toContain('bg-card');
-    expect(root.getAttribute('data-fill')).toBe('primary');
+    expect(root.classList.contains('bg-fill-glass')).toBe(true);
+    expect(root.classList.contains('bg-card')).toBe(false);
+    expect(root.hasAttribute('data-fill')).toBe(false);
   });
 
   it('className is NOT SUPPORTED -- it never reaches the element', () => {

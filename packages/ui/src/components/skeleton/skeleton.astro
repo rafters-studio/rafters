@@ -41,11 +41,14 @@
 import { skeleton } from './skeleton.behavior';
 import { skeletonClasses } from './skeleton.classes';
 
-interface Props {}
+interface Props {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+}
 
-const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = skeletonClasses({}, {});
+const classes = skeletonClasses({ fill }, {});
 const aria = skeleton.aria({}, {}, { root: '' }).root;
 ---
 

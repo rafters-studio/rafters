@@ -21,6 +21,8 @@ export interface DialogConfig extends DisclosableConfig {
   /** Modal dialogs trap focus, lock scroll, and dismiss on outside
    *  pointerdown. Default: true. */
   modal?: boolean | undefined;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
 }
 
 export type DialogState = DisclosableState;

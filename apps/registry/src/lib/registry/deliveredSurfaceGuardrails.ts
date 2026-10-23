@@ -313,13 +313,8 @@ export async function findCommentOnlyClassViolations(
 }
 
 /**
- * Dated exception (2026-10-20, #2800). `typography.classes.ts` builds its
- * colour classes at runtime (`resolveFillName(v, 'text')`), so its own install
- * has no literal `text-foreground`; the comment naming `text-foreground` and
- * `text-accent` is what compiles them today. Rewording it would drop
- * `text-foreground` from a typography-only consumer, so it stays until the
- * fills redesign makes those classes literal, which removes this entry.
+ * Dated exceptions: delivered files whose comments may name a class their code
+ * does not use, each with its date and issue. Empty since #2829 made
+ * Typography's colour classes literal, which retired the #2800 entry.
  */
-export const KNOWN_COMMENT_CLASS_VIOLATIONS: ReadonlySet<string> = new Set([
-  'components/ui/typography.classes.ts',
-]);
+export const KNOWN_COMMENT_CLASS_VIOLATIONS: ReadonlySet<string> = new Set<string>([]);

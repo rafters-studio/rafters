@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SheetConfig, SheetSide, SheetState } from './sheet.behavior';
 
 export interface SheetClassSet {
@@ -25,6 +26,9 @@ const overlayClasses =
   'fixed inset-0 z-depth-overlay bg-foreground/80 ' +
   'data-[state=open]:animate-fade-in-normal-enter data-[state=closed]:animate-fade-out-moderate-exit';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-background border-card-border';
+
 // Base content signature shared across sides. The per-side anchor, size and
 // border edge come from `sheetSideClasses`.
 //
@@ -47,7 +51,7 @@ const overlayClasses =
 // reset here would
 // reset the shorthand and discard the zeroed duration with it.
 const contentBaseClasses =
-  'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 shadow-lg ' +
+  'fixed z-depth-modal flex flex-col gap-4 p-6 shadow-lg ' +
   'data-[state=open]:animate-fade-in-normal-spring-smooth data-[state=closed]:animate-fade-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
@@ -56,12 +60,12 @@ const contentBaseClasses =
 // breakpoints moved to container context, cf. dialog); top/bottom span the
 // inline axis and hug the block edge.
 const sheetSideClasses: Record<SheetSide, string> = {
-  top: 'inset-x-0 top-0 border-b border-card-border',
-  bottom: 'inset-x-0 bottom-0 border-t border-card-border',
+  top: 'inset-x-0 top-0 border-b',
+  bottom: 'inset-x-0 bottom-0 border-t',
   // Physical on purpose (shadcn parity): side names a physical side, not a direction.
-  left: 'inset-y-0 left-0 h-full w-3/4 @sm:max-w-sm border-r border-card-border',
+  left: 'inset-y-0 left-0 h-full w-3/4 @sm:max-w-sm border-r',
   // Physical on purpose (shadcn parity): side names a physical side, not a direction.
-  right: 'inset-y-0 right-0 h-full w-3/4 @sm:max-w-sm border-l border-card-border',
+  right: 'inset-y-0 right-0 h-full w-3/4 @sm:max-w-sm border-l',
 };
 
 const headerClasses = 'flex flex-col space-y-2 text-center @md:text-start';
@@ -91,9 +95,9 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 /** The content class: the side-independent base signature plus the anchored
  *  placement for `side`. The ONLY source of the content class -- every
  *  performance calls this, so the side (a Content-level decoration prop
- *  mirroring shadcn) is the single argument the base does not already fix. */
-export function sheetContentClasses(side: SheetSide): string {
-  return `${contentBaseClasses} ${sheetSideClasses[side]}`;
+ *  mirroring shadcn) and the fill are the arguments the base does not fix. */
+export function sheetContentClasses(side: SheetSide, fill?: string): string {
+  return `${contentBaseClasses} ${classy.fill(fill, contentSurfaceClasses)} ${sheetSideClasses[side]}`;
 }
 
 /** The side-independent class set. The content class is NOT here: it depends on

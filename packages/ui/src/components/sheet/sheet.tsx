@@ -305,10 +305,13 @@ export interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> 
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function SheetContent({
   side = 'right',
+  fill,
   showCloseButton,
   forceMount,
   container,
@@ -376,7 +379,7 @@ export function SheetContent({
       ref={presenceRef}
       tabIndex={-1}
       hidden={present ? undefined : true}
-      className={classy(sheetContentClasses(side), className)}
+      className={classy(sheetContentClasses(side, fill), className)}
       {...aria.content}
       onKeyDown={handleKeyDown}
       {...props}

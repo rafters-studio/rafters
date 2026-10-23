@@ -60,11 +60,13 @@ interface Props {
   id: string;
   label: string;
   items: Item[];
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, label, items } = Astro.props;
+const { fill, id, label, items } = Astro.props;
 
-const config: DropdownMenuConfig = {};
+const config: DropdownMenuConfig = { fill };
 const state = dropdownMenu.initialState(config);
 const classes = dropdownMenuClasses(config, state);
 

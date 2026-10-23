@@ -104,6 +104,7 @@ exports[`motion CSS: golden emission > emits a stable motion surface 1`] = `
   "  --animate-pulse-shimmer: pulse var(--rafters-period-shimmer) infinite;",
   "  --animate-spin-spin: spin var(--rafters-period-spin) infinite;",
   "  --animate-caret-blink-blink: caret-blink var(--rafters-period-blink) infinite;",
+  "  --rafters-breakpoint-motion-reduce: (prefers-reduced-motion: reduce);",
   "@keyframes fade-in {",
   "@keyframes fade-out {",
   "@keyframes slide-in-from-top {",

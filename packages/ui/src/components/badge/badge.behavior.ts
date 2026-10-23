@@ -54,6 +54,8 @@ export function isBadgeSize(value: string | null | undefined): value is BadgeSiz
 }
 
 export interface BadgeConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
   variant?: BadgeVariant | undefined;
   size?: BadgeSize | undefined;
 }

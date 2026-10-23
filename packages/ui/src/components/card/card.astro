@@ -112,7 +112,7 @@ const hasAction = Astro.slots.has('action');
 const hasHeader = Astro.slots.has('header') || hasTitle || hasDescription || hasAction;
 ---
 
-<Tag data-part="root" data-slot="card" data-fill={fill || undefined} class={classes.root} {...attrs}>
+<Tag data-part="root" data-slot="card" class={classes.root} {...attrs}>
   {
     hasHeader && (
       <div data-slot="card-header" class={cardHeaderClasses}>

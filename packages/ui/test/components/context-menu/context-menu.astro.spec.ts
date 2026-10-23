@@ -170,7 +170,7 @@ describe('context-menu [astro]', () => {
     // resolver's output reaches the server-rendered nodes rather than being
     // applied later by the enhancer.
     const root = await mount();
-    const classes = contextMenuClasses();
+    const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
     const content = root.querySelector('[data-part="content"]') as HTMLElement;
     expect(content).not.toBeNull();
     expect(content.className).toBe(classes.content);

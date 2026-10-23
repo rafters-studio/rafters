@@ -419,6 +419,8 @@ export function MenubarPortal({ children }: { children: React.ReactNode }) {
 
 export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 /**
@@ -430,6 +432,7 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * CSS off data-state, so the exit can play.
  */
 export function MenubarContent({
+  fill,
   className,
   children,
   asChild,
@@ -471,7 +474,14 @@ export function MenubarContent({
         mergeProps(partProps, children.props as Record<string, unknown>) as React.Attributes,
       )
     ) : (
-      <div className={classy(classes.content, className)} {...partProps} {...props}>
+      <div
+        className={classy(
+          fill ? menubarClasses({ ...config, fill }, state).content : classes.content,
+          className,
+        )}
+        {...partProps}
+        {...props}
+      >
         {children}
       </div>
     );

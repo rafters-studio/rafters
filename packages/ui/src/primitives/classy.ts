@@ -176,6 +176,12 @@ function flatten(inputs: ClassInput[], out: unknown[] = []): unknown[] {
   return out;
 }
 
+/**
+ * A fill is exactly one token with the reserved `bg-fill-` prefix. This is a
+ * shape check, never a list of names: the registry owns which fills exist.
+ */
+const FILL_SHAPE = /^bg-fill-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
 // ============================================================================
 // Class Builder
 // ============================================================================
@@ -257,8 +263,23 @@ export function createClassy(options?: ClassyOptions) {
     return out.join(' ');
   }
 
+  /**
+   * Surface precedence for the `fill` prop (FR-RAF-FILL-003): a fill that is
+   * exactly one `bg-fill-*` token wins and replaces `surface` (the variant's or
+   * the base's surface classes) outright; a fill and a surface never join. Any
+   * other non-empty value is dropped with a warning and `surface` stands.
+   */
+  function fill(value: unknown, surface = ''): string {
+    if (value === undefined || value === null || value === '') return surface;
+    if (typeof value === 'string' && FILL_SHAPE.test(value)) return value;
+    warn(`classy: fill '${String(value)}' dropped -- fill takes exactly one bg-fill-* token`);
+    return surface;
+  }
+
   // Attach utilities to the build function
   const instance = Object.assign(build, {
+    /** Resolve the fill prop against a surface (fill > surface) */
+    fill,
     /** Create a token reference */
     token,
     /** Create a new classy instance with different options */

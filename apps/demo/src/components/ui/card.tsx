@@ -86,9 +86,8 @@ function withoutClassName<T extends object>(props: T): T {
 export interface CardProps extends NoClassName<React.HTMLAttributes<HTMLDivElement>> {
   as?: CardElement;
   /**
-   * Fill signature over the colour vocabulary (#1637): `word`, `word/alpha`,
-   * or `word-to-word`. When it resolves, the fill surface replaces the
-   * default `bg-card` surface; an invalid signature keeps the default.
+   * Exactly one `bg-fill-*` token. It replaces the base card surface; any
+   * other value is dropped with a warning and the base surface stays.
    */
   fill?: string;
 }
@@ -113,7 +112,6 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         // with a declared part.
         'data-slot': 'card',
         className: classes.root,
-        'data-fill': fill || undefined,
         ...props,
       },
       children,

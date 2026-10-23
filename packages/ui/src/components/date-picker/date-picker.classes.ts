@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { DatePickerConfig, DatePickerState } from './date-picker.behavior';
 
 export interface DatePickerClassSet {
@@ -48,6 +49,9 @@ const iconClasses = 'size-4 shrink-0 opacity-50';
 // The wrapper only places and hides: the brand brings its icons, sizing included.
 const iconWrapperClasses = 'inline-grid place-items-center';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // The popup sits on the popover depth token and fills with the popover surface
 // tokens; it hugs the calendar (shadcn's `w-auto p-0` on PopoverContent, the
 // oracle's `p-0`).
@@ -79,7 +83,7 @@ const iconWrapperClasses = 'inline-grid place-items-center';
 // placement; an opacity-only transition drops the zoom; an arbitrary property list is a
 // bracketed value React's `classy()` drops (#2396).
 const contentClasses =
-  'fixed z-depth-popover w-auto rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none ' +
+  'fixed z-depth-popover w-auto rounded-md border p-0 shadow-md outline-none ' +
   'pointer-events-none opacity-0 extent-pop scale-(--rafters-consumed-extent) ' +
   'transition duration-fast ease-exit ' +
   'data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
@@ -87,7 +91,7 @@ const contentClasses =
 
 /** The view: class strings keyed by config/state. No logic. */
 export function datePickerClasses(
-  _config: DatePickerConfig,
+  config: DatePickerConfig,
   _state: DatePickerState,
 ): DatePickerClassSet {
   return {
@@ -96,6 +100,6 @@ export function datePickerClasses(
     icon: iconClasses,
     startIcon: iconWrapperClasses,
     endIcon: iconWrapperClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
   };
 }

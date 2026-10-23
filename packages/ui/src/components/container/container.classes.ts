@@ -1,4 +1,4 @@
-import { resolveFillName } from '../../primitives/fill-resolver';
+import classy from '../../primitives/classy';
 import {
   gridColSpanClasses,
   gridGapClasses,
@@ -175,7 +175,8 @@ export function containerClasses(
   if (config.colSpan) parts.push(gridColSpanClasses[config.colSpan] ?? '');
   if (config.rowSpan) parts.push(gridRowSpanClasses[config.rowSpan] ?? '');
 
-  if (config.fill) parts.push(resolveFillName(config.fill, 'surface'));
+  // Container has no base surface: a fill (one bg-fill-* token) or nothing.
+  parts.push(classy.fill(config.fill));
 
   if (config.position) parts.push(positionClasses[config.position]);
   if (config.depth) parts.push(depthClasses[config.depth]);

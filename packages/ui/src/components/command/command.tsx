@@ -88,9 +88,12 @@ export interface CommandProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   onValueChange?: (value: string) => void;
   /** Accessible name for the listbox popup. */
   label?: string | undefined;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
 }
 
 export function Command({
+  fill,
   children,
   value,
   defaultValue = '',
@@ -99,7 +102,7 @@ export function Command({
   className,
   ...props
 }: CommandProps) {
-  const config: CommandConfig = { value, defaultValue, label };
+  const config: CommandConfig = { value, defaultValue, label, fill };
 
   const { memory, dispatch } = React.useMemo(() => createBehavior(command, config), []);
   const state = useMemory(memory);

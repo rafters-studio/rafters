@@ -400,10 +400,19 @@ export function SelectPortal({ children }: { children: React.ReactNode }) {
 
 export interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-export function SelectContent({ className, children, asChild, ...props }: SelectContentProps) {
-  const { ids, aria, effectiveOpen, classes } = useSelectContext('SelectContent');
+export function SelectContent({
+  fill,
+  className,
+  children,
+  asChild,
+  ...props
+}: SelectContentProps) {
+  const { ids, aria, effectiveOpen, classes, config, state } = useSelectContext('SelectContent');
+  const contentClass = fill ? selectClasses({ ...config, fill }, state).content : classes.content;
 
   const partProps = {
     'data-part': 'content',
@@ -418,7 +427,7 @@ export function SelectContent({ className, children, asChild, ...props }: Select
   }
 
   return (
-    <div className={classy(classes.content, className)} {...partProps} {...props}>
+    <div className={classy(contentClass, className)} {...partProps} {...props}>
       <div className={classes.viewport}>{children}</div>
     </div>
   );

@@ -117,11 +117,18 @@ describe('role scale: ownership', () => {
   });
 
   it('points every semantic declaration at a role step except the charts', () => {
+    const semanticNames = new Set(
+      generateBaseSystem()
+        .allTokens.filter((t) => t.namespace === 'semantic')
+        .map((t) => t.name.replace(/--dark$/, '')),
+    );
     const roleStep = new RegExp(`^(?:${SEMANTIC_FAMILY_ROLES.join('|')})-\\d+$`);
     const root = css.match(/:root, :host \{([\s\S]*?)\n\}/)?.[1] ?? '';
     const semantic = [...root.matchAll(/^\s*--rafters-(?:dark-)?([\w-]+): (var\([^)]+\));$/gm)]
       .map((m) => ({ name: m[1] ?? '', value: m[2] ?? '' }))
-      .filter((d) => !roleStep.test(d.name));
+      .filter((d) => !roleStep.test(d.name))
+      // The mapped namespaces' --rafters-* layer shares :root (#2825); only colours here.
+      .filter((d) => semanticNames.has(d.name));
     const onPalette = semantic.filter((d) => !/^var\(--rafters-[a-z]+-\d+\)$/.test(d.value));
     expect([...new Set(onPalette.map((d) => d.name))].sort()).toEqual([
       'chart-1',

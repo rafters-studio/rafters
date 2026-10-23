@@ -150,7 +150,7 @@ describe('context-menu [react]', () => {
     // the rendered nodes. Nothing else in this lane asserted it.
     setup();
     openMenu();
-    const classes = contextMenuClasses();
+    const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
     const content = partElement(document.body, 'content');
     expect(content).not.toBeNull();
     expect((content as HTMLElement).className).toBe(classes.content);

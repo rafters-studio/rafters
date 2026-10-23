@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { ButtonConfig, ButtonSize, ButtonState, ButtonVariant } from './button.behavior';
 
 export interface ButtonClassSet {
@@ -7,55 +8,45 @@ export interface ButtonClassSet {
   endIcon: string;
 }
 
-const variantClasses: Record<ButtonVariant, string> = {
-  default:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
-  primary:
-    'bg-primary text-primary-foreground ' +
-    'hover:bg-primary-hover active:bg-primary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-primary-ring',
+/**
+ * A variant is its SURFACE (resting background, foreground and border colour,
+ * plus their hover: and active: colour states) and the rest (focus ring,
+ * structure). They are kept apart so a winning `fill` replaces the surface
+ * whole and the rest stays (FR-RAF-FILL-003): a glass button never hovers to
+ * its variant colour.
+ */
+const variantSurfaceClasses: Record<ButtonVariant, string> = {
+  default: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',
+  primary: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',
   secondary:
-    'bg-secondary text-secondary-foreground ' +
-    'hover:bg-secondary-hover active:bg-secondary-active ' +
-    'focus-visible:ring-2 focus-visible:ring-secondary-ring',
+    'bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-active',
   destructive:
     'bg-destructive text-destructive-foreground ' +
-    'hover:bg-destructive-hover active:bg-destructive-active ' +
-    'focus-visible:ring-2 focus-visible:ring-destructive-ring',
-  success:
-    'bg-success text-success-foreground ' +
-    'hover:bg-success-hover active:bg-success-active ' +
-    'focus-visible:ring-2 focus-visible:ring-success-ring',
-  warning:
-    'bg-warning text-warning-foreground ' +
-    'hover:bg-warning-hover active:bg-warning-active ' +
-    'focus-visible:ring-2 focus-visible:ring-warning-ring',
-  info:
-    'bg-info text-info-foreground ' +
-    'hover:bg-info-hover active:bg-info-active ' +
-    'focus-visible:ring-2 focus-visible:ring-info-ring',
-  muted:
-    'bg-muted text-muted-foreground ' +
-    'hover:bg-muted-hover active:bg-muted-active ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  accent:
-    'bg-accent text-accent-foreground ' +
-    'hover:bg-accent-hover active:bg-accent-active ' +
-    'focus-visible:ring-2 focus-visible:ring-accent-ring',
+    'hover:bg-destructive-hover active:bg-destructive-active',
+  success: 'bg-success text-success-foreground hover:bg-success-hover active:bg-success-active',
+  warning: 'bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active',
+  info: 'bg-info text-info-foreground hover:bg-info-hover active:bg-info-active',
+  muted: 'bg-muted text-muted-foreground hover:bg-muted-hover active:bg-muted-active',
+  accent: 'bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active',
   outline:
-    'border border-input bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  ghost:
-    'bg-transparent text-foreground ' +
-    'hover:bg-accent hover:text-accent-foreground ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
-  link:
-    'text-primary underline-offset-4 ' +
-    'hover:underline ' +
-    'focus-visible:ring-2 focus-visible:ring-ring',
+    'border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+  ghost: 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+  link: 'text-primary',
+};
+
+const variantClasses: Record<ButtonVariant, string> = {
+  default: 'focus-visible:ring-2 focus-visible:ring-primary-ring',
+  primary: 'focus-visible:ring-2 focus-visible:ring-primary-ring',
+  secondary: 'focus-visible:ring-2 focus-visible:ring-secondary-ring',
+  destructive: 'focus-visible:ring-2 focus-visible:ring-destructive-ring',
+  success: 'focus-visible:ring-2 focus-visible:ring-success-ring',
+  warning: 'focus-visible:ring-2 focus-visible:ring-warning-ring',
+  info: 'focus-visible:ring-2 focus-visible:ring-info-ring',
+  muted: 'focus-visible:ring-2 focus-visible:ring-ring',
+  accent: 'focus-visible:ring-2 focus-visible:ring-accent-ring',
+  outline: 'border focus-visible:ring-2 focus-visible:ring-ring',
+  ghost: 'focus-visible:ring-2 focus-visible:ring-ring',
+  link: 'underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring',
 };
 
 // Padding tightens on the icon's own side only, in logical edges so the start
@@ -166,7 +157,7 @@ const iconClasses = 'inline-grid place-items-center';
 
 export function buttonClasses(config: ButtonConfig, _state: ButtonState): ButtonClassSet {
   return {
-    root: `${baseClasses} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, variantSurfaceClasses[config.variant])} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
     spinner: spinnerClasses,
     startIcon: iconClasses,
     endIcon: iconClasses,
@@ -176,5 +167,6 @@ export function buttonClasses(config: ButtonConfig, _state: ButtonState): Button
 export function buttonVariants(
   options: { variant?: ButtonVariant; size?: ButtonSize } = {},
 ): string {
-  return `${baseClasses} ${variantClasses[options.variant ?? 'default']} ${sizeClasses[options.size ?? 'default']}`;
+  const variant = options.variant ?? 'default';
+  return `${baseClasses} ${variantSurfaceClasses[variant]} ${variantClasses[variant]} ${sizeClasses[options.size ?? 'default']}`;
 }

@@ -426,6 +426,9 @@ class DTCGBuilder {
       const family = roleForPaletteReference(name, this.tokens) ?? value.family;
       return { kind: 'token', type: 'color', value: new Ref(`${family}-${value.position}`) };
     }
+    // A fill recipe has no DTCG type: it is carried verbatim, as data (FR-RAF-FILL-002).
+    if (typeof value !== 'string')
+      return { kind: 'unrepresented', reason: 'A fill recipe has no DTCG type.' };
     return this.classifyString(token, value.trim());
   }
 

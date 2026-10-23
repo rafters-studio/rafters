@@ -476,6 +476,169 @@ export const ColorReferenceSchema = z.object({
 
 export type ColorReference = z.infer<typeof ColorReferenceSchema>;
 
+// Token reference: names a role or semantic colour token ("card", "primary")
+// and follows that token through the cascade and the mode (FR-RAF-FILL-001).
+export const TokenReferenceSchema = z.object({ token: z.string().min(1) }).strict();
+
+export type TokenReference = z.infer<typeof TokenReferenceSchema>;
+
+// Fills (FR-RAF-FILL-001): a designer-authored recipe of stock Tailwind parts.
+// Every colour is a registry reference, never a literal.
+const FillColourSchema = z.union([ColorReferenceSchema.strict(), TokenReferenceSchema], {
+  error: 'must be a registry reference ({family, position} or {token}), not a literal colour',
+});
+const PercentSchema = z.number().min(0).max(100);
+const FillStopSchema = z
+  .object({
+    color: FillColourSchema,
+    alpha: PercentSchema.optional(),
+    position: PercentSchema.optional(),
+  })
+  .strict();
+const FillPartsSchema = z
+  .object({
+    background: z
+      .object({ color: FillColourSchema, alpha: PercentSchema.optional() })
+      .strict()
+      .optional(),
+    gradient: z
+      .object({
+        type: z.enum(['linear', 'radial', 'conic']),
+        direction: z
+          .enum(['to-t', 'to-tr', 'to-r', 'to-br', 'to-b', 'to-bl', 'to-l', 'to-tl'])
+          .optional(),
+        angle: z.number().optional(),
+        from: FillStopSchema.optional(),
+        via: FillStopSchema.optional(),
+        to: FillStopSchema.optional(),
+        interpolation: z
+          .enum(['srgb', 'hsl', 'oklab', 'oklch', 'longer', 'shorter', 'increasing', 'decreasing'])
+          .optional(),
+      })
+      .strict()
+      .optional(),
+    mask: z
+      .object({
+        type: z.enum(['linear', 'radial', 'conic', 't', 'r', 'b', 'l', 'x', 'y']),
+        from: PercentSchema.optional(),
+        to: PercentSchema.optional(),
+      })
+      .strict()
+      .optional(),
+    backdrop: z
+      .object({
+        blur: z.enum(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']).optional(),
+        brightness: z.number().min(0).optional(),
+        contrast: z.number().min(0).optional(),
+        saturate: z.number().min(0).optional(),
+        grayscale: PercentSchema.optional(),
+        opacity: PercentSchema.optional(),
+      })
+      .strict()
+      .optional(),
+    blend: z
+      .enum([
+        'normal',
+        'multiply',
+        'screen',
+        'overlay',
+        'darken',
+        'lighten',
+        'color-dodge',
+        'color-burn',
+        'hard-light',
+        'soft-light',
+        'difference',
+        'exclusion',
+        'hue',
+        'saturation',
+        'color',
+        'luminosity',
+      ])
+      .optional(),
+    foreground: FillColourSchema.optional(),
+    border: FillColourSchema.optional(),
+  })
+  .strict();
+const FillStateSchema = FillPartsSchema.extend({ dark: FillPartsSchema.optional() }).strict();
+
+export const FillValueSchema = FillPartsSchema.extend({
+  foreground: FillColourSchema,
+  dark: FillPartsSchema.optional(),
+  hover: FillStateSchema.optional(),
+  active: FillStateSchema.optional(),
+  focus: FillStateSchema.optional(),
+  disabled: FillStateSchema.optional(),
+}).strict();
+
+export type FillValue = z.infer<typeof FillValueSchema>;
+
+// Names a fill cannot take (FR-RAF-FILL-001): Tailwind's static bg-* utilities
+// (45), the legacy ones it still emits (12) and the bg- keywords, each without
+// its `bg-` prefix. Studio keeps the designer-facing list.
+export const FILL_NAME_EXCLUDES: readonly string[] = [
+  'auto',
+  'blend-color',
+  'blend-color-burn',
+  'blend-color-dodge',
+  'blend-darken',
+  'blend-difference',
+  'blend-exclusion',
+  'blend-hard-light',
+  'blend-hue',
+  'blend-lighten',
+  'blend-luminosity',
+  'blend-multiply',
+  'blend-normal',
+  'blend-overlay',
+  'blend-saturation',
+  'blend-screen',
+  'blend-soft-light',
+  'bottom',
+  'bottom-left',
+  'bottom-right',
+  'center',
+  'clip-border',
+  'clip-content',
+  'clip-padding',
+  'clip-text',
+  'contain',
+  'cover',
+  'fixed',
+  'left',
+  'local',
+  'no-repeat',
+  'none',
+  'origin-border',
+  'origin-content',
+  'origin-padding',
+  'repeat',
+  'repeat-round',
+  'repeat-space',
+  'repeat-x',
+  'repeat-y',
+  'right',
+  'scroll',
+  'top',
+  'top-left',
+  'top-right',
+  'left-top',
+  'right-top',
+  'left-bottom',
+  'right-bottom',
+  'gradient-to-t',
+  'gradient-to-tr',
+  'gradient-to-r',
+  'gradient-to-br',
+  'gradient-to-b',
+  'gradient-to-bl',
+  'gradient-to-l',
+  'gradient-to-tl',
+  'inherit',
+  'current',
+  'transparent',
+];
+
 // Progression system labels stamped on tokens to record which math system
 // produced them. Used only by TokenSchema below; the math-utils package
 // carries the actual ratio definitions in DEFAULT_RATIOS. This array will be
@@ -517,7 +680,7 @@ export type OverrideKind = z.infer<typeof OverrideKindSchema>;
 export const TokenSchema = z.object({
   // Core token data
   name: z.string(),
-  value: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]), // String, ColorValue for families, or ColorReference for semantic
+  value: z.union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema]), // String, ColorValue for families, ColorReference for semantic, FillValue for fills
   category: z.string(),
   namespace: z.string(),
   binding: BindingSchema.optional(), // Plugin binding for cascade-driven values
@@ -550,7 +713,7 @@ export const TokenSchema = z.object({
   userOverride: z
     .object({
       // Value before override (for undo)
-      previousValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]),
+      previousValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema]),
       // Why was this overridden
       reason: z.string(),
       // Additional context (e.g. "Q1 marketing campaign", "accessibility audit")
@@ -566,7 +729,9 @@ export const TokenSchema = z.object({
 
   // Computed value from generation rule (before any override)
   // Stored so agents can see what the system WOULD produce vs what human chose
-  computedValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]).optional(),
+  computedValue: z
+    .union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema])
+    .optional(),
 
   // Dependency tracking for automatic regeneration
   dependsOn: z.array(z.string()).optional(), // Parent token(s) - empty = root token

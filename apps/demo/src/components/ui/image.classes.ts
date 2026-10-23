@@ -1,4 +1,4 @@
-import { resolveFillName } from '@/lib/primitives/fill-resolver';
+import classy from '@/lib/primitives/classy';
 import {
   resolveImage,
   type ImageAlignment,
@@ -16,8 +16,8 @@ import {
  * performances all compose their className through imageClasses so there is
  * zero drift.
  *
- * Fill, not background: the frame's placeholder resolves through fill-resolver
- * (a role token or gradient), never a raw colour utility. The overlay itself is
+ * Fill, not background: the frame's placeholder is the `fill` prop, exactly one
+ * `bg-fill-*` token (FR-RAF-FILL-003), never a raw colour utility. The overlay itself is
  * a static token surface -- no spinner, no transition; the matrix gives Image
  * one animated moment, the img's load fade, and it lives on the img part.
  */
@@ -35,9 +35,9 @@ export const imageSizeClasses: Record<ImageSize, string> = {
 
 /** Horizontal alignment via auto margins. */
 export const imageAlignmentClasses: Record<ImageAlignment, string> = {
-  left: 'mr-auto',
+  left: 'me-auto',
   center: 'mx-auto',
-  right: 'ml-auto',
+  right: 'ms-auto',
 };
 
 /** Corner radius token applied to the clipping frame. */
@@ -119,7 +119,7 @@ export function imageClasses(config: ImageConfig, _state: ImageState): ImageClas
   const frame = [
     imageFrameClasses,
     imageRadiusClasses[radius],
-    resolveFillName(config.fill, 'surface'),
+    classy.fill(config.fill),
   ]
     .filter(Boolean)
     .join(' ');

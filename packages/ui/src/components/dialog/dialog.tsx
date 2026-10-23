@@ -304,6 +304,8 @@ export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement>
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function DialogContent({
@@ -313,6 +315,7 @@ export function DialogContent({
   onEscapeKeyDown,
   onPointerDownOutside,
   onInteractOutside,
+  fill,
   className,
   children,
   onKeyDown,
@@ -378,7 +381,10 @@ export function DialogContent({
         // animation. It lifts the moment the dialog reopens.
         inert={effectiveOpen ? undefined : true}
         tabIndex={-1}
-        className={classy(classes.content, className)}
+        className={classy(
+          fill ? dialogClasses({ ...config, fill }, state).content : classes.content,
+          className,
+        )}
         {...aria.content}
         onKeyDown={handleKeyDown}
         {...props}

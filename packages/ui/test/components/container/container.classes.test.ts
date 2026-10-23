@@ -58,8 +58,9 @@ describe('container classes', () => {
     expect(root({ as: 'section' })).not.toContain('max-w-prose');
   });
 
-  it('fill signatures resolve through the color vocabulary', () => {
-    expect(root({ fill: 'muted' })).toContain('bg-muted');
+  it('a bg-fill- fill lands on the root; a retired v2 value paints nothing', () => {
+    expect(root({ fill: 'bg-fill-glass' }).split(' ')).toContain('bg-fill-glass');
+    expect(root({ fill: 'muted' })).not.toContain('bg-');
   });
 });
 

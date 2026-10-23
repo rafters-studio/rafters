@@ -78,9 +78,12 @@ interface Props {
   side?: HoverCardConfig['side'];
   align?: HoverCardConfig['align'];
   sideOffset?: number;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 const {
+  fill,
   id,
   href,
   label,
@@ -93,6 +96,7 @@ const {
 
 const config: HoverCardConfig = {
   defaultOpen,
+  fill,
   disableHoverableContent,
   side,
   align,

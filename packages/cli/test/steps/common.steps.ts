@@ -143,8 +143,8 @@ Given('a Next.js project with .rafters already initialized', async () => {
   await execRafters(context.fixturePath, ['init']);
 });
 
-// Deleted token namespaces (#1638 S2 elevation, #1637 fill): old projects
-// carry these files; rebuild must drop them.
+// Deleted token namespace (#1638 S2 elevation): old projects carry the file;
+// rebuild must drop it.
 Given('a stale {string} namespace file exists', async ({}, namespace: string) => {
   const stale = {
     namespace,

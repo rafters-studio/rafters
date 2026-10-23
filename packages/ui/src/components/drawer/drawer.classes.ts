@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import {
   type DrawerConfig,
   type DrawerSide,
@@ -35,6 +36,9 @@ const overlayClasses =
   'data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 ' +
   'data-[state=open]:duration-normal data-[state=open]:ease-enter';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-background text-foreground border-card-border';
+
 // The panel is fixed to its anchoring edge (no centering container -- unlike a
 // dialog).
 //
@@ -65,8 +69,8 @@ const overlayClasses =
 // transform, so the panel is visible from the first frame and the focus trap,
 // which focuses synchronously on open, lands inside it.
 const contentBaseClasses =
-  'fixed z-depth-modal flex flex-col gap-4 bg-background p-6 text-foreground shadow-lg ' +
-  'border-card-border invisible pointer-events-none ' +
+  'fixed z-depth-modal flex flex-col gap-4 p-6 shadow-lg ' +
+  'invisible pointer-events-none ' +
   'transition-all duration-moderate ease-exit ' +
   'data-[state=open]:visible data-[state=open]:pointer-events-auto ' +
   'data-[state=open]:transition-transform ' +
@@ -116,7 +120,7 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 export function drawerClasses(config: DrawerConfig, _state: DrawerState): DrawerClassSet {
   return {
     overlay: overlayClasses,
-    content: `${contentBaseClasses} ${sideClasses[drawerSide(config)]}`,
+    content: `${contentBaseClasses} ${classy.fill(config.fill, contentSurfaceClasses)} ${sideClasses[drawerSide(config)]}`,
     handle: handleClasses,
     header: headerClasses,
     footer: footerClasses,

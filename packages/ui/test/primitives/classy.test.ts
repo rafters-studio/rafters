@@ -73,3 +73,36 @@ describe('classy - named grid track utility', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('classy.fill - the bg-fill- shape guard (FR-RAF-FILL-003)', () => {
+  const surface = 'bg-card text-card-foreground';
+
+  it('a single bg-fill- token wins over the surface, unchanged and silent', () => {
+    const warn = vi.fn();
+    expect(createClassy({ warn }).fill('bg-fill-glass', surface)).toBe('bg-fill-glass');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('no fill leaves the surface standing, silently', () => {
+    const warn = vi.fn();
+    const c = createClassy({ warn });
+    expect(c.fill(undefined, surface)).toBe(surface);
+    expect(c.fill('', surface)).toBe(surface);
+    expect(c.fill(undefined)).toBe('');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'bg-red-500',
+    'bg-fill-glass extra',
+    'background',
+    'muted/50',
+    'bg-fill-',
+    'bg-fill-[x]',
+  ])('drops %s with a warning naming it, and the surface stands', (value) => {
+    const warn = vi.fn();
+    expect(createClassy({ warn }).fill(value, surface)).toBe(surface);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain(`'${value}'`);
+  });
+});

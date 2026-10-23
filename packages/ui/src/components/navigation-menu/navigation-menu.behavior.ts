@@ -21,6 +21,8 @@ import { navigationMenuClasses } from './navigation-menu.classes';
  * which item is open.
  */
 export interface NavigationMenuConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
   /** Controlled open item ('' = none). */
   value?: string | undefined;
   /** Uncontrolled seed. */

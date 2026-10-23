@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { DropdownMenuConfig, DropdownMenuState } from './dropdown-menu.behavior';
 
 export interface DropdownMenuClassSet {
@@ -23,6 +24,9 @@ const triggerClasses =
   'inline-flex items-center justify-center gap-2 rounded-md ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
 // color. Enter/exit is PRESENCE (#1996): the menu is present-but-hidden, so the
 // keyframe starts as the node leaves display:none -- no @starting-style -- and
@@ -46,8 +50,8 @@ const triggerClasses =
 // items and the icon sits on the right on a dir="rtl" page with no direction
 // class.
 const contentClasses =
-  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -121,12 +125,12 @@ const labelClasses = 'col-span-full px-2 py-1.5 text-label-medium ts-label-mediu
 const groupClasses = 'grid grid-cols-subgrid col-span-full';
 
 export function dropdownMenuClasses(
-  _config: DropdownMenuConfig,
+  config: DropdownMenuConfig,
   _state: DropdownMenuState,
 ): DropdownMenuClassSet {
   return {
     trigger: triggerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

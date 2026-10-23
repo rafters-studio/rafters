@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { PopoverConfig, PopoverState } from './popover.behavior';
 
 export interface PopoverClassSet {
@@ -9,6 +10,9 @@ export interface PopoverClassSet {
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
 // and the config, and NO class -- a behavior root never styles itself; layout
 // belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // The panel sits on the popover depth token and fills with the popover surface
 // tokens. Enter/exit is PRESENCE (#1996): the node arrives with its keyframe
@@ -35,7 +39,7 @@ export interface PopoverClassSet {
 // backstop timer. The two mechanisms never compose either: `animation: none`
 // resets the shorthand and discards the zeroed duration wherever it wins.
 const contentClasses =
-  'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
+  'z-depth-popover w-72 rounded-md border p-4 shadow-lg outline-none ' +
   'data-[state=open]:animate-scale-in-moderate-enter data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
@@ -74,9 +78,9 @@ const closeClasses =
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
-export function popoverClasses(_config: PopoverConfig, _state: PopoverState): PopoverClassSet {
+export function popoverClasses(config: PopoverConfig, _state: PopoverState): PopoverClassSet {
   return {
-    content: contentClasses,
+    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
     close: closeClasses,
     closeIcon: closeIconClasses,
   };
