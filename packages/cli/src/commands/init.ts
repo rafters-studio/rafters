@@ -493,23 +493,26 @@ export function isTailwindCliInstalled(): boolean {
 }
 
 /**
- * Prompt to install @tailwindcss/cli (required for compiled CSS output).
- * In non-interactive/agent mode, throws with install instructions.
+ * Install @tailwindcss/cli into the project (required for compiled CSS output).
+ * Agent mode installs without asking; interactive mode asks first; any other
+ * non-interactive run throws with install instructions.
  */
 export async function ensureTailwindCli(cwd: string): Promise<void> {
-  if (!isInteractive() || isAgentMode()) {
-    throw new Error(
-      'Standalone CSS export requires @tailwindcss/cli. Install it as a dev dependency in your project.',
-    );
-  }
+  if (!isAgentMode()) {
+    if (!isInteractive()) {
+      throw new Error(
+        'Standalone CSS export requires @tailwindcss/cli. Install it as a dev dependency in your project.',
+      );
+    }
 
-  const shouldInstall = await confirm({
-    message: 'Standalone CSS requires @tailwindcss/cli. Install it now?',
-    default: true,
-  });
+    const shouldInstall = await confirm({
+      message: 'Standalone CSS requires @tailwindcss/cli. Install it now?',
+      default: true,
+    });
 
-  if (!shouldInstall) {
-    throw new Error('Standalone CSS export requires @tailwindcss/cli.');
+    if (!shouldInstall) {
+      throw new Error('Standalone CSS export requires @tailwindcss/cli.');
+    }
   }
 
   await updateDependencies([], ['@tailwindcss/cli'], { cwd });

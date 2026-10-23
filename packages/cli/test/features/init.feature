@@ -430,3 +430,26 @@ Feature: rafters init command
     When I run "rafters init --rebuild --agent"
     Then rafters.documentation.css has a rule for each of "text-4xl", "font-bold", "leading-4xl", "rounded-md", "shadow-md" and "p-4"
     And each of those rules resolves through a --rafters- property
+
+  # @tailwindcss/cli on demand (#2843)
+
+  @criterion-2843-1
+  Scenario: installing rafters brings neither @tailwindcss/cli nor @parcel/watcher
+    Then the rafters package's production dependencies include neither "@tailwindcss/cli" nor "@parcel/watcher"
+
+  @criterion-2843-2
+  Scenario: init with the compiled export off leaves @tailwindcss/cli out of the project
+    Given a "vite-no-shadcn" project
+    When I run "rafters init --agent"
+    Then the command should succeed
+    And the project's package.json does not list "@tailwindcss/cli"
+    And the project has no ".rafters/output/rafters.standalone.css"
+
+  @criterion-2843-3
+  Scenario: init with the compiled export on writes the compiled stylesheet
+    Given a "vite-no-shadcn" project
+    And I have run "rafters init --agent"
+    And the project's config enables the compiled export
+    When I run "rafters init --rebuild --agent"
+    Then the command should succeed
+    And ".rafters/output/rafters.standalone.css" holds compiled rafters CSS
