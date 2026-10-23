@@ -92,7 +92,7 @@ function errorMessage(): string {
   return String(parsed.message);
 }
 
-function run(args: string[], cwd: string): Promise<{ code: number; stderr: string }> {
+export function run(args: string[], cwd: string): Promise<{ code: number; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn('node', args, { cwd });
     let stderr = '';

@@ -18,6 +18,8 @@ import * as csstree from 'css-tree';
 import {
   type ColorReference,
   type ColorValue,
+  type FillValue,
+  FillValueSchema,
   SEMANTIC_FAMILY_ROLES,
   type Token,
   type TypographyElementOverride,
@@ -209,6 +211,8 @@ function getSemanticMappingsFromTokens(
  */
 function tokenValueToCSS(token: Token): string | null {
   const { value } = token;
+  // A fill is a recipe, written as its bg-fill-* utility, never a property.
+  if (token.namespace === 'fill') return null;
 
   // String values pass through, but skip JSON object/array strings
   if (typeof value === 'string') {
@@ -604,7 +608,8 @@ export type ThemeMappingGroup =
   | 'typography-composite'
   | 'depth'
   | 'breakpoint'
-  | 'focus';
+  | 'focus'
+  | 'fill';
 
 /** One theme key a row writes. */
 export interface ThemeMappingKey {
@@ -635,6 +640,11 @@ export interface ThemeMappingRow {
   readonly keys: readonly ThemeMappingKey[];
   /** Keys written once per entry of the JSON value's `responsive` object; `{bp}` is the entry's name. */
   readonly responsiveKeys?: readonly ThemeMappingKey[];
+  /**
+   * The utility the row writes for each matched token, in place of theme keys:
+   * `@utility <name> { @apply <the recipe's stock classes>; }`.
+   */
+  readonly utility?: string;
   /** The key carries the stored value itself: media and container queries cannot read var(). */
   readonly literal?: boolean;
   /** The value a probe stores in each probe token, and the utilities that must follow it. */
@@ -650,6 +660,8 @@ export interface ThemeMappingRow {
  * `--rafters-<token>` to the stored value, so a token change reaches its
  * utility the way colour does. A literal row carries the value itself.
  * A token in a mapped namespace that matches no row gets no theme key.
+ * A utility row (the fill row) writes a utility built from stock Tailwind
+ * classes; its probe colour is a family step, literal in `@theme`.
  *
  * A new namespace adds rows here; the writer below applies them for both the
  * consumer sheet and the static sheet.
@@ -832,6 +844,15 @@ export const THEME_MAPPING: readonly ThemeMappingRow[] = [
       { utility: 'outline-offset-2', token: 'focus-offset', property: 'outline-offset' },
     ],
   },
+  {
+    group: 'fill',
+    token: /^(.+)$/,
+    keys: [],
+    utility: 'bg-fill-{1}',
+    literal: true,
+    probeValue: 'oklch(0.41 0.12 30)',
+    probes: [{ utility: 'bg-fill-probe', token: 'zinc-500', property: 'background-color' }],
+  },
 ];
 
 const MAPPED_GROUPS: ReadonlySet<string> = new Set(THEME_MAPPING.map((row) => row.group));
@@ -921,6 +942,115 @@ function themeMappingLines(tokens: TokenIndex): string[] {
     const value = literal && source ? tokenValueToCSS(source) : `var(--rafters-${reads})`;
     return `  ${key}: ${value};`;
   });
+}
+
+type FillParts = NonNullable<FillValue['dark']>;
+type FillColour = NonNullable<FillParts['foreground']>;
+
+/** A state block and the variant its classes take. */
+const FILL_STATES = [
+  ['hover', 'hover'],
+  ['active', 'active'],
+  ['focus', 'focus-visible'],
+  ['disabled', 'disabled'],
+] as const;
+
+/** A recipe number as a utility value: the named step when whole, else an arbitrary value. */
+function fillNumber(n: number, named: string, arbitrary: string, hint = ''): string {
+  return Number.isInteger(n) ? `${n}${named}` : `[${hint}${n}${arbitrary}]`;
+}
+
+/** An angle utility, negated with a leading `-` as Tailwind spells it. */
+function fillAngle(root: string, angle: number): string {
+  return `${angle < 0 ? '-' : ''}${root}-${fillNumber(Math.abs(angle), '', 'deg')}`;
+}
+
+/** A registry colour as a utility's colour name, with its alpha modifier. */
+function fillColour(colour: FillColour, alpha?: number): string {
+  const name = 'token' in colour ? colour.token : `${colour.family}-${colour.position}`;
+  return alpha === undefined ? name : `${name}/${alpha}`;
+}
+
+function fillGradientClasses(gradient: NonNullable<FillParts['gradient']>): string[] {
+  let base: string;
+  if (gradient.type === 'radial') base = 'bg-radial';
+  else if (gradient.type === 'conic') {
+    base = gradient.angle === undefined ? 'bg-conic' : fillAngle('bg-conic', gradient.angle);
+  } else if (gradient.direction) base = `bg-linear-${gradient.direction}`;
+  else if (gradient.angle !== undefined) base = fillAngle('bg-linear', gradient.angle);
+  else base = 'bg-linear-to-b';
+  const out = [gradient.interpolation ? `${base}/${gradient.interpolation}` : base];
+  for (const prefix of ['from', 'via', 'to'] as const) {
+    const stop = gradient[prefix];
+    if (!stop) continue;
+    out.push(`${prefix}-${fillColour(stop.color, stop.alpha)}`);
+    if (stop.position !== undefined) out.push(`${prefix}-${fillNumber(stop.position, '%', '%')}`);
+  }
+  return out;
+}
+
+/** The stock classes of one block of a recipe. A mask with no positions writes no mask. */
+function fillPartClasses(parts: FillParts): string[] {
+  const out: string[] = [];
+  if (parts.background) {
+    out.push(`bg-${fillColour(parts.background.color, parts.background.alpha)}`);
+  }
+  if (parts.gradient) out.push(...fillGradientClasses(parts.gradient));
+  const { mask, backdrop } = parts;
+  for (const edge of ['from', 'to'] as const) {
+    const at = mask?.[edge];
+    if (mask && at !== undefined) {
+      out.push(`mask-${mask.type}-${edge}-${fillNumber(at, '%', '%', 'length:')}`);
+    }
+  }
+  if (backdrop?.blur) out.push(`backdrop-blur-${backdrop.blur}`);
+  for (const filter of ['brightness', 'contrast', 'saturate', 'grayscale', 'opacity'] as const) {
+    const n = backdrop?.[filter];
+    if (n !== undefined) out.push(`backdrop-${filter}-${fillNumber(n, '', '%')}`);
+  }
+  if (parts.blend) out.push(`bg-blend-${parts.blend}`);
+  if (parts.foreground) out.push(`text-${fillColour(parts.foreground)}`);
+  if (parts.border) out.push(`border-${fillColour(parts.border)}`);
+  return out;
+}
+
+/** A recipe's stock class list: its parts, then `dark:` parts, then each state's variant parts. */
+function fillClasses(recipe: FillValue): string[] {
+  const out = fillPartClasses(recipe);
+  if (recipe.dark) out.push(...fillPartClasses(recipe.dark).map((c) => `dark:${c}`));
+  for (const [state, variant] of FILL_STATES) {
+    const block = recipe[state];
+    if (!block) continue;
+    out.push(...fillPartClasses(block).map((c) => `${variant}:${c}`));
+    if (block.dark) out.push(...fillPartClasses(block.dark).map((c) => `dark:${variant}:${c}`));
+  }
+  return out;
+}
+
+/**
+ * Each fill as its utility row's `@utility`, built only from stock Tailwind
+ * classes and registry colours, and one `@source inline` line naming every
+ * one, so a fill named only in data still renders (FR-RAF-FILL-002).
+ */
+function generateFillUtilities(tokens: TokenIndex): string | null {
+  const blocks: string[] = [];
+  const names: string[] = [];
+  for (const row of THEME_MAPPING) {
+    if (row.utility === undefined) continue;
+    for (const token of tokens.values()) {
+      if (token.namespace !== row.group) continue;
+      const match = row.token.exec(token.name);
+      if (!match || row.except?.test(token.name)) continue;
+      const captures = Object.fromEntries(match.slice(1).map((c, i) => [String(i + 1), c]));
+      const name = fillTemplate(row.utility, captures);
+      if (name === null) continue;
+      const classes = fillClasses(FillValueSchema.parse(token.value));
+      names.push(name);
+      blocks.push(`@utility ${name} {\n  @apply ${classes.join(' ')};\n}`);
+    }
+  }
+  if (names.length === 0) return null;
+  return [...blocks, `@source inline("${names.join(' ')}");`].join('\n');
 }
 
 /**
@@ -1729,8 +1859,6 @@ export function tokensToTailwind(
   typographyOverrides: TypographyElementOverride[] = [],
 ): string {
   const { includeImport = true } = options;
-  // Fills reach no export until #2828 teaches the exporters about them.
-  tokens = tokens.filter((t) => t.namespace !== 'fill');
 
   if (tokens.length === 0) {
     throw new Error('Registry is empty');
@@ -1757,6 +1885,12 @@ export function tokensToTailwind(
   const familySources = generateFamilyInlineSources(groups.color);
   if (familySources) {
     sections.push(familySources);
+    sections.push('');
+  }
+
+  const fillUtilities = generateFillUtilities(tokensByName);
+  if (fillUtilities) {
+    sections.push(fillUtilities);
     sections.push('');
   }
 
@@ -1961,7 +2095,7 @@ export function registryToTailwindStatic(
   options?: Pick<TailwindExportOptions, 'fontImports'>,
 ): string {
   // Fills reach no export until #2828 teaches the exporters about them.
-  const tokens = registry.list().filter((t) => t.namespace !== 'fill');
+  const tokens = [...registry.list()];
 
   if (tokens.length === 0) {
     throw new Error('Registry is empty');
@@ -1984,6 +2118,12 @@ export function registryToTailwindStatic(
   const themeInlineBlock = generateThemeInlineBlock(tokensByName);
   sections.push(themeInlineBlock);
   sections.push('');
+
+  const fillUtilities = generateFillUtilities(tokensByName);
+  if (fillUtilities) {
+    sections.push(fillUtilities);
+    sections.push('');
+  }
 
   // Keyframes for animations (these don't change with token values)
   const keyframes = generateKeyframes(groups.motion);
