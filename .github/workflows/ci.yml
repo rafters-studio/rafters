@@ -13,42 +13,45 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The official Playwright image ships all three engines and their system
+    # libraries, so no browser download or apt install runs here (#2837).
+    # --with-deps used to fetch about 140 apt packages each run, and a slow
+    # Ubuntu mirror held the job for over half an hour. The tag must equal the
+    # lockfile's @playwright/test version; the first step checks that.
+    # --user 1001 follows Playwright's GitHub Actions container example
+    # (https://playwright.dev/docs/ci) and keeps Firefox off the root-HOME path.
+    container:
+      image: &playwright-image mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
     env:
       CI: true
     steps:
       - uses: actions/checkout@v5
+      - &check-playwright-image
+        name: Check the Playwright image matches the lockfile
+        env:
+          PLAYWRIGHT_IMAGE: *playwright-image
+        run: |
+          image_version="${PLAYWRIGHT_IMAGE##*:v}"
+          image_version="${image_version%-noble}"
+          lock_version="$(sed -n "s/^  '@playwright\/test@\([^']*\)':\$/\1/p" pnpm-lock.yaml | head -n 1)"
+          if [ "$image_version" != "$lock_version" ]; then
+            echo "Playwright image is v$image_version but pnpm-lock.yaml has @playwright/test $lock_version; update the image tag in .github/workflows/ci.yml"
+            exit 1
+          fi
+          echo "Playwright image v$image_version matches @playwright/test $lock_version"
       - uses: pnpm/action-setup@v6.0.10
       - uses: actions/setup-node@v5
         with:
           node-version: 24.12
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # All three engines the root playwright.config.ts declares projects for.
-      # webkit is not optional: test/presence/presence-race.e2e.ts is the only
-      # place the browser semantics usePresence rests on are measured, and it is
-      # measured in every engine the project ships against.
-      #
-      # --with-deps runs apt-get update against the runner's Google Chrome
-      # source, which has twice answered with a Hash Sum mismatch from
-      # dl.google.com and failed the job before a single test ran. A mismatch
-      # means the cached package index disagrees with the mirror mid-update, so
-      # a bare retry would re-read the same bad index; each attempt drops
-      # /var/lib/apt/lists to force a clean refetch. The first attempt neither
-      # clears nor sleeps, so a healthy run costs nothing extra (#2342).
-      - name: Install Playwright engines and system dependencies
-        run: |
-          for attempt in 1 2 3; do
-            if pnpm exec playwright install --with-deps chromium firefox webkit; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "playwright install failed (attempt $attempt of 3); clearing the apt index and retrying"
-              sudo rm -rf /var/lib/apt/lists/*
-              sleep 15
-            fi
-          done
-          echo "playwright install failed after 3 attempts"
-          exit 1
+      # All three engines the root playwright.config.ts declares projects for
+      # come from the image. webkit is not optional:
+      # test/presence/presence-race.e2e.ts is the only place the browser
+      # semantics usePresence rests on are measured, and it is measured in
+      # every engine the project ships against.
       - run: pnpm test:all
 
   # The Astro matrix (#2327): the same packages/ui Astro test files and
@@ -63,6 +66,12 @@ jobs:
   astro:
     name: astro-${{ matrix.leg }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Same Playwright image as the test job; the Astro layout specs measure
+    # the markup in its Chromium.
+    container:
+      image: *playwright-image
+      options: --user 1001
     env:
       CI: true
     strategy:
@@ -77,28 +86,12 @@ jobs:
             check: check:astro:v6
     steps:
       - uses: actions/checkout@v5
+      - *check-playwright-image
       - uses: pnpm/action-setup@v6.0.10
       - uses: actions/setup-node@v5
         with:
           node-version: 24.12
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # The Astro layout specs render in node, then measure the markup in a
-      # real Chromium, so this job needs that one engine. Same retry as the
-      # test job's install, for the same apt index mismatch (#2342).
-      - name: Install Playwright Chromium and system dependencies
-        run: |
-          for attempt in 1 2 3; do
-            if pnpm exec playwright install --with-deps chromium; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "playwright install failed (attempt $attempt of 3); clearing the apt index and retrying"
-              sudo rm -rf /var/lib/apt/lists/*
-              sleep 15
-            fi
-          done
-          echo "playwright install failed after 3 attempts"
-          exit 1
       - run: pnpm --filter @rafters/ui ${{ matrix.test }}
       - run: pnpm --filter @rafters/ui ${{ matrix.check }}
