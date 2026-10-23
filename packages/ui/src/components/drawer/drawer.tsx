@@ -332,9 +332,12 @@ export interface DrawerContentProps extends React.HTMLAttributes<HTMLDivElement>
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function DrawerContent({
+  fill,
   showCloseButton,
   forceMount,
   container,
@@ -383,7 +386,10 @@ export function DrawerContent({
       // Closed, the panel stays rendered so its slide can play; inert keeps it
       // out of focus and the accessibility tree.
       inert={!effectiveOpen}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill ? drawerClasses({ ...config, fill }, state).content : classes.content,
+        className,
+      )}
       {...aria.content}
       onKeyDown={handleKeyDown}
       {...props}

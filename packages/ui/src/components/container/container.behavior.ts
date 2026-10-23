@@ -75,7 +75,7 @@ export interface ContainerConfig {
   rowSpan?: 1 | 2 | 3 | undefined;
   position?: ContainerPosition | undefined;
   depth?: ContainerDepth | undefined;
-  /** Fill signature over the color vocabulary (#1637). */
+  /** Exactly one `bg-fill-*` token; any other value is dropped with a warning. */
   fill?: string | undefined;
 }
 

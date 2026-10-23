@@ -228,9 +228,12 @@ export interface AlertDialogContentProps extends React.HTMLAttributes<HTMLDivEle
   container?: HTMLElement | null;
   /** Consumer veto: called before Escape closes; preventDefault to keep open. */
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 export function AlertDialogContent({
+  fill,
   forceMount,
   container,
   onEscapeKeyDown,
@@ -294,7 +297,10 @@ export function AlertDialogContent({
         id={ids.content || undefined}
         ref={presenceRef}
         tabIndex={-1}
-        className={classy(classes.content, className)}
+        className={classy(
+          fill ? alertDialogClasses({ ...config, fill }, state).content : classes.content,
+          className,
+        )}
         {...aria.content}
         onKeyDown={handleKeyDown}
         {...props}

@@ -69,11 +69,13 @@ interface Props {
   items: MenuEntry[];
   loop?: boolean;
   avoidCollisions?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
+const { fill, id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
 
-const config: ContextMenuConfig = { loop, avoidCollisions };
+const config: ContextMenuConfig = { loop, avoidCollisions, fill };
 const state = contextMenu.initialState(config);
 const classes = contextMenuClasses(config, state);
 

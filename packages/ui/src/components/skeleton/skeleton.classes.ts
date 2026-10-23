@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SkeletonConfig, SkeletonState } from './skeleton.behavior';
 
 export interface SkeletonClassSet {
@@ -44,6 +45,13 @@ export interface SkeletonClassSet {
  */
 export const skeletonBaseClasses = 'animate-pulse-shimmer rounded-md bg-muted';
 
-export function skeletonClasses(_config: SkeletonConfig, _state: SkeletonState): SkeletonClassSet {
-  return { root: skeletonBaseClasses };
+const skeletonStructureClasses = 'animate-pulse-shimmer rounded-md';
+
+/** The placeholder's base surface; a fill replaces it. */
+const skeletonSurfaceClasses = 'bg-muted';
+
+export function skeletonClasses(config: SkeletonConfig, _state: SkeletonState): SkeletonClassSet {
+  return {
+    root: `${skeletonStructureClasses} ${classy.fill(config.fill, skeletonSurfaceClasses)}`,
+  };
 }

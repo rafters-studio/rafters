@@ -86,6 +86,8 @@ export interface DatePickerCalendarProps {
 }
 
 interface DatePickerBaseProps {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
   /** Form field name; with it, the value submits through a hidden input. */
   name?: string | undefined;
   placeholder?: string | undefined;
@@ -151,10 +153,12 @@ export function DatePicker(props: DatePickerProps) {
     calendarProps,
     startIcon,
     endIcon,
+    fill,
   } = props;
 
   const config: DatePickerConfig = {
     mode,
+    fill,
     value: controlledSelection(mode, props),
     defaultValue: selectionProp(mode, props.defaultValue),
     open,

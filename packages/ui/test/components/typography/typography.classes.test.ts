@@ -55,14 +55,17 @@ describe('token-prop overrides', () => {
   });
 });
 
-describe('color is a fill signature', () => {
-  it('a plain word emits text-{word}', () => {
-    expect(resolveTypography('p', { color: 'accent' })).toContain('text-accent');
+describe('color resolves through a literal map', () => {
+  it('a mapped colour emits its whole text class', () => {
+    expect(resolveTypography('p', { color: 'muted-foreground' }).split(' ')).toContain(
+      'text-muted-foreground',
+    );
   });
 
-  it('an invalid signature emits nothing for the color dimension', () => {
-    // Empty override string is skipped; the variant default still lands.
-    expect(resolveTypography('p', { color: 'foreground' })).toContain('text-foreground');
+  it('an unmapped value, a retired v2 signature included, emits no colour class', () => {
+    for (const value of ['muted', 'muted/50', 'primary-to-accent', 'accent']) {
+      expect(tokenPropsToClasses({ color: value })).toBe('');
+    }
   });
 });
 

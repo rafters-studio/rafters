@@ -420,9 +420,12 @@ export function NavigationMenuTrigger({
   );
 }
 
-export type NavigationMenuContentProps = React.HTMLAttributes<HTMLDivElement>;
+export interface NavigationMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+}
 
-export function NavigationMenuContent({ className, ...props }: NavigationMenuContentProps) {
+export function NavigationMenuContent({ fill, className, ...props }: NavigationMenuContentProps) {
   const { config, state, classes } = useNavigationMenuContext('NavigationMenuContent');
   const { value, triggerId, contentId } = useItemContext('NavigationMenuContent');
   const aria = navInstanceAria('content', value, state, config, {
@@ -435,7 +438,10 @@ export function NavigationMenuContent({ className, ...props }: NavigationMenuCon
       id={contentId}
       data-part="content"
       data-value={value}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill ? navigationMenuClasses({ ...config, fill }, state).content : classes.content,
+        className,
+      )}
       {...aria}
       {...props}
     />

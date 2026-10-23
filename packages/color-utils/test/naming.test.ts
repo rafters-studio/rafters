@@ -2,7 +2,6 @@
  * Tests for the deterministic color naming module
  */
 
-import { RESERVED_FILL_SEGMENTS } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
   C_BUCKET_COUNT,
@@ -165,16 +164,16 @@ describe('Word banks', () => {
   });
 });
 
-describe('Reserved fill separators (#1637)', () => {
+describe('Reserved hyphen segments (#1637)', () => {
   // Generated names are single-hyphen joins of bank words, so bank
   // cleanliness implies name cleanliness: a name can only contain the
   // segment '-to-' if some bank word is exactly 'to', starts 'to-', ends
-  // '-to', or embeds '-to-'. The fill signature parser candidate-splits on
-  // '-to-' and requires both sides to resolve (the #1632 lesson) -- a bank
-  // word violating this would make a generated family name unparseable as
-  // a fill. The list is imported from the parser's package so the namer
-  // gate and the parser can never drift.
-  const RESERVED = RESERVED_FILL_SEGMENTS;
+  // '-to', or embeds '-to-'. The banks reserve 'to', 'via' and 'from'
+  // (word-banks.ts, hue-hubs.ts) -- Tailwind's gradient connectors -- and
+  // this is the invariant that holds them to it. The fill signature parser
+  // that once imported the list is gone (FR-RAF-FILL-003); the reservation
+  // stays with the namer.
+  const RESERVED = ['to', 'via', 'from'] as const;
 
   function collectStrings(value: unknown, out: string[]): string[] {
     if (typeof value === 'string') out.push(value);

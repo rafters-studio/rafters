@@ -66,6 +66,8 @@ export type ButtonTextSize = (typeof BUTTON_TEXT_SIZES)[number];
 export interface ButtonConfig extends PressableConfig {
   variant: ButtonVariant;
   size: ButtonSize;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
+  fill?: string | undefined;
 }
 
 export type ButtonState = PressableState;

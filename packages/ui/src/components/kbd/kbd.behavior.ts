@@ -16,11 +16,14 @@ import type { BehaviorSpec } from '../../lib/contract';
  * projects no ARIA) identically across React, the Web Component, and Astro.
  *
  * The oracle exposes no variants, sizes, or attributes on
- * any of its three targets, so `KbdConfig` is empty by construction -- config
+ * any of its three targets, so `KbdConfig` carries only the fill -- config
  * in, one class string out.
  */
 
-export type KbdConfig = Record<never, never>;
+export interface KbdConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
+}
 export type KbdState = Record<never, never>;
 export type KbdActions = Record<never, never>;
 export type KbdPart = 'root';

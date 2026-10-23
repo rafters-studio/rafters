@@ -94,11 +94,13 @@ interface Props {
   id: string;
   menus: Menu[];
   loop?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, menus, loop = true } = Astro.props;
+const { fill, id, menus, loop = true } = Astro.props;
 
-const config: MenubarConfig = { loop };
+const config: MenubarConfig = { loop, fill };
 const state = menubar.initialState(config);
 const classes = menubarClasses(config, state);
 

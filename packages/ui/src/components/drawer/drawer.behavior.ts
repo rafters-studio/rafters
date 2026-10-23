@@ -29,6 +29,8 @@ export interface DrawerConfig extends DisclosableConfig {
   /** The edge the drawer is anchored to. Drives position classes only; the
    *  score's ARIA and keymap are edge-independent. Default: 'bottom'. */
   side?: DrawerSide | undefined;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
 }
 
 export type DrawerState = DisclosableState;

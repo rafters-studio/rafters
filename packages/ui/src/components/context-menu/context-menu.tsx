@@ -253,11 +253,14 @@ export function ContextMenuPortal({ children }: ContextMenuPortalProps) {
 
 export interface ContextMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
   forceMount?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
   container?: HTMLElement | null;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
 }
 
 export function ContextMenuContent({
+  fill,
   forceMount,
   container,
   onEscapeKeyDown,
@@ -293,7 +296,10 @@ export function ContextMenuContent({
       ref={presenceRef}
       role="menu"
       tabIndex={-1}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill ? contextMenuClasses({ ...config, fill }, state).content : classes.content,
+        className,
+      )}
       {...aria.content}
       onKeyDown={handleKeyDown}
       {...props}

@@ -24,6 +24,8 @@ import { contextMenuClasses } from './context-menu.classes';
  * navigation-menu keeps focus movement out of the score.
  */
 export interface ContextMenuConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
   /** Controlled open value. Passed fresh, never stored. */
   open?: boolean | undefined;
   /** Uncontrolled seed. */

@@ -40,8 +40,8 @@ export interface ImageConfig {
   alignment?: ImageAlignment | undefined;
   /** Corner radius token applied to the clipping frame. Default 'lg'. */
   radius?: ImageRadius | undefined;
-  /** Fill signature over the colour vocabulary, painted behind the image
-   *  (the frame placeholder). Resolved by fill-resolver, never a raw colour. */
+  /** Exactly one `bg-fill-*` token, painted behind the image (the frame
+   *  placeholder). Any other value is dropped with a warning. */
   fill?: string | undefined;
   /** Load lifecycle. Config, not state: the consumer (React at runtime) owns
    *  the flip; the DOM-native bind reads it once. Default 'loaded'. */
@@ -150,8 +150,8 @@ function parseEnum<T extends string>(
  * the inverse of the SSR/WC markup. Shared by bindImage and the Web Component
  * so the two never drift on how an attribute maps to config.
  *
- * Config travels as `data-*` and nothing else (#2001). `size` and `fill` in
- * particular are real platform attributes elsewhere (input/select, SVG), and
+ * Config travels as `data-*` and nothing else (#2001). `size` in
+ * particular is a real platform attribute elsewhere (input/select, SVG), and
  * the root here is a real <figure>: only `data-*` is valid on it, and only
  * `data-*` reaches `dataset`, which is what this reads. `src`/`alt` are native
  * passthrough on the inner img and are not part of the projection.
@@ -162,7 +162,6 @@ export function readImageConfig(root: HTMLElement): ImageConfig {
     size: parseEnum(data['size'], ALLOWED_SIZES),
     alignment: parseEnum(data['alignment'], ALLOWED_ALIGNMENTS),
     radius: parseEnum(data['radius'], ALLOWED_RADII),
-    fill: data['fill'],
     status: parseEnum(data['status'], ALLOWED_STATUSES),
     errorMessage: data['errorMessage'],
     loadingLabel: data['loadingLabel'],

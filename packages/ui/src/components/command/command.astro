@@ -60,6 +60,8 @@ interface Props {
   label?: string;
   placeholder?: string;
   emptyText?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
 }
 
 const {
@@ -68,9 +70,10 @@ const {
   label = 'Suggestions',
   placeholder = 'Type a command...',
   emptyText = 'No results found.',
+  fill,
 } = Astro.props;
 
-const config: CommandConfig = { label };
+const config: CommandConfig = { label, fill };
 const state = command.initialState(config);
 const classes = commandClasses(config, state);
 

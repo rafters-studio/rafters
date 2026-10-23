@@ -80,7 +80,7 @@ still loading.
 | `animate-pulse` shimmer | contract, then migrated onto `animate-skeleton-root-waiting` once #2154 gave the cell a utility to consume (#2155) |
 | `motion-reduce:animate-none` reduced-motion opt-out | contract at port time, REMOVED by #2155: period-kind cells are exempt from the reduced-motion zeroing law by design, so the loop never stops |
 | `rounded-md` + `bg-muted` default surface | contract (verbatim decoration; `bg-muted` is a semantic token, not a raw colour utility) |
-| `variant` prop (default/primary/secondary/destructive/success/warning/info/muted/accent -> `bg-*-subtle`) | dropped (a background channel; the port rule is "fill, not background", and the sanctioned `fill-resolver` primitive is not in this component's `uses`; superseded by `className`/fill, and shadcn's Skeleton has no variant) |
+| `variant` prop (default/primary/secondary/destructive/success/warning/info/muted/accent -> `bg-*-subtle`) | dropped (a background channel; the port rule is "fill, not background", and superseded by `className` and the `fill` prop (one `bg-fill-*` token), and shadcn's Skeleton has no variant) |
 | `aria-hidden="true"` on the placeholder | contract, promoted to the score so React and Astro both project it (closes the oracle's cross-framework drift) |
 | `{...props}` / `{...attrs}` spread on the root | framework affordance (React/Astro pass consumer attributes through) |
 | `className` sizing surface (`h-4 w-48`, `rounded-full`) | contract (the shadcn drop-in surface; the component owns its base classes, the consumer sizes and shapes) |

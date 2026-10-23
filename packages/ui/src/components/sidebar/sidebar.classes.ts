@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
 
 /**
@@ -94,8 +95,12 @@ const providerClasses =
 // `md:`-scoped, because below that breakpoint the same element is the fixed
 // mobile overlay, whose presence Sheet owns (see mobilePanelClasses) -- a
 // width transition there would time a panel that is `hidden` when closed.
+/** The panel's base surface (background, foreground, border colour); a fill
+ *  replaces it on the desktop panel and the mobile overlay alike. */
+const panelSurfaceClasses = 'bg-sidebar text-sidebar-foreground border-sidebar-border';
+
 const panelBaseClasses =
-  'flex flex-col bg-sidebar text-sidebar-foreground ' +
+  'flex flex-col ' +
   'fixed inset-y-0 z-depth-modal h-svh w-72 ' +
   'md:sticky md:top-0 md:z-depth-navigation md:h-svh md:w-64 ' +
   // Contained (#2657): drop the viewport height and let the provider's row
@@ -113,9 +118,9 @@ const panelBaseClasses =
 // page direction: a left sidebar is on the left of an rtl page too.
 const panelSideClasses: Record<SidebarSide, string> = {
   // physical: the panel is pinned to the left edge
-  left: 'left-0 border-r border-sidebar-border',
+  left: 'left-0 border-r',
   // physical: the panel is pinned to the right edge
-  right: 'right-0 border-l border-sidebar-border',
+  right: 'right-0 border-l',
 };
 
 const panelVariantClasses: Record<SidebarVariant, string> = {
@@ -125,11 +130,15 @@ const panelVariantClasses: Record<SidebarVariant, string> = {
 };
 
 /** The panel class: the axis-carrying base plus the anchored side and the
- *  surface variant. The single source of the panel class -- every performance
- *  calls this, so side and variant (decoration the score never touches) are the
- *  only arguments. */
-export function sidebarPanelClasses(side: SidebarSide, variant: SidebarVariant): string {
-  return `${panelBaseClasses} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
+ *  surface variant, its surface replaced by a winning fill. The single source of
+ *  the panel class -- every performance calls this, so side, variant and fill
+ *  (decoration the score never touches) are the only arguments. */
+export function sidebarPanelClasses(
+  side: SidebarSide,
+  variant: SidebarVariant,
+  fill?: string,
+): string {
+  return `${panelBaseClasses} ${classy.fill(fill, panelSurfaceClasses)} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
 }
 
 const triggerClasses = 'inline-flex size-7 items-center justify-center';
@@ -155,7 +164,7 @@ const triggerClasses = 'inline-flex size-7 items-center justify-center';
 // the cell's own `meaning` -- "the fade is emitted and the slide is not, because
 // the vocabulary has no side-agnostic slide shape". Four of sidebar's six rows
 // name a slide; none of the four can express it.
-const mobilePanelClasses = 'flex h-full w-full flex-col bg-sidebar text-sidebar-foreground';
+const mobilePanelClasses = 'flex h-full w-full flex-col';
 
 // The desktop drag rail: a hairline hit target on the collapsing edge. Hidden on
 // mobile (the overlay owns dismissal there). NO ROW for the hairline's own hover
@@ -343,12 +352,12 @@ const separatorClasses = 'mx-2 h-px w-auto bg-sidebar-border';
  *  depends on side + variant, produced by `sidebarPanelClasses`), and the
  *  variant-bearing button classes are their own functions. Everything below is
  *  invariant across side, variant, and state. */
-export function sidebarClasses(): SidebarClassSet {
+export function sidebarClasses(fill?: string): SidebarClassSet {
   return {
     provider: providerClasses,
     trigger: triggerClasses,
     rail: railClasses,
-    mobilePanel: mobilePanelClasses,
+    mobilePanel: `${mobilePanelClasses} ${classy.fill(fill, panelSurfaceClasses)}`,
     inset: insetClasses,
     header: headerClasses,
     footer: footerClasses,

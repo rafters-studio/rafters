@@ -82,12 +82,14 @@ interface Props {
   placeholder?: string;
   disabled?: boolean;
   name?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
-const { id, options, value = '', placeholder = 'Select an option', disabled = false, name } =
+const { fill, id, options, value = '', placeholder = 'Select an option', disabled = false, name } =
   Astro.props;
 
-const config: SelectConfig = { defaultValue: value, disabled, name };
+const config: SelectConfig = { defaultValue: value, disabled, name, fill };
 const state = select.initialState(config);
 const classes = selectClasses(config, state);
 

@@ -38,6 +38,8 @@ import { commandClasses } from './command.classes';
  * fuzzy matching, the behaviour the issue calls for.
  */
 export interface CommandConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
   /** Controlled search query. */
   value?: string | undefined;
   /** Uncontrolled seed. */

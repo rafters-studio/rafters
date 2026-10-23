@@ -82,6 +82,8 @@ interface Props {
   id: string;
   side?: SidebarSide;
   variant?: SidebarVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
   collapsible?: SidebarConfig['collapsible'];
   defaultOpen?: boolean;
   contained?: boolean;
@@ -91,6 +93,7 @@ const {
   id,
   side = 'left',
   variant = 'sidebar',
+  fill,
   collapsible = 'offcanvas',
   defaultOpen = true,
   contained = false,
@@ -99,7 +102,7 @@ const {
 const config: SidebarConfig = { defaultOpen, side, variant, collapsible };
 const state = sidebar.initialState(config);
 const classes = sidebarClasses();
-const panelClass = sidebarPanelClasses(side, variant);
+const panelClass = sidebarPanelClasses(side, variant, fill);
 
 const ids = {} as PartIds<SidebarPart>;
 for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;

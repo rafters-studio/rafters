@@ -36,6 +36,8 @@ export function isAlertVariant(value: string | null | undefined): value is Alert
 }
 
 export interface AlertConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
   variant?: AlertVariant | undefined;
 }
 

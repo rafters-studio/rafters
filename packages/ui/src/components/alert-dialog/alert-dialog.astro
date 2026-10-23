@@ -74,6 +74,8 @@ interface Props {
   description?: string;
   cancelLabel?: string;
   actionLabel?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
 }
 
 const {
@@ -83,9 +85,10 @@ const {
   description,
   cancelLabel = 'Cancel',
   actionLabel = 'Continue',
+  fill,
 } = Astro.props;
 
-const config: AlertDialogConfig = { defaultOpen };
+const config: AlertDialogConfig = { defaultOpen, fill };
 const state = alertDialog.initialState(config);
 const classes = alertDialogClasses(config, state);
 
