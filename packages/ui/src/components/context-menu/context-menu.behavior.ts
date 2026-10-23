@@ -26,6 +26,8 @@ import { contextMenuClasses } from './context-menu.classes';
 export interface ContextMenuConfig {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled open value. Passed fresh, never stored. */
   open?: boolean | undefined;
   /** Uncontrolled seed. */

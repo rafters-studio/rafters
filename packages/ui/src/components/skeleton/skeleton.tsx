@@ -31,11 +31,13 @@ import { skeletonClasses } from './skeleton.classes';
 export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ fill, className, ...props }, ref) => {
-    const config: SkeletonConfig = { fill };
+  ({ fill, surface, className, ...props }, ref) => {
+    const config: SkeletonConfig = { fill, surface };
     const classes = skeletonClasses(config, {});
 
     // A static score: aria-hidden is a constant, no state, no ids, no effects.

@@ -261,10 +261,13 @@ export interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement
   onInteractOutside?: (event: Event) => void;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function PopoverContent({
   fill,
+  surface,
   forceMount,
   side = 'bottom',
   align = 'center',
@@ -349,7 +352,9 @@ export function PopoverContent({
       data-side={side}
       data-align={align}
       className={classy(
-        fill ? popoverClasses({ ...config, fill }, state).content : classes.content,
+        fill || surface
+          ? popoverClasses({ ...config, fill, surface }, state).content
+          : classes.content,
         className,
       )}
       hidden={present ? undefined : true}

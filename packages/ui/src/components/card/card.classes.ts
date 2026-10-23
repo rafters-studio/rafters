@@ -8,7 +8,7 @@ export interface CardClassSet {
 /**
  * Structure the surface always carries: an elevated, bordered, rounded
  * panel. Colour is kept separate so a `fill` can replace the default
- * `bg-card` surface without leaving a competing `bg-*` behind.
+ * card surface without leaving a competing `bg-*` behind.
  *
  * NO MOTION, AND THE ROW SAYS WHY IT IS MISSING RATHER THAN THIS FILE FAKING
  * ONE. `card / root / hover (when interactive)` in
@@ -26,7 +26,7 @@ export interface CardClassSet {
 const cardStructureClasses = 'flex flex-col gap-6 rounded-xl border py-6 shadow-sm';
 
 /** Base surface -- card's identity when no fill wins. */
-const cardSurfaceClasses = 'bg-card text-card-foreground border-card-border';
+const cardSurfaceClasses = 'bg-surface-card';
 
 /**
  * Sub-part classes are config-independent literals, so the framework files
@@ -73,5 +73,7 @@ export function cardClasses(config: CardConfig, _state: CardState): CardClassSet
   // A fill REPLACES the base surface (bg, foreground and border colour), so
   // the two never coexist -- no reliance on compiled source order to pick a
   // winner. Anything but one bg-fill-* token is dropped and the base stands.
-  return { root: `${classy.fill(config.fill, cardSurfaceClasses)} ${cardStructureClasses}` };
+  return {
+    root: `${classy.fill(config.fill, classy.surface(config.surface, cardSurfaceClasses))} ${cardStructureClasses}`,
+  };
 }

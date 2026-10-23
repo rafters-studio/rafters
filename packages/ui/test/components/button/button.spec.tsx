@@ -353,3 +353,30 @@ describe('button icons [react]', () => {
     expect(rectsOf(root).label.width).toBe(before.label.width);
   });
 });
+
+describe('surface precedence (FR-RAF-FILL-004)', () => {
+  const classOf = (props: ButtonProps): string[] => {
+    const { container } = render(<Button {...props}>Go</Button>);
+    return (container.querySelector('button')?.className ?? '').split(/\s+/);
+  };
+
+  it('surface replaces the base surface when no variant is given', () => {
+    const classes = classOf({ surface: 'card' });
+    expect(classes).toContain('bg-surface-card');
+    expect(classes).not.toContain('bg-primary');
+  });
+
+  it('an explicit variant, default included, beats surface', () => {
+    for (const variant of ['default', 'destructive'] as const) {
+      const classes = classOf({ surface: 'card', variant });
+      expect(classes).not.toContain('bg-surface-card');
+      cleanup();
+    }
+  });
+
+  it('a fill beats surface', () => {
+    const classes = classOf({ surface: 'card', fill: 'bg-fill-glass' });
+    expect(classes).toContain('bg-fill-glass');
+    expect(classes).not.toContain('bg-surface-card');
+  });
+});

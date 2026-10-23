@@ -157,7 +157,7 @@ const iconClasses = 'inline-grid place-items-center';
 
 export function buttonClasses(config: ButtonConfig, _state: ButtonState): ButtonClassSet {
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, variantSurfaceClasses[config.variant])} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, classy.surface(config.surface, variantSurfaceClasses[config.variant]))} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
     spinner: spinnerClasses,
     startIcon: iconClasses,
     endIcon: iconClasses,

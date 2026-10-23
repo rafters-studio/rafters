@@ -25,6 +25,7 @@ import {
   fontImportsFor,
   fontStackFor,
   generateBaseSystem,
+  generateNamespaces,
   getAdapter,
   importColorFamily,
   loadRegistryFromDir,
@@ -333,6 +334,9 @@ async function resolveFramework(
 /** `fonts.scripts` as stored in config.rafters.json: external data, narrowed here. */
 const StoredScriptsSchema = z.array(z.string()).optional();
 
+/** The stored fill file, read only for its tokens; its other fields are kept. */
+const StoredFillFileSchema = z.looseObject({ tokens: z.array(z.unknown()) });
+
 /**
  * Ask which writing systems the project supports (#2742). One choice per
  * Noto family in SCRIPT_FONTS; Latin, Greek and Cyrillic share one choice.
@@ -632,6 +636,25 @@ async function regenerateFromExisting(
       saveRegistryToDir(paths.tokens, registry);
       log({ event: 'init:font_stack_rebuilt', fontSans: scriptStack });
     }
+  }
+
+  // Surface fills (FR-RAF-FILL-004): a project from before them gets each
+  // missing one; an existing surface fill, overridden or not, is never changed.
+  const missingSurfaces = generateNamespaces(['surface']).allTokens.filter(
+    (token) => !registry.has(token.name),
+  );
+  if (missingSurfaces.length > 0) {
+    for (const token of missingSurfaces) registry.define(token);
+    // Only the fill file is written: every other stored file stays as it is.
+    const fillFile = join(paths.tokens, 'fill.rafters.json');
+    const stored = StoredFillFileSchema.parse(
+      existsSync(fillFile) ? JSON.parse(await readFile(fillFile, 'utf8')) : { tokens: [] },
+    );
+    await writeFile(
+      fillFile,
+      `${JSON.stringify({ ...stored, namespace: 'fill', tokens: [...stored.tokens, ...missingSurfaces] }, null, 2)}\n`,
+    );
+    log({ event: 'init:surfaces_added', surfaces: missingSurfaces.map((t) => t.name) });
   }
 
   // Get unique namespaces for logging

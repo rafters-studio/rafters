@@ -304,7 +304,17 @@ Then('fill.rafters.json holds the same fill with the same userOverride', async (
   const raw = JSON.parse(readFileSync(join(tokensDir(), 'fill.rafters.json'), 'utf8')) as {
     tokens: unknown[];
   };
-  expect(raw.tokens).toEqual(local.files.get('fill'));
+  // The rebuild adds the surface fills the project lacked (FR-RAF-FILL-004).
+  const designed = raw.tokens.filter(
+    (t) =>
+      !(
+        typeof t === 'object' &&
+        t !== null &&
+        'name' in t &&
+        String(t.name).startsWith('surface-')
+      ),
+  );
+  expect(designed).toEqual(local.files.get('fill'));
 });
 
 Then('each parses', async () => {

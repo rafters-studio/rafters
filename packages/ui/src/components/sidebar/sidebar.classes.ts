@@ -97,7 +97,7 @@ const providerClasses =
 // width transition there would time a panel that is `hidden` when closed.
 /** The panel's base surface (background, foreground, border colour); a fill
  *  replaces it on the desktop panel and the mobile overlay alike. */
-const panelSurfaceClasses = 'bg-sidebar text-sidebar-foreground border-sidebar-border';
+const panelSurfaceClasses = 'bg-surface-sidebar';
 
 const panelBaseClasses =
   'flex flex-col ' +
@@ -137,8 +137,9 @@ export function sidebarPanelClasses(
   side: SidebarSide,
   variant: SidebarVariant,
   fill?: string,
+  surface?: string,
 ): string {
-  return `${panelBaseClasses} ${classy.fill(fill, panelSurfaceClasses)} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
+  return `${panelBaseClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
 }
 
 const triggerClasses = 'inline-flex size-7 items-center justify-center';
@@ -352,12 +353,12 @@ const separatorClasses = 'mx-2 h-px w-auto bg-sidebar-border';
  *  depends on side + variant, produced by `sidebarPanelClasses`), and the
  *  variant-bearing button classes are their own functions. Everything below is
  *  invariant across side, variant, and state. */
-export function sidebarClasses(fill?: string): SidebarClassSet {
+export function sidebarClasses(fill?: string, surface?: string): SidebarClassSet {
   return {
     provider: providerClasses,
     trigger: triggerClasses,
     rail: railClasses,
-    mobilePanel: `${mobilePanelClasses} ${classy.fill(fill, panelSurfaceClasses)}`,
+    mobilePanel: `${mobilePanelClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))}`,
     inset: insetClasses,
     header: headerClasses,
     footer: footerClasses,

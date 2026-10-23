@@ -86,3 +86,10 @@ describe('button [astro]', () => {
     expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });
+
+describe('button [astro] surface precedence (FR-RAF-FILL-004)', () => {
+  it('surface replaces the base surface only when no variant is given', async () => {
+    expect(await render({ surface: 'card' })).toContain('bg-surface-card');
+    expect(await render({ surface: 'card', variant: 'default' })).not.toContain('bg-surface-card');
+  });
+});

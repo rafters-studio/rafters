@@ -847,11 +847,22 @@ export const THEME_MAPPING: readonly ThemeMappingRow[] = [
   {
     group: 'fill',
     token: /^(.+)$/,
+    except: /^surface-/,
     keys: [],
     utility: 'bg-fill-{1}',
     literal: true,
     probeValue: 'oklch(0.41 0.12 30)',
     probes: [{ utility: 'bg-fill-probe', token: 'zinc-500', property: 'background-color' }],
+  },
+  {
+    // A surface is a fill named `surface-<name>` (FR-RAF-FILL-004).
+    group: 'fill',
+    token: /^surface-(.+)$/,
+    keys: [],
+    utility: 'bg-surface-{1}',
+    literal: true,
+    probeValue: 'oklch(0.41 0.12 30)',
+    probes: [{ utility: 'bg-surface-probe', token: 'zinc-500', property: 'background-color' }],
   },
 ];
 

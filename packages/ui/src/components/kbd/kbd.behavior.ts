@@ -23,6 +23,8 @@ import type { BehaviorSpec } from '../../lib/contract';
 export interface KbdConfig {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 export type KbdState = Record<never, never>;
 export type KbdActions = Record<never, never>;

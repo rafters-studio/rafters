@@ -364,9 +364,17 @@ export function ComboboxInput({ className, startIcon, ...props }: ComboboxInputP
 export interface ComboboxContentProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-export function ComboboxContent({ fill, className, children, ...props }: ComboboxContentProps) {
+export function ComboboxContent({
+  fill,
+  surface,
+  className,
+  children,
+  ...props
+}: ComboboxContentProps) {
   const { ids, aria, effectiveOpen, classes, config, state } =
     useComboboxContext('Combobox.Content');
   return (
@@ -375,7 +383,9 @@ export function ComboboxContent({ fill, className, children, ...props }: Combobo
       id={ids.content}
       hidden={effectiveOpen ? undefined : true}
       className={classy(
-        fill ? comboboxClasses({ ...config, fill }, state).content : classes.content,
+        fill || surface
+          ? comboboxClasses({ ...config, fill, surface }, state).content
+          : classes.content,
         className,
       )}
       {...aria.content}

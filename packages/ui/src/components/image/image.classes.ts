@@ -116,7 +116,11 @@ export function imageClasses(config: ImageConfig, _state: ImageState): ImageClas
     .filter(Boolean)
     .join(' ');
 
-  const frame = [imageFrameClasses, imageRadiusClasses[radius], classy.fill(config.fill)]
+  const frame = [
+    imageFrameClasses,
+    imageRadiusClasses[radius],
+    classy.fill(config.fill, classy.surface(config.surface)),
+  ]
     .filter(Boolean)
     .join(' ');
 

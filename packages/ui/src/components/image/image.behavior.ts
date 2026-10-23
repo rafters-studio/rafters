@@ -43,6 +43,8 @@ export interface ImageConfig {
   /** Exactly one `bg-fill-*` token, painted behind the image (the frame
    *  placeholder). Any other value is dropped with a warning. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Load lifecycle. Config, not state: the consumer (React at runtime) owns
    *  the flip; the DOM-native bind reads it once. Default 'loaded'. */
   status?: ImageStatus | undefined;

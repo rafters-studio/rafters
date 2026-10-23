@@ -82,7 +82,7 @@ describe('card [react]', () => {
     render(<Card fill="bg-fill-glass">x</Card>);
     const root = body().querySelector('[data-part="root"]') as HTMLElement;
     expect(root.classList.contains('bg-fill-glass')).toBe(true);
-    expect(root.classList.contains('bg-card')).toBe(false);
+    expect(root.classList.contains('bg-surface-card')).toBe(false);
     expect(root.hasAttribute('data-fill')).toBe(false);
   });
 

@@ -43,6 +43,8 @@ import {
 export interface MenubarConfig {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled open menu ('' = none). Passed fresh, never stored. */
   value?: string | undefined;
   /** Uncontrolled seed. */

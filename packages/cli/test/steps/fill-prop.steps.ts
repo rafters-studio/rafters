@@ -77,12 +77,13 @@ function capture(render: () => string): Rendered {
   }
 }
 
-interface RenderProps {
+export interface RenderProps {
   fill?: string;
   variant?: string;
+  surface?: string;
 }
 
-interface PlaneEntry {
+export interface PlaneEntry {
   /** The plane part, as the component names it. */
   part: string;
   render: (props: RenderProps) => string;
@@ -97,11 +98,11 @@ const POPOVER = words('bg-popover text-popover-foreground');
 const disclosed = { open: false };
 
 /** The measured list (#2829): every plane part that takes a fill. */
-const MEASURED: Record<string, PlaneEntry> = {
+export const MEASURED: Record<string, PlaneEntry> = {
   alert: {
     part: 'Alert (root)',
-    render: ({ fill, variant }) =>
-      alertClasses({ fill, variant: variant as 'destructive' | undefined }, {}).root,
+    render: ({ fill, variant, surface }) =>
+      alertClasses({ fill, surface, variant: variant as 'destructive' | undefined }, {}).root,
     base: words('bg-primary-subtle text-primary-subtle-foreground border-primary-border'),
     variant: {
       name: 'destructive',
@@ -112,17 +113,19 @@ const MEASURED: Record<string, PlaneEntry> = {
   },
   badge: {
     part: 'Badge (root)',
-    render: ({ fill, variant }) =>
-      badgeClasses({ fill, variant: variant as 'destructive' | undefined }, {}).root,
+    render: ({ fill, variant, surface }) =>
+      badgeClasses({ fill, surface, variant: variant as 'destructive' | undefined }, {}).root,
     base: words('bg-primary text-primary-foreground'),
     variant: { name: 'destructive', surface: words('bg-destructive text-destructive-foreground') },
   },
   button: {
     part: 'Button (root)',
-    render: ({ fill, variant }) =>
+    render: ({ fill, variant, surface }) =>
       buttonClasses(
         {
           fill,
+          // Button's performances pass surface only when no variant is given.
+          surface: variant === undefined ? surface : undefined,
           variant: (variant ?? 'default') as 'default' | 'destructive',
           size: 'default',
         },
@@ -140,102 +143,104 @@ const MEASURED: Record<string, PlaneEntry> = {
   },
   card: {
     part: 'Card (root)',
-    render: ({ fill }) => cardClasses({ fill }, {}).root,
-    base: words('bg-card text-card-foreground border-card-border'),
+    render: ({ fill, surface }) => cardClasses({ fill, surface }, {}).root,
+    base: ['bg-surface-card'],
   },
   container: {
     part: 'Container (root)',
-    render: ({ fill }) => containerClasses({ fill }, {}).root,
+    render: ({ fill, surface }) => containerClasses({ fill, surface }, {}).root,
     base: [],
   },
   image: {
     part: 'Image (frame)',
-    render: ({ fill }) => imageClasses({ fill }, {}).frame,
+    render: ({ fill, surface }) => imageClasses({ fill, surface }, {}).frame,
     base: [],
   },
   kbd: {
     part: 'Kbd (root)',
-    render: ({ fill }) => kbdClasses({ fill }, {}).root,
+    render: ({ fill, surface }) => kbdClasses({ fill, surface }, {}).root,
     base: words('border-border bg-muted text-muted-foreground'),
   },
   skeleton: {
     part: 'Skeleton (root)',
-    render: ({ fill }) => skeletonClasses({ fill }, {}).root,
+    render: ({ fill, surface }) => skeletonClasses({ fill, surface }, {}).root,
     base: words('bg-muted'),
   },
   sidebar: {
     part: 'Sidebar (panel)',
-    render: ({ fill }) => sidebarPanelClasses('left', 'sidebar', fill),
-    base: words('bg-sidebar text-sidebar-foreground border-sidebar-border'),
+    render: ({ fill, surface }) => sidebarPanelClasses('left', 'sidebar', fill, surface),
+    base: ['bg-surface-sidebar'],
   },
   command: {
     part: 'Command (root)',
-    render: ({ fill }) => commandClasses({ fill }, { query: '', activeIndex: -1 } as never).root,
+    render: ({ fill, surface }) =>
+      commandClasses({ fill, surface }, { query: '', activeIndex: -1 } as never).root,
     base: POPOVER,
   },
   'alert-dialog': {
     part: 'AlertDialogContent',
-    render: ({ fill }) => alertDialogClasses({ fill }, disclosed).content,
-    base: words('border-card-border bg-card text-card-foreground'),
+    render: ({ fill, surface }) => alertDialogClasses({ fill, surface }, disclosed).content,
+    base: ['bg-surface-card'],
   },
   dialog: {
     part: 'DialogContent',
-    render: ({ fill }) => dialogClasses({ fill }, disclosed).content,
-    base: words('border-card-border bg-card text-card-foreground'),
+    render: ({ fill, surface }) => dialogClasses({ fill, surface }, disclosed).content,
+    base: ['bg-surface-card'],
   },
   sheet: {
     part: 'SheetContent',
-    render: ({ fill }) => sheetContentClasses('right', fill),
+    render: ({ fill, surface }) => sheetContentClasses('right', fill, surface),
     base: words('bg-background border-card-border'),
   },
   drawer: {
     part: 'DrawerContent',
-    render: ({ fill }) => drawerClasses({ fill }, disclosed).content,
+    render: ({ fill, surface }) => drawerClasses({ fill, surface }, disclosed).content,
     base: words('bg-background text-foreground border-card-border'),
   },
   popover: {
     part: 'PopoverContent',
-    render: ({ fill }) => popoverClasses({ fill }, disclosed).content,
+    render: ({ fill, surface }) => popoverClasses({ fill, surface }, disclosed).content,
     base: POPOVER,
   },
   'hover-card': {
     part: 'HoverCardContent',
-    render: ({ fill }) => hoverCardClasses({ fill }, disclosed).content,
+    render: ({ fill, surface }) => hoverCardClasses({ fill, surface }, disclosed).content,
     base: POPOVER,
   },
   select: {
     part: 'SelectContent',
-    render: ({ fill }) => selectClasses({ fill }, {} as never).content,
+    render: ({ fill, surface }) => selectClasses({ fill, surface }, {} as never).content,
     base: POPOVER,
   },
   'dropdown-menu': {
     part: 'DropdownMenuContent',
-    render: ({ fill }) => dropdownMenuClasses({ fill }, disclosed).content,
+    render: ({ fill, surface }) => dropdownMenuClasses({ fill, surface }, disclosed).content,
     base: POPOVER,
   },
   'context-menu': {
     part: 'ContextMenuContent',
-    render: ({ fill }) => contextMenuClasses({ fill }, { open: false, x: 0, y: 0 }).content,
+    render: ({ fill, surface }) =>
+      contextMenuClasses({ fill, surface }, { open: false, x: 0, y: 0 }).content,
     base: POPOVER,
   },
   menubar: {
     part: 'MenubarContent',
-    render: ({ fill }) => menubarClasses({ fill }, {} as never).content,
+    render: ({ fill, surface }) => menubarClasses({ fill, surface }, {} as never).content,
     base: POPOVER,
   },
   combobox: {
     part: 'ComboboxContent',
-    render: ({ fill }) => comboboxClasses({ fill }, {} as never).content,
+    render: ({ fill, surface }) => comboboxClasses({ fill, surface }, {} as never).content,
     base: POPOVER,
   },
   'date-picker': {
     part: 'DatePicker (content)',
-    render: ({ fill }) => datePickerClasses({ fill }, {} as never).content,
+    render: ({ fill, surface }) => datePickerClasses({ fill, surface }, {} as never).content,
     base: POPOVER,
   },
   'navigation-menu': {
     part: 'NavigationMenuContent',
-    render: ({ fill }) => navigationMenuClasses({ fill }, {} as never).content,
+    render: ({ fill, surface }) => navigationMenuClasses({ fill, surface }, {} as never).content,
     base: POPOVER,
   },
 };
@@ -351,7 +356,7 @@ When(/^it renders with fill="([^"]*)"$/, async ({}, fill: string) => {
 
 Then(/^its root element's class list carries "([^"]+)" unchanged$/, async ({}, cls: string) => {
   expect(local.single.classes).toContain(cls);
-  expect(local.single.classes).not.toContain('bg-card');
+  expect(local.single.classes).not.toContain('bg-surface-card');
 });
 
 Then('no warning is given', async () => {
@@ -365,7 +370,7 @@ Then(
       expect(local.single.classes, piece).not.toContain(piece);
     }
     // The base surface stands.
-    expect(local.single.classes).toContain('bg-card');
+    expect(local.single.classes).toContain('bg-surface-card');
   },
 );
 

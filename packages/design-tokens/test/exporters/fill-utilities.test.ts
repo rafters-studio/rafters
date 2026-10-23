@@ -106,7 +106,8 @@ describe('bg-fill-* utilities', () => {
       new TokenRegistry([...BASE, fill('glass', { foreground: FG })], REGISTRY_PLUGINS),
     );
     expect(css).toContain('@utility bg-fill-glass {\n  @apply text-zinc-900;\n}');
-    expect(css).toContain('@source inline("bg-fill-glass");');
+    // The base system's surface fills (FR-RAF-FILL-004) share the line.
+    expect(css).toMatch(/@source inline\("bg-fill-glass( bg-surface-[a-z-]+)+"\);/);
     expect(css).not.toContain('[object Object]');
   });
 });

@@ -23,6 +23,8 @@ export interface DialogConfig extends DisclosableConfig {
   modal?: boolean | undefined;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 
 export type DialogState = DisclosableState;

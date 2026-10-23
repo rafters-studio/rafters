@@ -58,6 +58,8 @@ interface Props {
   variant?: ButtonVariant;
   /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
   toggle?: boolean;
@@ -72,8 +74,9 @@ interface Props {
 
 const {
   id,
-  variant = 'default',
+  variant: variantProp,
   fill,
+  surface,
   size = 'default',
   type = 'button',
   toggle = false,
@@ -85,10 +88,13 @@ const {
   label,
   'aria-label': ariaLabel,
 } = Astro.props;
+const variant = variantProp ?? 'default';
 
 const config: ButtonConfig = {
   variant,
   fill,
+  // An explicit variant, `default` included, beats surface (FR-RAF-FILL-004).
+  surface: variantProp === undefined ? surface : undefined,
   size,
   toggle,
   defaultPressed,

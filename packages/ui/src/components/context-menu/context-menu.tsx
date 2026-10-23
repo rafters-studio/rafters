@@ -255,12 +255,15 @@ export interface ContextMenuContentProps extends React.HTMLAttributes<HTMLDivEle
   forceMount?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   container?: HTMLElement | null;
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
 }
 
 export function ContextMenuContent({
   fill,
+  surface,
   forceMount,
   container,
   onEscapeKeyDown,
@@ -297,7 +300,9 @@ export function ContextMenuContent({
       role="menu"
       tabIndex={-1}
       className={classy(
-        fill ? contextMenuClasses({ ...config, fill }, state).content : classes.content,
+        fill || surface
+          ? contextMenuClasses({ ...config, fill, surface }, state).content
+          : classes.content,
         className,
       )}
       {...aria.content}
