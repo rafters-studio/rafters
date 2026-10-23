@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0]
+
+Released with the rafters CLI 0.5.0. `@rafters/ui` is not published to npm;
+the registry serves these components, so this section lists what changed
+in them since CLI 0.4.5. Entries below it predate 0.5.0.
+
+### Upgrading
+
+Run `rafters init --rebuild` first. It adds the surface fills a project made
+before 0.5.0 lacks; without them the updated Card, Dialog, AlertDialog and
+Sidebar paint no background. Then move each old `fill` value: a surface word
+moves to the `surface` prop under the same name (`fill="muted"` becomes
+`surface="muted"`); an alpha, gradient or family colour becomes a fill token
+the designer authors in `.rafters/tokens/fill.rafters.json`, passed as its
+`bg-fill-*` utility (`fill="bg-fill-<name>"`). For Typography,
+`color="muted"` becomes `color="muted-foreground"`.
+
 ### Added
 
 - **Surfaces are `bg-surface-*` fills, chosen by a `surface` prop (#2830,
@@ -32,6 +49,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   adds any surface fill a project lacks and never changes one that exists;
   run it before pulling the updated Card, Dialog, AlertDialog or Sidebar, or
   they paint no background.
+
+### Changed
+
+- **`fill` takes one `bg-fill-*` token, and it wins over the variant and the
+  base (#2829, FR-RAF-FILL-003).** `fill` is now the only prop that takes a
+  class. Its value is exactly one fill token from the registry (#2827), written
+  as the `bg-fill-*` utility the token exports (#2828), for example
+  `fill="bg-fill-glass"`. A component's surface (background, foreground and
+  border colour) comes from the fill first, then its variant, then its base
+  (#2830 puts `surface` between the variant and the base).
+  A fill replaces that surface outright, including the variant's own `hover:`
+  and `active:` colour states, so a glass Button does not hover to its variant
+  colour; structure, focus rings, `data-state` colours and every other state
+  class stay. The shared merge (`classy.fill`) checks the shape only: any
+  other value (`bg-red-500`, `bg-fill-glass extra`, a bare word) is dropped
+  with a console warning and the variant's or base's surface stands.
+  `fill` sits on the part that is the plane: the root of Alert, Badge, Button,
+  Card, Command, Container, Kbd, Skeleton and the Sidebar panel, Image's
+  frame, and the content panel of AlertDialog, Dialog, Drawer, Sheet,
+  Popover, HoverCard, Select, DropdownMenu, ContextMenu, Menubar, Combobox,
+  DatePicker and NavigationMenu. Controls whose colours carry state (Switch,
+  Slider, Tabs, Checkbox, Toggle and similar) take no fill.
+- **Typography's `color` is a literal map (#2829).** Each value names a text
+  colour token and renders its whole class (`color="muted-foreground"` renders
+  `text-muted-foreground`); a value with no entry renders no colour class.
+  `muted` is not a value: it is a surface token, and its text rendered near
+  invisible (#2528). The examples now show `color="muted-foreground"`.
+- **Migrating from fill v2.** The v2 signatures (`fill="background"`,
+  `fill="muted/50"`, `fill="primary-to-accent"`) are no longer read. `fill`
+  drops each one with a console warning, and the component paints its
+  variant's or base's surface instead; Container and Image have no base, so
+  they paint no background. Typography's `color` in the same forms renders no
+  colour class. Nothing rewrites your code, and this release does not flag
+  the old values: `rafters check` will, once rafters-studio/veneer#122 lands.
+  A surface word becomes a `surface=` name (#2830); anything else (an alpha,
+  a gradient, a family colour) becomes a fill token the designer authors in
+  the registry, passed as its `bg-fill-*` utility. For Typography, use the
+  text colour itself: `color="muted"` becomes `color="muted-foreground"`.
+
+### Removed
+
+- **Fill v2 (#2829).** `primitives/fill-resolver.ts` (`resolveFillName`) and
+  `@rafters/shared`'s `fill-signature.ts` (`parseFillSignature`,
+  `validateFillSignature`, `expandFillSignature`, `foregroundWordFor`,
+  `RESERVED_FILL_SEGMENTS`) are gone, and Card, Container and Image no
+  longer render a `data-fill` attribute. No component builds a class name
+  from fragments or writes a token name into the DOM. The colour namer still
+  reserves `to`, `via` and `from`; its invariant test holds the list itself.
+
+## Before 0.5.0
+
+These entries were listed under Unreleased before 0.5.0 and reached
+consumers through the registry as they merged.
+
+### Added
 
 - **Typography named exports on the Astro target (#2325).** The single
   `typography.astro` now exports the same 20 names `typography.tsx` exports
@@ -149,38 +221,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`fill` takes one `bg-fill-*` token, and it wins over the variant and the
-  base (#2829, FR-RAF-FILL-003).** `fill` is now the only prop that takes a
-  class. Its value is exactly one fill token from the registry (#2827), written
-  as the `bg-fill-*` utility the token exports (#2828), for example
-  `fill="bg-fill-glass"`. A component's surface (background, foreground and
-  border colour) comes from the fill first, then its variant, then its base.
-  A fill replaces that surface outright, including the variant's own `hover:`
-  and `active:` colour states, so a glass Button does not hover to its variant
-  colour; structure, focus rings, `data-state` colours and every other state
-  class stay. The shared merge (`classy.fill`) checks the shape only: any
-  other value (`bg-red-500`, `bg-fill-glass extra`, a bare word) is dropped
-  with a console warning and the variant's or base's surface stands.
-  `fill` sits on the part that is the plane: the root of Alert, Badge, Button,
-  Card, Command, Container, Kbd, Skeleton and the Sidebar panel, Image's
-  frame, and the content panel of AlertDialog, Dialog, Drawer, Sheet,
-  Popover, HoverCard, Select, DropdownMenu, ContextMenu, Menubar, Combobox,
-  DatePicker and NavigationMenu. Controls whose colours carry state (Switch,
-  Slider, Tabs, Checkbox, Toggle and similar) take no fill.
-- **Typography's `color` is a literal map (#2829).** Each value names a text
-  colour token and renders its whole class (`color="muted-foreground"` renders
-  `text-muted-foreground`); a value with no entry renders no colour class.
-  `muted` is not a value: it is a surface token, and its text rendered near
-  invisible (#2528). The examples now show `color="muted-foreground"`.
-- **Migrating from fill v2.** The v2 signatures (`fill="background"`,
-  `fill="muted/50"`, `fill="primary-to-accent"`, and `color` values in the
-  same forms) now paint nothing and warn. Nothing rewrites your code: `rafters
-  check` (rafters-studio/veneer#122) flags each retired value and names what
-  it becomes. A role surface word becomes a `surface=` name (#2830); anything
-  else (an alpha, a gradient, a family colour) becomes a fill token you author
-  in the registry and pass as its `bg-fill-*` utility. For Typography, use the
-  text colour itself: `color="muted"` becomes `color="muted-foreground"`.
-
 - **Astro pin moves to 7 and the Astro tests run against 6 and 7 (#2327).**
   `astro` is `^7.3.2` here and in `apps/registry`, so the `.astro` files the
   registry serves compile under `@astrojs/compiler-rs`, the strict Rust
@@ -204,14 +244,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `text-body-small`) are kept over shadcn's raw `font-semibold`/`text-sm`.
 
 ### Removed
-
-- **Fill v2 (#2829).** `primitives/fill-resolver.ts` (`resolveFillName`) and
-  `@rafters/shared`'s `fill-signature.ts` (`parseFillSignature`,
-  `validateFillSignature`, `expandFillSignature`, `foregroundWordFor`,
-  `RESERVED_FILL_SEGMENTS`) are gone, and Card, Container and Image no
-  longer render a `data-fill` attribute. No component builds a class name
-  from fragments or writes a token name into the DOM. The colour namer still
-  reserves `to`, `via` and `from`; its invariant test holds the list itself.
 
 - **The snapshot-history track is retired from `primitives/editor/` and the
   registry (#2240, folding #2239, closing #2220).** `history.ts`
