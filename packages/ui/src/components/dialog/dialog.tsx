@@ -306,6 +306,8 @@ export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement>
   onInteractOutside?: (event: Event) => void;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function DialogContent({
@@ -316,6 +318,7 @@ export function DialogContent({
   onPointerDownOutside,
   onInteractOutside,
   fill,
+  surface,
   className,
   children,
   onKeyDown,
@@ -382,7 +385,9 @@ export function DialogContent({
         inert={effectiveOpen ? undefined : true}
         tabIndex={-1}
         className={classy(
-          fill ? dialogClasses({ ...config, fill }, state).content : classes.content,
+          fill || surface
+            ? dialogClasses({ ...config, fill, surface }, state).content
+            : classes.content,
           className,
         )}
         {...aria.content}

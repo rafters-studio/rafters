@@ -77,6 +77,8 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   position?: ContainerPosition;
   depth?: ContainerDepth;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export const Container = React.forwardRef<HTMLElement, ContainerProps>(
@@ -94,6 +96,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       position,
       depth,
       fill,
+      surface,
       className,
       style,
       children,
@@ -114,6 +117,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       position,
       depth,
       fill,
+      surface,
     };
 
     const classes = containerClasses(config, {});

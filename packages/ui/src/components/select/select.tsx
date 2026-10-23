@@ -402,17 +402,21 @@ export interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement>
   asChild?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function SelectContent({
   fill,
+  surface,
   className,
   children,
   asChild,
   ...props
 }: SelectContentProps) {
   const { ids, aria, effectiveOpen, classes, config, state } = useSelectContext('SelectContent');
-  const contentClass = fill ? selectClasses({ ...config, fill }, state).content : classes.content;
+  const contentClass =
+    fill || surface ? selectClasses({ ...config, fill, surface }, state).content : classes.content;
 
   const partProps = {
     'data-part': 'content',

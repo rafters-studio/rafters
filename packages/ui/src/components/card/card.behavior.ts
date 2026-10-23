@@ -36,6 +36,8 @@ export interface CardConfig {
    * surface stays.
    */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 
 export type CardState = Record<never, never>;

@@ -164,7 +164,7 @@ export function comboboxClasses(config: ComboboxConfig, _state: ComboboxState): 
     chevron: chevronClasses,
     startIcon: startIconClasses,
     itemStartIcon: itemStartIconClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,
     itemText: itemTextClasses,

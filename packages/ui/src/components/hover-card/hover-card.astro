@@ -80,10 +80,13 @@ interface Props {
   sideOffset?: number;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 const {
   fill,
+  surface,
   id,
   href,
   label,
@@ -97,6 +100,7 @@ const {
 const config: HoverCardConfig = {
   defaultOpen,
   fill,
+  surface,
   disableHoverableContent,
   side,
   align,

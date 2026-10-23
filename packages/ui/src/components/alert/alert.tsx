@@ -60,11 +60,13 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: AlertVariant;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  ({ variant, fill, className, ...props }, ref) => {
-    const config: AlertConfig = { variant, fill };
+  ({ variant, fill, surface, className, ...props }, ref) => {
+    const config: AlertConfig = { variant, fill, surface };
     const classes = alertClasses(config, {});
 
     // A static score: role="alert" is constant, no state, no ids, no effects.

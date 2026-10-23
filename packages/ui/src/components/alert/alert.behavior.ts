@@ -38,6 +38,8 @@ export function isAlertVariant(value: string | null | undefined): value is Alert
 export interface AlertConfig {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   variant?: AlertVariant | undefined;
 }
 

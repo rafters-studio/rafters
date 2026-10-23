@@ -84,6 +84,8 @@ interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   position?: ContainerPosition;
   depth?: ContainerDepth;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 const {
@@ -99,6 +101,7 @@ const {
   position,
   depth,
   fill,
+  surface,
   class: _discardedClass,
   ...attrs
 } = Astro.props as Props & { class?: string };
@@ -116,6 +119,7 @@ const config: ContainerConfig = {
   position,
   depth,
   fill,
+  surface,
 };
 
 const classes = containerClasses(config, {});

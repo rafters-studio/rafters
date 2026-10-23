@@ -45,11 +45,13 @@ import { kbdClasses } from './kbd.classes';
 interface Props extends Omit<HTMLAttributes<'kbd'>, 'class'> {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = kbdClasses({ fill }, {});
+const classes = kbdClasses({ fill, surface }, {});
 ---
 
 <kbd data-part="root" class={classy(classes.root)} {...attrs}><slot /></kbd>

@@ -218,12 +218,15 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   variant?: SidebarVariant;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function Sidebar({
   side,
   variant,
   fill,
+  surface,
   className,
   children,
   onKeyDown,
@@ -250,7 +253,10 @@ export function Sidebar({
           data-sidebar="sidebar"
           showCloseButton={false}
           {...(fill !== undefined && { fill })}
-          className={classy(sidebarClasses(fill).mobilePanel, className)}
+          // The sheet paints the sidebar surface itself: a plain colour class
+          // beats a surface utility, so the sheet's own base must not stand.
+          surface={surface ?? 'sidebar'}
+          className={classy(sidebarClasses(fill, surface).mobilePanel, className)}
           {...props}
         >
           {children}
@@ -276,7 +282,10 @@ export function Sidebar({
       id={ids.panel}
       data-side={resolvedSide}
       data-variant={resolvedVariant}
-      className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant, fill), className)}
+      className={classy(
+        sidebarPanelClasses(resolvedSide, resolvedVariant, fill, surface),
+        className,
+      )}
       onKeyDown={handleKeyDown}
       {...aria.panel}
       {...props}

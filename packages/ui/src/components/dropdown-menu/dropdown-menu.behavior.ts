@@ -39,6 +39,8 @@ import { dropdownMenuClasses } from './dropdown-menu.classes';
 export interface DropdownMenuConfig extends DisclosableConfig {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 export type DropdownMenuState = DisclosableState;
 export type DropdownMenuActions = DisclosableActions;

@@ -90,10 +90,13 @@ export interface CommandProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   label?: string | undefined;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function Command({
   fill,
+  surface,
   children,
   value,
   defaultValue = '',
@@ -102,7 +105,7 @@ export function Command({
   className,
   ...props
 }: CommandProps) {
-  const config: CommandConfig = { value, defaultValue, label, fill };
+  const config: CommandConfig = { value, defaultValue, label, fill, surface };
 
   const { memory, dispatch } = React.useMemo(() => createBehavior(command, config), []);
   const state = useMemory(memory);

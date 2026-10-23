@@ -120,7 +120,7 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 export function drawerClasses(config: DrawerConfig, _state: DrawerState): DrawerClassSet {
   return {
     overlay: overlayClasses,
-    content: `${contentBaseClasses} ${classy.fill(config.fill, contentSurfaceClasses)} ${sideClasses[drawerSide(config)]}`,
+    content: `${contentBaseClasses} ${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${sideClasses[drawerSide(config)]}`,
     handle: handleClasses,
     header: headerClasses,
     footer: footerClasses,

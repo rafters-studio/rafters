@@ -244,7 +244,7 @@ export function contextMenuClasses(
 ): ContextMenuClassSet {
   return {
     trigger,
-    content: `${classy.fill(config.fill, contentSurface)} ${content}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurface))} ${content}`,
     subContent,
     item,
     checkboxItem,

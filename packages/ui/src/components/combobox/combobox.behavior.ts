@@ -48,6 +48,8 @@ import { comboboxClasses } from './combobox.classes';
 export interface ComboboxConfig {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled value ('' = no selection): shadows the intrinsic state. */
   value?: string | undefined;
   /** Uncontrolled seed for the intrinsic value. */

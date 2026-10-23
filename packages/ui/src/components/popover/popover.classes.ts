@@ -80,7 +80,7 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
 export function popoverClasses(config: PopoverConfig, _state: PopoverState): PopoverClassSet {
   return {
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     close: closeClasses,
     closeIcon: closeIconClasses,
   };

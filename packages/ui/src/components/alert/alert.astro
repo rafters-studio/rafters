@@ -105,11 +105,13 @@ interface Props {
   variant?: AlertVariant;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { variant, fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { variant, fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const config: AlertConfig = { variant, fill };
+const config: AlertConfig = { variant, fill, surface };
 const classes: AlertClassSet = alertClasses(config, {});
 
 // Annotation is documentation, not load-bearing -- inference reaches AriaAttrs

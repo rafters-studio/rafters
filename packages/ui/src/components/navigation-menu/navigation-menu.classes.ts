@@ -215,7 +215,7 @@ export function navigationMenuClasses(
     triggerChevron: triggerChevronClasses,
     startIcon: iconClasses,
     endIcon: iconClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     link: linkClasses,
     viewportWrapper: viewportWrapperClasses,
     viewport: viewportClasses,

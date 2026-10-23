@@ -71,6 +71,8 @@ interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt' | 'class'> 
   alignment?: ImageAlignment;
   radius?: ImageRadius;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   status?: ImageStatus;
   caption?: string;
   errorMessage?: string;
@@ -84,6 +86,7 @@ const {
   alignment = 'center',
   radius = 'lg',
   fill,
+  surface,
   status,
   caption,
   errorMessage,
@@ -92,7 +95,7 @@ const {
   ...attrs
 } = Astro.props as Props & { class?: string };
 
-const config: ImageConfig = { size, alignment, radius, fill, status, errorMessage, loadingLabel };
+const config: ImageConfig = { size, alignment, radius, fill, surface, status, errorMessage, loadingLabel };
 const classes = imageClasses(config, {});
 const resolved = resolveImage(config);
 

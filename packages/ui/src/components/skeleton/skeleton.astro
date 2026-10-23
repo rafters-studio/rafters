@@ -44,11 +44,13 @@ import { skeletonClasses } from './skeleton.classes';
 interface Props {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = skeletonClasses({ fill }, {});
+const classes = skeletonClasses({ fill, surface }, {});
 const aria = skeleton.aria({}, {}, { root: '' }).root;
 ---
 

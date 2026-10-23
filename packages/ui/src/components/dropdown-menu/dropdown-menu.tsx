@@ -258,19 +258,23 @@ export interface DropdownMenuContentProps extends React.HTMLAttributes<HTMLDivEl
   asChild?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function DropdownMenuContent({
   fill,
+  surface,
   className,
   children,
   asChild,
   ...props
 }: DropdownMenuContentProps) {
   const { ids, aria, effectiveOpen, classes } = useDropdownMenuContext('DropdownMenuContent');
-  const contentClass = fill
-    ? dropdownMenuClasses({ fill }, { open: effectiveOpen }).content
-    : classes.content;
+  const contentClass =
+    fill || surface
+      ? dropdownMenuClasses({ fill, surface }, { open: effectiveOpen }).content
+      : classes.content;
   // The menu lives in light DOM, so presence here gates `hidden` rather than a
   // mount -- but the mechanism is identical. `hidden` is `display: none`, and an
   // element LEAVING display:none starts its animation exactly as a mounting one

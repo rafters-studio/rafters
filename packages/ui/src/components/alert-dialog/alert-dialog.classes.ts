@@ -35,7 +35,7 @@ const overlayClasses =
 const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-center p-4';
 
 /** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
-const contentSurfaceClasses = 'border-card-border bg-card text-card-foreground';
+const contentSurfaceClasses = 'bg-surface-card';
 
 // data-[state=closed]:pointer-events-none -- the ratified motion ruling's taste
 // residue: while a closing surface is held present through its exit window
@@ -95,7 +95,7 @@ export function alertDialogClasses(
   return {
     overlay: overlayClasses,
     container: containerClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     header: headerClasses,
     footer: footerClasses,
     title: titleClasses,

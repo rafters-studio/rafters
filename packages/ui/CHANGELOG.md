@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Surfaces are `bg-surface-*` fills, chosen by a `surface` prop (#2830,
+  FR-RAF-FILL-004).** `rafters init` writes one fill per surface, named
+  `surface-<name>` in `fill.rafters.json` and exported as
+  `bg-surface-<name>`. Its parts reference that surface's own tokens
+  (background `<name>`, foreground `<name>-foreground`, border
+  `<name>-border` when it exists), with no new values and no state blocks, so
+  it follows the token chain as `bg-card` does. The 37 surfaces: background,
+  card, panel, popover, surface, primary, primary-subtle, secondary,
+  secondary-subtle, muted, accent, accent-subtle, destructive,
+  destructive-subtle, success, success-subtle, warning, warning-subtle, info,
+  info-subtle, alert, alert-subtle, highlight, input, selection, sidebar,
+  sidebar-primary, sidebar-accent, sidebar-item, nav, table, table-header,
+  tooltip, overlay, code, badge and avatar. A designer override on a surface
+  fill is kept. Card, DialogContent, AlertDialogContent and the Sidebar panel
+  now paint their base with `bg-surface-card` / `bg-surface-sidebar`; every
+  other base keeps its colour classes, so a fresh project looks as before.
+  Each component that takes `fill` also takes `surface="<name>"`, which
+  replaces the base surface. Precedence: fill, then an explicit variant
+  (`variant="default"` included), then surface, then base. Colour classes
+  such as `bg-card` are unchanged. **Migration:** `rafters init --rebuild`
+  adds any surface fill a project lacks and never changes one that exists;
+  run it before pulling the updated Card, Dialog, AlertDialog or Sidebar, or
+  they paint no background.
+
 - **Typography named exports on the Astro target (#2325).** The single
   `typography.astro` now exports the same 20 names `typography.tsx` exports
   (`H1`-`H6`, `P`, `Lead`, `Large`, `Muted`, `Small`, `Code`, `CodeBlock`,

@@ -68,6 +68,11 @@ export interface ButtonConfig extends PressableConfig {
   size: ButtonSize;
   /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
   fill?: string | undefined;
+  /**
+   * A surface name; its `bg-surface-*` class replaces the variant's surface.
+   * The performances set it only when no variant prop was given.
+   */
+  surface?: string | undefined;
 }
 
 export type ButtonState = PressableState;

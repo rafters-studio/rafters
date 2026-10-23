@@ -69,10 +69,13 @@ interface Props {
   empty?: string;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 const {
   fill,
+  surface,
   id,
   options,
   value = '',
@@ -81,7 +84,7 @@ const {
   empty = 'No results found.',
 } = Astro.props;
 
-const config: ComboboxConfig = { defaultValue: value, disabled, fill };
+const config: ComboboxConfig = { defaultValue: value, disabled, fill, surface };
 // A seeded value shows its option's label in the input, as a select of it does.
 const state = {
   ...combobox.initialState(config),

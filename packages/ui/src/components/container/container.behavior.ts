@@ -77,6 +77,8 @@ export interface ContainerConfig {
   depth?: ContainerDepth | undefined;
   /** Exactly one `bg-fill-*` token; any other value is dropped with a warning. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 
 export type ContainerState = Record<never, never>;

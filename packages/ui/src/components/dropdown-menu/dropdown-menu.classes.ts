@@ -130,7 +130,7 @@ export function dropdownMenuClasses(
 ): DropdownMenuClassSet {
   return {
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

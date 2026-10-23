@@ -26,5 +26,7 @@ export const kbdBaseClasses = `${kbdStructureClasses} ${kbdSurfaceClasses}`;
  * replaced by a fill when one wins -- the same single class string every performance reads.
  */
 export function kbdClasses(config: KbdConfig, _state: KbdState): KbdClassSet {
-  return { root: `${kbdStructureClasses} ${classy.fill(config.fill, kbdSurfaceClasses)}` };
+  return {
+    root: `${kbdStructureClasses} ${classy.fill(config.fill, classy.surface(config.surface, kbdSurfaceClasses))}`,
+  };
 }

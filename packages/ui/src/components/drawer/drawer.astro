@@ -93,6 +93,8 @@ interface Props {
   description?: string;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 const {
@@ -103,9 +105,10 @@ const {
   title,
   description,
   fill,
+  surface,
 } = Astro.props;
 
-const config: DrawerConfig = { modal, defaultOpen, side, fill };
+const config: DrawerConfig = { modal, defaultOpen, side, fill, surface };
 const state = drawer.initialState(config);
 const classes = drawerClasses(config, state);
 

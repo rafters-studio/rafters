@@ -88,6 +88,8 @@ export interface DatePickerCalendarProps {
 interface DatePickerBaseProps {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Form field name; with it, the value submits through a hidden input. */
   name?: string | undefined;
   placeholder?: string | undefined;
@@ -154,11 +156,13 @@ export function DatePicker(props: DatePickerProps) {
     startIcon,
     endIcon,
     fill,
+    surface,
   } = props;
 
   const config: DatePickerConfig = {
     mode,
     fill,
+    surface,
     value: controlledSelection(mode, props),
     defaultValue: selectionProp(mode, props.defaultValue),
     open,

@@ -114,6 +114,6 @@ export function hoverCardClasses(
 ): HoverCardClassSet {
   return {
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
   };
 }

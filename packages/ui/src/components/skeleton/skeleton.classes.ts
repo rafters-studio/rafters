@@ -52,6 +52,6 @@ const skeletonSurfaceClasses = 'bg-muted';
 
 export function skeletonClasses(config: SkeletonConfig, _state: SkeletonState): SkeletonClassSet {
   return {
-    root: `${skeletonStructureClasses} ${classy.fill(config.fill, skeletonSurfaceClasses)}`,
+    root: `${skeletonStructureClasses} ${classy.fill(config.fill, classy.surface(config.surface, skeletonSurfaceClasses))}`,
   };
 }
