@@ -233,6 +233,8 @@ export interface FrameworkSpec {
   components: ComponentPaths;
   /** One line init and add print for this framework, when it needs setup rafters does not do. */
   note?: string;
+  /** The Tailwind CSS v4 install guide init names when tailwindcss is missing (#2804). */
+  tailwindGuide: string;
 }
 
 export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
@@ -246,6 +248,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'composites',
       rules: 'lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/nextjs',
   },
   vite: {
     label: 'Vite',
@@ -257,6 +260,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/using-vite',
   },
   remix: {
     label: 'Remix',
@@ -268,6 +272,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'app/composites',
       rules: 'app/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
   'react-router': {
     label: 'React Router v7',
@@ -279,6 +284,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'app/composites',
       rules: 'app/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/react-router',
   },
   astro: {
     label: 'Astro',
@@ -290,6 +296,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/astro',
   },
   preact: {
     label: 'Preact',
@@ -301,6 +308,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
     note: 'Preact: rafters installs React (.tsx) components, so react and react-dom must alias to preact/compat (@preact/preset-vite sets this up).',
   },
   vanilla: {
@@ -313,6 +321,7 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
   unknown: {
     cssLocations: ['src/styles/global.css', 'src/index.css', 'styles/globals.css'],
@@ -323,5 +332,6 @@ export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
       composites: 'composites',
       rules: 'lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
 };
