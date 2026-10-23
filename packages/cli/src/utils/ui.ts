@@ -305,6 +305,25 @@ export function log(event: Record<string, unknown>): void {
       context.spinner?.fail(event.message as string);
       break;
 
+    // Remove events
+    case 'remove:start':
+      context.spinner = ora(`Removing ${event.component}...`).start();
+      break;
+
+    case 'remove:removed': {
+      context.spinner?.succeed(`Removed ${event.component}`);
+      context.spinner = null;
+      const files = event.files as string[];
+      for (const file of files) {
+        console.log(`    ${file}`);
+      }
+      break;
+    }
+
+    case 'remove:complete':
+      console.log('');
+      break;
+
     // Import events
     case 'import:scanning':
       context.spinner = ora('Scanning for design tokens...').start();

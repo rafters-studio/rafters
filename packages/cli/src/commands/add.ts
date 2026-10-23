@@ -112,7 +112,7 @@ async function isInitialized(cwd: string): Promise<boolean> {
 /**
  * Load rafters config from .rafters/config.rafters.json
  */
-async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
+export async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
   const paths = getRaftersPaths(cwd);
   let config: RaftersConfig;
   try {
@@ -152,7 +152,7 @@ export function resolveRegistryUrl(
 /**
  * Save config back to .rafters/config.rafters.json
  */
-async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
+export async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
   const paths = getRaftersPaths(cwd);
   await writeFile(paths.config, JSON.stringify(config, null, 2));
 }

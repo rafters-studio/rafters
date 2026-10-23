@@ -11,6 +11,7 @@ import { agents } from './commands/agents.js';
 import { importCss } from './commands/import.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
+import { remove } from './commands/remove.js';
 import { withErrorHandler } from './utils/ui.js';
 import { VERSION } from './version.js';
 
@@ -64,6 +65,14 @@ program
   .option('--registry-url <url>', 'Custom registry URL')
   .option('--agent', 'Output JSON for machine consumption')
   .action(withErrorHandler(add));
+
+program
+  .command('remove')
+  .description('Remove an installed rafters component and its config entry')
+  .argument('<name>', 'Name of the installed item to remove')
+  .option('--registry-url <url>', 'Custom registry URL')
+  .option('--agent', 'Output JSON for machine consumption')
+  .action(withErrorHandler(remove));
 
 program
   .command('mcp')
