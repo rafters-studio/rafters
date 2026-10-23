@@ -70,7 +70,7 @@ async function storedTokens(): Promise<Array<StoredToken & { userOverride?: unkn
 }
 
 /** Set stored tokens' values in `.rafters/tokens`, wherever each lives. */
-async function setStored(values: ReadonlyMap<string, string>): Promise<void> {
+export async function setStored(values: ReadonlyMap<string, string>): Promise<void> {
   const remaining = new Set(values.keys());
   for (const [entry, file] of await tokenFiles(context.fixturePath)) {
     let changed = false;
@@ -88,7 +88,7 @@ async function setStored(values: ReadonlyMap<string, string>): Promise<void> {
   expect([...remaining], 'tokens not in .rafters/tokens').toEqual([]);
 }
 
-async function rebuild(): Promise<void> {
+export async function rebuild(): Promise<void> {
   const result = await execRafters(context.fixturePath, ['init', '--rebuild', '--agent']);
   expect(result.exitCode, result.stderr).toBe(0);
 }
