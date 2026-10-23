@@ -60,6 +60,8 @@ export type DatePickerMode = 'single' | 'range';
 export interface DatePickerConfig {
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Selection cardinality. Default 'single'. */
   mode: DatePickerMode;
   /** Controlled committed value: shadows the intrinsic state when present. */

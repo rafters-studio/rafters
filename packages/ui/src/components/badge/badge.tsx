@@ -53,6 +53,8 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: BadgeSize;
   /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
   startIcon?: React.ReactNode;
@@ -62,19 +64,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   (
-    {
-      variant = 'default',
-      size = 'default',
-      fill,
-      className,
-      startIcon,
-      endIcon,
-      children,
-      ...props
-    },
+    { variant, size = 'default', fill, surface, className, startIcon, endIcon, children, ...props },
     ref,
   ) => {
-    const classes = badgeClasses({ variant, size, fill }, {});
+    const classes = badgeClasses({ variant, size, fill, surface }, {});
     const uid = React.useId();
     const ids = {} as PartIds<BadgePart>;
     for (const part of Object.keys(badge.parts) as BadgePart[]) ids[part] = `${uid}-${part}`;

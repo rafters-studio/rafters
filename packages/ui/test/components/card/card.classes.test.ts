@@ -16,11 +16,10 @@ function root(config: Parameters<typeof cardClasses>[0]): string {
 describe('card classes', () => {
   it('defaults to the card surface token pairing plus the structural panel', () => {
     const classes = root({});
-    expect(classes).toContain('bg-card');
-    expect(classes).toContain('text-card-foreground');
+    // The card surface fill carries bg, foreground and border (FR-RAF-FILL-004).
+    expect(classes.split(' ')).toContain('bg-surface-card');
     expect(classes).toContain('rounded-xl');
     expect(classes.split(' ')).toContain('border');
-    expect(classes).toContain('border-card-border');
     expect(classes).toContain('shadow-sm');
   });
 
@@ -40,9 +39,7 @@ describe('card classes', () => {
   it('a bg-fill- fill REPLACES the base surface -- no competing bg-card', () => {
     const filled = root({ fill: 'bg-fill-glass' }).split(' ');
     expect(filled).toContain('bg-fill-glass');
-    expect(filled).not.toContain('bg-card');
-    expect(filled).not.toContain('text-card-foreground');
-    expect(filled).not.toContain('border-card-border');
+    expect(filled).not.toContain('bg-surface-card');
     // structure survives the surface swap
     expect(filled).toContain('rounded-xl');
     expect(filled).toContain('border');
@@ -50,7 +47,7 @@ describe('card classes', () => {
 
   it('a retired v2 fill value keeps the base card surface', () => {
     const bad = root({ fill: 'muted/50' }).split(' ');
-    expect(bad).toContain('bg-card');
+    expect(bad).toContain('bg-surface-card');
     expect(bad).not.toContain('bg-muted/50');
   });
 

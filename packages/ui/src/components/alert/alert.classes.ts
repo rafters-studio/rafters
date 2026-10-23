@@ -65,10 +65,15 @@ export const alertDescriptionClasses =
 export const alertActionClasses = 'col-start-4 row-start-1 row-span-2 ms-3 shrink-0';
 
 export function alertClasses(config: AlertConfig, _state: AlertState): AlertClassSet {
-  const variant = config.variant ?? 'default';
+  // Fill, then an explicit variant, then surface, then base (the default
+  // variant): an absent variant does not beat surface (FR-RAF-FILL-004).
+  const surface =
+    config.variant === undefined
+      ? classy.surface(config.surface, variantClasses.default)
+      : variantClasses[config.variant];
   // The class set carries only declared parts (Spec 01: Partial<Record<Part,
   // string>>); the sub-component literals above are the direct imports.
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, variantClasses[variant])}`,
+    root: `${baseClasses} ${classy.fill(config.fill, surface)}`,
   };
 }

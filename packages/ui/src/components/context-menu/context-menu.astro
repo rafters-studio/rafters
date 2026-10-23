@@ -71,11 +71,13 @@ interface Props {
   avoidCollisions?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { fill, id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
+const { fill, surface, id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
 
-const config: ContextMenuConfig = { loop, avoidCollisions, fill };
+const config: ContextMenuConfig = { loop, avoidCollisions, fill, surface };
 const state = contextMenu.initialState(config);
 const classes = contextMenuClasses(config, state);
 

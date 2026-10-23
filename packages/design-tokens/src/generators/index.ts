@@ -45,6 +45,7 @@ import { generateRadiusTokens } from './radius.js';
 import { generateSemanticTokens, semanticDescription } from './semantic.js';
 import { generateShadowTokens } from './shadow.js';
 import { generateSpacingTokens } from './spacing.js';
+import { generateSurfaceTokens } from './surface.js';
 import type { BaseSystemConfig, ResolvedSystemConfig } from './types.js';
 import { DEFAULT_SYSTEM_CONFIG, resolveConfig } from './types.js';
 import { generateTypographyTokens } from './typography.js';
@@ -168,6 +169,7 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorSeedEntry>)
       name: 'focus',
       generate: (config) => generateFocusTokens(config, DEFAULT_FOCUS_CONFIGS),
     },
+    { name: 'surface', generate: () => generateSurfaceTokens() },
   ];
 }
 

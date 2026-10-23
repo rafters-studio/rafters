@@ -37,10 +37,9 @@ describe('card [astro]', () => {
     const body = await render();
     const root = partElement(body, 'root') as HTMLElement;
     expect(root).not.toBeNull();
-    expect(root.className).toContain('bg-card');
+    expect(root.classList.contains('bg-surface-card')).toBe(true);
     expect(root.className).toContain('rounded-xl');
     expect(root.classList.contains('border')).toBe(true);
-    expect(root.classList.contains('border-card-border')).toBe(true);
   });
 
   it('root carries the data-slot swap contract alongside its data-part', async () => {
@@ -105,7 +104,7 @@ describe('card [astro]', () => {
     const body = await render({ fill: 'bg-fill-glass' });
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.classList.contains('bg-fill-glass')).toBe(true);
-    expect(root.classList.contains('bg-card')).toBe(false);
+    expect(root.classList.contains('bg-surface-card')).toBe(false);
     expect(root.hasAttribute('data-fill')).toBe(false);
   });
 

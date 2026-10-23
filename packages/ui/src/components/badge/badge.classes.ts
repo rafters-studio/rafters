@@ -67,8 +67,14 @@ const baseClasses =
 export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClassSet {
   const variant = config.variant ?? 'default';
   const size = config.size ?? 'default';
+  // Fill, then an explicit variant, then surface, then base (the default
+  // variant): an absent variant does not beat surface (FR-RAF-FILL-004).
+  const surface =
+    config.variant === undefined
+      ? classy.surface(config.surface, variantClasses.default)
+      : variantClasses[config.variant];
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, variantClasses[variant])} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[size]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, surface)} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[size]}`,
     startIcon: iconClasses,
     endIcon: iconClasses,
   };

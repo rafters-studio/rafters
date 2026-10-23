@@ -421,6 +421,8 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
   asChild?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 /**
@@ -433,6 +435,7 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  */
 export function MenubarContent({
   fill,
+  surface,
   className,
   children,
   asChild,
@@ -476,7 +479,9 @@ export function MenubarContent({
     ) : (
       <div
         className={classy(
-          fill ? menubarClasses({ ...config, fill }, state).content : classes.content,
+          fill || surface
+            ? menubarClasses({ ...config, fill, surface }, state).content
+            : classes.content,
           className,
         )}
         {...partProps}

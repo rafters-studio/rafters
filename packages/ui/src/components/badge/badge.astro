@@ -61,12 +61,14 @@ interface Props extends Omit<HTMLAttributes<'span'>, 'class'> {
   variant?: BadgeVariant;
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: BadgeSize;
 }
 
-const { variant, size, fill, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { variant, size, fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = badgeClasses({ variant, size, fill }, {});
+const classes = badgeClasses({ variant, size, fill, surface }, {});
 const rootClass = classy(classes.root);
 const uid = attrs.id ?? 'badge';
 const ids = {} as PartIds<BadgePart>;

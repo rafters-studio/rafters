@@ -96,11 +96,13 @@ interface Props {
   loop?: boolean;
   /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { fill, id, menus, loop = true } = Astro.props;
+const { fill, surface, id, menus, loop = true } = Astro.props;
 
-const config: MenubarConfig = { loop, fill };
+const config: MenubarConfig = { loop, fill, surface };
 const state = menubar.initialState(config);
 const classes = menubarClasses(config, state);
 

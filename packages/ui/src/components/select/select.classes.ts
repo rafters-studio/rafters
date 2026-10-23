@@ -197,7 +197,7 @@ export function selectClasses(config: SelectConfig, _state: SelectState): Select
     trigger: triggerClasses,
     value: valueClasses,
     chevron: chevronClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     viewport: viewportClasses,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,

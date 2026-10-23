@@ -16,7 +16,7 @@ describe('sidebar shell classes', () => {
   it('the mobile overlay surface paints the sidebar fill over the Sheet frame', () => {
     // Sheet owns the modal positioning; this class only carries the sidebar
     // chrome, so it must not re-declare fixed/inset positioning.
-    expect(classes.mobilePanel).toContain('bg-sidebar');
+    expect(classes.mobilePanel.split(' ')).toContain('bg-surface-sidebar');
     expect(classes.mobilePanel).toContain('flex');
     expect(classes.mobilePanel).not.toContain('fixed');
   });

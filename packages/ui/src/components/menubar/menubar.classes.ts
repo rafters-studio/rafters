@@ -158,7 +158,7 @@ export function menubarClasses(config: MenubarConfig, _state: MenubarState): Men
   return {
     root: rootClasses,
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, contentSurfaceClasses)} ${contentClasses}`,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

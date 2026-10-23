@@ -495,7 +495,10 @@ Then(
 Then('the element paints its gradient and its mask', async ({ page }) => {
   // No added colour family, so no other @source inline line brings in gradient or mask utilities.
   const inlines = (await raftersCss()).split('\n').filter((l) => l.startsWith('@source inline('));
-  expect(inlines).toEqual(['@source inline("bg-fill-fade");']);
+  // Beside it, the line names only the surface fills, which carry no gradient or mask.
+  expect(inlines).toHaveLength(1);
+  const named = (inlines[0] ?? '').replace(/^@source inline\("|"\);$/g, '').split(' ');
+  expect(named.filter((n) => !n.startsWith('bg-surface-'))).toEqual(['bg-fill-fade']);
   await load(page, `<div id="fade" class="bg-fill-fade" style="width:100px;height:100px">x</div>`);
   const painted = await measure(page, 'fade');
   const sheet = parseCompiled(builtCss());
@@ -677,7 +680,8 @@ Then('rafters.css carries one @source inline line naming every bg-fill- utility'
     .filter((l) => l.startsWith('@source inline(') && l.includes('bg-fill-'));
   expect(lines).toHaveLength(1);
   const named = (lines[0] ?? '').replace(/^@source inline\("|"\);$/g, '').split(' ');
-  expect(named.sort()).toEqual(
+  // The same line names every bg-surface- utility too (FR-RAF-FILL-004).
+  expect(named.filter((n) => n.startsWith('bg-fill-')).sort()).toEqual(
     Object.keys(local.fills)
       .map((n) => `bg-fill-${n}`)
       .sort(),

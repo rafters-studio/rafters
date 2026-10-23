@@ -37,6 +37,8 @@ import type { BehaviorSpec } from '../../lib/contract';
 export interface SkeletonConfig {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
 }
 export type SkeletonState = Record<never, never>;
 export type SkeletonActions = Record<never, never>;

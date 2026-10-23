@@ -134,7 +134,7 @@ const dialogContentClasses =
 
 export function commandClasses(config: CommandConfig, _state: CommandState): CommandClassSet {
   return {
-    root: `${rootClasses} ${classy.fill(config.fill, rootSurfaceClasses)}`,
+    root: `${rootClasses} ${classy.fill(config.fill, classy.surface(config.surface, rootSurfaceClasses))}`,
     inputWrapper: inputWrapperClasses,
     inputIcon: inputIconClasses,
     input: inputClasses,

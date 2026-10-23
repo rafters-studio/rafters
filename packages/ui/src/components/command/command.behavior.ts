@@ -40,6 +40,8 @@ import { commandClasses } from './command.classes';
 export interface CommandConfig {
   /** Exactly one `bg-fill-*` token; it replaces the surface. */
   fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled search query. */
   value?: string | undefined;
   /** Uncontrolled seed. */

@@ -90,11 +90,13 @@ export interface CardProps extends NoClassName<React.HTMLAttributes<HTMLDivEleme
    * other value is dropped with a warning and the base surface stays.
    */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ as: Element = 'div', fill, children, ...rest }, ref) => {
-    const config: CardConfig = { as: Element, fill };
+  ({ as: Element = 'div', fill, surface, children, ...rest }, ref) => {
+    const config: CardConfig = { as: Element, fill, surface };
     const classes = cardClasses(config, {});
     const props = withoutClassName(rest);
 
