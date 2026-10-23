@@ -88,8 +88,12 @@ subdivision steps and the scale floor makes gratuitous depth unrepresentable.
 decoration.
 
 **classes.ts owns:** selection among literal strings. Never construction,
-never arbitrary values, never named colors. Fill, never background (ruled
-2026-07-08: fill is the only color-surface channel in the contract).
+never arbitrary values, never named colors. A consumer changes a surface in
+two ways only: `fill`, which takes exactly one designer-authored `bg-fill-*`
+token, and `surface`, which names one of the generated `bg-surface-*`
+surfaces. There is no background prop. Precedence on every part that takes
+them: fill, then an explicit variant, then surface, then the base
+(`classy.fill` and `classy.surface` in `primitives/classy.ts`).
 
 **Corollary — style the contract:** state-dependent looks key off the
 PROJECTED attributes (disabled:, aria-disabled:, aria-busy:, data-state)

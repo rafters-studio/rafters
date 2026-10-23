@@ -8,6 +8,28 @@ That rule runs on three layers: the `dependsOn` record, the registry binding,
 and the CSS `var()` chain. Rafters tokens are CSS only, so the CSS is the
 design; the other two layers must describe the same edges.
 
+## What the Tailwind exporter writes
+
+`rafters.css` and the static sheet come from one table, `THEME_MAPPING` in
+`src/exporters/tailwind.ts`. Each row maps a registry token pattern to the
+Tailwind v4 theme key its stock utility reads. `:root` sets
+`--rafters-<token>` to the stored value, and the theme key carries
+`var(--rafters-<token>)`, so changing a token moves its utility: `p-4` reads
+`--spacing-4`, bare `rounded` reads `--radius`, `z-depth-modal` reads
+`--z-index-depth-modal`. Breakpoint and container keys carry the literal
+value, because media and container queries cannot read `var()`. A token with
+a `<token>--dark` sibling switches in dark mode, as colour does.
+
+Fills are the exception. A token in the `fill` namespace is a recipe
+(`FillValueSchema` in `@rafters/shared`): background, gradient, mask,
+backdrop, blend, foreground and border, with optional dark and state blocks,
+and every colour a reference to a registry token. The exporter writes each
+one as `@utility bg-fill-<name> { @apply <stock Tailwind classes>; }`, plus
+one `@source inline(...)` line naming every fill utility, so a fill named only
+in data still compiles. The generated surface fills (`surface-<name>`, from
+`src/generators/surface.ts`) are written as `bg-surface-<name>`. The
+TypeScript and DTCG exports carry fills as data.
+
 ## Docs
 
 - [How the Rafters Token Cascade Works](docs/cascade.md): the three layers, the

@@ -97,7 +97,8 @@ interface PressableConfig {
   loadedAnnouncement?: string;     // default: "" (no announcement)
 }
 
-// ButtonConfig extends PressableConfig with variant (12) and size (8).
+// ButtonConfig extends PressableConfig with variant (12) and size (8),
+// plus fill?: string (one bg-fill-* token) and surface?: string (a surface name).
 
 interface PressableState {
   pressed: boolean | undefined;    // undefined unless config.toggle
@@ -208,6 +209,21 @@ the conformance harness fails the case in CI.
   (`hover:bg-{family}-hover`, `active:bg-{family}-active`,
   `focus-visible:ring-{family}-ring`). Keep them.
 - Every string literal; selection only; classy concatenates.
+- Each variant is split in two: `variantSurfaceClasses` (resting background,
+  text and border colour, with their `hover:` and `active:` colour states) and
+  `variantClasses` (focus ring and structure). `fill` and `surface` replace
+  only the first (`button.classes.ts:160`):
+  - `fill` takes exactly one `bg-fill-*` token and replaces the variant's
+    surface, hover and active colours included, so a filled Button does not
+    hover to its variant colour. Ring, size, press and disabled/busy classes
+    stay. Any other value is dropped with a console warning and the variant's
+    surface stands.
+  - `surface` names a generated surface (`bg-surface-<name>`). The React and
+    Astro performances pass it only when no `variant` prop was given
+    (`button.tsx:124`, `button.astro:97`), so an explicit `variant`,
+    `"default"` included, beats it. An unknown name is ignored.
+  - Precedence: fill, then an explicit variant, then surface, then the default
+    variant.
 - Drop `disabled:pointer-events-none` from base (see ARIA corrections).
   Keep `disabled:opacity-50 disabled:cursor-not-allowed`; add
   `aria-disabled:opacity-50 aria-disabled:cursor-not-allowed` for the

@@ -3,6 +3,22 @@
 Measured at rafters `72ac0c6f` (2026-10-19). Keep it current: see the
 [package README](../README.md#keeping-the-docs-current).
 
+Not yet re-measured since then. Three changes reached the CSS after that
+commit, and the counts below predate them:
+
+- The role layer (#2745, 0.4.5): every semantic declaration now points at its
+  owning role's step (`--rafters-primary-hover: var(--rafters-primary-950)`),
+  and each role step points at its palette, so a role change moves every token
+  that role owns in the browser.
+- The theme mapping (#2825): spacing, radius, shadow, typography, depth,
+  breakpoint and focus tokens are each set on `:root` as `--rafters-<token>`,
+  and their Tailwind theme keys read `var(--rafters-<token>)`. Breakpoints
+  stay literal in the theme because media queries cannot read `var()`.
+- Fills (#2827 to #2830): a `fill` namespace whose tokens are recipes, not CSS
+  values. Each is written as a `bg-fill-<name>` (or, for the 37 generated
+  surfaces, `bg-surface-<name>`) utility built from stock Tailwind classes. A
+  fill's colours are references to registry tokens, so it follows them.
+
 ## The short version
 
 A rafters cascade is one rule applied again and again: a token derives from a
@@ -86,9 +102,9 @@ separately and can disagree with it.
 | --- | --- | --- | --- | --- | --- | --- |
 | semantic colour | 414 | a palette, through a role root | all 414 | all 414, up to 5 hops deep | flat: utility, theme switch, `--rafters-<role>`, a palette step | only the light/dark switch; a role change moves nothing |
 | palette colour | 84 | none | none | none | literal `oklch()` | leaf |
-| spacing | 24 | `spacing-base` | 22 | none | `calc(var(--spacing-base) * n)` | yes |
-| radius | 38 | `radius-base`, itself `spacing-base` x 1.5 | 36 | none | `calc(var(--radius-base) * n)` | yes |
-| focus | 16 | `spacing-base` and `ring` | 16 | none | `calc(var(--spacing-base) / 2)`, `var(--ring)` | yes |
+| spacing | 24 | `spacing-base` | 22 | none | `calc(var(--rafters-spacing-base) * n)` | yes |
+| radius | 38 | `radius-base`, itself `spacing-base` x 1.5 | 36 | none | `calc(var(--rafters-radius-base) * n)` | yes |
+| focus | 16 | `spacing-base` and `ring` | 16 | none | `calc(var(--rafters-spacing-base) / 2)`, `var(--ring)` | yes |
 | typography | 56 | `font-size-base`, `font-sans` | 42, one pointing at itself | none | font sizes literal rem; `--font-heading: var(--font-sans)` | families yes, the size scale no |
 | typography composites | 14 | typography tokens | 14, one naming a token that does not exist | none | not emitted as custom properties | not traced |
 | shadow | 47 | `shadow-base-unit` from `spacing-base` | 45 | none | composites `var()` their parts; parts and base unit literal | composites follow their parts; geometry does not follow spacing |
@@ -110,7 +126,6 @@ and on which layer.
 
 | Break | Layer | Measured | Issue |
 | --- | --- | --- | --- |
-| No role layer in CSS: every semantic token points at a palette step, none at its role | CSS | 404 of 414 unlinked; the other 10 are the charts, which have no role | [#2745](https://github.com/rafters-studio/rafters/issues/2745) |
 | Light and dark point at each other in `dependsOn`: every light token lists its dark twin, while dark tokens derive from light | `dependsOn` | 207 light, 58 dark | not filed |
 | Loading the registry replaces designed steps with computed ones | binding | 199 steps (measured at c3c0a24b) | [#2662](https://github.com/rafters-studio/rafters/issues/2662) |
 | The font-size scale is literal rem; `font-size-base` is emitted twice and depends on itself | CSS, `dependsOn` | 13 sizes | [#2647](https://github.com/rafters-studio/rafters/issues/2647) |
@@ -124,6 +139,10 @@ Fixed since the first measurement (c3c0a24b): 60 semantic steps bound to a
 palette instead of their role, and `ring-primary`, `sidebar-primary`,
 `sidebar-accent` and `sidebar-muted` hanging off `neutral`
 ([#2743](https://github.com/rafters-studio/rafters/issues/2743)).
+
+Fixed since 72ac0c6f: the CSS had no role layer, so 404 of 414 semantic
+tokens pointed at a palette step instead of their role
+([#2745](https://github.com/rafters-studio/rafters/issues/2745)).
 
 ## How to check a cascade
 

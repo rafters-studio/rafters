@@ -54,6 +54,8 @@ absence here is a fits-this-component call, not a rejected-primitive call.
 
 ```ts
 interface ComboboxConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled selected value ('' = none)
   defaultValue?: string; // uncontrolled seed
   open?: boolean;        // controlled open
@@ -93,6 +95,18 @@ option leaves the input empty.
 The filter predicate is pure and shared by both performances:
 `matchesQuery(label, value, query)` matches on label OR value, case-insensitively,
 with an empty query matching everything.
+
+### Fill and surface
+
+`ComboboxContent` takes `fill` and `surface`, which change the surface of the listbox panel
+(`combobox.classes.ts:167`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

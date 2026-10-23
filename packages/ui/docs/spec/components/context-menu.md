@@ -68,6 +68,8 @@ records it), because a controlled/SSR client must be able to project it.
 
 ```ts
 interface ContextMenuConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;            // controlled
   defaultOpen?: boolean;    // uncontrolled seed
   loop?: boolean;           // roving wrap, default true
@@ -85,6 +87,18 @@ Controlled/uncontrolled per boundary 4: `config.open` shadows intrinsic
 idempotence gate rejects `close` when already closed, so a consumer callback
 fires once per real close. `openAt` is never gated: re-opening at a new point is
 a legitimate move (the menu follows the cursor).
+
+### Fill and surface
+
+`ContextMenuContent` takes `fill` and `surface`, which change the surface of the menu panel
+(`context-menu.classes.ts:247`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

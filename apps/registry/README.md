@@ -28,4 +28,4 @@ Deployed to Cloudflare Workers via `wrangler deploy`. Auto-deploys on push to ma
 
 ## How it works
 
-The registry reads raw `.tsx` source files from `packages/ui` at build time, extracts JSDoc intelligence metadata (cognitive load, accessibility, usage patterns), and outputs static JSON. The CLI (`pnpx rafters add`) fetches from these endpoints.
+The registry reads raw `.tsx` source files from `packages/ui` at build time, extracts JSDoc intelligence metadata (cognitive load, accessibility, usage patterns), and outputs static JSON. The CLI (`pnpm dlx rafters add`) fetches from these endpoints.

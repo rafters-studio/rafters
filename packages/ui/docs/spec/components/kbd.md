@@ -42,16 +42,30 @@ across every framework.
 ## Config, state, actions
 
 ```ts
-type KbdConfig = Record<never, never>;
+interface KbdConfig {
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
+}
 type KbdState = Record<never, never>;
 type KbdActions = Record<never, never>;
 ```
 
-`KbdConfig` is empty by construction: the oracle exposes
-no variants, sizes, or attributes on any of its targets. Config in, one
-class string out. `kbdClasses(config, state) => { root }` returns the base cap
-string regardless of config or state -- the single projection every
-performance reads.
+The oracle exposes no variants, sizes, or attributes on any of its targets,
+so `KbdConfig` carries only `fill` and `surface`. Config in, one class string
+out: `kbdClasses(config, state) => { root }` returns the cap's structure plus
+its surface -- the single projection every performance reads.
+
+### Fill and surface
+
+`Kbd` takes `fill` and `surface`, which change the surface of its root
+(`kbd.classes.ts:30`):
+
+- The base surface is `border-border bg-muted text-muted-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

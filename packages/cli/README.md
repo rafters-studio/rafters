@@ -23,7 +23,8 @@ On the first run against an existing project, `init` runs an import flow that li
 - **Pre-generation base detection** — reads `--spacing` / `--spacing-base`, `--radius` / `--radius-base`, `--text-base` / `--font-size-base`, `--ring-width` / `--focus-ring-width` and threads them into the token generator BEFORE construction. The cascade flows correctly from the first generation; derived namespaces (spacing scale, shadow numerics, radius scale, focus tokens) all match the imported base.
 - **Color import** — walks `:root` semantic declarations (`--primary`, `--background`, etc.) AND `@theme { ... }` multi-palette blocks (Tailwind v4 brand palette convention). Detects ramps (palette-0 through palette-950), runs a designer-driven role-walk in interactive mode or auto-assigns in `--agent` mode.
 - **Font role-walk** — detects every font family loaded by the source (`@import url(google fonts)`, `@font-face`, named `--font-*` declarations) and assigns each to a typography role (`font-heading`, `font-body`, `font-code`). Custom fonts that don't fit a canonical role become their own tokens (`font-aurabesh`, `font-mydisplay`, etc.) so consumers can reference them via Tailwind utilities.
-- **Motion is intentionally untouched** — rafters' motion system is research-backed (perceptual response curves, cognitive thresholds, reduced-motion accommodations); arbitrary `--duration-base` declarations in source are NOT auto-applied. Use `rafters set motion-duration-base ...` if you specifically need to override.
+- **Motion is intentionally untouched** — rafters' motion system is research-backed (perceptual response curves, cognitive thresholds, reduced-motion accommodations); arbitrary `--duration-base` declarations in source are NOT auto-applied.
+- **Surfaces** — init writes one fill per surface (37 of them: `card`, `popover`, `primary`, `sidebar` and the rest) into `.rafters/tokens/fill.rafters.json` as `surface-<name>`, exported as the `bg-surface-<name>` utility. Each one references that surface's own colour tokens, so it follows them.
 
 ### Modes
 
@@ -32,7 +33,17 @@ pnpm dlx rafters init              # Interactive prompts for role assignments
 pnpm dlx rafters init --agent      # Non-interactive; auto-assigns; emits JSON events
 pnpm dlx rafters init --rebuild    # Regenerate output files from existing .rafters/tokens
 pnpm dlx rafters init --reset      # Re-run generators from defaults, replacing tokens
+pnpm dlx rafters init --scripts Latn,Arab   # Writing systems to support (ISO 15924 codes)
+pnpm dlx rafters init --css-import theme.css --map primary=--brand   # Import by explicit mapping
 ```
+
+`--rebuild` keeps every stored token and designer override, including your fills. It adds any surface fill the project lacks (a project made before 0.5.0 has none) and never changes one that exists.
+
+### Importing a stylesheet by mapping
+
+`--css-import <path>` with one or more `--map` entries imports a stylesheet by naming which custom property feeds which rafters token, instead of sensing the source CSS. `rafters import --css-import <path> --map ...` does the same into an existing project. `--map` is repeatable, as `target=--property` or one JSON object.
+
+`--map color:<name>=--property` adds a colour family named `<name>` that no role points at: the resolved colour seeds an 11-step scale, pinned at 500. `--map color:<name>=--prefix-*` takes a complete scale instead, `--prefix-50` through `--prefix-950`, kept as given; a missing step fails before anything is written. `<name>` is lowercase kebab-case and cannot be one of the 11 family role names. The family gets `bg-<name>-500`, `text-<name>-700` and the other colour utilities at every step, generated whether or not a source file uses them.
 
 ### Detected frameworks
 
@@ -46,8 +57,9 @@ Next.js, Vite, Remix, React Router, Astro, vanilla.
 | TypeScript | `rafters.ts` | Yes | Type-safe constants with JSDoc intelligence |
 | DTCG JSON | `rafters.json` | No | W3C Design Tokens standard format |
 | Standalone CSS | `rafters.standalone.css` | No | Pre-built, no Tailwind required |
+| Documentation CSS | `rafters.documentation.css` | No | Complete utility surface for docs and previews |
 
-Requires Tailwind v4. Tailwind v3 projects are rejected.
+Requires Tailwind v4. `rafters init` refuses a project with no `tailwindcss` dependency, writing nothing and naming the Tailwind v4 install guide for its framework; Tailwind v3 projects are rejected too. Init does not install Tailwind for you.
 
 ## Other commands
 
@@ -63,13 +75,23 @@ pnpm dlx rafters add --overwrite      # Replace existing files
 
 Each component carries embedded design intelligence (cognitive load, accessibility, do/never guidance, variant patterns). Dependencies resolve automatically.
 
-### `rafters set <name> <value>`
+`--update <names...>` re-fetches named components from the registry; `--update-all` re-fetches every installed one; `--registry-url <url>` points at another registry.
 
-Override a token value with a recorded reason. The previous value and the why-gate land as `userOverride` metadata so future agents can read your intent.
+### `rafters remove <name>`
+
+Remove one installed item: deletes the files `rafters add` installed for it and takes it off the `installed` list in `.rafters/config.rafters.json`. Items it depended on stay installed. A name that is not installed fails and changes nothing. Outputs are not regenerated, and emptied folders are left in place.
 
 ```bash
-pnpm dlx rafters set spacing-base 0.5rem --reason "denser layout for data-heavy UI"
+pnpm dlx rafters remove dialog
 ```
+
+### `rafters import`
+
+Import a stylesheet into an existing project by mapping its custom properties. Takes `--css-import <path>` and `--map`, as described under init.
+
+### `rafters agents`
+
+Write or update the rafters contract block in `AGENTS.md`, for agent hosts other than Claude Code.
 
 ### `rafters mcp`
 
@@ -81,54 +103,19 @@ pnpm dlx rafters mcp
 
 ## MCP tools
 
-Four tools for agent ASSEMBLY (not design). Token design lives in Studio; import lives in `rafters init`. Agents read pre-made decisions; they do not author them.
+Three tools for agent ASSEMBLY (not design). Agents read the designer's choices; they do not author them.
 
-### `rafters_composite`
+- `rafters_workspaces` -- lists the rafters workspaces and which is the default; call it first in a monorepo. With fields, it updates a workspace's wiring config.
+- `rafters_describe` -- walks the component and composite intel graph. `describe()` for the installed surface, `describe(button)` for a node, `describe(button.*)` for every prop, `describe(button.props.variant)` to drill into one.
+- `rafters_generate` -- a component name in, that component's verbatim snippet for the project's target out, with its open slots and whether it is installed.
 
-Query composites by ID, search term, or category. Returns designer intent (solves, appliesWhen, do/never), I/O rules, and block structure.
-
-```json
-{ "id": "login-form" }        // Get a specific composite
-{ "query": "form" }           // Fuzzy search across composites
-{ "category": "typography" }  // Filter
-```
-
-### `rafters_pattern`
-
-Design pattern guidance by querying composites. Search by what the page or section SOLVES.
-
-```json
-{ "solves": "authentication" }
-{ "solves": "data entry" }
-{ "query": "navigation" }
-```
-
-Returns composites with usagePatterns (do/never), cognitive load, and intent.
-
-### `rafters_rule`
-
-Query validation rules or create new ones. Rules are named patterns composites apply to inputs.
-
-```json
-{}                    // List all rules
-{ "name": "email" }   // Get a specific rule
-```
-
-Built-in: `required`, `email`, `password`, `url`, `credentials`.
-
-### `rafters_component`
-
-Full intelligence for a specific component: cognitive load, accessibility level, variants, sizes, do/never.
-
-```json
-{ "name": "button" }
-```
+`rafters_component`, `rafters_composite` and `rafters_pattern` are deprecated aliases for `rafters_describe`.
 
 ## Architecture
 
 Four layers, stacked:
 
-- **Tokens** — primitive design values (color OKLCH, spacing scale, radius, typography, motion, focus, shadow, depth, elevation, breakpoints). 13 namespaces; dependency graph with human override tracking. Override a base (`spacing-base`, `radius-base`, `font-size-base`) and dependents recompute. Override a leaf and the override anchors the subtree.
+- **Tokens** — primitive design values (color OKLCH, semantic roles, spacing scale, radius, typography, motion, focus, shadow, depth, breakpoints, fills). 12 token files, one per namespace; dependency graph with human override tracking. Override a base (`spacing-base`, `radius-base`, `font-size-base`) and dependents recompute. Override a leaf and the override anchors the subtree.
 - **Primitives** — 62 framework-agnostic building blocks (clipboard, focus-trap, portal, roving-focus, selection, serializer, slot, token-sheet, typeahead, etc.). Headless behaviors components compose against.
 - **Components** — 60+ React + 71 Astro. Two-target parity. Each component carries embedded intelligence metadata: cognitive load rating, accessibility level, do/never, variant semantics, attention economics. Installed into your project via `rafters add` — you own the code.
 - **Composites** — designer-authored JSON manifests that bundle components into reusable patterns (login-form, copy-button, heading, paragraph, etc.). Each manifest carries `solves`, `appliesWhen`, `usagePatterns` (do/never), `cognitiveLoad`, I/O contracts, and a typed block tree. The composite owns the variant/size decisions — agents render blocks verbatim instead of choosing aesthetics.
@@ -149,13 +136,12 @@ When a designer overrides a computed value, the system records the reason. Agent
     focus.rafters.json
     motion.rafters.json
     depth.rafters.json
-    elevation.rafters.json
     breakpoint.rafters.json
     semantic.rafters.json
-    fill.rafters.json
+    fill.rafters.json         # Fills and the generated surface-* fills
     typography-composite.rafters.json
   output/
-    rafters.css               # Tailwind v4 CSS variables
+    rafters.css               # Tailwind v4 CSS variables and utilities
     rafters.ts                # TypeScript constants
 ```
 

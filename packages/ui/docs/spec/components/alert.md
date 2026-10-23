@@ -43,7 +43,11 @@ type AlertVariant =
   | 'default' | 'primary' | 'secondary' | 'destructive'
   | 'success' | 'warning' | 'info' | 'muted' | 'accent';
 
-interface AlertConfig { variant?: AlertVariant }
+interface AlertConfig {
+  variant?: AlertVariant;
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
+}
 type AlertState = Record<never, never>;
 type AlertActions = Record<never, never>;
 ```
@@ -51,6 +55,18 @@ type AlertActions = Record<never, never>;
 Nine severity variants -- the same vocabulary the button prototype uses --
 but Alert is not an action trigger: the variant selects a subtle
 background/foreground/border triple, never the solid button treatment.
+
+`fill` and `surface` change the root's surface (`alert.classes.ts:66-77`):
+
+- `fill` takes exactly one `bg-fill-*` token and replaces the variant's
+  surface outright. Any other value is dropped with a console warning and the
+  variant's surface stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`). It applies only when no `variant` prop is given; an
+  explicit `variant`, `"default"` included, beats it. An unknown name is
+  ignored.
+- Precedence: fill, then an explicit variant, then surface, then the default
+  variant.
 
 ## Parts and ARIA
 

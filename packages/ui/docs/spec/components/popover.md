@@ -32,6 +32,7 @@ real transition.
 
 ```ts
 type PopoverConfig = DisclosableConfig; // { open?; defaultOpen? }
+// plus fill?: string (one bg-fill-* token) and surface?: string (a surface name), see Fill and surface
 interface PopoverState { open: boolean } // intrinsic only
 type PopoverActions = { open: undefined; close: undefined };
 ```
@@ -45,6 +46,18 @@ so the pure score never projects `data-side`/`data-align`. They are
 decorator/view options consumed by the positioning affordance and by the
 enter-animation slide variants — carried on `PopoverContent` props (React) or as
 attributes on the host element (Astro).
+
+### Fill and surface
+
+`PopoverContent` takes `fill` and `surface`, which change the surface of its panel
+(`popover.classes.ts:83`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

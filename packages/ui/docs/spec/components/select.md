@@ -43,6 +43,8 @@ declarative effects), `dismiss-on-outside`, `aria-manager`, `memory`
 
 ```ts
 interface SelectConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled
   defaultValue?: string; // uncontrolled seed
   open?: boolean;        // controlled
@@ -60,6 +62,18 @@ No `toggle` action: the trigger dispatches `open` or `close` computed from the
 effective value, so intrinsic state never drifts from a controlled consumer.
 `select` is the single action that moves both value and open — it fires
 `onValueChange` and `onOpenChange(false)` and clears the highlight.
+
+### Fill and surface
+
+`SelectContent` takes `fill` and `surface`, which change the surface of the listbox panel
+(`select.classes.ts:200`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

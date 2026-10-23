@@ -35,6 +35,8 @@ reducers, one keymap, one effects function.
 
 ```ts
 interface NavigationMenuConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;          // controlled ('' = none)
   defaultValue?: string;
   orientation?: 'horizontal' | 'vertical'; // default horizontal
@@ -57,6 +59,18 @@ Callback protocol (binding, mechanical): fire `onValueChange` only when an
 accepted dispatch actually moved the effective value — read intrinsic state
 after the reducer, compare with effective before. No duplicated reducer
 logic in the binding.
+
+### Fill and surface
+
+`NavigationMenuContent` takes `fill` and `surface`, which change the surface of its panel
+(`navigation-menu.classes.ts:218`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts
 
