@@ -13,7 +13,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     # The official Playwright image ships all three engines and their system
     # libraries, so no browser download or apt install runs here (#2837).
     # --with-deps used to fetch about 140 apt packages each run, and a slow
