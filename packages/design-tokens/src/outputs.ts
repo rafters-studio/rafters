@@ -15,7 +15,8 @@
  */
 
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, unlink } from 'node:fs/promises';
+import { writeFileAtomic } from './atomic-write.js';
 import { isAbsolute, join, resolve } from 'node:path';
 import { toDTCG } from './exporters/dtcg.js';
 import {
@@ -153,31 +154,31 @@ export async function regenerateOutputs(
 
   if (exports.tailwind) {
     const css = registryToTailwind(registry, { includeImport, darkMode, fontImports });
-    await writeFile(join(outputDir, 'rafters.css'), css);
+    await writeFileAtomic(join(outputDir, 'rafters.css'), css);
     written.push('rafters.css');
   }
 
   if (exports.typescript) {
     const ts = registryToTypeScript(registry, { includeJSDoc: true });
-    await writeFile(join(outputDir, 'rafters.ts'), ts);
+    await writeFileAtomic(join(outputDir, 'rafters.ts'), ts);
     written.push('rafters.ts');
   }
 
   if (exports.dtcg) {
     const dtcg = toDTCG([...registry.list()]);
-    await writeFile(join(outputDir, 'rafters.json'), JSON.stringify(dtcg, null, 2));
+    await writeFileAtomic(join(outputDir, 'rafters.json'), JSON.stringify(dtcg, null, 2));
     written.push('rafters.json');
   }
 
   if (exports.compiled) {
     const compiled = await registryToCompiled(registry, { contentSources });
-    await writeFile(join(outputDir, 'rafters.standalone.css'), compiled);
+    await writeFileAtomic(join(outputDir, 'rafters.standalone.css'), compiled);
     written.push('rafters.standalone.css');
   }
 
   if (exports.documentation) {
     const doc = await registryToDocumentation(registry, { contentSources });
-    await writeFile(join(outputDir, 'rafters.documentation.css'), doc);
+    await writeFileAtomic(join(outputDir, 'rafters.documentation.css'), doc);
     written.push('rafters.documentation.css');
   }
 

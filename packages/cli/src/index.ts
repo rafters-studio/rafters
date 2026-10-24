@@ -12,6 +12,7 @@ import { importCss } from './commands/import.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
 import { remove } from './commands/remove.js';
+import { studio } from './commands/studio.js';
 import { withErrorHandler } from './utils/ui.js';
 import { VERSION } from './version.js';
 
@@ -73,6 +74,13 @@ program
   .option('--registry-url <url>', 'Custom registry URL')
   .option('--agent', 'Output JSON for machine consumption')
   .action(withErrorHandler(remove));
+
+program
+  .command('studio')
+  .description('Start Studio, a local server for designers to set tokens and fills')
+  .option('--port <port>', 'Port to listen on (default 7777)')
+  .option('--agent', 'Output JSON for machine consumption')
+  .action(withErrorHandler(studio));
 
 program
   .command('mcp')
