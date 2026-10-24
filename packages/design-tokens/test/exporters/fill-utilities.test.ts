@@ -20,7 +20,7 @@ import { tokensToTailwind } from '../../src/exporters/tailwind.js';
 const FG = { family: 'zinc', position: '900' };
 
 function fill(name: string, value: FillValue): Token {
-  return { name, value, category: 'fill', namespace: 'fill', userOverride: null };
+  return { name: `fill-${name}`, value, category: 'fill', namespace: 'fill', userOverride: null };
 }
 
 const BASE = generateBaseSystem().allTokens;
