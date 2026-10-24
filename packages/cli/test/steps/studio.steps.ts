@@ -15,7 +15,7 @@ import { execRafters, startRafters } from './helpers.js';
 const { When, Then, After } = createBdd();
 
 const PORT = 7790;
-const BASE = `http://localhost:${PORT}`;
+const BASE = `http://127.0.0.1:${PORT}`;
 
 const state: { stop?: () => void; status: number; cssBefore: number } = {
   status: 0,

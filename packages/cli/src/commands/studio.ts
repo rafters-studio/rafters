@@ -76,8 +76,11 @@ export async function studio(options: StudioOptions): Promise<void> {
     cacheDir: join(tmpdir(), 'rafters-studio-vite'),
     logLevel: 'warn',
     server: {
-      host: 'localhost',
+      // IPv4 loopback, so `localhost` resolving to ::1 on some hosts cannot split
+      // the server from its clients; a taken port fails instead of drifting.
+      host: '127.0.0.1',
       port: options.port ? Number(options.port) : DEFAULT_PORT,
+      strictPort: true,
     },
     plugins: [studioApi(registry, paths.tokens, regenerate)],
   });
@@ -85,7 +88,7 @@ export async function studio(options: StudioOptions): Promise<void> {
 
   const address = server.httpServer?.address();
   const port = address && typeof address === 'object' ? address.port : DEFAULT_PORT;
-  const url = `http://localhost:${port}`;
+  const url = `http://127.0.0.1:${port}`;
   const lock: StudioLock = { pid: process.pid, port, url, startedAt: new Date().toISOString() };
   writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
 
