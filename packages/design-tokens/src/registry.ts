@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { FILL_NAME_EXCLUDES, FillValueSchema, type Token, TokenSchema } from '@rafters/shared';
 import type { z } from 'zod';
 import {
@@ -89,11 +90,66 @@ export class TokenRegistry {
     }
   }
 
-  set(name: string, value: TokenValue, options: SetOptions): void {
-    if (!this.metadata.has(name)) {
+  /**
+   * The one change operation. With a value and a reason it sets a registered
+   * token, or creates a `fill-*` fill; with no value it returns the token to
+   * its previousValue (one step) and clears the override, removing a fill
+   * that set created.
+   */
+  set(name: string): void;
+  set(name: string, value: TokenValue, options: SetOptions): void;
+  set(name: string, value?: TokenValue, options?: SetOptions): void {
+    if (value === undefined) {
+      this.revert(name);
+      return;
+    }
+    if (!options?.reason) {
+      throw new MissingReasonError(name);
+    }
+    const meta = this.metadata.get(name);
+    if (meta) {
+      this.validate({ ...meta, value });
+      this.graph.set(name, value, options);
+      return;
+    }
+    if (!name.startsWith(DESIGNER_FILL_PREFIX)) {
       throw new UnknownTokenError(name);
     }
-    this.graph.set(name, value, options);
+    const created = this.validate({
+      name,
+      value,
+      category: FILL_NAMESPACE,
+      namespace: FILL_NAMESPACE,
+      userOverride: null,
+    });
+    this.metadata.set(name, created);
+    // Seeded first so the override records the fill's own recipe as its
+    // previousValue: that is how set(name) knows set created it.
+    this.graph.seed(name, created.value);
+    this.graph.set(name, created.value, options);
+  }
+
+  private revert(name: string): void {
+    const node = this.graph.node(name);
+    if (!node?.userOverride) return;
+    if (
+      name.startsWith(DESIGNER_FILL_PREFIX) &&
+      isDeepStrictEqual(node.userOverride.previousValue, node.value)
+    ) {
+      this.graph.remove(name);
+      this.metadata.delete(name);
+      return;
+    }
+    this.graph.revert(name);
+  }
+
+  private validate(token: unknown): Token {
+    const result = TokenSchema.safeParse(token);
+    if (!result.success) {
+      throw new TokenParseError(token, result.error.issues);
+    }
+    checkName(result.data, colourNames([...this.metadata.values(), result.data]));
+    return result.data;
   }
 
   bind(name: string, pluginName: string, input: unknown): void {
@@ -171,6 +227,13 @@ export class TokenParseError extends Error {
   }
 }
 
+class MissingReasonError extends Error {
+  constructor(public readonly tokenName: string) {
+    super(`Token "${tokenName}" cannot be set without a reason`);
+    this.name = 'MissingReasonError';
+  }
+}
+
 class TokenNameError extends Error {
   constructor(
     public readonly tokenName: string,
@@ -182,6 +245,9 @@ class TokenNameError extends Error {
 }
 
 const FILL_NAMESPACE = 'fill';
+// A designer fill is stored as `fill-<name>`; a generated one as `surface-<name>`.
+const DESIGNER_FILL_PREFIX = 'fill-';
+const FILL_NAME_PREFIXES = [DESIGNER_FILL_PREFIX, 'surface-'] as const;
 const COLOUR_NAMESPACE = 'color';
 // Reserved for the bg-fill-* and bg-surface-* utilities (FR-RAF-FILL-001).
 const RESERVED_COLOUR_PREFIXES = ['fill-', 'surface-'] as const;
@@ -213,14 +279,24 @@ function checkName(t: Token, colours: ReadonlySet<string>): void {
       recipe.error.issues.map((issue) => ({ ...issue, path: ['value', ...issue.path] })),
     );
   }
+  if (!FILL_NAME_PREFIXES.some((p) => t.name.startsWith(p))) {
+    throw new TokenNameError(
+      t.name,
+      `a fill name must begin with "${DESIGNER_FILL_PREFIX}"; rename it to "${DESIGNER_FILL_PREFIX}${t.name}"`,
+    );
+  }
   if (!KEBAB_CASE.test(t.name)) {
     throw new TokenNameError(t.name, 'a fill name must be lowercase kebab-case');
   }
-  if (colours.has(t.name)) {
-    throw new TokenNameError(t.name, `a fill name cannot equal the colour "${t.name}"`);
+  // A designer fill's own name is the part after `fill-`.
+  const own = t.name.startsWith(DESIGNER_FILL_PREFIX)
+    ? t.name.slice(DESIGNER_FILL_PREFIX.length)
+    : t.name;
+  if (colours.has(own)) {
+    throw new TokenNameError(t.name, `a fill name cannot equal the colour "${own}"`);
   }
-  if (EXCLUDED_FILL_NAMES.has(t.name)) {
-    throw new TokenNameError(t.name, `a fill name cannot equal the excluded name "bg-${t.name}"`);
+  if (EXCLUDED_FILL_NAMES.has(own)) {
+    throw new TokenNameError(t.name, `a fill name cannot equal the excluded name "bg-${own}"`);
   }
 }
 

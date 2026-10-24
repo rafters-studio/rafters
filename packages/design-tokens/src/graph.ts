@@ -87,6 +87,25 @@ export class TokenGraph {
     this.cascadeFrom(name);
   }
 
+  // Return a token to its override's previousValue and drop the override.
+  revert(name: string): void {
+    const existing = this.nodes.get(name);
+    if (!existing?.userOverride) return;
+    this.takeSnapshot();
+    this.nodes.set(name, {
+      name,
+      value: existing.userOverride.previousValue,
+      ...(existing.binding ? { binding: existing.binding } : {}),
+    });
+    this.cascadeFrom(name);
+  }
+
+  remove(name: string): void {
+    if (!this.nodes.has(name)) return;
+    this.takeSnapshot();
+    this.nodes.delete(name);
+  }
+
   // Hydrate a node from persisted state. No cascade fires; the caller
   // (registry constructor) is responsible for ordering: leaves first, then
   // bindings. userOverride / binding are preserved verbatim from the persisted
