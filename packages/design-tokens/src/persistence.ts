@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Token } from '@rafters/shared';
+import { writeFileAtomicSync } from './atomic-write.js';
 import type { Plugin } from './graph.js';
 import { TokenRegistry } from './registry.js';
 
@@ -33,17 +34,18 @@ export function saveRegistryToDir(dir: string, registry: TokenRegistry): void {
     byNamespace.set(token.namespace, list);
   }
   for (const [namespace, tokens] of byNamespace) {
-    const previous = envelopes.get(namespace) ?? {};
+    const { tokens: previousTokens, ...previous } = envelopes.get(namespace) ?? { tokens: [] };
+    // Unchanged tokens keep the file as it is, generatedAt included.
+    if (JSON.stringify(previousTokens) === JSON.stringify(tokens)) continue;
     const file: NamespaceFileEnvelope = {
       ...previous,
       namespace,
       generatedAt: new Date().toISOString(),
       tokens,
     };
-    writeFileSync(
+    writeFileAtomicSync(
       join(dir, `${namespace}.rafters.json`),
       `${JSON.stringify(file, null, 2)}\n`,
-      'utf8',
     );
   }
 }
@@ -64,8 +66,8 @@ export function findTokenFile(dir: string, tokenName: string): string | undefine
   return undefined;
 }
 
-function readEnvelopes(dir: string): Map<string, Omit<NamespaceFileEnvelope, 'tokens'>> {
-  const out = new Map<string, Omit<NamespaceFileEnvelope, 'tokens'>>();
+function readEnvelopes(dir: string): Map<string, NamespaceFileEnvelope> {
+  const out = new Map<string, NamespaceFileEnvelope>();
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -76,8 +78,7 @@ function readEnvelopes(dir: string): Map<string, Omit<NamespaceFileEnvelope, 'to
     if (!entry.endsWith('.rafters.json')) continue;
     const raw = JSON.parse(readFileSync(join(dir, entry), 'utf8'));
     if (raw && typeof raw === 'object' && typeof raw.namespace === 'string') {
-      const { tokens: _tokens, ...envelope } = raw as NamespaceFileEnvelope;
-      out.set(raw.namespace, envelope);
+      out.set(raw.namespace, raw as NamespaceFileEnvelope);
     }
   }
   return out;
