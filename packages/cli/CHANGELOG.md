@@ -6,6 +6,10 @@
 
 - `rafters studio` (#2846): run `pnpm dlx rafters studio` in a project to start a local server whose one API call, `POST /__rafters/set { name, value?, why }`, sets a token, creates a `fill-*` fill or undoes one step through the registry, saves the token files, regenerates `rafters.css` and tells the page; `GET /__rafters/tokens` lists every token with its override and chain. Requests must be JSON from the server's own localhost origin.
 
+### Fixes
+
+- fix(design-tokens): **A fill recipe holding a literal colour is refused naming the field (#2832).** TokenSchema's value is a union, so a recipe that broke the fill rules failed every branch and the error said only `value: Invalid input`. The fill recipe is now checked first, in `set`, `define` and on load, so Studio's `POST /__rafters/set` answers with the field, for example `value.background.color: must be a registry reference ({family, position} or {token}), not a literal colour`. What is refused is unchanged.
+
 ## 0.5.0
 
 ### Upgrading
