@@ -39,7 +39,7 @@ const LITERAL = 'oklch(0.6 0.1 240)';
 const ZINC_900 = { family: 'zinc', position: '900' };
 
 /** A recipe that sets every part FR-RAF-FILL-001 names. */
-const EVERY_PART: FillValue = {
+export const EVERY_PART: FillValue = {
   background: { color: { token: 'card' }, alpha: 80 },
   gradient: {
     type: 'linear',

@@ -48,6 +48,18 @@ describe('set on a registered token', () => {
     );
     expect(registry.get('fill-glass')).toEqual(before);
   });
+
+  it('names the field when a recipe holds a literal colour', () => {
+    const registry = fresh();
+    const literal = { ...GLASS, background: { color: 'oklch(0.6 0.1 240)' } };
+    expect(() => registry.set('fill-glass', literal, { reason: 'bad' })).toThrow(
+      /value\.background\.color/,
+    );
+    expect(() =>
+      registry.define({ name: 'fill-glass', value: literal, category: 'fill', namespace: 'fill' }),
+    ).toThrow(/value\.background\.color/);
+    expect(registry.has('fill-glass')).toBe(false);
+  });
 });
 
 describe('set on an unregistered name', () => {
