@@ -1,6 +1,6 @@
 # rafters
 
-## Unreleased
+## 0.5.1
 
 ### Features
 
