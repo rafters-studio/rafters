@@ -6,6 +6,10 @@
 
 - `rafters studio` (#2846): run `pnpm dlx rafters studio` in a project to start a local server whose one API call, `POST /__rafters/set { name, value?, why }`, sets a token, creates a `fill-*` fill or undoes one step through the registry, saves the token files, regenerates `rafters.css` and tells the page; `GET /__rafters/tokens` lists every token with its override and chain. Requests must be JSON from the server's own localhost origin.
 
+### Fixes
+
+- fix(cli): **`@tailwindcss/cli` is installed only when the compiled export is chosen (#2843).** It moves from rafters' dependencies to its devDependencies, so installing rafters no longer pulls it or its native watcher `@parcel/watcher`, whose build script stopped pnpm with ERR_PNPM_IGNORED_BUILDS. `rafters init` checks for it only when `exports.compiled` is on; with `--agent` it now installs it into the project instead of throwing, and still fails naming it when it cannot be resolved after install.
+
 ## 0.5.0
 
 ### Upgrading
