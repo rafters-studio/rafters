@@ -477,19 +477,22 @@ async function promptExportFormats(existingConfig?: ExportConfig): Promise<Expor
 }
 
 /**
- * Check if @tailwindcss/cli is installed (required for compiled CSS output)
+ * Check if @tailwindcss/cli is installed (required for compiled CSS output),
+ * resolving from the project at `cwd` first and then from rafters itself, the
+ * same order the compiled export resolves it in.
  */
-export function isTailwindCliInstalled(): boolean {
-  const require = createRequire(import.meta.url);
-  try {
-    require.resolve('@tailwindcss/cli/package.json');
-    return true;
-  } catch (err: unknown) {
-    if (err instanceof Error && 'code' in err && err.code === 'MODULE_NOT_FOUND') {
-      return false;
+export function isTailwindCliInstalled(cwd: string): boolean {
+  for (const base of [join(cwd, 'package.json'), import.meta.url]) {
+    try {
+      createRequire(base).resolve('@tailwindcss/cli/package.json');
+      return true;
+    } catch (err: unknown) {
+      if (!(err instanceof Error && 'code' in err && err.code === 'MODULE_NOT_FOUND')) {
+        throw err;
+      }
     }
-    throw err;
   }
+  return false;
 }
 
 /**
@@ -517,7 +520,7 @@ export async function ensureTailwindCli(cwd: string): Promise<void> {
 
   await updateDependencies([], ['@tailwindcss/cli'], { cwd });
 
-  if (!isTailwindCliInstalled()) {
+  if (!isTailwindCliInstalled(cwd)) {
     throw new Error(
       '@tailwindcss/cli was installed but cannot be resolved. Try installing at the workspace root.',
     );
@@ -543,7 +546,7 @@ export async function generateOutputs(
 ): Promise<string[]> {
   const contentSources = config ? resolveContentSources(cwd, config) : [];
 
-  if (exports.compiled && !isTailwindCliInstalled()) {
+  if (exports.compiled && !isTailwindCliInstalled(cwd)) {
     log({ event: 'init:prompting_exports' });
     await ensureTailwindCli(cwd);
   }
@@ -558,6 +561,7 @@ export async function generateOutputs(
     darkMode,
     includeImport: source !== 'shadcn',
     fontImports,
+    projectRoot: cwd,
   });
 }
 

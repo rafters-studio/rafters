@@ -56,6 +56,8 @@ export interface RegenerateOutputsInput {
   includeImport?: boolean;
   /** Passed to registryToTailwind for rafters.css only. Not passed to the compiled or documentation sheet. */
   fontImports?: readonly string[];
+  /** Project directory the compiled and documentation sheets resolve `@tailwindcss/cli` from first. */
+  projectRoot?: string;
 }
 
 export interface RegenerateOutputsHooks {
@@ -148,6 +150,7 @@ export async function regenerateOutputs(
     darkMode = 'class',
     includeImport = true,
     fontImports = [],
+    projectRoot,
   } = input;
   await mkdir(outputDir, { recursive: true });
   const written: string[] = [];
@@ -171,13 +174,13 @@ export async function regenerateOutputs(
   }
 
   if (exports.compiled) {
-    const compiled = await registryToCompiled(registry, { contentSources });
+    const compiled = await registryToCompiled(registry, { contentSources, projectRoot });
     await writeFileAtomic(join(outputDir, 'rafters.standalone.css'), compiled);
     written.push('rafters.standalone.css');
   }
 
   if (exports.documentation) {
-    const doc = await registryToDocumentation(registry, { contentSources });
+    const doc = await registryToDocumentation(registry, { contentSources, projectRoot });
     await writeFileAtomic(join(outputDir, 'rafters.documentation.css'), doc);
     written.push('rafters.documentation.css');
   }

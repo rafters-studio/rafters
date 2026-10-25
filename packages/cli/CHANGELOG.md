@@ -9,6 +9,7 @@
 ### Fixes
 
 - fix(cli): **`@tailwindcss/cli` is installed only when the compiled export is chosen (#2843).** It moves from rafters' dependencies to its devDependencies, so installing rafters no longer pulls it or its native watcher `@parcel/watcher`, whose build script stopped pnpm with ERR_PNPM_IGNORED_BUILDS. `rafters init` checks for it only when `exports.compiled` is on; with `--agent` it now installs it into the project instead of throwing, and still fails naming it when it cannot be resolved after install.
+- The documentation export (`exports.documentation`) also needs `@tailwindcss/cli` installed in the project; rafters does not install it for that export and fails naming it when it does not resolve (#2843).
 
 ## 0.5.0
 

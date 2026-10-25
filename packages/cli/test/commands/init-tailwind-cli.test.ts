@@ -6,9 +6,10 @@
  * checks and installs.
  */
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { TokenRegistry } from '@rafters/design-tokens';
+import { regenerateOutputs, TokenRegistry } from '@rafters/design-tokens';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ensureTailwindCli, generateOutputs } from '../../src/commands/init.js';
 import { getRaftersPaths } from '../../src/utils/paths.js';
@@ -17,6 +18,9 @@ import { updateDependencies } from '../../src/utils/update-dependencies.js';
 
 const TAILWIND_CLI = '@tailwindcss/cli/package.json';
 const resolveCalls = vi.hoisted(() => ({ tailwindCli: 0 }));
+// A project directory whose node_modules holds the CLI; resolving from any
+// other base (rafters' own location included) fails, as under `pnpm dlx`.
+const projectWithCli = vi.hoisted(() => ({ dir: '' }));
 
 vi.mock('node:module', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:module')>();
@@ -24,14 +28,16 @@ vi.mock('node:module', async (importOriginal) => {
     ...actual,
     createRequire: (from: string | URL) => {
       const real = actual.createRequire(from);
+      const realResolve = real.resolve;
+      const fromProject = projectWithCli.dir !== '' && String(from).startsWith(projectWithCli.dir);
       const resolve = (request: string, options?: { paths?: string[] }): string => {
-        if (request === TAILWIND_CLI) {
+        if (request === TAILWIND_CLI && !fromProject) {
           resolveCalls.tailwindCli += 1;
           throw Object.assign(new Error(`Cannot find module '${request}'`), {
             code: 'MODULE_NOT_FOUND',
           });
         }
-        return real.resolve(request, options);
+        return realResolve(request, options);
       };
       return Object.assign(real, { resolve });
     },
@@ -64,7 +70,9 @@ describe('@tailwindcss/cli on demand (#2843)', () => {
     savedStdinTTY = process.stdin.isTTY;
     savedStdoutTTY = process.stdout.isTTY;
     resolveCalls.tailwindCli = 0;
+    projectWithCli.dir = '';
     vi.mocked(updateDependencies).mockClear();
+    vi.mocked(regenerateOutputs).mockClear();
   });
 
   afterEach(() => {
@@ -145,5 +153,39 @@ describe('@tailwindcss/cli on demand (#2843)', () => {
     ).rejects.toThrow(UNRESOLVABLE);
 
     expect(updateDependencies).toHaveBeenCalledWith([], ['@tailwindcss/cli'], { cwd });
+  });
+
+  it('with the compiled export on, resolves a CLI installed in the project rafters runs outside of', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'rafters-2843-'));
+    try {
+      const cliDir = join(cwd, 'node_modules', '@tailwindcss', 'cli');
+      mkdirSync(cliDir, { recursive: true });
+      writeFileSync(join(cliDir, 'package.json'), '{"name":"@tailwindcss/cli"}');
+      writeFileSync(join(cwd, 'package.json'), '{"name":"project"}');
+      projectWithCli.dir = cwd;
+      setAgentMode(true);
+
+      await generateOutputs(
+        cwd,
+        getRaftersPaths(cwd),
+        new TokenRegistry(),
+        {
+          tailwind: true,
+          typescript: true,
+          dtcg: false,
+          compiled: true,
+          documentation: false,
+        },
+        undefined,
+      );
+
+      expect(updateDependencies).not.toHaveBeenCalled();
+      expect(regenerateOutputs).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ projectRoot: cwd }),
+      );
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 });

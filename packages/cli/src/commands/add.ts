@@ -87,6 +87,7 @@ export async function regenerateAfterInstall(cwd: string, config: RaftersConfig)
       darkMode: config.darkMode ?? 'class',
       includeImport: config.source !== 'shadcn',
       fontImports: config.fonts?.imports ?? [],
+      projectRoot: cwd,
     });
   } catch (err) {
     log({
