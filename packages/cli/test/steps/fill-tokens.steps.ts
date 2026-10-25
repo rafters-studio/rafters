@@ -136,9 +136,9 @@ function capture(fn: () => void): void {
 function roundTrip(): void {
   const parsed = FillValueSchema.parse(local.recipe);
   local.dir = mkdtempSync(join(tmpdir(), 'rafters-fill-'));
-  saveRegistryToDir(local.dir, new TokenRegistry([fillToken('glass', parsed)]));
+  saveRegistryToDir(local.dir, new TokenRegistry([fillToken('fill-glass', parsed)]));
   expect(readdirSync(local.dir)).toContain('fill.rafters.json');
-  local.readBack = loadRegistryFromDir(local.dir).get('glass')?.value;
+  local.readBack = loadRegistryFromDir(local.dir).get('fill-glass')?.value;
 }
 
 /**
@@ -186,7 +186,7 @@ Given(
     context.fixturePath = await createFixture('nextjs-shadcn-v4');
     const result = await execRafters(context.fixturePath, ['init', '--agent']);
     expect(result.exitCode, result.stderr).toBe(0);
-    const token = fillToken('glass', EVERY_PART, {
+    const token = fillToken('fill-glass', EVERY_PART, {
       previousValue: { foreground: ZINC_900 },
       reason: 'frosted card for the hero',
       kind: 'designer',
@@ -238,9 +238,9 @@ When(/^a fill is defined whose name is (.+)$/, async ({}, which: string) => {
   const colour = registry.list({ namespace: 'color' })[0]?.name;
   if (!colour) throw new Error('The initialised project has no colour');
   const names: Record<string, [string, string]> = {
-    'equal to an existing colour': [colour, colour],
-    'on the exclude list of bg-* names': ['cover', 'bg-cover'],
-    'not lowercase kebab-case': ['Frosted_Glass', 'kebab-case'],
+    'equal to an existing colour': [`fill-${colour}`, colour],
+    'on the exclude list of bg-* names': ['fill-cover', 'bg-cover'],
+    'not lowercase kebab-case': ['fill-Frosted_Glass', 'kebab-case'],
   };
   const entry = names[which];
   if (!entry) throw new Error(`No name case for "${which}"`);
@@ -265,8 +265,8 @@ When('each is parsed with the token schema after this change', async () => {
 
 When('its parts are resolved through the registry in light mode and in dark mode', async () => {
   const registry = loadRegistryFromDir(tokensDir(), REGISTRY_PLUGINS);
-  registry.define(fillToken('card-glass', local.recipe));
-  const value = FillValueSchema.parse(registry.get('card-glass')?.value);
+  registry.define(fillToken('fill-card-glass', local.recipe));
+  const value = FillValueSchema.parse(registry.get('fill-card-glass')?.value);
   const role = value.background?.color;
   const at = (ref: unknown): Record<Mode, unknown> => ({
     light: resolveColour(registry, ref, 'light'),

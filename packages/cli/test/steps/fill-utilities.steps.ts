@@ -223,7 +223,7 @@ async function projectWithFills(fills: Record<string, FillValue>): Promise<void>
   local.sources = [];
   local.stock = {};
   const tokens = Object.entries(fills).map(([name, value]) => ({
-    name,
+    name: `fill-${name}`,
     value,
     category: 'fill',
     namespace: 'fill',
@@ -580,7 +580,8 @@ Then('each export carries every fill with its full recipe and its colour referen
   const dtcg = JSON.parse(
     await readFile(join(context.fixturePath, OUTPUT_DIR, 'rafters.json'), 'utf8'),
   ) as { $extensions: { rafters: { unrepresented: Record<string, { value: unknown }> } } };
-  for (const [name, recipe] of Object.entries(local.fills)) {
+  for (const [bare, recipe] of Object.entries(local.fills)) {
+    const name = `fill-${bare}`;
     const line = ts.split('\n').find((l) => l.startsWith(`    '${name}': `));
     expect(line, `rafters.ts ${name}`).toBeDefined();
     const json = (line ?? '').slice(`    '${name}': `.length).replace(/,$/, '');

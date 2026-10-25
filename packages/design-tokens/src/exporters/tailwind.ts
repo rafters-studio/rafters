@@ -846,8 +846,7 @@ export const THEME_MAPPING: readonly ThemeMappingRow[] = [
   },
   {
     group: 'fill',
-    token: /^(.+)$/,
-    except: /^surface-/,
+    token: /^fill-(.+)$/,
     keys: [],
     utility: 'bg-fill-{1}',
     literal: true,
