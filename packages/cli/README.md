@@ -59,6 +59,8 @@ Next.js, Vite, Remix, React Router, Astro, vanilla.
 | Standalone CSS | `rafters.standalone.css` | No | Pre-built, no Tailwind required |
 | Documentation CSS | `rafters.documentation.css` | No | Complete utility surface for docs and previews |
 
+Standalone CSS and Documentation CSS are built with `@tailwindcss/cli`, which rafters does not depend on. With Standalone CSS chosen, init installs it into your project (it asks first, or installs straight away with `--agent`). Documentation CSS needs it installed in your project already: `pnpm add -D @tailwindcss/cli`.
+
 Requires Tailwind v4. `rafters init` refuses a project with no `tailwindcss` dependency, writing nothing and naming the Tailwind v4 install guide for its framework; Tailwind v3 projects are rejected too. Init does not install Tailwind for you.
 
 ## Other commands
@@ -92,6 +94,19 @@ Import a stylesheet into an existing project by mapping its custom properties. T
 ### `rafters agents`
 
 Write or update the rafters contract block in `AGENTS.md`, for agent hosts other than Claude Code.
+
+### `rafters studio`
+
+Start a local server at `http://127.0.0.1:7777` (`--port` to change it) for changing the project's design tokens. It has no page yet; its API is one call.
+
+```bash
+pnpm dlx rafters studio
+curl -X POST http://127.0.0.1:7777/__rafters/set \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "fill-glass", "value": {"foreground": {"family": "zinc", "position": "900"}, "background": {"color": {"family": "zinc", "position": "100"}, "alpha": 70}, "backdrop": {"blur": "md"}}, "why": "frosted panels"}'
+```
+
+`POST /__rafters/set { name, value?, why }` sets a token, records your reason, cascades, saves `.rafters/tokens/` and regenerates `rafters.css`. A name starting `fill-` that does not exist yet creates a designer fill, exported as `bg-fill-<name>`; a fill needs a `foreground`. With no value it undoes one step, which removes a fill `set` created. A value with no `why` is refused, and so is an invalid value, with the registry's error naming the field. Colours in a fill are always references (`{family, position}` or `{token}`), never literals. `GET /__rafters/tokens` lists every token by namespace with its override and chain. Requests must be JSON, from no origin or the server's own. Running it again while it runs prints the existing URL.
 
 ### `rafters mcp`
 
