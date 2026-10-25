@@ -31,6 +31,7 @@ export class TokenRegistry {
     // its upstream values. Array order alone was not enough (#1634).
     const parsed: Token[] = [];
     for (const raw of initialTokens) {
+      checkFillRecipe(raw);
       const result = TokenSchema.safeParse(raw);
       if (!result.success) {
         throw new TokenParseError(raw, result.error.issues);
@@ -72,6 +73,7 @@ export class TokenRegistry {
   }
 
   define(token: unknown): void {
+    checkFillRecipe(token);
     const result = TokenSchema.safeParse(token);
     if (!result.success) {
       throw new TokenParseError(token, result.error.issues);
@@ -144,6 +146,7 @@ export class TokenRegistry {
   }
 
   private validate(token: unknown): Token {
+    checkFillRecipe(token);
     const result = TokenSchema.safeParse(token);
     if (!result.success) {
       throw new TokenParseError(token, result.error.issues);
@@ -261,9 +264,26 @@ function colourNames(tokens: Iterable<Token>): ReadonlySet<string> {
 }
 
 /**
+ * A fill's recipe is checked before TokenSchema: TokenSchema's value is a
+ * union, so a bad recipe fails every branch and the error names no field.
+ */
+function checkFillRecipe(raw: unknown): void {
+  if (!raw || typeof raw !== 'object') return;
+  const { namespace, value } = raw as { namespace?: unknown; value?: unknown };
+  if (namespace !== FILL_NAMESPACE) return;
+  const recipe = FillValueSchema.safeParse(value);
+  if (!recipe.success) {
+    throw new TokenParseError(
+      raw,
+      recipe.error.issues.map((issue) => ({ ...issue, path: ['value', ...issue.path] })),
+    );
+  }
+}
+
+/**
  * The naming rules of FR-RAF-FILL-001: a colour never takes a reserved
- * prefix; a fill is a valid recipe under a kebab-case name that no colour
- * and no excluded bg-* name already holds.
+ * prefix; a fill takes a kebab-case name that no colour and no excluded
+ * bg-* name already holds (its recipe is checked by checkFillRecipe).
  */
 function checkName(t: Token, colours: ReadonlySet<string>): void {
   if (t.namespace === COLOUR_NAMESPACE) {
@@ -272,13 +292,6 @@ function checkName(t: Token, colours: ReadonlySet<string>): void {
     return;
   }
   if (t.namespace !== FILL_NAMESPACE) return;
-  const recipe = FillValueSchema.safeParse(t.value);
-  if (!recipe.success) {
-    throw new TokenParseError(
-      t,
-      recipe.error.issues.map((issue) => ({ ...issue, path: ['value', ...issue.path] })),
-    );
-  }
   if (!FILL_NAME_PREFIXES.some((p) => t.name.startsWith(p))) {
     throw new TokenNameError(
       t.name,

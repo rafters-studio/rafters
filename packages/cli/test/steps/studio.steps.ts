@@ -15,7 +15,8 @@ import { execRafters, startRafters } from './helpers.js';
 const { When, Then, After } = createBdd();
 
 const PORT = 7790;
-const BASE = `http://127.0.0.1:${PORT}`;
+export const STUDIO_URL = `http://127.0.0.1:${PORT}`;
+const BASE = STUDIO_URL;
 
 const state: { stop?: () => void; status: number; cssBefore: number } = {
   status: 0,
@@ -43,7 +44,8 @@ After(() => {
   state.stop = undefined;
 });
 
-When('Studio is started', async () => {
+/** Starts Studio on the test port in the current fixture; the After hook stops it. */
+export async function startStudio(): Promise<void> {
   state.cssBefore = statSync(raftersPath('output', 'rafters.css')).mtimeMs;
   const server = await startRafters(context.fixturePath, [
     'studio',
@@ -53,7 +55,9 @@ When('Studio is started', async () => {
   ]);
   state.stop = server.stop;
   await server.waitForReady();
-});
+}
+
+When('Studio is started', startStudio);
 
 Then('the Studio lockfile names its pid, port and url', () => {
   const lock = JSON.parse(readFileSync(raftersPath('studio.json'), 'utf8'));
