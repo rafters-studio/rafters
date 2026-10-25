@@ -46,14 +46,11 @@ Query these before writing UI:
 
 ## Running the rafters MCP server
 
-Non-Claude-Code hosts wire the server manually. Invoke the `rafters` binary that
-is installed in your project, through your package manager:
+Non-Claude-Code hosts wire the server manually. rafters is never installed into
+a project; run it through pnpm dlx, as you run every other rafters command:
 
-- `pnpm exec rafters mcp`
-- `npx rafters mcp`
-- `yarn rafters mcp`
+- `pnpm dlx rafters mcp`
 
-Run the copy pinned in your own lockfile. Do NOT use `pnpx rafters@latest`,
-`npx rafters@latest`, `pnpm dlx rafters`, or any `@latest` pin: these resolve
-outside your lockfile and can drift from the version your project installed --
-the exact staleness that strands you on an old rafters after a new one ships.
+Do NOT add rafters to the project's dependencies or run it through
+`pnpm exec`, `npx` or `yarn`: the project has no copy to run, and an
+installed copy goes stale when a new rafters ships.

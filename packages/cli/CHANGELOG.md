@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixes
+
+- fix(cli): **The agent contract runs rafters through `pnpm dlx` (#2854).** rafters is never installed into a project, and the README and `rafters studio` run every command through `pnpm dlx rafters`, but the contract's "Running the rafters MCP server" section told agents to run an installed copy (`pnpm exec`, `npx`, `yarn`) and forbade `pnpm dlx rafters`. It now names `pnpm dlx rafters mcp` and tells agents not to install rafters. The plugin's session-start copy (`plugin/hooks/agent-contract.md`) carries the same text; a project's AGENTS.md picks it up on its next `rafters agents` run.
+
 ## 0.5.1
 
 ### Features
