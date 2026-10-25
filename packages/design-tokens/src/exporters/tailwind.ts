@@ -2187,6 +2187,31 @@ export interface CompiledCssOptions {
    * emitted (no utility rules).
    */
   contentSources?: string[];
+  /**
+   * Project directory to resolve `@tailwindcss/cli` from before falling back
+   * to rafters' own location. rafters does not depend on the CLI; a project
+   * that wants compiled output installs it, and `pnpm dlx rafters` runs from
+   * a cache whose resolution path never reaches the project.
+   */
+  projectRoot?: string | undefined;
+}
+
+/**
+ * Directory of the `@tailwindcss/cli` package, resolved from `projectRoot`
+ * first and then from this module. Undefined when neither resolves it.
+ */
+async function resolveTailwindCliDir(projectRoot: string | undefined): Promise<string | undefined> {
+  const { createRequire } = await import('node:module');
+  const { join, dirname } = await import('node:path');
+  const bases = [...(projectRoot ? [join(projectRoot, 'package.json')] : []), import.meta.url];
+  for (const base of bases) {
+    try {
+      return dirname(createRequire(base).resolve('@tailwindcss/cli/package.json'));
+    } catch {
+      // Not resolvable from this base; try the next.
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -2214,7 +2239,7 @@ export async function registryToCompiled(
   registry: TokenRegistry,
   options: CompiledCssOptions = {},
 ): Promise<string> {
-  const { minify = true, contentSources = [] } = options;
+  const { minify = true, contentSources = [], projectRoot } = options;
 
   // Theme body without its own @import -- the standalone sheet supplies the
   // import with source(none) below so utilities come only from contentSources.
@@ -2228,16 +2253,10 @@ export async function registryToCompiled(
 
   const { execFileSync } = await import('node:child_process');
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { createRequire } = await import('node:module');
+  const { join } = await import('node:path');
 
-  // Resolve the @tailwindcss/cli package location using createRequire
-  const require = createRequire(import.meta.url);
-  let pkgDir: string;
-  try {
-    const pkgJsonPath = require.resolve('@tailwindcss/cli/package.json');
-    pkgDir = dirname(pkgJsonPath);
-  } catch {
+  const pkgDir = await resolveTailwindCliDir(projectRoot);
+  if (!pkgDir) {
     throw new Error('Failed to resolve @tailwindcss/cli');
   }
 
@@ -2472,24 +2491,19 @@ function deriveCandidates(themeCSS: string): string[] {
  */
 export async function registryToDocumentation(
   registry: TokenRegistry,
-  options: { minify?: boolean; contentSources?: string[] } = {},
+  options: { minify?: boolean; contentSources?: string[]; projectRoot?: string | undefined } = {},
 ): Promise<string> {
-  const { minify = true, contentSources = [] } = options;
+  const { minify = true, contentSources = [], projectRoot } = options;
   const themeBody = registryToTailwind(registry, { includeImport: false });
   const candidates = deriveCandidates(themeBody);
 
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { createRequire } = await import('node:module');
+  const { join } = await import('node:path');
 
-  const require = createRequire(import.meta.url);
-  let pkgDir: string;
-  try {
-    const pkgJsonPath = require.resolve('@tailwindcss/cli/package.json');
-    pkgDir = dirname(pkgJsonPath);
-  } catch {
+  const pkgDir = await resolveTailwindCliDir(projectRoot);
+  if (!pkgDir) {
     throw new Error(
-      'Failed to resolve @tailwindcss/cli -- install it to generate documentation CSS',
+      'Failed to resolve @tailwindcss/cli -- the documentation export needs it installed in your project (pnpm add -D @tailwindcss/cli)',
     );
   }
 

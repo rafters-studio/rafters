@@ -31,7 +31,7 @@ vi.mock('../../src/utils/update-dependencies.js', () => ({
 
 describe('isTailwindCliInstalled', () => {
   it('returns a boolean without throwing', () => {
-    const result = isTailwindCliInstalled();
+    const result = isTailwindCliInstalled(process.cwd());
     expect(typeof result).toBe('boolean');
   });
 });

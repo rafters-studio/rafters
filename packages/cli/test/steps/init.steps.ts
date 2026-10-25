@@ -324,3 +324,54 @@ Then(
     );
   },
 );
+
+// @tailwindcss/cli on demand (#2843)
+
+Then(
+  "the rafters package's production dependencies include neither {string} nor {string}",
+  async ({}, a: string, b: string) => {
+    const require = createRequire(import.meta.url);
+    const cliDir = dirname(require.resolve('../../package.json'));
+    const result = await run(
+      'pnpm',
+      ['--filter', 'rafters', 'list', '--prod', '--depth', 'Infinity', '--parseable'],
+      cliDir,
+    );
+    expect(result.code, result.stderr).toBe(0);
+    const installed = result.stdout.split('\n');
+    expect(installed.length).toBeGreaterThan(1);
+    for (const name of [a, b]) {
+      expect(installed.filter((line) => line.endsWith(`/node_modules/${name}`))).toEqual([]);
+    }
+  },
+);
+
+Then("the project's package.json does not list {string}", async ({}, name: string) => {
+  const parsed: unknown = JSON.parse(
+    await readFile(join(context.fixturePath, 'package.json'), 'utf8'),
+  );
+  if (typeof parsed !== 'object' || parsed === null)
+    throw new Error('package.json is not an object');
+  const pkg = parsed as Record<string, unknown>;
+  for (const field of ['dependencies', 'devDependencies']) {
+    const deps = pkg[field];
+    expect(typeof deps === 'object' && deps !== null && name in deps, field).toBe(false);
+  }
+});
+
+Then('the project has no {string}', async ({}, file: string) => {
+  expect(existsSync(join(context.fixturePath, file))).toBe(false);
+});
+
+Given("the project's config enables the compiled export", async () => {
+  const path = join(context.fixturePath, '.rafters', 'config.rafters.json');
+  const config = JSON.parse(await readFile(path, 'utf8')) as { exports: Record<string, boolean> };
+  config.exports.compiled = true;
+  await writeFile(path, JSON.stringify(config, null, 2));
+});
+
+Then('{string} holds compiled rafters CSS', async ({}, file: string) => {
+  const css = await readFile(join(context.fixturePath, file), 'utf8');
+  expect(css).toContain('--rafters-');
+  expect(css).not.toContain('@import "tailwindcss"');
+});

@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- fix(cli): **`@tailwindcss/cli` is installed only when the compiled export is chosen (#2843).** It moves from rafters' dependencies to its devDependencies, so installing rafters no longer pulls it or its native watcher `@parcel/watcher`, whose build script stopped pnpm with ERR_PNPM_IGNORED_BUILDS. `rafters init` checks for it only when `exports.compiled` is on; with `--agent` it now installs it into the project instead of throwing, and still fails naming it when it cannot be resolved after install. `rafters init`, `rafters add` and both stylesheet exporters resolve the CLI from the project first, so a project-installed CLI is found when rafters runs through `pnpm dlx`. The documentation export (`exports.documentation`) also needs the CLI; rafters does not install it for that export, and fails saying to run `pnpm add -D @tailwindcss/cli` when it does not resolve.
+
 - fix(design-tokens): **A fill recipe holding a literal colour is refused naming the field (#2832).** TokenSchema's value is a union, so a recipe that broke the fill rules failed every branch and the error said only `value: Invalid input`. The fill recipe is now checked first, in `set`, `define` and on load, so Studio's `POST /__rafters/set` answers with the field, for example `value.background.color: must be a registry reference ({family, position} or {token}), not a literal colour`. What is refused is unchanged.
 
 ## 0.5.0
