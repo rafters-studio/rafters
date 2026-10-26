@@ -160,3 +160,43 @@ Feature: rafters import -- a colour family assigned to no role (#2813)
     Then the command should fail
     And the error names "nasty-orange" and says "color:<name>"
     And "rafters import --help" and "rafters init --help" describe "color:<name>=--property" and "color:<name>=--prefix-*"
+
+  # A role mapped to a palette step points at that step (#2866)
+  #
+  # palette.css (written by "the stylesheet palette.css") declares, in :root:
+  #   --color-mud-50 .. --color-mud-950, each a colour         (a palette)
+  #   --primary   -> var(--color-mud-500)                      (a role on a step)
+  #   --accent    -> var(--brand) -> var(--color-mud-300)      (through another property)
+  #   --ink       -> an oklch colour                           (no palette step)
+
+  @criterion-2866-1 @criterion-2866-3
+  Scenario: a role on a palette step points at that step of one palette
+    Given an initialised project
+    And the stylesheet "palette.css"
+    When I run "rafters import --agent --css-import palette.css --map primary=--primary"
+    Then the command should succeed
+    And the family token "mud" has an 11-step scale, harmonies, accessibility and analysis
+    And the tokens "mud-50" through "mud-950" exist
+    And "primary" references the family "mud" at 500, with the reason "imported from --primary in palette.css"
+    And no colour token is named "imported-color-mud-" or "imported-primary"
+
+  @criterion-2866-2
+  Scenario: a role points at a step through other properties or by naming it, and a colour off the palette stays a one-off family
+    Given an initialised project
+    And the stylesheet "palette.css"
+    When I run "rafters import --agent --css-import palette.css --map accent=--accent --map secondary=--color-mud-700 --map primary=--ink"
+    Then the command should succeed
+    And "accent" references the family "mud" at 300, with the reason "imported from --accent in palette.css"
+    And "secondary" references the family "mud" at 700, with the reason "imported from --color-mud-700 in palette.css"
+    And "primary" references the family "imported-ink" at 500, with the reason "imported from --ink in palette.css"
+    And no colour token is named "imported-color-mud-" or "imported-accent"
+
+  @criterion-2866-4
+  Scenario: rafters import repoints a role an older version imported, and leaves the old family
+    Given an initialised project
+    And the stylesheet "palette.css"
+    And the project was imported from "palette.css" by an older version, with "primary" on the family "imported-color-mud-500"
+    When I run "rafters import --agent --css-import palette.css --map primary=--color-mud-500"
+    Then the command should succeed
+    And "primary" references the family "mud" at 500, with the reason "imported from --color-mud-500 in palette.css"
+    And the family token "imported-color-mud-500" has an 11-step scale, harmonies, accessibility and analysis

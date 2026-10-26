@@ -26,6 +26,7 @@ export { colorsFromClassification } from './importers/colors.js';
 export {
   type ResolvedCustomProperty,
   resolveCustomProperties,
+  resolvePaletteStep,
 } from './importers/custom-properties.js';
 export { detectFamilySeeds } from './importers/family-seeds.js';
 export {
@@ -84,5 +85,6 @@ export {
   TokenParseError,
   TokenRegistry,
   NameTakenError,
+  TokenInUseError,
   UnknownTokenError,
 } from './registry.js';

@@ -32,6 +32,7 @@ import {
   REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
+  resolvePaletteStep,
   SCRIPT_FONTS,
   saveRegistryToDir,
   senseShadcnCss,
@@ -1177,6 +1178,11 @@ export async function init(options: InitOptions): Promise<void> {
   if (existingEntry !== null && detectedCssPath !== null && cssImportPlan === undefined) {
     // The original content: the entry on disk may be the new wired file.
     const sourceCss: string | null = existingEntry.original;
+    // `:root` palette steps (`--color-mud-500`) and the roles that point at
+    // one through var() (#2866). Both are collected here and applied with the
+    // `@theme` palettes below, so each palette is defined once.
+    const rootPaletteSteps: ColorDeclaration[] = [];
+    const boundRoles: Array<{ role: string; family: string; position: string }> = [];
     if (sourceCss !== null) {
       const summary = senseShadcnCss(sourceCss);
       if (summary.totalDeclarations > 0) {
@@ -1203,7 +1209,26 @@ export async function init(options: InitOptions): Promise<void> {
                 message: `Import --${color.name}: ${color.value}?`,
                 default: true,
               });
-          if (accept) toImportColors.push(color);
+          if (!accept) continue;
+          if (resolvePaletteStep(sourceCss, `--${color.name}`) !== null) {
+            rootPaletteSteps.push(color);
+          } else {
+            toImportColors.push(color);
+          }
+        }
+
+        for (const decl of classification.unclassified) {
+          if (registry.get(decl.name)?.namespace !== 'semantic') continue;
+          if (boundRoles.some((b) => b.role === decl.name)) continue;
+          const step = resolvePaletteStep(sourceCss, `--${decl.name}`);
+          if (step === null) continue;
+          const accept = isAgentMode
+            ? true
+            : await confirm({
+                message: `Import --${decl.name}: ${decl.value}?`,
+                default: true,
+              });
+          if (accept) boundRoles.push({ role: decl.name, ...step });
         }
 
         const toImportNonColors: typeof nonColorDecls = [];
@@ -1295,35 +1320,59 @@ export async function init(options: InitOptions): Promise<void> {
         // owns these assignments -- the importer collects taste, does not
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
-        if (themeDecls.length > 0) {
+        {
           // One seed per detected family, at the position the designer
-          // authored it (see `detectFamilySeeds`).
-          const families = detectFamilySeeds(themeDecls);
-          if (families.length > 0) {
+          // authored it (see `detectFamilySeeds`), over the `@theme`
+          // declarations and the `:root` palette steps together. The role
+          // walk offers the `@theme` palettes, as before.
+          const palettes = detectFamilySeeds([...themeDecls, ...rootPaletteSteps]);
+          const themeNames = new Set(detectFamilySeeds(themeDecls).map((f) => f.name));
+          const families = palettes.filter((f) => themeNames.has(f.name));
+          if (palettes.length > 0) {
             // Define every detected palette via `importColorFamily` --
             // returns the family Token + 11 per-position primitive Tokens,
             // all built via `buildColorValue` (the canonical color-utils
             // builder). Designers preserve their own family names:
             // `--color-empire-500` -> family `empire`.
-            for (const family of families) {
+            for (const family of palettes) {
               for (const t of importColorFamily(family.name, family.seedPosition, family.seed)) {
                 registry.define(t);
               }
             }
 
-            // Walk semantic roles. The designer assigns detected palettes
-            // to each role. Filter to roles that exist as semantic-namespace
-            // tokens in the registry (tertiary ships only in some configs).
-            const ROLES = SEMANTIC_FAMILY_ROLES.filter((r) => {
-              const tok = registry.get(r);
-              return tok !== undefined && tok.namespace === 'semantic';
-            });
+            // A role the CSS points at a palette step is set to that step,
+            // and the walk below leaves it alone.
             const assignments: Array<{
               role: string;
               family: string;
               position: string;
             }> = [];
+            const bound = new Set<string>();
+            for (const { role, family, position } of boundRoles) {
+              if (!palettes.some((f) => f.name === family)) continue;
+              registry.set(
+                role,
+                { family, position },
+                { reason: `imported from --${role} in ${detectedCssPath}` },
+              );
+              bound.add(role);
+              assignments.push({ role, family, position });
+            }
+
+            // Walk semantic roles. The designer assigns detected palettes
+            // to each role. Filter to roles that exist as semantic-namespace
+            // tokens in the registry (tertiary ships only in some configs).
+            // With no `@theme` palette there is nothing to offer, so there is
+            // no walk, as before #2866.
+            const ROLES =
+              families.length === 0
+                ? []
+                : SEMANTIC_FAMILY_ROLES.filter((r) => {
+                    const tok = registry.get(r);
+                    return tok !== undefined && tok.namespace === 'semantic';
+                  });
             for (const [i, role] of ROLES.entries()) {
+              if (bound.has(role)) continue;
               let familyChoice: string | null;
               if (isAgentMode) {
                 familyChoice = families[i]?.name ?? null;
@@ -1379,7 +1428,7 @@ export async function init(options: InitOptions): Promise<void> {
             log({
               event: 'init:import_palettes_applied',
               cssPath: detectedCssPath,
-              palettesDefined: families.map((f) => f.name),
+              palettesDefined: palettes.map((f) => f.name),
               assignments,
             });
           }

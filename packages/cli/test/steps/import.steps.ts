@@ -10,7 +10,14 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { oklchToCSS, rebakeAccessibility, SCALE_POSITIONS } from '@rafters/color-utils';
-import { generateBaseSystem, resolveCustomProperties } from '@rafters/design-tokens';
+import {
+  generateBaseSystem,
+  importColorFamily,
+  loadRegistryFromDir,
+  REGISTRY_PLUGINS,
+  resolveCustomProperties,
+  saveRegistryToDir,
+} from '@rafters/design-tokens';
 import { type ColorValue, ColorValueSchema, SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -43,6 +50,23 @@ ${BAD.join('\n')}
 }
 `;
 
+const MUD = SCALE_POSITIONS.map(
+  (step, i) =>
+    `  --color-mud-${step}: oklch(${(0.96 - i * 0.08).toFixed(2)} ${(0.01 + i * 0.005).toFixed(3)} 190);`,
+);
+
+/** palette.css (#2866): a palette, roles on its steps, and a colour off it. */
+const PALETTE = `:root {
+${MUD.join('\n')}
+  --primary: var(--color-mud-500);
+  --accent: var(--brand);
+  --brand: var(--color-mud-300);
+  --ink: oklch(0.45 0.2 20);
+}
+`;
+
+const STYLESHEETS: Record<string, string> = { 'brand.css': STYLESHEET, 'palette.css': PALETTE };
+
 const COLOR_TOKENS = '.rafters/tokens/color.rafters.json';
 const SEMANTIC_TOKENS = '.rafters/tokens/semantic.rafters.json';
 const RAFTERS_CSS = '.rafters/output/rafters.css';
@@ -50,6 +74,7 @@ const RAFTERS_CSS = '.rafters/output/rafters.css';
 interface StoredToken {
   name: string;
   value: unknown;
+  userOverride?: { reason?: string } | null;
 }
 
 const local: { other: string; built: string } = { other: '', built: '' };
@@ -181,8 +206,48 @@ Given('an initialised project whose config enables the dtcg export', async () =>
 });
 
 Given('the stylesheet {string}', async ({}, file: string) => {
-  await writeFile(join(context.fixturePath, file), STYLESHEET);
+  const css = STYLESHEETS[file];
+  if (css === undefined) throw new Error(`no stylesheet ${file}`);
+  await writeFile(join(context.fixturePath, file), css);
 });
+
+Given(
+  /^"([^"]+)" declares --color-mud-50 to --color-mud-950 in (:root|@theme), with --primary on var\(--color-mud-500\) and --secondary on var\(--color-mud-300\) in :root$/,
+  async ({}, file: string, block: string) => {
+    const full = join(context.fixturePath, file);
+    const css = await readFile(full, 'utf8');
+    const roles = '  --primary: var(--color-mud-500);\n  --secondary: var(--color-mud-300);';
+    const palette =
+      block === ':root'
+        ? `:root {\n${MUD.join('\n')}\n${roles}\n}\n`
+        : `@theme {\n${MUD.join('\n')}\n}\n:root {\n${roles}\n}\n`;
+    await writeFile(full, `${css}\n${palette}`);
+  },
+);
+
+/**
+ * The state an import before #2866 left: the step's colour grown into a
+ * one-off family, with the role pointed at it.
+ */
+Given(
+  'the project was imported from {string} by an older version, with {string} on the family {string}',
+  async ({}, file: string, role: string, family: string) => {
+    const property = `--${family.replace(/^imported-/, '')}`;
+    const css = STYLESHEETS[file] ?? '';
+    const found = resolveCustomProperties(css).find((r) => r.property === property);
+    const seed = found?.value ? tryParseColor(found.value) : null;
+    if (seed === null) throw new Error(`${property} does not resolve to a colour`);
+    const tokens = join(context.fixturePath, '.rafters', 'tokens');
+    const registry = loadRegistryFromDir(tokens, REGISTRY_PLUGINS);
+    for (const t of importColorFamily(family, '500', seed)) registry.define(t);
+    registry.set(
+      role,
+      { family, position: '500' },
+      { reason: `imported from ${property} in ${file}` },
+    );
+    saveRegistryToDir(tokens, registry);
+  },
+);
 
 // Whens
 
@@ -324,6 +389,20 @@ Then(
     expect(semantic.get(role)?.value).toEqual({ family, position: String(position) });
   },
 );
+
+Then(
+  '{string} references the family {string} at {int}, with the reason {string}',
+  async ({}, role: string, family: string, position: number, reason: string) => {
+    const token = (await tokensIn(context.fixturePath, SEMANTIC_TOKENS)).get(role);
+    expect(token?.value, role).toEqual({ family, position: String(position) });
+    expect(token?.userOverride?.reason, role).toBe(reason);
+  },
+);
+
+Then('no colour token is named {string} or {string}', async ({}, first: string, second: string) => {
+  const names = [...(await tokensIn(context.fixturePath, COLOR_TOKENS)).keys()];
+  expect(names.filter((n) => n.startsWith(first) || n.startsWith(second))).toEqual([]);
+});
 
 Then('the {string} tokens in both projects are equal', async ({}, family: string) => {
   const pick = async (root: string): Promise<StoredToken[]> => {

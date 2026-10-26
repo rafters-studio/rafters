@@ -17,6 +17,7 @@ import {
   loadRegistryFromDir,
   REGISTRY_PLUGINS,
   saveRegistryToDir,
+  TokenInUseError,
   type TokenRegistry,
 } from '@rafters/design-tokens';
 import type { Token } from '@rafters/shared';
@@ -171,7 +172,8 @@ function studioApi(
               });
             }
           } catch (error) {
-            return sendJson(res, 400, { error: (error as Error).message });
+            const status = error instanceof TokenInUseError ? 409 : 400;
+            return sendJson(res, status, { error: (error as Error).message });
           }
           if (touched.length === 0) {
             return sendJson(res, 409, {
