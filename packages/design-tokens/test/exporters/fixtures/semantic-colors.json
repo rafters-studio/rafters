@@ -364,8 +364,8 @@
     "dark": "oklch(0.645 0.095 210)"
   },
   "--color-info-foreground": {
-    "light": "oklch(0.057 0.014 244)",
-    "dark": "oklch(0.185 0.034 224)"
+    "light": "oklch(0.05 0 0)",
+    "dark": "oklch(0.175 0.03 210)"
   },
   "--color-info-hover": {
     "light": "oklch(0.425 0.073 210)",

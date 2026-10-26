@@ -447,6 +447,7 @@ describe('toDTCG composites, records and role scale (#2758)', () => {
       .filter(({ path }) => !/^[a-z]+\.(50|[1-9]00|950)$/.test(path))
       .filter(({ path, token }) => familyOf(token.$value) !== familyOf(at(before, path)))
       .map(({ path }) => path);
-    expect(leftRole).toEqual(['neutral.$root', 'neutral.dark']);
+    // info-foreground falls back to the neutral role (4.49:1, tracked in rafters #2811).
+    expect(leftRole).toEqual(['neutral.$root', 'neutral.dark', 'info.foreground.$root']);
   });
 });

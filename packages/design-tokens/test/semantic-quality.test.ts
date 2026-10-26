@@ -128,9 +128,10 @@ describe('semantic selection over the default system (#2668)', () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
-    // The default success hue at 600 has no step, in its family or the
-    // neutral, that reaches 4.5:1 (best 4.31). Listed, not hidden.
-    expect(unreachable).toEqual(['success-foreground best 4.31']);
+    // The default success and info hues at 600 have no step, in their family
+    // or the neutral, that reaches 4.5:1 (best 4.30 and 4.49). Listed, not
+    // hidden; both are tracked in rafters #2811.
+    expect(unreachable).toEqual(['success-foreground best 4.30', 'info-foreground best 4.49']);
   });
 
   it('the generator measures rings against the mode background and falls foregrounds back to neutral', () => {
@@ -209,7 +210,8 @@ describe('semantic selection follows the designer (#2668)', () => {
   it('the plain token list stores the neutral role for the fallback foregrounds, and its CSS rides neutral', () => {
     const all = generateBaseSystem().allTokens;
     const css = tokensToTailwind(all);
-    for (const name of ['success-foreground']) {
+    // info-foreground falls back to neutral at 4.49:1, tracked in rafters #2811.
+    for (const name of ['success-foreground', 'info-foreground']) {
       const token = all.find((t) => t.name === name);
       const value: unknown = token?.value;
       if (!isRef(value)) throw new Error(name);
@@ -221,7 +223,8 @@ describe('semantic selection follows the designer (#2668)', () => {
   it('a foreground that falls back stores the neutral role and moves when neutral does', () => {
     const reg = fresh();
     const { step } = helpers(reg);
-    const fallbacks = ['success-foreground'];
+    // info-foreground falls back to neutral at 4.49:1, tracked in rafters #2811.
+    const fallbacks = ['success-foreground', 'info-foreground'];
     for (const name of fallbacks) expect(reg.get(name)?.value).toMatchObject({ family: 'neutral' });
     const before = new Map(fallbacks.map((n) => [n, step(n)]));
     reg.set('neutral', { family: 'silver-true-violet', position: '500' }, { reason: 'test' });

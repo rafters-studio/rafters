@@ -148,7 +148,8 @@ describe('role scale: ownership', () => {
     }
     // #2668: a foreground whose own role has no AA pair falls back to the neutral role and
     // rides its step, so it moves with neutral.
-    const fallbacks = ['--color-success-foreground'];
+    // info-foreground falls back at 4.49:1, tracked in rafters #2811.
+    const fallbacks = ['--color-success-foreground', '--color-info-foreground'];
     for (const u of fallbacks) expect(moved).toContain(u);
     for (const role of ['destructive', 'success', 'warning', 'info', 'highlight']) {
       expect(
