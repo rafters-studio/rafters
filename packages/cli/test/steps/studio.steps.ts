@@ -1,11 +1,11 @@
 /**
- * Steps for `rafters studio` (#2846).
+ * Steps for `rafters studio` (#2846, #2859).
  *
  * Note: Module-level state is intentional for playwright-bdd step state sharing.
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
  */
 
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SCALE_POSITIONS } from '@rafters/color-utils';
 import { expect } from '@playwright/test';
@@ -19,8 +19,9 @@ const PORT = 7790;
 export const STUDIO_URL = `http://127.0.0.1:${PORT}`;
 const BASE = STUDIO_URL;
 
-const state: { stop?: () => void; status: number; cssBefore: number } = {
+const state: { stop?: () => void; status: number; body: unknown; cssBefore: number } = {
   status: 0,
+  body: null,
   cssBefore: 0,
 };
 
@@ -28,15 +29,26 @@ function raftersPath(...parts: string[]): string {
   return join(context.fixturePath, '.rafters', ...parts);
 }
 
-async function postSet(body: unknown, headers: Record<string, string>): Promise<void> {
+async function send(
+  method: 'POST' | 'DELETE',
+  body: unknown,
+  headers: Record<string, string>,
+): Promise<void> {
   const res = await fetch(`${BASE}/__rafters/set`, {
-    method: 'POST',
+    method,
     headers,
     body: JSON.stringify(body),
   });
   state.status = res.status;
-  await res.text();
+  const text = await res.text();
+  try {
+    state.body = JSON.parse(text);
+  } catch {
+    state.body = text;
+  }
 }
+
+const postSet = (body: unknown, headers: Record<string, string>) => send('POST', body, headers);
 
 const json = { 'Content-Type': 'application/json' };
 
@@ -103,9 +115,103 @@ When('a set is posted as text\\/plain', async () => {
   await postSet({ name: 'spacing-base' }, { 'Content-Type': 'text/plain' });
 });
 
+When('Studio deletes {string} because {string}', async ({}, name: string, why: string) => {
+  await send('DELETE', { name, why }, json);
+});
+
+When('Studio deletes {string} with no why', async ({}, name: string) => {
+  await send('DELETE', { name }, json);
+});
+
+When('a page at {string} sends a delete', async ({}, origin: string) => {
+  await send('DELETE', { name: 'spacing-base', why: 'x' }, { ...json, Origin: origin });
+});
+
+When('a delete is sent as text\\/plain', async () => {
+  await send('DELETE', { name: 'spacing-base', why: 'x' }, { 'Content-Type': 'text/plain' });
+});
+
 Then('the response status is {int}', ({}, status: number) => {
   expect(state.status).toBe(status);
 });
+
+Then('the response error says {string}', ({}, text: string) => {
+  expect((state.body as { error: string }).error).toContain(text);
+});
+
+const family = (name: string) => [name, ...SCALE_POSITIONS.map((p) => `${name}-${p}`)];
+
+Then('the response lists {string} and its eleven steps as deleted', ({}, name: string) => {
+  expect(state.body).toEqual({ deleted: family(name) });
+});
+
+Then('the colour token file no longer stores {string} or its steps', ({}, name: string) => {
+  const file = JSON.parse(readFileSync(raftersPath('tokens', 'color.rafters.json'), 'utf8'));
+  const names = new Set(file.tokens.map((t: { name: string }) => t.name));
+  for (const n of family(name)) expect(names.has(n)).toBe(false);
+});
+
+function logLines(): Record<string, unknown>[] {
+  const text = readFileSync(raftersPath('studio.log'), 'utf8');
+  return text
+    .split('\n')
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line));
+}
+
+function logLine(n: number): Record<string, unknown> {
+  const line = logLines()[n - 1];
+  if (!line) throw new Error(`studio.log has no line ${n}`);
+  expect(Number.isNaN(Date.parse(String(line.at)))).toBe(false);
+  return line;
+}
+
+Then('Studio has written no log', () => {
+  expect(existsSync(raftersPath('studio.log'))).toBe(false);
+});
+
+Then('the Studio log holds {int} lines', ({}, count: number) => {
+  expect(logLines()).toHaveLength(count);
+});
+
+Then(
+  'Studio log line {int} is a {string} of {string} from {string} to {string} because {string}',
+  ({}, n: number, action: string, name: string, before: string, after: string, why: string) => {
+    expect(logLine(n)).toMatchObject({ action, name, before, after, why });
+    expect(logLine(n)).not.toHaveProperty('tokens');
+  },
+);
+
+Then(
+  'Studio log line {int} is an {string} of {string} from {string} to {string}',
+  ({}, n: number, action: string, name: string, before: string, after: string) => {
+    expect(logLine(n)).toMatchObject({ action, name, before, after, why: null });
+  },
+);
+
+Then(
+  'Studio log line {int} creates {string} and names its eleven steps',
+  ({}, n: number, name: string) => {
+    const line = logLine(n);
+    expect(line).toMatchObject({
+      action: 'set',
+      name,
+      before: null,
+      why: 'brand',
+      tokens: family(name),
+    });
+    expect(line.after).toHaveProperty('scale');
+  },
+);
+
+Then(
+  'Studio log line {int} deletes {string} because {string} and names its eleven steps',
+  ({}, n: number, name: string, why: string) => {
+    const line = logLine(n);
+    expect(line).toMatchObject({ action: 'delete', name, after: null, why, tokens: family(name) });
+    expect(line.before).toHaveProperty('scale');
+  },
+);
 
 function storedValue(name: string): unknown {
   const file = JSON.parse(readFileSync(raftersPath('tokens', 'spacing.rafters.json'), 'utf8'));

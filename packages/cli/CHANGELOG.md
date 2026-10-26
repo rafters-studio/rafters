@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli): **`DELETE` removes a whole token through Studio, and Studio logs every change (#2859).** `DELETE /__rafters/set { name, why }` calls the registry's new `delete(name, { reason })`, which removes a whole token of a kind a designer creates, whoever made it: a fill, or a colour family with its eleven steps, including families `rafters import` or `init` wrote. It answers `{ deleted: [names] }`. A family step is refused with the family to delete instead, and any token the system makes (spacing, typography, roles, semantic colours, `surface-*`) is refused. A reason is required. `POST` with no value on a token with nothing to undo now answers 409 instead of 200 with the unchanged token. Every successful set, undo or delete appends one JSON line to `.rafters/studio.log` (`at`, `action`, `name`, `before`, `after`, `why`, and `tokens` for a family). `set` now returns the names it created, changed or removed.
+
 ## 0.5.2
 
 ### Features
