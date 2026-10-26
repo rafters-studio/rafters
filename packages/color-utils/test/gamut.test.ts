@@ -14,7 +14,6 @@ import {
   toGamutCeiling,
   toNearestGamut,
 } from '../src/gamut.js';
-import { roundOKLCH } from '../src/conversion.js';
 import { generateOKLCHScale } from '../src/harmony.js';
 import {
   ALLOW_P3,
@@ -61,25 +60,37 @@ describe('gamut ceiling (#2672)', () => {
     }
   });
 
-  it('keeps lightness and reduces chroma only where mapping would break the order', () => {
-    // Two adjacent out-of-gamut steps close in lightness: mapping can pull
-    // them level or across each other, so the order must still hold after.
+  it('toGamutCeiling keeps lightness and hue and reduces chroma to the edge (#2873)', () => {
+    const out: OKLCH = { l: 0.7, c: 0.35, h: 150, alpha: 1 };
+    for (const ceiling of ['srgb', 'p3'] as const) {
+      const mapped = toGamutCeiling(out, ceiling);
+      expect(mapped.l).toBe(out.l);
+      expect(mapped.h).toBe(out.h);
+      expect(mapped.alpha).toBe(out.alpha);
+      expect(mapped.c).toBeLessThan(out.c);
+      expect(ceiling === 'srgb' ? isInSRGBGamut(mapped) : isInP3Gamut(mapped)).toBe(true);
+      // The largest chroma inside: a little more is outside.
+      const more = { ...mapped, c: mapped.c + 0.002 };
+      expect(ceiling === 'srgb' ? isInSRGBGamut(more) : isInP3Gamut(more)).toBe(false);
+    }
+  });
+
+  it('mapScaleToGamut keeps every step lightness and hue, reducing chroma only (#2873)', () => {
     const scale: OKLCH[] = [
       { l: 0.951, c: 0.4, h: 150, alpha: 1 },
       { l: 0.95, c: 0.08, h: 150, alpha: 1 },
-      { l: 0.5, c: 0.01, h: 150, alpha: 1 },
+      { l: 0.3, c: 0.2, h: 234, alpha: 1 },
+      { l: 0.15, c: 0.12, h: 51, alpha: 1 },
     ];
-    // Plain toGamut would leave the first two steps level or crossed.
-    const plain = scale.slice(0, 2).map((step) => roundOKLCH(toGamutCeiling(step, 'srgb')));
-    expect((plain[1] as OKLCH).l).toBeGreaterThanOrEqual((plain[0] as OKLCH).l);
     const mapped = mapScaleToGamut(scale, 'srgb');
     for (const [i, step] of mapped.entries()) {
+      const before = scale[i] as OKLCH;
       expect(isInSRGBGamut(step)).toBe(true);
+      expect(step.l).toBe(before.l);
+      expect(step.h).toBe(before.h);
+      expect(step.c).toBeLessThanOrEqual(before.c);
       if (i > 0) expect(step.l).toBeLessThan((mapped[i - 1] as OKLCH).l);
     }
-    expect(mapped[0]?.l).toBe(0.951);
-    expect(mapped[1]?.l).toBe(0.95);
-    expect(mapped[0]?.h).toBe(150);
   });
 });
 

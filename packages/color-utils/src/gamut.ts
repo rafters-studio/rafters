@@ -84,18 +84,11 @@ function inCeiling(oklch: OKLCH, ceiling: GamutCeiling): boolean {
 
 /**
  * Map one colour into a gamut ceiling: unchanged when already inside, else
- * colorjs.io toGamut into that space.
+ * the same lightness and hue at the largest chroma the ceiling holds there.
  */
 export function toGamutCeiling(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
-  const color = new Color('oklch', [oklch.l, oklch.c, oklch.h]);
-  if (color.inGamut(ceiling)) return { ...oklch };
-  const [l, c, h] = color.toGamut({ space: ceiling }).to('oklch').coords;
-  return {
-    l: l ?? oklch.l,
-    c: c ?? 0,
-    h: h === undefined || Number.isNaN(h) ? oklch.h : h,
-    alpha: oklch.alpha,
-  };
+  if (inCeiling(oklch, ceiling)) return { ...oklch };
+  return { ...oklch, c: Math.min(oklch.c, findMaxChroma(oklch.l, oklch.h, ceiling)) };
 }
 
 /**
@@ -113,46 +106,17 @@ function roundInside(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
   return { ...rounded, c: Math.max(0, c) };
 }
 
-/** Keep the step's lightness and hue; reduce chroma only, to the ceiling's edge. */
-function reduceChromaOnly(oklch: OKLCH, ceiling: GamutCeiling): OKLCH {
-  const maxC = findMaxChroma(oklch.l, oklch.h, ceiling);
-  return roundInside({ ...oklch, c: Math.min(oklch.c, maxC) }, ceiling);
-}
-
 /**
- * Map every step of a scale into the ceiling, keeping lightness order.
+ * Map every step of a scale into the ceiling, keeping lightness and hue.
  *
- * A step already inside the ceiling is not moved. A step outside is mapped
- * with colorjs.io toGamut; where that mapping would break the scale's
- * strictly falling lightness, the step keeps its lightness and loses chroma
- * only. Steps already inside are never re-marked, so the loop ends: at worst
- * every outside step keeps its lightness, and the input order holds.
+ * A step already inside the ceiling is not moved. A step outside keeps its
+ * lightness and hue and loses chroma only, to the ceiling's edge, so the
+ * scale's lightness order is the input's.
  */
 export function mapScaleToGamut(scale: readonly OKLCH[], ceiling: GamutCeiling): OKLCH[] {
-  const chromaOnly = new Set<number>();
-  const mapStep = (step: OKLCH, i: number): OKLCH => {
-    if (inCeiling(step, ceiling)) return { ...step };
-    if (chromaOnly.has(i)) return reduceChromaOnly(step, ceiling);
-    return roundInside(toGamutCeiling(step, ceiling), ceiling);
-  };
-  let mapped = scale.map(mapStep);
-  for (;;) {
-    let marked = false;
-    for (let i = 1; i < mapped.length; i++) {
-      const prev = mapped[i - 1];
-      const cur = mapped[i];
-      if (prev === undefined || cur === undefined || cur.l < prev.l) continue;
-      for (const j of [i - 1, i]) {
-        const original = scale[j];
-        if (original && !chromaOnly.has(j) && !inCeiling(original, ceiling)) {
-          chromaOnly.add(j);
-          marked = true;
-        }
-      }
-    }
-    if (!marked) return mapped;
-    mapped = scale.map(mapStep);
-  }
+  return scale.map((step) =>
+    inCeiling(step, ceiling) ? { ...step } : roundInside(toGamutCeiling(step, ceiling), ceiling),
+  );
 }
 
 /**
