@@ -65,7 +65,11 @@ the resolver.
   `secondary-foreground`, `destructive`, `success`, `warning` and `info`
   (`COLOR` in `typography.classes.ts`). A value with no entry renders no colour
   class. `muted` is not a key: it is a surface token, and its text rendered
-  near invisible (#2528). Typography takes no `fill` or `surface`.
+  near invisible (#2528). Typography takes `fill` (#2860): exactly one
+  `bg-fill-*` token, which wins over `color` and the variant's colour, and
+  replaces the surface of Mark, Code and CodeBlock, so the recipe's foreground
+  paints the text. A recipe with `clip: "text"` paints the glyphs with its
+  background or gradient. Typography takes no `surface` prop.
 - **h5/h6 borrow h4.** The variant scale stops at h4; `H5`/`H6` (and `as="h5"`
   /`"h6"`) render their own tag with h4's classes. `span` reads as body (`p`).
 
