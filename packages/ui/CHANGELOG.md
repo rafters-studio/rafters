@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Article prose headings read `foreground` (#2816).** `Container as="article"` coloured `h1` to `h4` with `accent-foreground`, so they read lighter than body text, or navy on dark surfaces when the accent is light. They now read `foreground`, as Typography's headings do.
+
 ## [0.5.3]
 
 Released with the rafters CLI 0.5.3. `@rafters/ui` is not published to npm;
