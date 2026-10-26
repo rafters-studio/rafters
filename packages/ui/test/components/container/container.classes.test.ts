@@ -58,6 +58,14 @@ describe('container classes', () => {
     expect(root({ as: 'section' })).not.toContain('max-w-prose');
   });
 
+  it('article headings name foreground, never accent-foreground (#2816)', () => {
+    const article = root({ as: 'article' });
+    for (const heading of ['h1', 'h2', 'h3', 'h4']) {
+      expect(article.split(' ')).toContain(`[&_${heading}]:text-foreground`);
+    }
+    expect(article).not.toContain('accent-foreground');
+  });
+
   it('a bg-fill- fill lands on the root; a retired v2 value paints nothing', () => {
     expect(root({ fill: 'bg-fill-glass' }).split(' ')).toContain('bg-fill-glass');
     expect(root({ fill: 'muted' })).not.toContain('bg-');
