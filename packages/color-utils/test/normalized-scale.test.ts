@@ -56,14 +56,27 @@ describe('createNormalizedScale', () => {
       expect(result.seedAdjusted).toBeUndefined();
     });
 
-    it('gives every other step the ladder lightness', () => {
-      const result = createNormalizedScale(blue, { lightness: 'compact' });
-      const ladder = LIGHTNESS_LADDERS.compact;
-      // compact: 0.6 at index 8 is the source itself
+    it('bends the ladder toward the pin on both sides', () => {
+      const pin: OKLCH = { l: 0.62, c: 0.12, h: 250, alpha: 1 };
+      const result = createNormalizedScale(pin, { lightness: 'compact' });
+      const lad = LIGHTNESS_LADDERS.compact;
+      // compact: 0.6 at index 8 is nearest 0.62
       expect(result.anchor).toBe('800');
-      for (const [i, step] of result.scale.entries()) {
-        if (i !== 8) expect(step.l).toBe(ladder[i]);
+      const top = lad[0];
+      const bottom = lad[10];
+      const at = lad[8];
+      for (const [k, step] of result.scale.entries()) {
+        const ladK = lad[k] ?? 0;
+        const expected =
+          k === 8
+            ? 0.62
+            : k < 8
+              ? top + ((0.62 - top) * (ladK - top)) / (at - top)
+              : 0.62 + ((bottom - 0.62) * (ladK - at)) / (bottom - at);
+        expect(step.l).toBeCloseTo(expected, 3);
       }
+      expect(result.scale[0]?.l).toBe(top);
+      expect(result.scale[10]?.l).toBe(bottom);
       expect(result.scaleStyle).toBe('compact');
     });
 
@@ -82,29 +95,63 @@ describe('createNormalizedScale', () => {
       const result = createNormalizedScale(blue, { lightness: ELEVEN });
       expect(result.scaleStyle).toBe('custom');
       expect(result.anchor).toBe('500');
-      expect(result.scale[4]?.l).toBe(0.7);
+      expect(result.scale[5]?.l).toBe(blue.l);
+      expect(result.scale[0]?.l).toBe(0.95);
+      expect(result.scale[10]?.l).toBe(0.1);
     });
   });
 
   describe('chroma', () => {
-    it('is the share of the sRGB maximum at each step; the anchor keeps its own', () => {
+    it("is the seed's share times the curve times the sRGB maximum; the anchor keeps its own", () => {
       const result = createNormalizedScale(blue, { chroma: 'measured', hue: 'none' });
-      const ladder = LIGHTNESS_LADDERS.deep;
+      const seedShare = Math.min(1, blue.c / findMaxChroma(0.6, 250, 'srgb'));
       for (const [i, step] of result.scale.entries()) {
         if (i === 6) {
           expect(step.c).toBe(blue.c);
           continue;
         }
-        const max = findMaxChroma(ladder[i] ?? 0, 250, 'srgb');
-        expect(step.c).toBeCloseTo((CHROMA_SHARE.measured[i] ?? 0) * max, 2);
+        const max = findMaxChroma(step.l, 250, 'srgb');
+        expect(step.c).toBeCloseTo(seedShare * (CHROMA_SHARE.measured[i] ?? 0) * max, 2);
         expect(step.c).toBeLessThanOrEqual(max);
       }
     });
 
-    it('fills the gamut with the gamut share', () => {
-      const result = createNormalizedScale(blue, { chroma: 'gamut', hue: 'none' });
+    it('keeps a vivid seed at the gamut edge with the gamut curve', () => {
+      const vivid: OKLCH = { l: 0.6, c: 0.3, h: 250, alpha: 1 };
+      const result = createNormalizedScale(vivid, { chroma: 'gamut', hue: 'none' });
       const step = result.scale[2];
       expect(step?.c).toBeCloseTo(findMaxChroma(step?.l ?? 0, 250, 'srgb'), 2);
+    });
+  });
+
+  describe('shadow-ash (0.050-0.013-239)', () => {
+    const shadowAsh: OKLCH = { l: 0.05, c: 0.013, h: 239, alpha: 1 };
+    const result = createNormalizedScale(shadowAsh);
+
+    it('pins the seed at 950 with its lightness and hue exact', () => {
+      // 0.050-0.013-239 sits just outside sRGB, so the pin loses chroma only.
+      const pin = result.scale[10];
+      expect(result.anchor).toBe('950');
+      expect(pin?.l).toBe(shadowAsh.l);
+      expect(pin?.h).toBe(shadowAsh.h);
+      expect(result.seedAdjusted).toEqual({
+        from: shadowAsh,
+        to: { ...shadowAsh, c: pin?.c },
+        reason: 'gamut',
+      });
+    });
+
+    it('stays near-grey at every step', () => {
+      for (const step of result.scale) expect(step.c).toBeLessThan(0.03);
+    });
+
+    it('runs smoothly from 600 to 950 with no gap', () => {
+      const run = result.scale.slice(6).map((step) => step.l);
+      const gaps = run.slice(1).map((l, i) => (run[i] ?? 0) - l);
+      for (const gap of gaps) {
+        expect(gap).toBeGreaterThan(0);
+        expect(gap).toBeLessThan(0.15);
+      }
     });
   });
 
@@ -150,20 +197,35 @@ describe('createNormalizedScale', () => {
   });
 
   describe('gamut', () => {
-    it('maps every step into sRGB and records per-step gamut', () => {
-      const result = createNormalizedScale(blue, {
+    it('reduces chroma only and records per-step gamut', () => {
+      const vivid: OKLCH = { l: 0.6, c: 0.3, h: 250, alpha: 1 };
+      const unmapped = createNormalizedScale(vivid, { chroma: 'gamut', hue: 'none' });
+      const result = createNormalizedScale(vivid, {
         chroma: [1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3],
+        hue: 'none',
       });
       expect(result.gamut).toEqual(Array.from({ length: 11 }, () => 'srgb'));
-      for (const step of result.scale) expect(isInSRGBGamut(step)).toBe(true);
+      for (const [i, step] of result.scale.entries()) {
+        expect(isInSRGBGamut(step)).toBe(true);
+        expect(step.l).toBe(unmapped.scale[i]?.l);
+        expect(step.h).toBe(250);
+      }
     });
 
-    it('records seedAdjusted when the anchor itself was mapped', () => {
-      const vivid: OKLCH = { l: 0.6, c: 0.3, h: 250, alpha: 1 };
-      const result = createNormalizedScale(vivid);
-      expect(result.seedAdjusted?.reason).toBe('gamut');
-      expect(result.seedAdjusted?.from).toEqual(vivid);
-      expect(result.seedAdjusted?.to).toEqual(result.scale[6]);
+    it('reduces an out-of-gamut dark seed in chroma only', () => {
+      const dark: OKLCH = { l: 0.2, c: 0.2, h: 56, alpha: 1 };
+      const result = createNormalizedScale(dark);
+      const pin = result.scale[10];
+      expect(result.anchor).toBe('950');
+      expect(pin?.l).toBe(dark.l);
+      expect(pin?.h).toBe(dark.h);
+      expect(pin?.c ?? 1).toBeLessThan(dark.c);
+      expect(isInSRGBGamut(pin ?? dark)).toBe(true);
+      expect(result.seedAdjusted).toEqual({
+        from: dark,
+        to: { ...dark, c: pin?.c },
+        reason: 'gamut',
+      });
     });
   });
 

@@ -2,14 +2,14 @@
  * Normalized scale builder.
  *
  * A second way to build a colour family, beside buildColorValue: step
- * lightness from a measured ladder, step chroma as a share of what sRGB holds
- * at that step, and step hue drifting toward both ends the way hand-tuned
- * systems drift it. The constants are in normalized-scale-constants.ts.
+ * lightness from a measured ladder bent through the source, step chroma at
+ * the source's own share of what sRGB holds, and step hue drifting toward
+ * both ends the way hand-tuned systems drift it. The constants are in normalized-scale-constants.ts.
  */
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
 import { assembleColorValue } from './builder.js';
-import { ceilingForSeed, findMaxChroma, mapScaleToGamut, storedTier } from './gamut.js';
+import { findMaxChroma, isInSRGBGamut, storedTier } from './gamut.js';
 import { normalizeHue } from './internal/math.js';
 import { CHROMA_SHARE, HUE_DRIFT_BANDS, LIGHTNESS_LADDERS } from './normalized-scale-constants.js';
 import { SCALE_POSITIONS } from './scale-positions.js';
@@ -90,14 +90,48 @@ function nearestStep(ladder: readonly number[], l: number): number {
 }
 
 /**
+ * Step lightness: the ladder bent toward the pin. Steps lighter than the
+ * anchor are re-spaced between the ladder's top and the pin, steps darker
+ * between the pin and the ladder's bottom, so the run has no gap.
+ */
+function bendLadder(ladder: readonly number[], anchor: number, pin: number): number[] {
+  const top = ladder[0] ?? pin;
+  const bottom = ladder[ladder.length - 1] ?? pin;
+  const at = ladder[anchor] ?? pin;
+  return ladder.map((lad, k) => {
+    if (k === anchor) return pin;
+    if (k < anchor) return top + ((pin - top) * (lad - top)) / (at - top);
+    return pin + ((bottom - pin) * (lad - at)) / (bottom - at);
+  });
+}
+
+/** Chroma floored to the stored precision, so a step at the sRGB edge stays inside. */
+function floorChroma(c: number): number {
+  return Math.floor(c * 1000) / 1000;
+}
+
+/**
+ * Chroma reduction into sRGB: a step outside keeps its lightness and hue
+ * exactly and takes the sRGB chroma maximum there.
+ */
+function reduceIntoSRGB(step: OKLCH): OKLCH {
+  if (isInSRGBGamut(step)) return step;
+  return { ...step, c: floorChroma(findMaxChroma(step.l, step.h, 'srgb')) };
+}
+
+/** Lightness at which every hue has room, for the source's chroma share. */
+const SHARE_REFERENCE_L = 0.6;
+
+/**
  * Build a ColorValue on a normalized 11-step scale.
  *
- * The source sits, exactly as typed, at the step whose ladder lightness is
- * nearest its own (the anchor). Every other step takes the ladder lightness,
- * the chroma share of the sRGB maximum at its lightness and hue, and the
- * source hue plus the drift relative to the anchor. Every step is then mapped
- * into the family's gamut ceiling, as buildColorValue does. Harmonies,
- * accessibility, analysis and naming are buildColorValue's.
+ * The source is the pin, exactly as typed, at the step whose ladder lightness
+ * is nearest its own (the anchor). The other steps take the ladder bent
+ * toward the pin, the source's share of the sRGB chroma maximum (at L 0.6)
+ * times the chroma curve times the maximum at the step, and the source hue
+ * plus the drift relative to the anchor. A step outside sRGB, the anchor
+ * included, loses chroma only. Harmonies, accessibility, analysis and naming
+ * are buildColorValue's.
  *
  * @throws NormalizedScaleError when an array option does not have 11 entries,
  *   or a lightness array is not strictly decreasing.
@@ -112,28 +146,27 @@ export function createNormalizedScale(
 ): ColorValue {
   const lightness = options.lightness ?? 'deep';
   const ladder = resolveLadder(lightness);
-  const share = resolveShare(options.chroma ?? 'measured');
+  const curve = resolveShare(options.chroma ?? 'measured');
   const drift = resolveDrift(options.hue ?? 'measured', source.h);
 
   const anchor = nearestStep(ladder, source.l);
   const anchorDrift = drift[anchor] ?? 0;
+  const stepL = bendLadder(ladder, anchor, source.l);
+  const referenceMax = findMaxChroma(SHARE_REFERENCE_L, source.h, 'srgb');
+  const seedShare = referenceMax > 0 ? Math.min(1, source.c / referenceMax) : 0;
 
-  const raw = ladder.map((l, i): OKLCH => {
-    if (i === anchor) return { ...source };
+  const scale = stepL.map((rawL, i): OKLCH => {
+    if (i === anchor) return reduceIntoSRGB({ ...source });
+    const l = Math.round(rawL * 1000) / 1000;
     const h = Math.round(normalizeHue(source.h + (drift[i] ?? 0) - anchorDrift));
-    // Floored to the stored precision, so a full share stays inside sRGB.
-    const c = Math.floor((share[i] ?? 0) * findMaxChroma(l, h, 'srgb') * 1000) / 1000;
-    return { l, c, h, alpha: source.alpha ?? 1 };
+    const c = floorChroma(seedShare * (curve[i] ?? 0) * findMaxChroma(l, h, 'srgb'));
+    return reduceIntoSRGB({ l, c, h, alpha: source.alpha ?? 1 });
   });
-
-  const scale = mapScaleToGamut(raw, ceilingForSeed(source));
   const gamut = scale.map(storedTier);
 
   const landed = scale[anchor] ?? source;
   const seedAdjusted: ColorValue['seedAdjusted'] =
-    landed.l !== source.l || landed.c !== source.c || landed.h !== source.h
-      ? { from: { ...source }, to: { ...landed }, reason: 'gamut' }
-      : undefined;
+    landed.c !== source.c ? { from: { ...source }, to: { ...landed }, reason: 'gamut' } : undefined;
 
   return {
     ...assembleColorValue(source, { scale, gamut, seedAdjusted, reference: landed }, {}),
