@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3]
+
+Released with the rafters CLI 0.5.3. `@rafters/ui` is not published to npm;
+the registry serves these components, so this section lists what changed in
+them since CLI 0.5.0.
+
+### Added
+
+- **Typography takes `fill` (#2860).** Every Typography component, React and
+  Astro, takes `fill="bg-fill-<name>"`. A fill wins over `color` and the
+  variant's colour, so the recipe's foreground paints the text, and it replaces
+  the surface of Mark, Code and CodeBlock. With a fill recipe that sets
+  `clip: "text"`, the background or gradient paints the glyphs.
+
 ## [0.5.0]
 
 Released with the rafters CLI 0.5.0. `@rafters/ui` is not published to npm;
