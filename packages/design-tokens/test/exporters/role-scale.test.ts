@@ -142,17 +142,13 @@ describe('role scale: ownership', () => {
 
   it('a change to neutral moves the roles that hang off it and no others', () => {
     const moved = movedBySwap(css, 'neutral');
-    expect(moved).toHaveLength(130);
+    expect(moved).toHaveLength(129);
     for (const u of ['--color-primary', '--color-secondary', '--color-accent', '--color-muted']) {
       expect(moved).toContain(u);
     }
     // #2668: a foreground whose own role has no AA pair falls back to the neutral role and
     // rides its step, so it moves with neutral.
-    const fallbacks = [
-      '--color-alert-foreground',
-      '--color-destructive-foreground',
-      '--color-success-foreground',
-    ];
+    const fallbacks = ['--color-success-foreground'];
     for (const u of fallbacks) expect(moved).toContain(u);
     for (const role of ['destructive', 'success', 'warning', 'info', 'highlight']) {
       expect(
@@ -208,7 +204,7 @@ describe('role scale: ownership', () => {
   });
 
   describe('renders what the registry stores', () => {
-    const SKY_600 = 'oklch(0.559 0.097 213)';
+    const SKY_600 = 'oklch(0.55 0.095 210)';
     const build = (override?: string) => {
       const r = new TokenRegistry(generateBaseSystem().allTokens, PLUGINS);
       if (override) {

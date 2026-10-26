@@ -209,7 +209,7 @@ describe('semantic selection follows the designer (#2668)', () => {
   it('the plain token list stores the neutral role for the fallback foregrounds, and its CSS rides neutral', () => {
     const all = generateBaseSystem().allTokens;
     const css = tokensToTailwind(all);
-    for (const name of ['alert-foreground', 'destructive-foreground', 'success-foreground']) {
+    for (const name of ['success-foreground']) {
       const token = all.find((t) => t.name === name);
       const value: unknown = token?.value;
       if (!isRef(value)) throw new Error(name);
@@ -221,7 +221,7 @@ describe('semantic selection follows the designer (#2668)', () => {
   it('a foreground that falls back stores the neutral role and moves when neutral does', () => {
     const reg = fresh();
     const { step } = helpers(reg);
-    const fallbacks = ['alert-foreground', 'destructive-foreground', 'success-foreground'];
+    const fallbacks = ['success-foreground'];
     for (const name of fallbacks) expect(reg.get(name)?.value).toMatchObject({ family: 'neutral' });
     const before = new Map(fallbacks.map((n) => [n, step(n)]));
     reg.set('neutral', { family: 'silver-true-violet', position: '500' }, { reason: 'test' });
