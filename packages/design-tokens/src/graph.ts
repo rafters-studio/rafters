@@ -40,6 +40,8 @@ export type SetOptions = {
   reason: string;
   context?: string;
   kind?: OverrideKind;
+  // TokenRegistry.set only: mark a created colour family generateUtilityClass.
+  utilities?: boolean;
 };
 
 export class CircularDependencyError extends Error {

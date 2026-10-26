@@ -1,5 +1,13 @@
 import { isDeepStrictEqual } from 'node:util';
-import { FILL_NAME_EXCLUDES, FillValueSchema, type Token, TokenSchema } from '@rafters/shared';
+import { SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
+import {
+  FILL_NAME_EXCLUDES,
+  FillValueSchema,
+  type OKLCH,
+  OKLCHSchema,
+  type Token,
+  TokenSchema,
+} from '@rafters/shared';
 import type { z } from 'zod';
 import {
   CircularDependencyError,
@@ -9,6 +17,7 @@ import {
   TokenGraph,
   type UserOverride,
 } from './graph.js';
+import { importColorFamily } from './importers/color.js';
 
 type TokenValue = z.infer<typeof TokenSchema>['value'];
 type UserOverrideField = NonNullable<z.infer<typeof TokenSchema>['userOverride']>;
@@ -94,13 +103,14 @@ export class TokenRegistry {
 
   /**
    * The one change operation. With a value and a reason it sets a registered
-   * token, or creates a `fill-*` fill; with no value it returns the token to
-   * its previousValue (one step) and clears the override, removing a fill
-   * that set created.
+   * token, regenerates a colour family from a new seed, or creates what the
+   * first matching CREATORS entry makes; with no value it returns the token to
+   * its previousValue (one step) and clears the override, removing what set
+   * created.
    */
   set(name: string): void;
-  set(name: string, value: TokenValue, options: SetOptions): void;
-  set(name: string, value?: TokenValue, options?: SetOptions): void {
+  set(name: string, value: TokenValue | OKLCH, options: SetOptions): void;
+  set(name: string, value?: TokenValue | OKLCH, options?: SetOptions): void {
     if (value === undefined) {
       this.revert(name);
       return;
@@ -110,36 +120,53 @@ export class TokenRegistry {
     }
     const meta = this.metadata.get(name);
     if (meta) {
+      // A new seed on a family regenerates it; any other value edits the token.
+      if (colourCreator.owns(meta) && colourCreator.match(name, value)) {
+        const created = colourCreator.create(name, value, options).map((t) => this.validate(t));
+        for (const n of colourCreator.names(name)) this.graph.remove(n);
+        for (const n of colourCreator.names(name)) this.metadata.delete(n);
+        this.add(created, options);
+        return;
+      }
       this.validate({ ...meta, value });
       this.graph.set(name, value, options);
       return;
     }
-    if (!name.startsWith(DESIGNER_FILL_PREFIX)) {
+    const creator = CREATORS.find((c) => c.match(name, value));
+    if (!creator) {
       throw new UnknownTokenError(name);
     }
-    const created = this.validate({
-      name,
-      value,
-      category: FILL_NAMESPACE,
-      namespace: FILL_NAMESPACE,
-      userOverride: null,
-    });
-    this.metadata.set(name, created);
-    // Seeded first so the override records the fill's own recipe as its
-    // previousValue: that is how set(name) knows set created it.
-    this.graph.seed(name, created.value);
-    this.graph.set(name, created.value, options);
+    const created = creator.create(name, value, options).map((t) => this.validate(t));
+    const taken = creator.occupies(name).find((n) => this.graph.has(n));
+    if (taken) {
+      throw new NameTakenError(name, taken);
+    }
+    this.add(created, options);
+  }
+
+  // The first token is the one created; it records the override, seeded first
+  // so its previousValue is its own value: that is how set(name) knows set
+  // created it.
+  private add(tokens: readonly Token[], options: SetOptions): void {
+    const [head] = tokens;
+    if (!head) return;
+    for (const t of tokens) {
+      this.metadata.set(t.name, t);
+      this.graph.seed(t.name, t.value);
+    }
+    this.graph.set(head.name, head.value, options);
   }
 
   private revert(name: string): void {
     const node = this.graph.node(name);
-    if (!node?.userOverride) return;
-    if (
-      name.startsWith(DESIGNER_FILL_PREFIX) &&
-      isDeepStrictEqual(node.userOverride.previousValue, node.value)
-    ) {
-      this.graph.remove(name);
-      this.metadata.delete(name);
+    const meta = this.metadata.get(name);
+    if (!node?.userOverride || !meta) return;
+    const creator = CREATORS.find((c) => c.owns(meta));
+    if (creator && isDeepStrictEqual(node.userOverride.previousValue, node.value)) {
+      for (const n of creator.names(name)) {
+        this.graph.remove(n);
+        this.metadata.delete(n);
+      }
       return;
     }
     this.graph.revert(name);
@@ -230,6 +257,16 @@ export class TokenParseError extends Error {
   }
 }
 
+export class NameTakenError extends Error {
+  constructor(
+    public readonly tokenName: string,
+    public readonly takenBy: string,
+  ) {
+    super(`Token "${tokenName}" cannot be created: the token "${takenBy}" holds that name`);
+    this.name = 'NameTakenError';
+  }
+}
+
 class MissingReasonError extends Error {
   constructor(public readonly tokenName: string) {
     super(`Token "${tokenName}" cannot be set without a reason`);
@@ -256,6 +293,74 @@ const COLOUR_NAMESPACE = 'color';
 const RESERVED_COLOUR_PREFIXES = ['fill-', 'surface-'] as const;
 const KEBAB_CASE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const EXCLUDED_FILL_NAMES: ReadonlySet<string> = new Set(FILL_NAME_EXCLUDES);
+
+/**
+ * What set makes for an unregistered name. `match` picks the creator, `names`
+ * are the tokens `create` returns (the first records the override), and
+ * `occupies` every name that must be free before creating. `owns` tells
+ * set(name) which creator made a registered token.
+ */
+type Creator = {
+  match(name: string, value: unknown): boolean;
+  owns(token: Token): boolean;
+  names(name: string): readonly string[];
+  occupies(name: string): readonly string[];
+  create(name: string, value: unknown, options: SetOptions): readonly unknown[];
+};
+
+// A designer fill's own name is the part after `fill-`.
+const fillOwnName = (name: string): string => name.slice(DESIGNER_FILL_PREFIX.length);
+
+const fillCreator: Creator = {
+  match: (name) => name.startsWith(DESIGNER_FILL_PREFIX),
+  owns: (token) => token.name.startsWith(DESIGNER_FILL_PREFIX),
+  names: (name) => [name],
+  occupies: (name) => [name, fillOwnName(name)],
+  create: (name, value) => [
+    {
+      name,
+      value,
+      category: FILL_NAMESPACE,
+      namespace: FILL_NAMESPACE,
+      userOverride: null,
+    },
+  ],
+};
+
+/** A seed in any CSS colour format color-utils parses, or an `{l, c, h}` object. */
+function parseColour(value: unknown): OKLCH | null {
+  if (typeof value === 'string') return tryParseColor(value);
+  const oklch = OKLCHSchema.safeParse(value);
+  return oklch.success ? oklch.data : null;
+}
+
+const colourFamilyNames = (name: string): readonly string[] => [
+  name,
+  ...SCALE_POSITIONS.map((p) => `${name}-${p}`),
+];
+
+const colourCreator: Creator = {
+  match: (name, value) =>
+    KEBAB_CASE.test(name) &&
+    !RESERVED_COLOUR_PREFIXES.some((p) => name.startsWith(p)) &&
+    parseColour(value) !== null,
+  owns: (token) =>
+    token.namespace === COLOUR_NAMESPACE &&
+    typeof token.value === 'object' &&
+    'scale' in token.value,
+  names: colourFamilyNames,
+  occupies: (name) => [...colourFamilyNames(name), `${DESIGNER_FILL_PREFIX}${name}`],
+  create: (name, value, options) => {
+    const seed = parseColour(value);
+    if (!seed) throw new UnknownTokenError(name);
+    return importColorFamily(name, '500', seed).map((t) =>
+      options.utilities && t.name === name ? { ...t, generateUtilityClass: true } : t,
+    );
+  },
+};
+
+// Checked in order; the first match creates.
+const CREATORS: readonly Creator[] = [fillCreator, colourCreator];
 
 function colourNames(tokens: Iterable<Token>): ReadonlySet<string> {
   const names = new Set<string>();
@@ -301,10 +406,7 @@ function checkName(t: Token, colours: ReadonlySet<string>): void {
   if (!KEBAB_CASE.test(t.name)) {
     throw new TokenNameError(t.name, 'a fill name must be lowercase kebab-case');
   }
-  // A designer fill's own name is the part after `fill-`.
-  const own = t.name.startsWith(DESIGNER_FILL_PREFIX)
-    ? t.name.slice(DESIGNER_FILL_PREFIX.length)
-    : t.name;
+  const own = t.name.startsWith(DESIGNER_FILL_PREFIX) ? fillOwnName(t.name) : t.name;
   if (colours.has(own)) {
     throw new TokenNameError(t.name, `a fill name cannot equal the colour "${own}"`);
   }

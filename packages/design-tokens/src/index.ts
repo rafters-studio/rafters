@@ -83,5 +83,6 @@ export {
   type RegistryFilter,
   TokenParseError,
   TokenRegistry,
+  NameTakenError,
   UnknownTokenError,
 } from './registry.js';

@@ -88,9 +88,9 @@ describe('TokenRegistry', () => {
       expect(r.get('spacing-base')?.userOverride?.previousValue).toBe('4px');
     });
 
-    it('throws UnknownTokenError when set is called on a name with no registered metadata', () => {
+    it('throws UnknownTokenError when no creator matches an unregistered name', () => {
       const r = new TokenRegistry();
-      expect(() => r.set('color-mystery', '#fff', { reason: 'test' })).toThrow(UnknownTokenError);
+      expect(() => r.set('mystery', '1rem', { reason: 'test' })).toThrow(UnknownTokenError);
     });
 
     it('replaces userOverride on subsequent set (latest reason wins)', () => {
