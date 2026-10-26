@@ -3,9 +3,8 @@
  * fill-* fill or a colour family (#2855), and with no value undoes one step.
  */
 
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { oklchToCSS, SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
 import type { Token } from '@rafters/shared';
@@ -190,6 +189,8 @@ describe('fill names', () => {
 });
 
 const GOLD = '#c8a24b';
+// The repo never writes to /tmp; this matches persistence.test.ts.
+const TEST_TMP_ROOT = join(import.meta.dirname, '..', 'node_modules', '.test-tmp');
 const STEPS = SCALE_POSITIONS.map((p) => `gold-${p}`);
 
 function familyOf(registry: TokenRegistry, name: string): (Token | undefined)[] {
@@ -290,7 +291,8 @@ describe('set creates a colour family', () => {
   });
 
   it('survives save and load, and set(name) after reloading removes it', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'rafters-2855-'));
+    mkdirSync(TEST_TMP_ROOT, { recursive: true });
+    const dir = mkdtempSync(join(TEST_TMP_ROOT, 'rafters-2855-'));
     try {
       const registry = fresh();
       const size = registry.size();
