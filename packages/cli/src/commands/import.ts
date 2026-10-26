@@ -7,16 +7,20 @@
  * command is a dry run that reports every custom property it can resolve.
  * `rafters init --css-import` runs the same plan on a fresh project.
  * A `color:<name>` entry adds a colour family assigned to no role (#2813).
+ * A role mapped to a `--color-<family>-<step>`, directly or through `var()`,
+ * points at that step of the palette (#2866).
  */
 
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  detectFamilySeeds,
   importColorFamily,
   loadRegistryFromDir,
   REGISTRY_PLUGINS,
   resolveCustomProperties,
+  resolvePaletteStep,
   saveRegistryToDir,
   type TokenRegistry,
 } from '@rafters/design-tokens';
@@ -50,9 +54,18 @@ const SCALE_SOURCE = /^--[\w-]+-\*$/;
 /** A `color:<name>` entry: one seed pinned at 500, or a complete 50-950 scale. */
 type AddedFamily = { name: string; seed: OKLCH } | { name: string; scale: readonly OKLCH[] };
 
+/** A palette step a mapped role points at. */
+type PaletteStep = { family: string; position: string };
+
 export interface CssImportPlan {
   readonly cssPath: string;
-  readonly colors: readonly { role: string; property: string; seed: OKLCH }[];
+  readonly colors: readonly {
+    role: string;
+    property: string;
+    seed: OKLCH;
+    step: PaletteStep | null;
+  }[];
+  readonly palettes: readonly ReturnType<typeof detectFamilySeeds>[number][];
   readonly nonColors: readonly { token: string; property: string; value: string }[];
   readonly families: readonly AddedFamily[];
 }
@@ -194,7 +207,7 @@ export function planCssImport(
     families.push({ name, scale });
   }
 
-  const colors: { role: string; property: string; seed: OKLCH }[] = [];
+  const colors: CssImportPlan['colors'][number][] = [];
   const nonColors: { token: string; property: string; value: string }[] = [];
   for (const [target, property] of Object.entries(parsed.data)) {
     if (property === undefined) continue;
@@ -208,27 +221,38 @@ export function planCssImport(
       nonColors.push({ token: NON_COLOR_TARGETS[target as NonColorTarget], property, value });
       continue;
     }
-    colors.push({ role: target, property, seed: resolveColor(entry, property) });
+    const seed = resolveColor(entry, property);
+    colors.push({ role: target, property, seed, step: resolvePaletteStep(css, property) });
   }
-  return { cssPath, colors, nonColors, families };
+  const referenced = new Set(colors.flatMap((c) => (c.step ? [c.step.family] : [])));
+  const palettes = detectFamilySeeds(
+    [...resolved.values()].flatMap((r) =>
+      r.value === null ? [] : [{ name: r.property.slice(2), value: r.value }],
+    ),
+  ).filter((p) => referenced.has(p.name));
+  return { cssPath, colors, nonColors, families, palettes };
 }
 
 /**
- * Apply a checked plan. A colour defines a new `imported-<property>` family
- * seeded at 500 and points the role at it, as init's `:root` import does; a
- * non-colour sets its token. Every set records a designer override. An
+ * Apply a checked plan. Each palette a role points at is defined once from
+ * its seed, and the role is set to its step. Any other colour defines a new
+ * `imported-<property>` family seeded at 500 and points the role at it, as
+ * init's `:root` import does; a non-colour sets its token. Every set records a designer override. An
  * added family is defined under its own name, assigned to no role, and marked
  * `generateUtilityClass` so rafters.css names its utilities without scanning.
  */
 export function applyCssImport(registry: TokenRegistry, plan: CssImportPlan): void {
-  for (const { role, property, seed } of plan.colors) {
-    const family = `imported-${property.slice(2)}`;
-    for (const t of importColorFamily(family, '500', seed)) registry.define(t);
-    registry.set(
-      role,
-      { family, position: '500' },
-      { reason: `imported from ${property} in ${plan.cssPath}` },
-    );
+  for (const palette of plan.palettes) {
+    for (const t of importColorFamily(palette.name, palette.seedPosition, palette.seed)) {
+      registry.define(t);
+    }
+  }
+  for (const { role, property, seed, step } of plan.colors) {
+    const reference = step ?? { family: `imported-${property.slice(2)}`, position: '500' };
+    if (step === null) {
+      for (const t of importColorFamily(reference.family, '500', seed)) registry.define(t);
+    }
+    registry.set(role, reference, { reason: `imported from ${property} in ${plan.cssPath}` });
   }
   for (const { token, property, value } of plan.nonColors) {
     registry.set(token, value, { reason: `imported from ${property} in ${plan.cssPath}` });

@@ -17,6 +17,14 @@ import type { OKLCH } from '@rafters/shared';
 
 const POSITION_SUFFIX = new RegExp(`^(.+)-(${SCALE_POSITIONS.join('|')})$`);
 
+/** `color-<family>-<step>` read as step `<step>` of palette `<family>`, else null. */
+export function parsePaletteStep(name: string): { family: string; position: string } | null {
+  const m = name.match(POSITION_SUFFIX);
+  if (!m?.[1] || !m[2] || !m[1].startsWith('color-')) return null;
+  const family = m[1].slice('color-'.length);
+  return family ? { family, position: m[2] } : null;
+}
+
 export function detectFamilySeeds(
   themeDecls: readonly { name: string; value: string }[],
 ): { name: string; seed: OKLCH; seedPosition: string }[] {
