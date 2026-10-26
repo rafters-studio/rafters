@@ -150,7 +150,8 @@ export class TokenRegistry {
   /**
    * Removes a whole token of a kind a CREATORS entry makes, whoever made it:
    * a fill, or a colour family with its eleven steps. It returns the names
-   * removed. A family step, or a token the system makes, is refused.
+   * removed. A family step, or a token the system makes, is refused, and so
+   * is a token any other token still reads.
    */
   delete(name: string, options: { reason: string }): readonly string[] {
     if (!options?.reason) {
@@ -173,6 +174,14 @@ export class TokenRegistry {
       );
     }
     const names = creator.names(name).filter((n) => this.graph.has(n));
+    const own = new Set(names);
+    const readers = this.list()
+      .filter((t) => !own.has(t.name))
+      .filter((t) => readsAny(t.value, name, own) || t.dependsOn?.some((d) => own.has(d)))
+      .map((t) => t.name);
+    if (readers.length > 0) {
+      throw new TokenInUseError(name, readers);
+    }
     this.drop(names);
     return names;
   }
@@ -327,6 +336,20 @@ class UndeletableTokenError extends Error {
   }
 }
 
+export class TokenInUseError extends Error {
+  constructor(
+    public readonly tokenName: string,
+    public readonly readers: readonly string[],
+  ) {
+    const list =
+      readers.length > 1
+        ? `${readers.slice(0, -1).join(', ')} and ${readers[readers.length - 1]} read it`
+        : `${readers[0]} reads it`;
+    super(`Token "${tokenName}" cannot be deleted: ${list}`);
+    this.name = 'TokenInUseError';
+  }
+}
+
 class TokenNameError extends Error {
   constructor(
     public readonly tokenName: string,
@@ -414,6 +437,19 @@ const colourCreator: Creator = {
 
 // Checked in order; the first match creates.
 const CREATORS: readonly Creator[] = [fillCreator, colourCreator];
+
+/**
+ * Whether a value holds `{ family }` naming the family, or `{ token }` naming
+ * one of its tokens, anywhere inside it: a fill recipe's parts, states and
+ * dark parts included.
+ */
+function readsAny(value: unknown, family: string, names: ReadonlySet<string>): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const ref = value as { family?: unknown; token?: unknown };
+  if (ref.family === family) return true;
+  if (typeof ref.token === 'string' && names.has(ref.token)) return true;
+  return Object.values(value).some((v) => readsAny(v, family, names));
+}
 
 function colourNames(tokens: Iterable<Token>): ReadonlySet<string> {
   const names = new Set<string>();
