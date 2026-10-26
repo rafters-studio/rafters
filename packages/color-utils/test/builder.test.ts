@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { rebakeAccessibility } from '../src/accessibility.js';
 import { buildColorValue } from '../src/builder.js';
 import { roundOKLCH } from '../src/conversion.js';
-import { getGamutTier } from '../src/gamut.js';
+import { getGamutTier, toGamutCeiling } from '../src/gamut.js';
 import { generateOKLCHScale } from '../src/harmony.js';
 import { SCALE_POSITIONS } from '../src/scale-positions.js';
 
@@ -83,9 +83,8 @@ describe('buildColorValue', () => {
 
     it('keeps the base hue on every step that needed no gamut mapping', () => {
       // An sRGB seed: steps already in sRGB are not moved and keep the hue
-      // exactly. A step mapped by colorjs.io toGamut can turn a few degrees
-      // (its CSS method ends in a clip held within deltaEOK 0.02), so mapped
-      // steps are only required to land in sRGB.
+      // exactly. Mapped steps must land in sRGB; their hue is held by the
+      // #2873 seed test below.
       const muted: OKLCH = { l: 0.5, c: 0.05, h: 240, alpha: 1 };
       const unmapped = SCALE_POSITIONS.map((pos) => generateOKLCHScale(muted)[pos]);
       const result = buildColorValue(muted);
@@ -102,28 +101,6 @@ describe('buildColorValue', () => {
         }
       }
       expect(kept).toBeGreaterThan(5);
-    });
-
-    it('turns a mapped step by a hue difference within deltaEOK 0.02', () => {
-      // Seeds whose steps do move: the hue turn colorjs.io's clip makes is
-      // measured as the OKLab distance it costs at the stored chroma,
-      // 2 * c * sin(dh / 2), which stays inside the 0.02 JND.
-      let turned = 0;
-      for (const seed of [
-        { l: 0.55, c: 0.2, h: 0, alpha: 1 },
-        { l: 0.55, c: 0.2, h: 260, alpha: 1 },
-        { l: 0.55, c: 0.12, h: 90, alpha: 1 },
-      ]) {
-        const result = buildColorValue(seed);
-        const seedHue = result.scale[6]?.h ?? seed.h;
-        for (const color of result.scale) {
-          const dh = Math.abs(color.h - seedHue) % 360;
-          const turn = Math.min(dh, 360 - dh);
-          if (turn > 0) turned++;
-          expect(2 * color.c * Math.sin((turn * Math.PI) / 360)).toBeLessThanOrEqual(0.02);
-        }
-      }
-      expect(turned).toBeGreaterThan(0);
     });
   });
 
@@ -579,6 +556,35 @@ describe('buildColorValue', () => {
         const value = buildColorValue(seed);
         if (value.seedAdjusted) continue;
         expect(value.scale[6]).toEqual(roundOKLCH(seed));
+      }
+    });
+
+    it('keeps every step within 1 degree of its generated hue for the #2873 seeds', () => {
+      const seeds: OKLCH[] = [
+        { l: 0.517, c: 0.107, h: 234, alpha: 1 },
+        { l: 0.375, c: 0.061, h: 236, alpha: 1 },
+        { l: 0.213, c: 0.061, h: 236, alpha: 1 },
+        { l: 0.725, c: 0.166, h: 53, alpha: 1 },
+        { l: 0.418, c: 0.127, h: 51, alpha: 1 },
+        { l: 0.817, c: 0.167, h: 247, alpha: 1 },
+      ];
+      const hueGap = (a: number, b: number) => {
+        const d = Math.abs(a - b) % 360;
+        return Math.min(d, 360 - d);
+      };
+      for (const seed of seeds) {
+        const value = buildColorValue(seed);
+        // The builder's own seed: a P3 seed is first mapped into sRGB.
+        const built = getGamutTier(seed) === 'p3' ? toGamutCeiling(seed, 'srgb') : seed;
+        const generated = generateOKLCHScale(built);
+        for (const [i, step] of value.scale.entries()) {
+          const pos = SCALE_POSITIONS[i] as (typeof SCALE_POSITIONS)[number];
+          const expected = generated[pos] as OKLCH;
+          if (step.c > 0.02) expect(hueGap(step.h, expected.h)).toBeLessThanOrEqual(1);
+          if (i > 0) expect(step.l).toBeLessThan(value.scale[i - 1]?.l as number);
+          expect(getGamutTier(step)).toBe('srgb');
+        }
+        if (value.seedAdjusted) expect(value.seedAdjusted.reason).toBe('gamut');
       }
     });
 
