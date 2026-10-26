@@ -15,6 +15,7 @@
  */
 
 import * as csstree from 'css-tree';
+import { parsePaletteStep } from './family-seeds.js';
 import type { CssDeclaration } from './shapes.js';
 import { extractThemeBlocks } from './theme.js';
 
@@ -58,11 +59,42 @@ function splitVarArgs(inner: string): { name: string; fallback: string | null } 
   return { name: inner.trim(), fallback: null };
 }
 
-export function resolveCustomProperties(css: string): readonly ResolvedCustomProperty[] {
+/** Every declaration the resolver reads, by name without `--`; last one wins. */
+function declaredProperties(css: string): Map<string, string> {
   const declared = new Map<string, string>();
   for (const decl of [...topLevelRoot(css), ...extractThemeBlocks(css)]) {
     declared.set(decl.name, decl.value.trim());
   }
+  return declared;
+}
+
+/**
+ * The palette step a property names (#2866): the property itself when it is
+ * a declared `--color-<family>-<step>`, or the step a value of exactly
+ * `var(--x)` reaches, followed through other declared properties. Null when
+ * the chain ends anywhere else.
+ */
+export function resolvePaletteStep(
+  css: string,
+  property: string,
+): { family: string; position: string } | null {
+  const declared = declaredProperties(css);
+  const seen = new Set<string>();
+  for (let key = property.replace(/^--/, ''); declared.has(key) && !seen.has(key); ) {
+    const step = parsePaletteStep(key);
+    if (step !== null) return step;
+    seen.add(key);
+    const value = declared.get(key) ?? '';
+    if (!value.startsWith('var(') || !value.endsWith(')')) return null;
+    const { name } = splitVarArgs(value.slice(4, -1));
+    if (!/^--[\w-]+$/.test(name)) return null;
+    key = name.slice(2);
+  }
+  return null;
+}
+
+export function resolveCustomProperties(css: string): readonly ResolvedCustomProperty[] {
+  const declared = declaredProperties(css);
 
   const substitute = (value: string, seen: readonly string[]): string => {
     let out = value;

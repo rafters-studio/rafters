@@ -12,6 +12,8 @@
 
 - fix(design-tokens): **`delete` refuses a token while anything reads it, naming the readers (#2865).** A colour family or fill is refused, changing nothing, while any other token holds `{ family }` naming it, `{ token }` naming one of its tokens (anywhere in a value, fill states and dark parts included), or lists one in `dependsOn`. The check reads values directly, because `readBy` misses `{ family, position }` references. The error names every reader (`Token "imported-color-mud-500" cannot be deleted: primary, background and nav read it`), and Studio's `DELETE` answers 409 with it. `TokenInUseError` is exported.
 
+- fix(cli): **Importing CSS reads `--color-<family>-<step>` as a palette step, not a new family (#2866).** `rafters init` and `rafters import` turned every colour declaration into an `imported-<name>` family, so `--color-mud-500` became a fake 11-step family `imported-color-mud-500` grown from one step, and roles were pointed at it. Now a declaration named `--color-<family>-<step>` is a step of palette `<family>`, each palette is defined once through `detectFamilySeeds`, and a role whose value reaches a step, directly or through a `var()` chain, is set to `{ family, position }`. A colour that matches no palette step still gets a one-off family. Re-running `rafters import` on a project imported by an older version repoints its mapped roles at the palette steps and leaves the old `imported-*` families for the designer to delete once nothing reads them. Also exported: `resolvePaletteStep`.
+
 ## 0.5.2
 
 ### Features

@@ -453,3 +453,20 @@ Feature: rafters init command
     When I run "rafters init --rebuild --agent"
     Then the command should succeed
     And ".rafters/output/rafters.standalone.css" holds compiled rafters CSS
+
+  # init's detected-CSS import reads a palette step as a step (#2866)
+  @criterion-2866-1 @criterion-2866-2 @criterion-2866-3
+  Scenario Outline: init points a role on a palette step at that step, with the palette in <block>
+    Given a "nextjs-shadcn-v4" project
+    And "src/app/globals.css" declares --color-mud-50 to --color-mud-950 in <block>, with --primary on var(--color-mud-500) and --secondary on var(--color-mud-300) in :root
+    When I run "rafters init --agent"
+    Then the command should succeed
+    And the family token "mud" has an 11-step scale, harmonies, accessibility and analysis
+    And "primary" references the family "mud" at 500, with the reason "imported from --primary in src/app/globals.css"
+    And "secondary" references the family "mud" at 300, with the reason "imported from --secondary in src/app/globals.css"
+    And no colour token is named "imported-color-mud-" or "imported-primary"
+
+    Examples:
+      | block  |
+      | :root  |
+      | @theme |
