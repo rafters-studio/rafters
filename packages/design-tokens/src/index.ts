@@ -84,5 +84,6 @@ export {
   TokenParseError,
   TokenRegistry,
   NameTakenError,
+  TokenInUseError,
   UnknownTokenError,
 } from './registry.js';

@@ -17,6 +17,7 @@ import {
   NameTakenError,
   REGISTRY_PLUGINS,
   saveRegistryToDir,
+  TokenInUseError,
   TokenRegistry,
   UnknownTokenError,
 } from '../src/index.js';
@@ -462,6 +463,65 @@ describe('delete', () => {
       expect(() => registry.delete(name, { reason: 'x' })).toThrow(/the system makes it/);
     }
     expect(registry.list()).toEqual(before);
+  });
+});
+
+describe('delete while something reads it (#2865)', () => {
+  const GOLD_FILL = { foreground: { token: 'gold-900' }, background: { color: FG } };
+
+  it('refuses a family read by value, dark recipe part, token reference or dependsOn, naming every reader', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'brand' });
+    registry.set('primary', { family: 'gold', position: '500' }, { reason: 'brand' });
+    registry.set('fill-sun', GOLD_FILL, { reason: 'brand' });
+    registry.set(
+      'fill-moon',
+      { ...GLASS, dark: { background: { color: { family: 'gold', position: '800' } } } },
+      { reason: 'brand' },
+    );
+    registry.define({
+      name: 'nav',
+      value: '1rem',
+      category: 'spacing',
+      namespace: 'spacing',
+      dependsOn: ['gold-600'],
+      userOverride: null,
+    });
+    const before = registry.list();
+    const attempt = () => registry.delete('gold', { reason: 'unused' });
+    expect(attempt).toThrow(TokenInUseError);
+    expect(attempt).toThrow(
+      /^Token "gold" cannot be deleted: (?=.*\bprimary\b)(?=.*\bfill-sun\b)(?=.*\bfill-moon\b)(?=.*\bnav\b).* read it$/,
+    );
+    expect(registry.list()).toEqual(before);
+  });
+
+  it('names one reader in the singular', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'brand' });
+    registry.set('fill-sun', GOLD_FILL, { reason: 'brand' });
+    expect(() => registry.delete('gold', { reason: 'unused' })).toThrow(
+      'Token "gold" cannot be deleted: fill-sun reads it',
+    );
+  });
+
+  it('refuses a fill another fill names by token', () => {
+    const registry = fresh();
+    registry.set('fill-glass', GLASS, { reason: 'designer' });
+    registry.set('fill-frost', { ...GLASS, border: { token: 'fill-glass' } }, { reason: 'x' });
+    expect(() => registry.delete('fill-glass', { reason: 'unused' })).toThrow(
+      'Token "fill-glass" cannot be deleted: fill-frost reads it',
+    );
+    expect(registry.has('fill-glass')).toBe(true);
+  });
+
+  it('deletes once nothing reads it', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'brand' });
+    registry.set('fill-sun', GOLD_FILL, { reason: 'brand' });
+    expect(() => registry.delete('gold', { reason: 'unused' })).toThrow(TokenInUseError);
+    registry.delete('fill-sun', { reason: 'unused' });
+    expect(registry.delete('gold', { reason: 'unused' })).toEqual(['gold', ...STEPS]);
   });
 });
 
