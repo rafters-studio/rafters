@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat: **text takes fills (#2860).** Every Typography component, React and Astro, takes `fill="bg-fill-<name>"` with the same precedence as the other components: a fill replaces `color` and the variant's default colour (and the surface of Mark, Code and CodeBlock), so the recipe's foreground paints the text. A fill recipe can set `clip: "text"`: its `bg-fill-*` utility then adds `bg-clip-text` and a transparent text colour guarded by `@supports (background-clip: text)`, so the recipe's background or gradient paints the glyphs and its `foreground` (still required) is the colour wherever background-clip text is unsupported. Studio's `POST /__rafters/set` accepts the part and refuses any other clip value naming `value.clip`.
+
 ## 0.5.2
 
 ### Features

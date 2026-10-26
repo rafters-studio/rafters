@@ -89,6 +89,7 @@ interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   family?: string;
   align?: string;
   transform?: string;
+  fill?: string;
 }
 
 const {
@@ -102,6 +103,7 @@ const {
   family,
   align,
   transform,
+  fill,
   class: _discardedClass,
   ...attrs
 } = Astro.props as Props & { class?: string };
@@ -117,6 +119,7 @@ const classes = classy(
     family,
     align,
     transform,
+    fill,
   }),
 );
 
@@ -166,6 +169,7 @@ export function makeTypography<Tag extends HTMLTag>(
       family,
       align,
       transform,
+      fill,
       class: _discardedClass,
       ...attrs
     } = props as TypographyProps<Tag> & { class?: string };
@@ -179,6 +183,7 @@ export function makeTypography<Tag extends HTMLTag>(
         family,
         align,
         transform,
+        fill,
       }),
     );
     const content = renderSlot(result, slots.default);

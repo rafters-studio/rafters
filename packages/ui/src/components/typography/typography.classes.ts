@@ -13,13 +13,19 @@
  * (typography.behavior.ts) so the pure behavior test imports them with no DOM.
  */
 
+import classy from '../../primitives/classy';
 import type { TypographyTokenProps, TypographyVariant } from './typography.behavior';
 
 /** The dimensions a container-query default can set. */
 type CqDimension = 'size' | 'weight' | 'line' | 'tracking';
 
-interface VariantDefaults extends TypographyTokenProps {
+/** The props that each set one dimension; `fill` is resolved apart from them. */
+type Dimension = Exclude<keyof TypographyTokenProps, 'fill'>;
+
+interface VariantDefaults extends Omit<TypographyTokenProps, 'fill'> {
   layout?: string;
+  /** The variant's surface; a fill replaces it with the colour. */
+  surface?: string;
   /** Container-query defaults, each a whole literal class Tailwind can see. */
   cq?: Partial<Record<CqDimension, string>>;
 }
@@ -63,16 +69,18 @@ const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
     size: 'sm',
     family: 'mono',
     color: 'foreground',
-    layout: 'rounded bg-muted px-1 py-0.5',
+    surface: 'bg-muted',
+    layout: 'rounded px-1 py-0.5',
   },
   codeblock: {
     size: 'sm',
     family: 'mono',
     color: 'foreground',
-    layout: 'relative rounded-lg bg-muted p-4 overflow-x-auto [&_code]:bg-transparent [&_code]:p-0',
+    surface: 'bg-muted',
+    layout: 'relative rounded-lg p-4 overflow-x-auto [&_code]:bg-transparent [&_code]:p-0',
   },
   blockquote: { color: 'foreground', layout: 'mt-6 border-s-2 border-border ps-6 italic' },
-  mark: { color: 'accent-foreground', layout: 'bg-accent px-1 rounded' },
+  mark: { color: 'accent-foreground', surface: 'bg-accent', layout: 'px-1 rounded' },
   abbr: { layout: 'cursor-help underline decoration-dotted underline-offset-4' },
   ul: { color: 'foreground', layout: 'my-6 ms-6 list-disc [&>li]:mt-2' },
   ol: { color: 'foreground', layout: 'my-6 ms-6 list-decimal [&>li]:mt-2' },
@@ -205,7 +213,7 @@ const fromMap =
   (v: string): string =>
     Object.hasOwn(map, v) ? (map[v] ?? '') : '';
 
-const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
+const DIM_TO_UTIL: Record<Dimension, (v: string) => string> = {
   size: fromMap(SIZE),
   weight: fromMap(WEIGHT),
   line: fromMap(LINE),
@@ -216,7 +224,7 @@ const DIM_TO_UTIL: Record<keyof TypographyTokenProps, (v: string) => string> = {
   color: fromMap(COLOR),
 };
 
-const DIM_KEYS = Object.keys(DIM_TO_UTIL) as (keyof TypographyTokenProps)[];
+const DIM_KEYS = Object.keys(DIM_TO_UTIL) as Dimension[];
 
 function emitProps(props: TypographyTokenProps): string {
   const classes: string[] = [];
@@ -229,6 +237,11 @@ function emitProps(props: TypographyTokenProps): string {
   return classes.join(' ');
 }
 
+/**
+ * A fill that is exactly one `bg-fill-*` token wins over `color` and the
+ * variant's colour and surface, so the recipe's foreground paints the text
+ * (FR-RAF-FILL-003). Any other fill is dropped with a warning by classy.fill.
+ */
 export function resolveTypography(
   variant: TypographyVariant,
   overrides: TypographyTokenProps = {},
@@ -236,9 +249,12 @@ export function resolveTypography(
   const defaults = VARIANTS[variant];
   const merged: TypographyTokenProps = {};
   for (const key of DIM_KEYS) merged[key] = overrides[key] ?? defaults[key];
+  const fill = classy.fill(overrides.fill);
+  if (fill) merged.color = undefined;
 
   const parts: string[] = [];
   if (defaults.layout) parts.push(defaults.layout);
+  parts.push(fill || (defaults.surface ?? ''));
   parts.push(emitProps(merged));
 
   // CQ defaults survive only where the prop didn't override the same dimension.

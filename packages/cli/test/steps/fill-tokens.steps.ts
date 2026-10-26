@@ -55,6 +55,7 @@ export const EVERY_PART: FillValue = {
   blend: 'multiply',
   foreground: { token: 'card-foreground' },
   border: { token: 'border' },
+  clip: 'text',
   dark: {
     background: { color: { family: 'zinc', position: '800' }, alpha: 70 },
     foreground: { family: 'zinc', position: '50' },

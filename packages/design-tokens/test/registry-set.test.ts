@@ -57,6 +57,16 @@ describe('set on a registered token', () => {
     expect(registry.get('fill-glass')).toEqual(before);
   });
 
+  it('accepts the text-clip part and names the field for an unknown clip value', () => {
+    const registry = fresh();
+    registry.set('fill-blaze', { ...GLASS, clip: 'text' }, { reason: 'gradient title' });
+    expect(registry.get('fill-blaze')?.value).toEqual({ ...GLASS, clip: 'text' });
+    expect(() =>
+      registry.set('fill-blaze', { ...GLASS, clip: 'border' }, { reason: 'bad' }),
+    ).toThrow(/value\.clip/);
+    expect(registry.get('fill-blaze')?.value).toEqual({ ...GLASS, clip: 'text' });
+  });
+
   it('names the field when a recipe holds a literal colour', () => {
     const registry = fresh();
     const literal = { ...GLASS, background: { color: 'oklch(0.6 0.1 240)' } };

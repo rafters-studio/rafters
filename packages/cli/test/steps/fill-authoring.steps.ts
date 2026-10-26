@@ -139,6 +139,9 @@ When(
           named: 'value.background.color',
         },
       ],
+      'an unknown clip value': [
+        { name: NAME, value: { ...GLASS, clip: 'border' }, named: 'value.clip' },
+      ],
       'a name equal to a colour, on the exclude list, or not kebab-case': [
         { name: `fill-${colour}`, value: GLASS, named: `colour "${colour}"` },
         { name: 'fill-cover', value: GLASS, named: 'bg-cover' },
