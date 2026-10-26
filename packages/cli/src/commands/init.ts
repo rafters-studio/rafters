@@ -1362,10 +1362,15 @@ export async function init(options: InitOptions): Promise<void> {
             // Walk semantic roles. The designer assigns detected palettes
             // to each role. Filter to roles that exist as semantic-namespace
             // tokens in the registry (tertiary ships only in some configs).
-            const ROLES = SEMANTIC_FAMILY_ROLES.filter((r) => {
-              const tok = registry.get(r);
-              return tok !== undefined && tok.namespace === 'semantic';
-            });
+            // With no `@theme` palette there is nothing to offer, so there is
+            // no walk, as before #2866.
+            const ROLES =
+              families.length === 0
+                ? []
+                : SEMANTIC_FAMILY_ROLES.filter((r) => {
+                    const tok = registry.get(r);
+                    return tok !== undefined && tok.namespace === 'semantic';
+                  });
             for (const [i, role] of ROLES.entries()) {
               if (bound.has(role)) continue;
               let familyChoice: string | null;
