@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(color-utils): **`createNormalizedScale` builds a colour family on a measured ladder (#2872).** A second builder beside `buildColorValue`, which is unchanged, so every existing family is byte-identical. `createNormalizedScale(source, { lightness, chroma, hue })` takes each option as an 11-entry array or a named constant: lightness `'deep'` (default, the median of Tailwind, Ant and Chakra, darkest step near L 0.29) or `'compact'` (Material and Open Color, darkest near L 0.49); chroma `'measured'` (default) or `'gamut'`; hue `'measured'` (default) or `'none'`. The source is the pin, exactly as typed, at the step whose ladder lightness is nearest its own, so a near-black seed anchors at 950 and a near-white at 50, and the ladder bends toward the pin with no gap. Step chroma follows the source's own saturation (its share of the sRGB maximum at L 0.6), so a grey seed stays grey and a vivid seed stays vivid. Step hue drifts toward both ends by the measured amount for the source's hue (yellow shades turn toward orange-brown, blue tints toward cyan). A step outside sRGB keeps its lightness and hue and loses only chroma. The ColorValue records `scaleStyle` and `anchor`, two new optional fields in `@rafters/shared`, and `rebakeAccessibility` measures on the recorded anchor. Exported constants: `LIGHTNESS_LADDERS`, `CHROMA_SHARE`, `HUE_DRIFT_BANDS` and `HUE_DRIFT_SAMPLES`, measured on 66 hand-tuned palettes. Nothing calls it yet.
+
 ## 0.5.4
 
 ### Fixes

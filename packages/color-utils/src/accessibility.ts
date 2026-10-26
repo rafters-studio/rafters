@@ -18,6 +18,7 @@ import { APCAcontrast, displayP3toY, sRGBtoY } from 'apca-w3';
 import Color from 'colorjs.io';
 import { z } from 'zod';
 import { getGamutTier, toGamutCeiling } from './gamut.js';
+import { POSITION_TO_INDEX } from './scale-positions.js';
 
 /** White reference color for contrast calculations. */
 export const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
@@ -276,6 +277,8 @@ export function assembleWcagAccessibility(
 
 /**
  * Re-derive accessibility metadata for a ColorValue whose scale changed.
+ * On-white and on-black are measured on the recorded anchor step when the
+ * value has one (createNormalizedScale), else on the 600 step.
  * A family value supplied without its WCAG pair matrices would starve the
  * contrast/state/invert selection downstream -- this guard re-bakes them.
  * No-op for values without a scale. (Moved from the removed CLI set command;
@@ -283,7 +286,9 @@ export function assembleWcagAccessibility(
  */
 export function rebakeAccessibility(value: ColorValue): ColorValue {
   if (!('scale' in value) || !Array.isArray(value.scale)) return value;
-  const reference = value.scale[REFERENCE_STEP_INDEX] ?? value.scale[0];
+  const anchorIndex =
+    value.anchor === undefined ? REFERENCE_STEP_INDEX : POSITION_TO_INDEX[value.anchor];
+  const reference = value.scale[anchorIndex ?? REFERENCE_STEP_INDEX] ?? value.scale[0];
   if (!reference) return value;
   return { ...value, accessibility: assembleWcagAccessibility(value.scale, reference) };
 }
