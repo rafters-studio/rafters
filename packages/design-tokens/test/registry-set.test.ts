@@ -4,6 +4,7 @@
  */
 
 import { mkdtempSync, rmSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { oklchToCSS, SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
@@ -318,6 +319,41 @@ describe('set on a registered colour family with a new seed', () => {
     );
     expect(registry.get('zinc')?.userOverride?.reason).toBe('warm zinc');
     expect(registry.get('zinc-300')?.userOverride).toBeNull();
+  });
+
+  it('resolves a role pointed at the family to the new 500 after regeneration', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'x' });
+    registry.set('primary', { family: 'gold', position: '500' }, { reason: 'brand' });
+    registry.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed' });
+    const step = registry.get('gold-500')?.value;
+    expect(step).toBe(oklchToCSS({ l: 0.55, c: 0.15, h: 250, alpha: 1 }));
+    const out = css(registry);
+    expect(out).toContain(`--color-gold-500: ${step};`);
+    // The role reads its step through the role layer (#2745).
+    expect(out).toContain('--rafters-primary-500: var(--color-gold-500);');
+    expect(out).toContain('--rafters-primary: var(--rafters-primary-500);');
+  });
+
+  it('re-derives every token whose binding reads the family, directly or through a role', () => {
+    const registry = fresh();
+    const plugins = new Map(REGISTRY_PLUGINS.map((p) => [p.name, p]));
+    const readsZinc = registry
+      .list()
+      .filter(
+        (t) =>
+          t.binding && plugins.get(t.binding.plugin)?.dependsOn(t.binding.input).includes('zinc'),
+      );
+    expect(readsZinc.length).toBeGreaterThan(0);
+    const before = new Map(registry.list().map((t) => [t.name, t.value]));
+    registry.set('zinc', GOLD, { reason: 'warm zinc' });
+    // A registry built from the result derives every binding from scratch.
+    const rebuilt = new TokenRegistry(registry.list(), REGISTRY_PLUGINS);
+    const bound = registry.list().filter((t) => t.binding && !t.userOverride);
+    for (const t of bound)
+      expect(registry.get(t.name)?.value, t.name).toEqual(rebuilt.get(t.name)?.value);
+    // The new seed moved at least one derived choice, so the check above is not vacuous.
+    expect(bound.some((t) => !isDeepStrictEqual(before.get(t.name), t.value))).toBe(true);
   });
 
   it('keeps set on a step an edit of that step', () => {
