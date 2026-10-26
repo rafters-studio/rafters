@@ -120,13 +120,42 @@ export function buildColorValue(oklch: OKLCH, options: BuildColorValueOptions = 
         }
       : undefined;
 
+  return assembleColorValue(
+    oklch,
+    { scale, gamut, seedAdjusted, reference: landed ?? oklch },
+    options,
+  );
+}
+
+/** The scale half of a ColorValue, as a builder produced it. */
+export interface BuiltScale {
+  scale: OKLCH[];
+  gamut: NonNullable<ColorValue['gamut']>;
+  seedAdjusted: ColorValue['seedAdjusted'];
+  /** The step the on-white and on-black figures are measured on. */
+  reference: OKLCH;
+}
+
+/**
+ * Assemble a ColorValue around a built scale: harmonies, accessibility,
+ * analysis, weights, semantic suggestions and the name, all from the
+ * requested colour. Shared by buildColorValue and createNormalizedScale so
+ * both families carry the same intelligence.
+ */
+export function assembleColorValue(
+  oklch: OKLCH,
+  built: BuiltScale,
+  options: BuildColorValueOptions,
+): ColorValue {
+  const { scale, gamut, seedAdjusted, reference } = built;
+
   // Generate harmonies
   const harmony = generateHarmony(oklch);
 
   // WCAG accessibility (pair matrices + on-white/on-black) via the shared
   // assembler, measured on the step the seed landed on (the same step
   // rebakeAccessibility uses); APCA is layered on below, builder-only.
-  const wcagAccessibility = assembleWcagAccessibility(scale, landed ?? oklch);
+  const wcagAccessibility = assembleWcagAccessibility(scale, reference);
   const apcaOnWhite = calculateAPCAContrast(oklch, CONTRAST_WHITE);
   const apcaOnBlack = calculateAPCAContrast(oklch, CONTRAST_BLACK);
 

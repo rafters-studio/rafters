@@ -464,6 +464,12 @@ export const ColorValueSchema = z.object({
       reason: z.enum(['lightness-bounds', 'gamut']),
     })
     .optional(),
+  // The lightness ladder a normalized scale was built on (createNormalizedScale);
+  // 'custom' when the caller supplied the ladder. Absent for buildColorValue.
+  scaleStyle: z.enum(['deep', 'compact', 'custom']).optional(),
+  // The scale position the source colour sits at, e.g. '200'. Absent for
+  // buildColorValue, whose seed always lands on '600'.
+  anchor: z.string().optional(),
 });
 
 export type ColorValue = z.infer<typeof ColorValueSchema>;

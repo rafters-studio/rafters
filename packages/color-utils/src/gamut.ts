@@ -196,7 +196,7 @@ const TOLERANCE = 0.001;
  * against 0.0227 at h=145, l=0.05. `inGamut` is the predicate this function
  * actually needs, and bisecting it is the only way to ask where it flips.
  */
-function findMaxChroma(l: number, h: number, gamutSpace: string): number {
+export function findMaxChroma(l: number, h: number, gamutSpace: string): number {
   let lo = 0;
   let hi = MAX_CHROMA;
   if (l <= 0 || l >= 1) return 0;
