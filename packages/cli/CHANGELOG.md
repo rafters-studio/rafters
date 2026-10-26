@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixes
+
+- fix(ui): **Article prose headings read `foreground` (#2816).** `Container as="article"` coloured `h1` to `h4` with `accent-foreground`, the text colour for an accent fill, so headings came out lighter than body text in light mode, and navy on dark surfaces in palettes whose accent is light. They now read `foreground`, as Typography's own `H1` to `H4` do. Projects pick it up with `rafters add --update-all`.
+
 ## 0.5.3
 
 ### Features

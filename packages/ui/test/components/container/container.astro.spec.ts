@@ -68,4 +68,14 @@ describe('container [astro]', () => {
     const root = partElement(body, 'root') as HTMLElement;
     expect(root.getAttribute('class')).toBe(containerClasses({ size: '6xl' }, {}).root);
   });
+
+  it.each(['h1', 'h2', 'h3', 'h4'])(
+    'article %s reads the foreground token, not accent-foreground (#2816)',
+    async (heading) => {
+      const body = await render({ as: 'article' }, `<${heading}>Title</${heading}><p>Prose.</p>`);
+      const classes = (partElement(body, 'root') as HTMLElement).className.split(' ');
+      expect(classes).toContain(`[&_${heading}]:text-foreground`);
+      expect(classes).not.toContain(`[&_${heading}]:text-accent-foreground`);
+    },
+  );
 });
