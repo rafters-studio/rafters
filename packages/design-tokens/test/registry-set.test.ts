@@ -395,3 +395,83 @@ describe('set on a registered colour family with a new seed', () => {
     expect(familyOf(registry, 'zinc').every((t) => t === undefined)).toBe(true);
   });
 });
+
+describe('delete', () => {
+  it('removes a fill, whoever made it', () => {
+    const registry = fresh();
+    registry.set('fill-glass', GLASS, { reason: 'designer' });
+    expect(registry.delete('fill-glass', { reason: 'unused' })).toEqual(['fill-glass']);
+    expect(registry.has('fill-glass')).toBe(false);
+    expect(css(registry)).not.toContain('bg-fill-glass');
+  });
+
+  it('removes a colour family set created, with its eleven steps', () => {
+    const registry = fresh();
+    const size = registry.size();
+    registry.set('gold', GOLD, { reason: 'brand' });
+    expect(registry.delete('gold', { reason: 'unused' })).toEqual(['gold', ...STEPS]);
+    expect(registry.size()).toBe(size);
+    expect(familyOf(registry, 'gold').every((t) => t === undefined)).toBe(true);
+  });
+
+  it('removes a family that import wrote, which set(name) leaves alone', () => {
+    const seed = tryParseColor(GOLD);
+    if (!seed) throw new Error('seed did not parse');
+    const imported = importColorFamily('imported-color-gold', '500', seed);
+    const registry = new TokenRegistry(
+      [...generateBaseSystem().allTokens, ...imported],
+      REGISTRY_PLUGINS,
+    );
+    expect(registry.set('imported-color-gold')).toEqual([]);
+    expect(registry.has('imported-color-gold')).toBe(true);
+    const deleted = registry.delete('imported-color-gold', { reason: 'read by nothing' });
+    expect(deleted).toEqual(imported.map((t) => t.name));
+    expect(deleted.some((n) => registry.has(n))).toBe(false);
+  });
+
+  it('survives save and load', () => {
+    mkdirSync(TEST_TMP_ROOT, { recursive: true });
+    const dir = mkdtempSync(join(TEST_TMP_ROOT, 'rafters-2859-'));
+    try {
+      const registry = fresh();
+      registry.set('gold', GOLD, { reason: 'brand' });
+      saveRegistryToDir(dir, registry);
+      const loaded = loadRegistryFromDir(dir, REGISTRY_PLUGINS);
+      loaded.delete('gold', { reason: 'unused' });
+      saveRegistryToDir(dir, loaded);
+      const reloaded = loadRegistryFromDir(dir, REGISTRY_PLUGINS);
+      expect(familyOf(reloaded, 'gold').every((t) => t === undefined)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses, changing nothing, with no reason, an unknown name, a step or a system token', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'brand' });
+    const before = registry.list();
+    const del = registry.delete.bind(registry) as (n: string, o?: unknown) => unknown;
+    expect(() => del('gold')).toThrow(/cannot be deleted without a reason/);
+    expect(() => del('gold', { reason: '' })).toThrow(/cannot be deleted without a reason/);
+    expect(() => registry.delete('nothing-here', { reason: 'x' })).toThrow(UnknownTokenError);
+    expect(() => registry.delete('gold-500', { reason: 'x' })).toThrow(
+      /step of "gold"; delete "gold" instead/,
+    );
+    for (const name of ['spacing-base', 'font-sans', 'primary', 'surface-card']) {
+      expect(registry.has(name)).toBe(true);
+      expect(() => registry.delete(name, { reason: 'x' })).toThrow(/the system makes it/);
+    }
+    expect(registry.list()).toEqual(before);
+  });
+});
+
+describe('set returns what it touched', () => {
+  it('names the token, the created family, and nothing for an empty undo', () => {
+    const registry = fresh();
+    expect(registry.set('spacing-base', '0.3rem', { reason: 'x' })).toEqual(['spacing-base']);
+    expect(registry.set('spacing-base')).toEqual(['spacing-base']);
+    expect(registry.set('spacing-base')).toEqual([]);
+    expect(registry.set('gold', GOLD, { reason: 'x' })).toEqual(['gold', ...STEPS]);
+    expect(registry.set('gold')).toEqual(['gold', ...STEPS]);
+  });
+});

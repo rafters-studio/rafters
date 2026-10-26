@@ -2,13 +2,14 @@
  * rafters studio
  *
  * A local Vite dev server for designers. Its API is one call: POST
- * /__rafters/set { name, value?, why, utilities? } runs the registry's set, saves the
- * token files and regenerates rafters.css, then tells the page over Vite's
- * HMR channel. rafters is never installed into the project: this runs
- * through `pnpm dlx rafters studio`.
+ * /__rafters/set { name, value?, why, utilities? } runs the registry's set, and
+ * DELETE /__rafters/set { name, why } its delete; either saves the token files
+ * and regenerates rafters.css, tells the page over Vite's HMR channel, and
+ * appends a line to .rafters/studio.log. rafters is never installed into the
+ * project: this runs through `pnpm dlx rafters studio`.
  */
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -82,7 +83,7 @@ export async function studio(options: StudioOptions): Promise<void> {
       port: options.port ? Number(options.port) : DEFAULT_PORT,
       strictPort: true,
     },
-    plugins: [studioApi(registry, paths.tokens, regenerate)],
+    plugins: [studioApi(registry, paths.tokens, join(paths.root, 'studio.log'), regenerate)],
   });
   await server.listen();
 
@@ -119,6 +120,7 @@ function readLiveLock(lockPath: string): StudioLock | undefined {
 function studioApi(
   registry: TokenRegistry,
   tokensDir: string,
+  logPath: string,
   regenerate: () => Promise<string[]>,
 ): Plugin {
   // Writes run one at a time, in the order the requests arrived.
@@ -137,7 +139,10 @@ function studioApi(
       });
 
       server.middlewares.use('/__rafters/set', (req, res) => {
-        if (req.method !== 'POST') return sendJson(res, 405, { error: 'POST only' });
+        const method = req.method;
+        if (method !== 'POST' && method !== 'DELETE') {
+          return sendJson(res, 405, { error: 'POST or DELETE only' });
+        }
         const refusal = refuseRequest(req, server);
         if (refusal) return sendJson(res, 403, { error: refusal });
 
@@ -150,11 +155,17 @@ function studioApi(
           }
           const parsed = parseSetBody(body);
           if (typeof parsed === 'string') return sendJson(res, 400, { error: parsed });
+          const action: StudioAction =
+            method === 'DELETE' ? 'delete' : parsed.value === undefined ? 'undo' : 'set';
+          const before = registry.get(parsed.name)?.value ?? null;
+          let touched: readonly string[];
           try {
-            if (parsed.value === undefined) {
-              registry.set(parsed.name);
+            if (action === 'delete') {
+              touched = registry.delete(parsed.name, { reason: parsed.why ?? '' });
+            } else if (parsed.value === undefined) {
+              touched = registry.set(parsed.name);
             } else {
-              registry.set(parsed.name, parsed.value, {
+              touched = registry.set(parsed.name, parsed.value, {
                 reason: parsed.why ?? '',
                 ...(parsed.utilities ? { utilities: true } : {}),
               });
@@ -162,10 +173,26 @@ function studioApi(
           } catch (error) {
             return sendJson(res, 400, { error: (error as Error).message });
           }
+          if (touched.length === 0) {
+            return sendJson(res, 409, {
+              error: `Token "${parsed.name}" has no change to undo`,
+            });
+          }
           saveRegistryToDir(tokensDir, registry);
           await regenerate();
           server.ws.send({ type: 'custom', event: 'rafters:css-updated' });
-          sendJson(res, 200, { token: registry.get(parsed.name) ?? null });
+          const token = registry.get(parsed.name);
+          appendLog(logPath, {
+            at: new Date().toISOString(),
+            action,
+            name: parsed.name,
+            before,
+            after: token?.value ?? null,
+            why: action === 'undo' ? null : (parsed.why ?? null),
+            // More than one name is a colour family and its steps.
+            ...(touched.length > 1 ? { tokens: [...touched] } : {}),
+          });
+          sendJson(res, 200, action === 'delete' ? { deleted: touched } : { token: token ?? null });
         });
       });
     },
@@ -186,6 +213,23 @@ function refuseRequest(req: IncomingMessage, server: ViteDevServer): string | un
   const port = address && typeof address === 'object' ? address.port : undefined;
   const own = [`http://localhost:${port}`, `http://127.0.0.1:${port}`];
   return own.includes(origin) ? undefined : `origin ${origin} may not write`;
+}
+
+type StudioAction = 'set' | 'undo' | 'delete';
+
+interface StudioLogEntry {
+  at: string;
+  action: StudioAction;
+  name: string;
+  before: Token['value'] | null;
+  after: Token['value'] | null;
+  why: string | null;
+  tokens?: string[];
+}
+
+/** One JSON line per change; the log is only ever appended to. */
+function appendLog(logPath: string, entry: StudioLogEntry): void {
+  appendFileSync(logPath, `${JSON.stringify(entry)}\n`);
 }
 
 interface SetBody {

@@ -106,14 +106,14 @@ export class TokenRegistry {
    * token, regenerates a colour family from a new seed, or creates what the
    * first matching CREATORS entry makes; with no value it returns the token to
    * its previousValue (one step) and clears the override, removing what set
-   * created.
+   * created. It returns the names it created, changed or removed, and none
+   * when there was nothing to undo.
    */
-  set(name: string): void;
-  set(name: string, value: TokenValue | OKLCH, options: SetOptions): void;
-  set(name: string, value?: TokenValue | OKLCH, options?: SetOptions): void {
+  set(name: string): readonly string[];
+  set(name: string, value: TokenValue | OKLCH, options: SetOptions): readonly string[];
+  set(name: string, value?: TokenValue | OKLCH, options?: SetOptions): readonly string[] {
     if (value === undefined) {
-      this.revert(name);
-      return;
+      return this.revert(name);
     }
     if (!options?.reason) {
       throw new MissingReasonError(name);
@@ -128,14 +128,12 @@ export class TokenRegistry {
           utilities: options.utilities || meta.generateUtilityClass === true,
         };
         const created = colourCreator.create(name, value, keep).map((t) => this.validate(t));
-        for (const n of colourCreator.names(name)) this.graph.remove(n);
-        for (const n of colourCreator.names(name)) this.metadata.delete(n);
-        this.add(created, options);
-        return;
+        this.drop(colourCreator.names(name));
+        return this.add(created, options);
       }
       this.validate({ ...meta, value });
       this.graph.set(name, value, options);
-      return;
+      return [name];
     }
     const creator = CREATORS.find((c) => c.match(name, value));
     if (!creator) {
@@ -146,35 +144,72 @@ export class TokenRegistry {
     if (taken) {
       throw new NameTakenError(name, taken);
     }
-    this.add(created, options);
+    return this.add(created, options);
+  }
+
+  /**
+   * Removes a whole token of a kind a CREATORS entry makes, whoever made it:
+   * a fill, or a colour family with its eleven steps. It returns the names
+   * removed. A family step, or a token the system makes, is refused.
+   */
+  delete(name: string, options: { reason: string }): readonly string[] {
+    if (!options?.reason) {
+      throw new MissingReasonError(name, 'deleted');
+    }
+    const meta = this.metadata.get(name);
+    if (!meta) {
+      throw new UnknownTokenError(name);
+    }
+    const creator = CREATORS.find((c) => c.owns(meta));
+    if (!creator) {
+      const family = [...this.metadata.values()].find((t) =>
+        CREATORS.some((c) => c.owns(t) && t.name !== name && c.names(t.name).includes(name)),
+      );
+      throw new UndeletableTokenError(
+        name,
+        family
+          ? `it is a step of "${family.name}"; delete "${family.name}" instead`
+          : 'the system makes it, so it cannot be deleted',
+      );
+    }
+    const names = creator.names(name).filter((n) => this.graph.has(n));
+    this.drop(names);
+    return names;
   }
 
   // The first token is the one created; it records the override, seeded first
   // so its previousValue is its own value: that is how set(name) knows set
   // created it.
-  private add(tokens: readonly Token[], options: SetOptions): void {
+  private add(tokens: readonly Token[], options: SetOptions): readonly string[] {
     const [head] = tokens;
-    if (!head) return;
+    if (!head) return [];
     for (const t of tokens) {
       this.metadata.set(t.name, t);
       this.graph.seed(t.name, t.value);
     }
     this.graph.set(head.name, head.value, options);
+    return tokens.map((t) => t.name);
   }
 
-  private revert(name: string): void {
+  private drop(names: readonly string[]): void {
+    for (const n of names) {
+      this.graph.remove(n);
+      this.metadata.delete(n);
+    }
+  }
+
+  private revert(name: string): readonly string[] {
     const node = this.graph.node(name);
     const meta = this.metadata.get(name);
-    if (!node?.userOverride || !meta) return;
+    if (!node?.userOverride || !meta) return [];
     const creator = CREATORS.find((c) => c.owns(meta));
     if (creator && isDeepStrictEqual(node.userOverride.previousValue, node.value)) {
-      for (const n of creator.names(name)) {
-        this.graph.remove(n);
-        this.metadata.delete(n);
-      }
-      return;
+      const names = creator.names(name).filter((n) => this.graph.has(n));
+      this.drop(names);
+      return names;
     }
     this.graph.revert(name);
+    return [name];
   }
 
   private validate(token: unknown): Token {
@@ -273,9 +308,22 @@ export class NameTakenError extends Error {
 }
 
 class MissingReasonError extends Error {
-  constructor(public readonly tokenName: string) {
-    super(`Token "${tokenName}" cannot be set without a reason`);
+  constructor(
+    public readonly tokenName: string,
+    action: 'set' | 'deleted' = 'set',
+  ) {
+    super(`Token "${tokenName}" cannot be ${action} without a reason`);
     this.name = 'MissingReasonError';
+  }
+}
+
+class UndeletableTokenError extends Error {
+  constructor(
+    public readonly tokenName: string,
+    reason: string,
+  ) {
+    super(`Token "${tokenName}" cannot be deleted: ${reason}`);
+    this.name = 'UndeletableTokenError';
   }
 }
 
@@ -303,7 +351,7 @@ const EXCLUDED_FILL_NAMES: ReadonlySet<string> = new Set(FILL_NAME_EXCLUDES);
  * What set makes for an unregistered name. `match` picks the creator, `names`
  * are the tokens `create` returns (the first records the override), and
  * `occupies` every name that must be free before creating. `owns` tells
- * set(name) which creator made a registered token.
+ * set(name) and delete which creator's kind a registered token is.
  */
 type Creator = {
   match(name: string, value: unknown): boolean;
