@@ -358,6 +358,18 @@ describe('set on a registered colour family with a new seed', () => {
     expect(bound.some((t) => !isDeepStrictEqual(before.get(t.name), t.value))).toBe(true);
   });
 
+  it('keeps the family utilities across a regeneration', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'x', utilities: true });
+    registry.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed' });
+    expect(registry.get('gold')?.generateUtilityClass).toBe(true);
+
+    const plain = fresh();
+    plain.set('gold', GOLD, { reason: 'x' });
+    plain.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed', utilities: true });
+    expect(plain.get('gold')?.generateUtilityClass).toBe(true);
+  });
+
   it('keeps set on a step an edit of that step', () => {
     const registry = fresh();
     const zinc = registry.get('zinc')?.value;

@@ -120,9 +120,14 @@ export class TokenRegistry {
     }
     const meta = this.metadata.get(name);
     if (meta) {
-      // A new seed on a family regenerates it; any other value edits the token.
+      // A new seed on a family regenerates it, keeping its utilities; any other
+      // value edits the token.
       if (colourCreator.owns(meta) && colourCreator.match(name, value)) {
-        const created = colourCreator.create(name, value, options).map((t) => this.validate(t));
+        const keep = {
+          ...options,
+          utilities: options.utilities || meta.generateUtilityClass === true,
+        };
+        const created = colourCreator.create(name, value, keep).map((t) => this.validate(t));
         for (const n of colourCreator.names(name)) this.graph.remove(n);
         for (const n of colourCreator.names(name)) this.metadata.delete(n);
         this.add(created, options);
