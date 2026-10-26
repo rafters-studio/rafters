@@ -59,6 +59,15 @@ export {
 // Harmony
 export { generateHarmony, generateOKLCHScale } from './harmony.js';
 
+// Normalized scale (#2872)
+export { createNormalizedScale } from './normalized-scale.js';
+export {
+  CHROMA_SHARE,
+  HUE_DRIFT_BANDS,
+  HUE_DRIFT_SAMPLES,
+  LIGHTNESS_LADDERS,
+} from './normalized-scale-constants.js';
+
 // Manipulation
 export { adjustHue } from './manipulation.js';
 // Naming
