@@ -43,3 +43,11 @@ Feature: rafters studio serves the set API (#2846)
     And Studio sets "spacing-base" to "0.3rem" because "test"
     Then the tokens endpoint shows "spacing-base" with its reason and the tokens that read it
     And the status endpoint answers ok
+
+  @criterion-8
+  Scenario: set creates a colour family from a CSS colour, with its utilities
+    When Studio is started
+    And Studio creates the colour "gold" from "#c8a24b" with utilities because "brand"
+    Then the response status is 200
+    And the colour token file stores "gold" and its eleven steps
+    And rafters.css names every colour utility candidate for "gold" without scanning

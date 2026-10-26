@@ -1,14 +1,22 @@
 /**
  * One set on the token registry (#2845): it changes a token, creates a
- * fill-* fill, and with no value undoes one step.
+ * fill-* fill or a colour family (#2855), and with no value undoes one step.
  */
 
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
+import { join } from 'node:path';
+import { oklchToCSS, SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
 import type { Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { tokensToTailwind } from '../src/exporters/tailwind.js';
 import {
   generateBaseSystem,
+  importColorFamily,
+  loadRegistryFromDir,
+  NameTakenError,
   REGISTRY_PLUGINS,
+  saveRegistryToDir,
   TokenRegistry,
   UnknownTokenError,
 } from '../src/index.js';
@@ -177,5 +185,203 @@ describe('fill names', () => {
     registry.define({ ...bare, name: 'fill-glass' });
     expect(css(registry)).toContain('@utility bg-fill-glass {');
     expect(css(registry).match(/@utility bg-surface-[\w-]+ \{[^}]*\}/g)).toEqual(before);
+  });
+});
+
+const GOLD = '#c8a24b';
+// The repo never writes to /tmp; this matches persistence.test.ts.
+const TEST_TMP_ROOT = join(import.meta.dirname, '..', 'node_modules', '.test-tmp');
+const STEPS = SCALE_POSITIONS.map((p) => `gold-${p}`);
+
+function familyOf(registry: TokenRegistry, name: string): (Token | undefined)[] {
+  return [name, ...SCALE_POSITIONS.map((p) => `${name}-${p}`)].map((n) => registry.get(n));
+}
+
+describe('set creates a colour family', () => {
+  it('creates the family token and its eleven steps through importColorFamily', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'brand gold' });
+    const seed = tryParseColor(GOLD);
+    if (!seed) throw new Error('seed did not parse');
+    const expected = importColorFamily('gold', '500', seed);
+    expect(familyOf(registry, 'gold').map((t) => t?.value)).toEqual(expected.map((t) => t.value));
+    expect(registry.get('gold')?.userOverride?.reason).toBe('brand gold');
+    for (const step of STEPS) expect(registry.get(step)?.userOverride).toBeNull();
+  });
+
+  it('creates the same family from hex, rgb(), oklch() and an {l, c, h} object', () => {
+    const seed = tryParseColor(GOLD);
+    if (!seed) throw new Error('seed did not parse');
+    const values = ['rgb(200 162 75)', oklchToCSS(seed), { l: seed.l, c: seed.c, h: seed.h }];
+    const reference = fresh();
+    reference.set('gold', GOLD, { reason: 'x' });
+    for (const value of values) {
+      const registry = fresh();
+      registry.set('gold', value, { reason: 'x' });
+      expect(familyOf(registry, 'gold').map((t) => t?.value)).toEqual(
+        familyOf(reference, 'gold').map((t) => t?.value),
+      );
+    }
+  });
+
+  it('creates from a named colour', () => {
+    const registry = fresh();
+    registry.set('brick', 'firebrick', { reason: 'x' });
+    expect(registry.has('brick-950')).toBe(true);
+  });
+
+  it('refuses a reserved prefix or a non-kebab name', () => {
+    const registry = fresh();
+    expect(() => registry.set('surface-gold', GOLD, { reason: 'x' })).toThrow(UnknownTokenError);
+    expect(() => registry.set('Gold', GOLD, { reason: 'x' })).toThrow(UnknownTokenError);
+    expect(registry.has('Gold-500')).toBe(false);
+  });
+
+  it('refuses with NameTakenError, naming the holder, when any occupied name exists', () => {
+    const registry = fresh();
+    registry.set('fill-gold', GLASS, { reason: 'x' });
+    const size = registry.size();
+    expect(() => registry.set('gold', GOLD, { reason: 'x' })).toThrow(NameTakenError);
+    expect(() => registry.set('gold', GOLD, { reason: 'x' })).toThrow(/"fill-gold"/);
+    expect(registry.size()).toBe(size);
+
+    registry.define({
+      name: 'teal-300',
+      value: 'oklch(0.7 0.1 190)',
+      category: 'color',
+      namespace: 'color',
+      userOverride: null,
+    });
+    expect(() => registry.set('teal', GOLD, { reason: 'x' })).toThrow(/"teal-300"/);
+    expect(registry.has('teal')).toBe(false);
+  });
+
+  it('refuses a fill whose own name a token holds', () => {
+    const registry = fresh();
+    registry.define({
+      name: 'glass',
+      value: '1px',
+      category: 'spacing',
+      namespace: 'spacing',
+      userOverride: null,
+    });
+    expect(() => registry.set('fill-glass', GLASS, { reason: 'x' })).toThrow(NameTakenError);
+    expect(registry.has('fill-glass')).toBe(false);
+  });
+
+  it('marks the family generateUtilityClass only with utilities: true', () => {
+    const off = fresh();
+    off.set('gold', GOLD, { reason: 'x' });
+    expect(off.get('gold')?.generateUtilityClass).toBeUndefined();
+    expect(css(off)).not.toContain('-gold-{');
+
+    const on = fresh();
+    on.set('gold', GOLD, { reason: 'x', utilities: true });
+    expect(on.get('gold')?.generateUtilityClass).toBe(true);
+    expect(css(on)).toContain('}-gold-{50,100');
+  });
+
+  it('removes the family and all eleven steps with set(name)', () => {
+    const registry = fresh();
+    const size = registry.size();
+    registry.set('gold', GOLD, { reason: 'x' });
+    registry.set('gold');
+    expect(registry.size()).toBe(size);
+    expect(familyOf(registry, 'gold').every((t) => t === undefined)).toBe(true);
+  });
+
+  it('survives save and load, and set(name) after reloading removes it', () => {
+    mkdirSync(TEST_TMP_ROOT, { recursive: true });
+    const dir = mkdtempSync(join(TEST_TMP_ROOT, 'rafters-2855-'));
+    try {
+      const registry = fresh();
+      const size = registry.size();
+      registry.set('gold', GOLD, { reason: 'x', utilities: true });
+      saveRegistryToDir(dir, registry);
+      const loaded = loadRegistryFromDir(dir, REGISTRY_PLUGINS);
+      expect(familyOf(loaded, 'gold')).toEqual(familyOf(registry, 'gold'));
+      loaded.set('gold');
+      expect(loaded.size()).toBe(size);
+      expect(loaded.has('gold-500')).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('set on a registered colour family with a new seed', () => {
+  it('regenerates the family pinned at 500, dropping step overrides', () => {
+    const registry = fresh();
+    registry.set('zinc-300', 'oklch(0.5 0.2 30)', { reason: 'step edit' });
+    registry.set('zinc', GOLD, { reason: 'warm zinc' });
+    const seed = tryParseColor(GOLD);
+    if (!seed) throw new Error('seed did not parse');
+    expect(familyOf(registry, 'zinc').map((t) => t?.value)).toEqual(
+      importColorFamily('zinc', '500', seed).map((t) => t.value),
+    );
+    expect(registry.get('zinc')?.userOverride?.reason).toBe('warm zinc');
+    expect(registry.get('zinc-300')?.userOverride).toBeNull();
+  });
+
+  it('resolves a role pointed at the family to the new 500 after regeneration', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'x' });
+    registry.set('primary', { family: 'gold', position: '500' }, { reason: 'brand' });
+    registry.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed' });
+    const step = registry.get('gold-500')?.value;
+    expect(step).toBe(oklchToCSS({ l: 0.55, c: 0.15, h: 250, alpha: 1 }));
+    const out = css(registry);
+    expect(out).toContain(`--color-gold-500: ${step};`);
+    // The role reads its step through the role layer (#2745).
+    expect(out).toContain('--rafters-primary-500: var(--color-gold-500);');
+    expect(out).toContain('--rafters-primary: var(--rafters-primary-500);');
+  });
+
+  it('re-derives every token whose binding reads the family, directly or through a role', () => {
+    const registry = fresh();
+    const plugins = new Map(REGISTRY_PLUGINS.map((p) => [p.name, p]));
+    const readsZinc = registry
+      .list()
+      .filter(
+        (t) =>
+          t.binding && plugins.get(t.binding.plugin)?.dependsOn(t.binding.input).includes('zinc'),
+      );
+    expect(readsZinc.length).toBeGreaterThan(0);
+    const before = new Map(registry.list().map((t) => [t.name, t.value]));
+    registry.set('zinc', GOLD, { reason: 'warm zinc' });
+    // A registry built from the result derives every binding from scratch.
+    const rebuilt = new TokenRegistry(registry.list(), REGISTRY_PLUGINS);
+    const bound = registry.list().filter((t) => t.binding && !t.userOverride);
+    for (const t of bound)
+      expect(registry.get(t.name)?.value, t.name).toEqual(rebuilt.get(t.name)?.value);
+    // The new seed moved at least one derived choice, so the check above is not vacuous.
+    expect(bound.some((t) => !isDeepStrictEqual(before.get(t.name), t.value))).toBe(true);
+  });
+
+  it('keeps the family utilities across a regeneration', () => {
+    const registry = fresh();
+    registry.set('gold', GOLD, { reason: 'x', utilities: true });
+    registry.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed' });
+    expect(registry.get('gold')?.generateUtilityClass).toBe(true);
+
+    const plain = fresh();
+    plain.set('gold', GOLD, { reason: 'x' });
+    plain.set('gold', 'oklch(0.55 0.15 250)', { reason: 'new seed', utilities: true });
+    expect(plain.get('gold')?.generateUtilityClass).toBe(true);
+  });
+
+  it('keeps set on a step an edit of that step', () => {
+    const registry = fresh();
+    const zinc = registry.get('zinc')?.value;
+    registry.set('zinc-500', GOLD, { reason: 'x' });
+    expect(registry.get('zinc-500')?.value).toBe(GOLD);
+    expect(registry.get('zinc')?.value).toEqual(zinc);
+  });
+
+  it('deletes the family on set(name) right after a regeneration', () => {
+    const registry = fresh();
+    registry.set('zinc', GOLD, { reason: 'x' });
+    registry.set('zinc');
+    expect(familyOf(registry, 'zinc').every((t) => t === undefined)).toBe(true);
   });
 });

@@ -2,7 +2,7 @@
  * rafters studio
  *
  * A local Vite dev server for designers. Its API is one call: POST
- * /__rafters/set { name, value?, why } runs the registry's set, saves the
+ * /__rafters/set { name, value?, why, utilities? } runs the registry's set, saves the
  * token files and regenerates rafters.css, then tells the page over Vite's
  * HMR channel. rafters is never installed into the project: this runs
  * through `pnpm dlx rafters studio`.
@@ -154,7 +154,10 @@ function studioApi(
             if (parsed.value === undefined) {
               registry.set(parsed.name);
             } else {
-              registry.set(parsed.name, parsed.value, { reason: parsed.why ?? '' });
+              registry.set(parsed.name, parsed.value, {
+                reason: parsed.why ?? '',
+                ...(parsed.utilities ? { utilities: true } : {}),
+              });
             }
           } catch (error) {
             return sendJson(res, 400, { error: (error as Error).message });
@@ -189,17 +192,22 @@ interface SetBody {
   name: string;
   value?: Token['value'];
   why?: string;
+  utilities?: boolean;
 }
 
 function parseSetBody(body: unknown): SetBody | string {
   if (!body || typeof body !== 'object') return 'body must be an object';
-  const { name, value, why } = body as Record<string, unknown>;
+  const { name, value, why, utilities } = body as Record<string, unknown>;
   if (typeof name !== 'string' || name.length === 0) return 'name is required';
   if (why !== undefined && typeof why !== 'string') return 'why must be a string';
+  if (utilities !== undefined && typeof utilities !== 'boolean') {
+    return 'utilities must be a boolean';
+  }
   return {
     name,
     ...(value !== undefined ? { value: value as Token['value'] } : {}),
     ...(why !== undefined ? { why } : {}),
+    ...(utilities !== undefined ? { utilities } : {}),
   };
 }
 

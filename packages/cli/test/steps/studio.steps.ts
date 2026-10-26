@@ -7,6 +7,7 @@
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { SCALE_POSITIONS } from '@rafters/color-utils';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { context } from './common.steps.js';
@@ -79,6 +80,13 @@ When(
   },
 );
 
+When(
+  'Studio creates the colour {string} from {string} with utilities because {string}',
+  async ({}, name: string, value: string, why: string) => {
+    await postSet({ name, value, why, utilities: true }, json);
+  },
+);
+
 When('Studio sets {string} to {string} with no why', async ({}, name: string, value: string) => {
   await postSet({ name, value }, json);
 });
@@ -114,6 +122,15 @@ Then('the spacing token file stores {string} as {string}', ({}, name: string, va
 
 Then('rafters.css was regenerated after the set', () => {
   expect(statSync(raftersPath('output', 'rafters.css')).mtimeMs).toBeGreaterThan(state.cssBefore);
+});
+
+Then('the colour token file stores {string} and its eleven steps', ({}, name: string) => {
+  const file = JSON.parse(readFileSync(raftersPath('tokens', 'color.rafters.json'), 'utf8'));
+  const names = new Set(file.tokens.map((t: { name: string }) => t.name));
+  const family = file.tokens.find((t: { name: string }) => t.name === name);
+  expect(family.generateUtilityClass).toBe(true);
+  expect(family.userOverride.reason).toBe('brand');
+  for (const step of SCALE_POSITIONS) expect(names.has(`${name}-${step}`)).toBe(true);
 });
 
 Then(
