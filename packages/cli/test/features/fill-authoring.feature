@@ -34,6 +34,7 @@ Feature: a non-UI path creates, edits and removes fills (#2832)
     Examples:
       | input                                                            | named        |
       | a literal colour in the recipe                                   | the field    |
+      | an unknown clip value                                            | the field    |
       | a name equal to a colour, on the exclude list, or not kebab-case | the conflict |
 
   @criterion-5

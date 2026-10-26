@@ -564,6 +564,8 @@ const FillStateSchema = FillPartsSchema.extend({ dark: FillPartsSchema.optional(
 
 export const FillValueSchema = FillPartsSchema.extend({
   foreground: FillColourSchema,
+  // Clips the background or gradient to the glyphs; foreground stays the fallback.
+  clip: z.enum(['text']).optional(),
   dark: FillPartsSchema.optional(),
   hover: FillStateSchema.optional(),
   active: FillStateSchema.optional(),

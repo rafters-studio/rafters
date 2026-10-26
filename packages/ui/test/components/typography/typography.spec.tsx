@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import * as Named from '../../../src/components/typography/typography';
 import {
   Blockquote,
   Code,
@@ -12,7 +13,33 @@ import {
   Typography,
   Ul,
   P,
+  resolveTypography,
 } from '../../../src/components/typography/typography';
+import type { TypographyVariant } from '../../../src/components/typography/typography.behavior';
+
+/** Name -> variant, the same table the Astro spec renders against resolveTypography. */
+const NAMED: Array<[keyof typeof Named, TypographyVariant]> = [
+  ['H1', 'h1'],
+  ['H2', 'h2'],
+  ['H3', 'h3'],
+  ['H4', 'h4'],
+  ['H5', 'h4'],
+  ['H6', 'h4'],
+  ['P', 'p'],
+  ['Lead', 'lead'],
+  ['Large', 'large'],
+  ['Muted', 'muted'],
+  ['Small', 'small'],
+  ['Code', 'code'],
+  ['CodeBlock', 'codeblock'],
+  ['Blockquote', 'blockquote'],
+  ['Mark', 'mark'],
+  ['Abbr', 'abbr'],
+  ['Ul', 'ul'],
+  ['Ol', 'ol'],
+  ['Li', 'li'],
+  ['List', 'ul'],
+];
 
 const body = () => document.body;
 
@@ -111,6 +138,28 @@ describe('typography [react]', () => {
     expect(c.className).toContain('text-xl');
     expect(d.tagName.toLowerCase()).toBe('p');
     expect(d.className).toContain('text-xl');
+  });
+
+  it('fill resolves on every named export exactly as resolveTypography resolves it', () => {
+    for (const [name, variant] of NAMED) {
+      const Component = Named[name] as React.ComponentType<Named.TypographyComponentProps>;
+      const { container } = render(
+        <Component fill="bg-fill-blaze" data-testid={name}>
+          x
+        </Component>,
+      );
+      const root = container.querySelector(`[data-testid="${name}"]`) as HTMLElement;
+      expect(root.className, name).toBe(resolveTypography(variant, { fill: 'bg-fill-blaze' }));
+      expect(root.className.split(' '), name).toContain('bg-fill-blaze');
+      cleanup();
+    }
+    render(
+      <Typography as="h2" fill="bg-fill-blaze" data-testid="generic">
+        x
+      </Typography>,
+    );
+    const generic = body().querySelector('[data-testid="generic"]') as HTMLElement;
+    expect(generic.className).toBe(resolveTypography('h2', { fill: 'bg-fill-blaze' }));
   });
 
   it('consumer className merges via classy', () => {

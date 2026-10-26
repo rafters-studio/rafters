@@ -39,7 +39,17 @@ const PROPERTIES = [
   'backdrop-filter',
   'color',
   'border-top-color',
+  'background-clip',
 ] as const;
+
+const CLIP_GRADIENT = {
+  type: 'linear',
+  direction: 'to-r',
+  from: { color: zinc('200') },
+  to: { color: zinc('800') },
+} as const;
+const CLIP_GRADIENT_STOCK = 'bg-linear-to-r from-zinc-200 to-zinc-800';
+const CLIP_TEXT_COLOUR = 'supports-[background-clip:text]:text-transparent';
 
 /** Each recipe part alone (with the foreground every recipe needs) and its stock class list. */
 const PARTS: Record<string, { recipe: FillValue; stock: string }> = {
@@ -136,6 +146,10 @@ const PARTS: Record<string, { recipe: FillValue; stock: string }> = {
     recipe: { foreground: FG, border: { token: 'border' } },
     stock: 'text-zinc-900 border-border',
   },
+  'gradient clipped to the text': {
+    recipe: { foreground: FG, gradient: CLIP_GRADIENT, clip: 'text' },
+    stock: `text-zinc-900 ${CLIP_GRADIENT_STOCK} bg-clip-text ${CLIP_TEXT_COLOUR}`,
+  },
 };
 
 /** Fills that between them set every recipe part, in every block. */
@@ -191,6 +205,13 @@ const EVERY_PART_FILLS: Record<string, FillValue> = {
     foreground: FG,
     gradient: { type: 'linear', to: { color: zinc('300') } },
     mask: { type: 'x', from: 10 },
+  },
+  clipped: {
+    foreground: FG,
+    gradient: CLIP_GRADIENT,
+    clip: 'text',
+    dark: { foreground: zinc('50') },
+    hover: { foreground: zinc('700'), dark: { foreground: zinc('100') } },
   },
 };
 
@@ -334,6 +355,22 @@ Given(
     });
     await writeFile(join(context.fixturePath, 'page.html'), '<div class="bg-fill-fade"></div>\n');
     local.sources = ['@source "./page.html";'];
+  },
+);
+
+Given(
+  'an initialised project with a fill whose recipe clips a gradient to the text and has a dark foreground',
+  async () => {
+    await projectWithFills({
+      title: {
+        foreground: FG,
+        gradient: CLIP_GRADIENT,
+        clip: 'text',
+        dark: { foreground: zinc('50') },
+      },
+    });
+    local.stock = { light: 'text-zinc-900', dark: 'text-zinc-50' };
+    local.sources = [inline('bg-fill-title text-zinc-900 text-zinc-50')];
   },
 );
 
@@ -489,6 +526,42 @@ Then(
     for (const value of [light.fill, light['fill-sub'], dark.fill, dark['fill-sub']]) {
       expect(value).toEqual(light.hold);
     }
+  },
+);
+
+Then(
+  "an element with the fill's bg-fill- utility clips its gradient to the glyphs with a transparent text colour, in light and under a root .dark",
+  async ({ page }) => {
+    const modes = await measureModes(page, '<div id="fill" class="bg-fill-title">x</div>', [
+      'fill',
+    ]);
+    for (const mode of [modes.light, modes.dark]) {
+      expect(mode.fill?.['background-clip']).toBe('text');
+      expect(mode.fill?.color).toBe('rgba(0, 0, 0, 0)');
+      expect(mode.fill?.['background-image']).toContain('linear-gradient');
+    }
+  },
+);
+
+Then(
+  "where background-clip text is unsupported, the element's text colour is the fill's foreground, in light and under a root .dark",
+  async ({ page }) => {
+    // A browser without background-clip text skips the block its @supports guards.
+    const css = builtCss().replace(/@supports \(background-clip:\s*text\)/g, '@supports (x:y)');
+    const body = [
+      '<div id="fill" class="bg-fill-title">x</div>',
+      `<div id="light" class="${local.stock.light}">x</div>`,
+      `<div id="dark" class="${local.stock.dark}">x</div>`,
+    ].join('');
+    const colour = async (dark: boolean, id: string): Promise<string> => {
+      await page.setContent(
+        `<!doctype html><html${dark ? ' class="dark"' : ''}><head><style>${css}</style></head><body>${body}</body></html>`,
+      );
+      return page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).color);
+    };
+    expect(await colour(false, 'fill')).toBe(await colour(false, 'light'));
+    expect(await colour(true, 'fill')).toBe(await colour(true, 'dark'));
+    expect(await colour(false, 'fill')).not.toBe('rgba(0, 0, 0, 0)');
   },
 );
 

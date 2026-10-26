@@ -6,6 +6,8 @@
 
 - feat(cli): **`DELETE` removes a whole token through Studio, and Studio logs every change (#2859).** `DELETE /__rafters/set { name, why }` calls the registry's new `delete(name, { reason })`, which removes a whole token of a kind a designer creates, whoever made it: a fill, or a colour family with its eleven steps, including families `rafters import` or `init` wrote. It answers `{ deleted: [names] }`. A family step is refused with the family to delete instead, and any token the system makes (spacing, typography, roles, semantic colours, `surface-*`) is refused. A reason is required. `POST` with no value on a token with nothing to undo now answers 409 instead of 200 with the unchanged token. Every successful set, undo or delete appends one JSON line to `.rafters/studio.log` (`at`, `action`, `name`, `before`, `after`, `why`, and `tokens` for a family). `set` now returns the names it created, changed or removed.
 
+- feat: **text takes fills (#2860).** Every Typography component, React and Astro, takes `fill="bg-fill-<name>"` with the same precedence as the other components: a fill replaces `color` and the variant's default colour (and the surface of Mark, Code and CodeBlock), so the recipe's foreground paints the text. A fill recipe can set `clip: "text"`: its `bg-fill-*` utility then adds `bg-clip-text` and a transparent text colour guarded by `@supports (background-clip: text)`, so the recipe's background or gradient paints the glyphs and its `foreground` (still required) is the colour wherever background-clip text is unsupported. Studio's `POST /__rafters/set` accepts the part and refuses any other clip value naming `value.clip`.
+
 ## 0.5.2
 
 ### Features

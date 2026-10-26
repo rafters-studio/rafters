@@ -225,6 +225,16 @@ describe('typography named exports [astro drop-in surface]', () => {
     expect(className).not.toContain('@lg:text-5xl');
   });
 
+  it('fill resolves on every named export exactly as resolveTypography resolves it', async () => {
+    for (const [name, component, , variant] of NAMED) {
+      const { className } = await renderComponent(component, { fill: 'bg-fill-blaze' });
+      expect(className, name).toBe(resolveTypography(variant, { fill: 'bg-fill-blaze' }));
+      expect(className.split(' '), name).toContain('bg-fill-blaze');
+    }
+    const generic = await renderComponent(Typography, { as: 'h2', fill: 'bg-fill-blaze' });
+    expect(generic.className).toBe(resolveTypography('h2', { fill: 'bg-fill-blaze' }));
+  });
+
   it('a consumer class is discarded silently and survives nowhere -- not via the rest spread', async () => {
     const warn = vi.spyOn(console, 'warn');
     const error = vi.spyOn(console, 'error');

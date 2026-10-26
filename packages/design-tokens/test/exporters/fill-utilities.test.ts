@@ -101,6 +101,36 @@ describe('bg-fill-* utilities', () => {
     ]);
   });
 
+  it('clips a text-clip fill to the glyphs, with each foreground as the unsupported fallback', () => {
+    const T = 'supports-[background-clip:text]:text-transparent';
+    const classes = applied({
+      foreground: FG,
+      gradient: { type: 'linear', direction: 'to-r', from: { color: { token: 'primary' } } },
+      clip: 'text',
+      dark: { foreground: { family: 'zinc', position: '50' } },
+      hover: { foreground: { token: 'accent' }, dark: { foreground: FG } },
+    });
+    expect(classes).toEqual([
+      'bg-linear-to-r',
+      'from-primary',
+      'text-zinc-900',
+      T,
+      'bg-clip-text',
+      'dark:text-zinc-50',
+      `dark:${T}`,
+      'hover:text-accent',
+      `hover:${T}`,
+      'dark:hover:text-zinc-900',
+      `dark:hover:${T}`,
+    ]);
+    expect(classes).not.toContain('text-transparent');
+  });
+
+  it('writes no clip classes for a fill without the text-clip part', () => {
+    const classes = applied({ foreground: FG, gradient: { type: 'linear' } });
+    expect(classes).toEqual(['bg-linear-to-b', 'text-zinc-900']);
+  });
+
   it('writes the fills into the static sheet too, with no --rafters- property for a fill', () => {
     const css = registryToTailwindStatic(
       new TokenRegistry([...BASE, fill('glass', { foreground: FG })], REGISTRY_PLUGINS),

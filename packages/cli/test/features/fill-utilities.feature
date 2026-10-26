@@ -30,6 +30,7 @@ Feature: fills export as bg-fill-* utilities from stock Tailwind (#2828)
       | background blend mode                                     |
       | foreground                                                |
       | border                                                    |
+      | gradient clipped to the text                              |
 
   @criterion-2
   Scenario: dark parts flip under root .dark and inside a .dark subtree; a fill without a dark block holds
@@ -89,3 +90,12 @@ Feature: fills export as bg-fill-* utilities from stock Tailwind (#2828)
     When rafters.css is exported and compiled with real Tailwind
     Then rafters.css carries one @source inline line naming every bg-fill- utility
     And an element given that fill's bg-fill- utility at runtime paints it
+
+  # #2860 criterion 2: a text-clip part paints the glyphs with the recipe's
+  # background or gradient; its foreground stays the fallback colour.
+  @text-clip
+  Scenario: a text-clip fill paints its glyphs with its gradient, and its foreground is the fallback
+    Given an initialised project with a fill whose recipe clips a gradient to the text and has a dark foreground
+    When rafters.css is exported and compiled with real Tailwind
+    Then an element with the fill's bg-fill- utility clips its gradient to the glyphs with a transparent text colour, in light and under a root .dark
+    And where background-clip text is unsupported, the element's text colour is the fill's foreground, in light and under a root .dark

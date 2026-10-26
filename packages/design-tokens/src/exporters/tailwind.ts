@@ -999,8 +999,15 @@ function fillGradientClasses(gradient: NonNullable<FillParts['gradient']>): stri
   return out;
 }
 
-/** The stock classes of one block of a recipe. A mask with no positions writes no mask. */
-function fillPartClasses(parts: FillParts): string[] {
+/** Where background-clip text paints, the glyphs take the background, not the foreground. */
+const FILL_CLIP_TEXT_COLOUR = 'supports-[background-clip:text]:text-transparent';
+
+/**
+ * The stock classes of one block of a recipe. A mask with no positions writes
+ * no mask. Under a text clip each foreground is followed by the transparent
+ * text colour, so the foreground holds only where background-clip text fails.
+ */
+function fillPartClasses(parts: FillParts, clipText = false): string[] {
   const out: string[] = [];
   if (parts.background) {
     out.push(`bg-${fillColour(parts.background.color, parts.background.alpha)}`);
@@ -1019,20 +1026,27 @@ function fillPartClasses(parts: FillParts): string[] {
     if (n !== undefined) out.push(`backdrop-${filter}-${fillNumber(n, '', '%')}`);
   }
   if (parts.blend) out.push(`bg-blend-${parts.blend}`);
-  if (parts.foreground) out.push(`text-${fillColour(parts.foreground)}`);
+  if (parts.foreground) {
+    out.push(`text-${fillColour(parts.foreground)}`);
+    if (clipText) out.push(FILL_CLIP_TEXT_COLOUR);
+  }
   if (parts.border) out.push(`border-${fillColour(parts.border)}`);
   return out;
 }
 
 /** A recipe's stock class list: its parts, then `dark:` parts, then each state's variant parts. */
 function fillClasses(recipe: FillValue): string[] {
-  const out = fillPartClasses(recipe);
-  if (recipe.dark) out.push(...fillPartClasses(recipe.dark).map((c) => `dark:${c}`));
+  const clip = recipe.clip === 'text';
+  const out = fillPartClasses(recipe, clip);
+  if (clip) out.push('bg-clip-text');
+  if (recipe.dark) out.push(...fillPartClasses(recipe.dark, clip).map((c) => `dark:${c}`));
   for (const [state, variant] of FILL_STATES) {
     const block = recipe[state];
     if (!block) continue;
-    out.push(...fillPartClasses(block).map((c) => `${variant}:${c}`));
-    if (block.dark) out.push(...fillPartClasses(block.dark).map((c) => `dark:${variant}:${c}`));
+    out.push(...fillPartClasses(block, clip).map((c) => `${variant}:${c}`));
+    if (block.dark) {
+      out.push(...fillPartClasses(block.dark, clip).map((c) => `dark:${variant}:${c}`));
+    }
   }
   return out;
 }

@@ -76,8 +76,8 @@ function splitTokenProps(props: TypographyComponentProps): {
   tokens: TypographyTokenProps;
   rest: Omit<TypographyComponentProps, keyof TypographyTokenProps>;
 } {
-  const { size, weight, color, line, tracking, family, align, transform, ...rest } = props;
-  return { tokens: { size, weight, color, line, tracking, family, align, transform }, rest };
+  const { size, weight, color, line, tracking, family, align, transform, fill, ...rest } = props;
+  return { tokens: { size, weight, color, line, tracking, family, align, transform, fill }, rest };
 }
 
 /**
