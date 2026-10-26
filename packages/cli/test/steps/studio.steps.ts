@@ -1,5 +1,5 @@
 /**
- * Steps for `rafters studio` (#2846, #2859).
+ * Steps for `rafters studio` (#2846, #2859, #2865).
  *
  * Note: Module-level state is intentional for playwright-bdd step state sharing.
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
@@ -96,6 +96,13 @@ When(
   'Studio creates the colour {string} from {string} with utilities because {string}',
   async ({}, name: string, value: string, why: string) => {
     await postSet({ name, value, why, utilities: true }, json);
+  },
+);
+
+When(
+  'Studio points {string} at {string} {string} because {string}',
+  async ({}, name: string, family: string, position: string, why: string) => {
+    await postSet({ name, value: { family, position }, why }, json);
   },
 );
 

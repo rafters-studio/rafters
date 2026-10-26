@@ -1,4 +1,4 @@
-Feature: rafters studio serves the set API (#2846, #2859)
+Feature: rafters studio serves the set API (#2846, #2859, #2865)
 
   Background:
     Given a clean temporary directory
@@ -75,6 +75,16 @@ Feature: rafters studio serves the set API (#2846, #2859)
     When a delete is sent as text/plain
     Then the response status is 403
     And Studio has written no log
+
+  @criterion-3
+  Scenario: DELETE answers 409 naming the tokens that read a colour family
+    When Studio is started
+    And Studio creates the colour "gold" from "#c8a24b" with utilities because "brand"
+    And Studio points "primary" at "gold" "500" because "brand"
+    And Studio deletes "gold" because "unused"
+    Then the response status is 409
+    And the response error says "cannot be deleted: primary"
+    And the colour token file stores "gold" and its eleven steps
 
   @criterion-4
   Scenario: undo with nothing to undo answers 409
