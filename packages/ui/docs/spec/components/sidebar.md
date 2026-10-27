@@ -213,10 +213,10 @@ are kept (docs/MOTION.md retains interaction feedback), never the layout motion.
 
 ## Height: the viewport rail and the contained sidebar (#2657)
 
-Current choice (2026-10-19; revisable): an opt-in prop, because a new
-fill-by-default would break every full-page consumer (under an auto-height body a
-percentage height collapses), and the defect is only that a props-only consumer
-had no way to bound the sidebar.
+The contained height is an opt-in prop, because a new fill-by-default would
+break every full-page consumer (under an auto-height body a percentage height
+collapses), and the defect is only that a props-only consumer had no way to
+bound the sidebar.
 
 - **Default, `contained` unset or `false`: the viewport-height rail.** The
   provider is `min-h-svh`, the desktop panel is a sticky `md:h-svh` rail (the

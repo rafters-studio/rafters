@@ -119,8 +119,8 @@ opposite case: complete in the registry, flat in CSS.
 
 The registry engine works: with every role root set to a new family, the only
 semantic tokens that do not follow are `chart-1` to `chart-5` in light and dark
-(10 tokens), which are unlinked by design (current choice). Rafters' own test
-asserts it: `leaves only the charts unchanged when every role moves` in
+(10 tokens), which are unlinked by design. Rafters' own test asserts it:
+`leaves only the charts unchanged when every role moves` in
 `packages/design-tokens/test/cascade.test.ts`. What still breaks is the wiring,
 and on which layer.
 

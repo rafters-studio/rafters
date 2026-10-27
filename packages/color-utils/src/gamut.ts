@@ -53,9 +53,9 @@ export function toNearestGamut(oklch: OKLCH): { color: OKLCH; tier: GamutTier } 
 }
 
 /**
- * Whether Display P3 steps are allowed in a family. Current choice (Sean,
- * 2026-10-17; revisable): one constant, off by default, so every family is
- * built in sRGB until a setting exists to turn it on.
+ * Whether Display P3 steps are allowed in a family. One constant, off by
+ * default, so every family is built in sRGB until a setting exists to turn it
+ * on.
  */
 export const ALLOW_P3 = false;
 

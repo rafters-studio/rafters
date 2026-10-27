@@ -125,9 +125,9 @@ are the same step, and the inline padding never pushes a single digit past that
 minimum. `sm` is 36 x 36 (`h-9 min-w-9 px-3`), `default` is 40 x 40
 (`h-10 min-w-10 px-4 py-2`), and `lg` is 44 x 44 (`h-11 min-w-11 px-4`) for one
 digit. A multi-digit page number grows the link in width only, so it never
-clips. `icon` is a fixed 40 x 40 (`h-10 w-10`). Current choice (2026-10-19):
-`lg` is square like `sm` and `default`, because the three sizes of one control
-should change scale, not shape; revisable.
+clips. `icon` is a fixed 40 x 40 (`h-10 w-10`). `lg` is square like `sm` and
+`default`, because the three sizes of one control should change scale, not
+shape.
 
 ## Parts and ARIA
 
