@@ -73,7 +73,7 @@ everywhere, `p3` needs a wide-gamut screen, `out` is displayable nowhere.
 
 - `getGamutTier(oklch)` — which tier a color falls in.
 - `isInSRGBGamut(oklch)` / `isInP3Gamut(oklch)` — the two boundary checks.
-- `toNearestGamut(oklch)` — snap an out-of-gamut color into sRGB. Returns
+- `toNearestGamut(oklch)` — snap an out-of-gamut color into sRGB, keeping lightness, hue and alpha; only chroma drops. Returns
   `{ color, tier }`: the snapped OKLCH and the tier it landed in.
 - `computeGamutBoundaries(hue, steps?)` — the boundary points a picker draws
   against.
