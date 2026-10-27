@@ -30,7 +30,6 @@ const { Given, When, Then } = createBdd();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const UI = join(HERE, '../../../ui');
-const BASELINE = join(HERE, '../fixtures/surface-readers.before.json');
 
 const SURFACES = [
   'background',
@@ -166,10 +165,17 @@ async function expectFillsMatchStock(
 
 const local: {
   fillsBefore: StoredToken[];
+  measuredBefore: Record<'light' | 'dark', Record<string, Measured>> | undefined;
   designed: StoredToken | undefined;
   otherFiles: Map<string, unknown>;
   rendered: Map<string, string[]>;
-} = { fillsBefore: [], designed: undefined, otherFiles: new Map(), rendered: new Map() };
+} = {
+  fillsBefore: [],
+  measuredBefore: undefined,
+  designed: undefined,
+  otherFiles: new Map(),
+  rendered: new Map(),
+};
 
 async function initProject(): Promise<void> {
   context.fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -245,8 +251,9 @@ Given('each surface-bearing component in the list measured for #2829', async () 
 
 When(
   'a role that surfaces depend on changes and rafters.css is exported and compiled with real Tailwind',
-  async () => {
+  async ({ page }) => {
     local.fillsBefore = await surfaceTokens();
+    local.measuredBefore = await expectFillsMatchStock(page);
     // The neutral role takes another family; every neutral surface follows it.
     const colours = await readTokens(join(tokensDir(), 'color.rafters.json'));
     const family = colours.tokens.find(
@@ -310,14 +317,22 @@ Then(
 );
 
 Then('every dependent bg-surface- fill computes the new value', async ({ page }) => {
+  const before = local.measuredBefore;
+  if (!before) throw new Error('no fills measured before the role change');
   const measured = await expectFillsMatchStock(page);
-  const baseline = JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<
-    'light' | 'dark',
-    Record<string, string>
-  >;
-  const card = SURFACES.indexOf('card');
-  expect(measured.light[`f${card}`]?.['background-color']).not.toBe(baseline.light['bg-card']);
-  expect(measured.dark[`f${card}`]?.['background-color']).not.toBe(baseline.dark['bg-card']);
+  // A surface depends on the neutral role when its default reads the neutral family.
+  const dependents = SURFACES.filter(
+    (name) => DEFAULT_SEMANTIC_COLOR_MAPPINGS[name]?.light?.family === 'neutral',
+  );
+  expect(dependents).toContain('card');
+  for (const mode of ['light', 'dark'] as const) {
+    for (const name of dependents) {
+      const id = `f${SURFACES.indexOf(name)}`;
+      expect(measured[mode][id]?.['background-color'], `${name} (${mode})`).not.toBe(
+        before[mode][id]?.['background-color'],
+      );
+    }
+  }
 });
 
 Then('every surface fill still holds the same references, with nothing regenerated', async () => {
@@ -369,27 +384,37 @@ Then("its root element carries that surface's literal bg-surface- class", async 
 });
 
 Then(
-  'bg-card and every text-*-foreground class compute the same values as before this change, in light and in dark',
+  'bg-card and every text-*-foreground class compute the same colour as its token, in light and in dark',
   async ({ page }) => {
-    // Measured on 0fb96e9a, the commit before this change, from a fresh init.
-    const baseline = JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<
-      'light' | 'dark',
-      Record<string, string>
-    >;
-    const readers = Object.keys(baseline.light);
-    expect(readers).toContain('bg-card');
-    expect(readers.filter((r) => r.endsWith('-foreground')).length).toBeGreaterThan(40);
-    await buildRaftersCss([`@source inline("${readers.join(' ')}");`]);
-    const body = readers.map((cls, i) => `<div id="r${i}" class="${cls}">x</div>`).join('');
+    // Each reader beside a probe that reads its token directly: --<token>, which a root
+    // .dark switches to the token's dark value. A token that resolves to nothing leaves its
+    // probe unset, inheriting UNSET's colour.
+    const UNSET = 'rgb(1, 2, 3)';
+    const readers: Array<[cls: string, property: 'background-color' | 'color', token: string]> = [
+      ['bg-card', 'background-color', 'card'],
+      ...[...SEMANTIC]
+        .filter((name) => name === 'foreground' || name.endsWith('-foreground'))
+        .map((name): [string, 'color', string] => [`text-${name}`, 'color', name]),
+    ];
+    expect(readers.filter(([cls]) => cls.endsWith('-foreground')).length).toBeGreaterThan(40);
+    await buildRaftersCss([`@source inline("${readers.map(([cls]) => cls).join(' ')}");`]);
+    const probes = readers
+      .map(
+        ([cls, property, token], i) =>
+          `<div id="r${i}" class="${cls}">x</div>` +
+          `<div id="t${i}" style="${property}: var(--${token})">x</div>`,
+      )
+      .join('');
     const measured = await measureModes(
       page,
-      body,
-      readers.map((_, i) => `r${i}`),
+      `<div style="color: ${UNSET}">${probes}</div>`,
+      readers.flatMap((_, i) => [`r${i}`, `t${i}`]),
     );
     for (const mode of ['light', 'dark'] as const) {
-      for (const [i, cls] of readers.entries()) {
-        const property = cls === 'bg-card' ? 'background-color' : 'color';
-        expect(measured[mode][`r${i}`]?.[property], `${cls} (${mode})`).toBe(baseline[mode][cls]);
+      for (const [i, [cls, property, token]] of readers.entries()) {
+        const probe = measured[mode][`t${i}`]?.[property];
+        expect(['', UNSET, 'rgba(0, 0, 0, 0)'], `--${token} (${mode})`).not.toContain(probe);
+        expect(measured[mode][`r${i}`]?.[property], `${cls} (${mode})`).toBe(probe);
       }
     }
   },
