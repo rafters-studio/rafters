@@ -8,6 +8,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SCALE_POSITIONS } from '@rafters/color-utils';
+import { STUDIO_ERROR_CODES } from '@rafters/shared';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { context } from './common.steps.js';
@@ -142,8 +143,46 @@ Then('the response status is {int}', ({}, status: number) => {
   expect(state.status).toBe(status);
 });
 
+When(
+  'Studio creates the fill {string} reading {string} {string} because {string}',
+  async ({}, name: string, family: string, position: string, why: string) => {
+    await postSet({ name, value: { foreground: { family, position } }, why }, json);
+    expect(state.status).toBe(200);
+  },
+);
+
+When(
+  'the endpoint receives {string} {string} with headers {string} and body {string}',
+  async ({}, method: string, path: string, headers: string, body: string) => {
+    const res = await fetch(`${BASE}${path}`, { method, headers: JSON.parse(headers), body });
+    state.status = res.status;
+    state.body = await res.json();
+  },
+);
+
+/** The refusal's body: { error: { code, message, ...details } }, with no other field. */
+function refusal(): { code: unknown; message: unknown; [field: string]: unknown } {
+  const { error } = state.body as { error: { code: unknown; message: unknown } };
+  return error;
+}
+
+Then(
+  'the refusal is {int} {string} with details {string}',
+  ({}, status: number, code: string, details: string) => {
+    const expected = JSON.parse(details) as Record<string, unknown>;
+    expect(state.status).toBe(status);
+    expect(Object.keys(state.body as object)).toEqual(['error']);
+    const error = refusal();
+    expect(error.code).toBe(code);
+    expect(STUDIO_ERROR_CODES).toContain(error.code);
+    expect(typeof error.message === 'string' && error.message.length > 0).toBe(true);
+    expect(Object.keys(error).sort()).toEqual(['code', 'message', ...Object.keys(expected)].sort());
+    expect(error).toMatchObject(expected);
+  },
+);
+
 Then('the response error says {string}', ({}, text: string) => {
-  expect((state.body as { error: string }).error).toContain(text);
+  expect(refusal().message).toContain(text);
 });
 
 const family = (name: string) => [name, ...SCALE_POSITIONS.map((p) => `${name}-${p}`)];

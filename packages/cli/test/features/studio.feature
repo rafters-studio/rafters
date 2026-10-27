@@ -1,4 +1,4 @@
-Feature: rafters studio serves the set API (#2846, #2859, #2865)
+Feature: rafters studio serves the set API (#2846, #2859, #2865, #2876)
 
   Background:
     Given a clean temporary directory
@@ -18,7 +18,7 @@ Feature: rafters studio serves the set API (#2846, #2859, #2865)
     And Studio sets "spacing-base" to "0.3rem" because "test"
     Then the response status is 200
     When Studio sets "spacing-base" to "0.4rem" with no why
-    Then the response status is 400
+    Then the response status is 422
     When Studio undoes "spacing-base"
     Then the stored "spacing-base" is "0.25rem"
 
@@ -28,7 +28,7 @@ Feature: rafters studio serves the set API (#2846, #2859, #2865)
     And a page at "http://evil.example" posts a set
     Then the response status is 403
     When a set is posted as text/plain
-    Then the response status is 403
+    Then the response status is 415
 
   @criterion-3
   Scenario: a set saves the token file and regenerates rafters.css
@@ -66,14 +66,14 @@ Feature: rafters studio serves the set API (#2846, #2859, #2865)
   Scenario: DELETE refuses a system token, a missing why, a foreign origin and a non-JSON body
     When Studio is started
     And Studio deletes "spacing-base" because "unused"
-    Then the response status is 400
+    Then the response status is 409
     And the response error says "the system makes it"
     When Studio deletes "spacing-base" with no why
-    Then the response status is 400
+    Then the response status is 422
     When a page at "http://evil.example" sends a delete
     Then the response status is 403
     When a delete is sent as text/plain
-    Then the response status is 403
+    Then the response status is 415
     And Studio has written no log
 
   @criterion-3
@@ -107,3 +107,33 @@ Feature: rafters studio serves the set API (#2846, #2859, #2865)
     And Studio log line 2 is an "undo" of "spacing-base" from "0.3rem" to "0.25rem"
     And Studio log line 3 creates "gold" and names its eleven steps
     And Studio log line 4 deletes "gold" because "unused" and names its eleven steps
+
+  # #2876: every refusal is { error: { code, message, ...details } }, with the
+  # status and detail fields the code's row in the CLI README gives.
+  @criterion-5
+  Scenario Outline: Studio refuses <method> <path> <body> with the code <code>
+    When Studio is started
+    And Studio creates the colour "gold" from "#c8a24b" with utilities because "brand"
+    And Studio creates the fill "fill-glass" reading "gold" "500" because "frosted card"
+    And the endpoint receives "<method>" "<path>" with headers '<headers>' and body '<body>'
+    Then the refusal is <status> "<code>" with details '<details>'
+
+    Examples:
+      | code                   | method | path              | headers                                                      | body                                                                                 | status | details                                                         |
+      | method-not-allowed     | PUT    | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"spacing-base"}                                                              | 405    | {"allowed":["POST","DELETE"]}                                   |
+      | method-not-allowed     | POST   | /__rafters/tokens | {"Content-Type":"application/json"}                          | {}                                                                                   | 405    | {"allowed":["GET"]}                                             |
+      | origin-refused         | POST   | /__rafters/set    | {"Content-Type":"application/json","Origin":"http://evil.example"} | {"name":"spacing-base"}                                                        | 403    | {"origin":"http://evil.example"}                                |
+      | unsupported-media-type | POST   | /__rafters/set    | {"Content-Type":"text/plain"}                                | {"name":"spacing-base"}                                                              | 415    | {"expected":"application/json"}                                 |
+      | body-not-json          | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | not json                                                                             | 400    | {}                                                              |
+      | body-invalid           | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"why":"x"}                                                                          | 400    | {"field":"name"}                                                |
+      | body-invalid           | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | "spacing-base"                                                                       | 400    | {"field":"body"}                                                |
+      | reason-required        | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"spacing-base","value":"0.4rem"}                                             | 422    | {"name":"spacing-base","action":"set"}                          |
+      | reason-required        | DELETE | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"gold"}                                                                      | 422    | {"name":"gold","action":"delete"}                               |
+      | unknown-token          | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"spacing-huge","value":"9rem","why":"x"}                                     | 404    | {"name":"spacing-huge"}                                         |
+      | token-invalid          | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"fill-glass","value":{"foreground":{"token":"border"},"clip":"border"},"why":"x"} | 422 | {"name":"fill-glass","issues":[{"path":"value.clip"}]}          |
+      | literal-color          | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"fill-glass","value":{"foreground":"#ffffff"},"why":"x"}                     | 422    | {"name":"fill-glass","path":"value.foreground"}                 |
+      | name-rejected          | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"fill-Frost","value":{"foreground":{"token":"border"}},"why":"x"}            | 422    | {"name":"fill-Frost","reason":"a fill name must be lowercase kebab-case"} |
+      | name-taken             | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"glass","value":"#c8a24b","why":"x"}                                         | 409    | {"name":"glass","takenBy":"fill-glass"}                         |
+      | token-in-use           | DELETE | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"gold","why":"unused"}                                                       | 409    | {"name":"gold","readers":["fill-glass"]}                        |
+      | token-undeletable      | DELETE | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"spacing-base","why":"unused"}                                               | 409    | {"name":"spacing-base","reason":"the system makes it, so it cannot be deleted"} |
+      | nothing-to-undo        | POST   | /__rafters/set    | {"Content-Type":"application/json"}                          | {"name":"spacing-base"}                                                              | 409    | {"name":"spacing-base"}                                         |

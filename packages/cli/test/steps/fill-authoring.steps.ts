@@ -63,8 +63,9 @@ async function set(body: Record<string, unknown>): Promise<{ status: number; err
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as { error?: unknown };
-  return { status: res.status, error: typeof data.error === 'string' ? data.error : '' };
+  const data = (await res.json()) as { error?: { message?: unknown } };
+  const message = data.error?.message;
+  return { status: res.status, error: typeof message === 'string' ? message : '' };
 }
 
 /** The message the registry itself gives for this set, run in-process. */
@@ -179,7 +180,7 @@ Then(
   async () => {
     expect(local.attempts.length).toBeGreaterThan(0);
     for (const attempt of local.attempts) {
-      expect(attempt.status, attempt.name).toBe(400);
+      expect(attempt.status, attempt.name).toBe(422);
       expect(attempt.error).toBe(attempt.expected);
       expect(attempt.error).toContain(attempt.named);
     }

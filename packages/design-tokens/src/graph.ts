@@ -1,4 +1,4 @@
-import { type OverrideKind, OverrideKindSchema } from '@rafters/shared';
+import { type OverrideKind, OverrideKindSchema, type StudioErrorCode } from '@rafters/shared';
 import { z } from 'zod';
 
 export type Plugin = {
@@ -45,6 +45,8 @@ export type SetOptions = {
 };
 
 export class CircularDependencyError extends Error {
+  readonly code: StudioErrorCode = 'circular-dependency';
+
   constructor(public readonly cycle: readonly string[]) {
     super(`Circular dependency: ${cycle.join(' -> ')}`);
     this.name = 'CircularDependencyError';
