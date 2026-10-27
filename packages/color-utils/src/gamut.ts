@@ -45,27 +45,11 @@ export function getGamutTier(oklch: OKLCH): GamutTier {
 }
 
 /**
- * Snap an OKLCH color to the nearest in-gamut color.
- * Returns the snapped color and its tier.
+ * Snap an OKLCH color into sRGB, keeping lightness, hue and alpha: the
+ * largest chroma sRGB holds there, as toGamutCeiling(oklch, 'srgb').
  */
 export function toNearestGamut(oklch: OKLCH): { color: OKLCH; tier: GamutTier } {
-  const color = new Color('oklch', [oklch.l, oklch.c, oklch.h]);
-
-  if (color.inGamut('srgb')) {
-    return { color: { ...oklch }, tier: 'srgb' };
-  }
-
-  const srgbMapped = color.toGamut({ space: 'srgb' });
-  const mappedOklch = srgbMapped.to('oklch');
-  return {
-    color: {
-      l: mappedOklch.coords[0] ?? 0,
-      c: mappedOklch.coords[1] ?? 0,
-      h: mappedOklch.coords[2] ?? oklch.h,
-      alpha: oklch.alpha,
-    },
-    tier: 'srgb',
-  };
+  return { color: toGamutCeiling(oklch, 'srgb'), tier: 'srgb' };
 }
 
 /**
@@ -136,12 +120,12 @@ export function storedTier(oklch: OKLCH): GamutCeiling {
 }
 
 /**
- * Snap an OKLCH into sRGB and round it -- the shape every generated color is
- * emitted in. Lives here because both halves are gamut/conversion concerns;
- * harmony.ts and semantic.ts are callers, not owners.
+ * Snap an OKLCH into sRGB and round it inside sRGB -- the shape every
+ * generated color is emitted in. Lives here because both halves are
+ * gamut/conversion concerns; harmony.ts and semantic.ts are callers, not owners.
  */
 export function clampColor(color: OKLCH): OKLCH {
-  return roundOKLCH(toNearestGamut(color).color);
+  return roundInside(toNearestGamut(color).color, 'srgb');
 }
 
 const DEFAULT_STEPS = 101;
