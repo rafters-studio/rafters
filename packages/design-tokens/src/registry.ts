@@ -5,6 +5,7 @@ import {
   FillValueSchema,
   type OKLCH,
   OKLCHSchema,
+  type StudioErrorCode,
   type Token,
   TokenSchema,
 } from '@rafters/shared';
@@ -155,7 +156,7 @@ export class TokenRegistry {
    */
   delete(name: string, options: { reason: string }): readonly string[] {
     if (!options?.reason) {
-      throw new MissingReasonError(name, 'deleted');
+      throw new MissingReasonError(name, 'delete');
     }
     const meta = this.metadata.get(name);
     if (!meta) {
@@ -283,7 +284,12 @@ export class TokenRegistry {
   }
 }
 
+// Each error carries its Studio error code and, as public properties, the
+// facts that code's refusal reports (#2876).
+
 export class UnknownTokenError extends Error {
+  readonly code: StudioErrorCode = 'unknown-token';
+
   constructor(public readonly tokenName: string) {
     super(`Token not registered: ${tokenName}`);
     this.name = 'UnknownTokenError';
@@ -291,6 +297,9 @@ export class UnknownTokenError extends Error {
 }
 
 export class TokenParseError extends Error {
+  readonly code: StudioErrorCode = 'token-invalid';
+  readonly tokenName: string;
+
   constructor(
     public readonly raw: unknown,
     public readonly issues: readonly z.core.$ZodIssue[],
@@ -303,10 +312,27 @@ export class TokenParseError extends Error {
         : '<unnamed>';
     super(`Token "${name}" failed TokenSchema validation: ${detail}`);
     this.name = 'TokenParseError';
+    this.tokenName = name;
+  }
+}
+
+/** A fill recipe holding a colour that is not a registry reference. */
+export class LiteralColourError extends TokenParseError {
+  override readonly code: StudioErrorCode = 'literal-color';
+
+  constructor(
+    raw: unknown,
+    issues: readonly z.core.$ZodIssue[],
+    public readonly path: string,
+  ) {
+    super(raw, issues);
+    this.name = 'LiteralColourError';
   }
 }
 
 export class NameTakenError extends Error {
+  readonly code: StudioErrorCode = 'name-taken';
+
   constructor(
     public readonly tokenName: string,
     public readonly takenBy: string,
@@ -316,20 +342,26 @@ export class NameTakenError extends Error {
   }
 }
 
-class MissingReasonError extends Error {
+export class MissingReasonError extends Error {
+  readonly code: StudioErrorCode = 'reason-required';
+
   constructor(
     public readonly tokenName: string,
-    action: 'set' | 'deleted' = 'set',
+    public readonly action: 'set' | 'delete' = 'set',
   ) {
-    super(`Token "${tokenName}" cannot be ${action} without a reason`);
+    super(
+      `Token "${tokenName}" cannot be ${action === 'set' ? 'set' : 'deleted'} without a reason`,
+    );
     this.name = 'MissingReasonError';
   }
 }
 
-class UndeletableTokenError extends Error {
+export class UndeletableTokenError extends Error {
+  readonly code: StudioErrorCode = 'token-undeletable';
+
   constructor(
     public readonly tokenName: string,
-    reason: string,
+    public readonly reason: string,
   ) {
     super(`Token "${tokenName}" cannot be deleted: ${reason}`);
     this.name = 'UndeletableTokenError';
@@ -337,6 +369,8 @@ class UndeletableTokenError extends Error {
 }
 
 export class TokenInUseError extends Error {
+  readonly code: StudioErrorCode = 'token-in-use';
+
   constructor(
     public readonly tokenName: string,
     public readonly readers: readonly string[],
@@ -350,10 +384,12 @@ export class TokenInUseError extends Error {
   }
 }
 
-class TokenNameError extends Error {
+export class TokenNameError extends Error {
+  readonly code: StudioErrorCode = 'name-rejected';
+
   constructor(
     public readonly tokenName: string,
-    reason: string,
+    public readonly reason: string,
   ) {
     super(`Token "${tokenName}" is rejected: ${reason}`);
     this.name = 'TokenNameError';
@@ -467,11 +503,29 @@ function checkFillRecipe(raw: unknown): void {
   if (namespace !== FILL_NAMESPACE) return;
   const recipe = FillValueSchema.safeParse(value);
   if (!recipe.success) {
-    throw new TokenParseError(
-      raw,
-      recipe.error.issues.map((issue) => ({ ...issue, path: ['value', ...issue.path] })),
+    const issues = recipe.error.issues.map((issue) => ({
+      ...issue,
+      path: ['value', ...issue.path],
+    }));
+    // A colour slot is the recipe's only union: a union failure on a present
+    // value is a colour that is not a reference.
+    const literal = recipe.error.issues.find(
+      (issue) => issue.code === 'invalid_union' && valueAt(value, issue.path) !== undefined,
     );
+    if (literal) {
+      throw new LiteralColourError(raw, issues, ['value', ...literal.path].join('.'));
+    }
+    throw new TokenParseError(raw, issues);
   }
+}
+
+function valueAt(value: unknown, path: readonly PropertyKey[]): unknown {
+  let at = value;
+  for (const key of path) {
+    if (!at || typeof at !== 'object') return undefined;
+    at = (at as Record<PropertyKey, unknown>)[key];
+  }
+  return at;
 }
 
 /**

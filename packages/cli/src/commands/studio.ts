@@ -17,10 +17,9 @@ import {
   loadRegistryFromDir,
   REGISTRY_PLUGINS,
   saveRegistryToDir,
-  TokenInUseError,
   type TokenRegistry,
 } from '@rafters/design-tokens';
-import type { Token } from '@rafters/shared';
+import { STUDIO_ERROR_CODES, type StudioErrorCode, type Token } from '@rafters/shared';
 import { createServer, type Plugin, type ViteDevServer } from 'vite';
 import { DEFAULT_EXPORTS } from '../utils/exports.js';
 import { getRaftersPaths } from '../utils/paths.js';
@@ -118,7 +117,7 @@ function readLiveLock(lockPath: string): StudioLock | undefined {
   }
 }
 
-function studioApi(
+export function studioApi(
   registry: TokenRegistry,
   tokensDir: string,
   logPath: string,
@@ -135,68 +134,76 @@ function studioApi(
       });
 
       server.middlewares.use('/__rafters/tokens', (req, res) => {
-        if (req.method !== 'GET') return sendJson(res, 405, { error: 'GET only' });
+        if (req.method !== 'GET') {
+          return refuse(res, 'method-not-allowed', 'GET only', { allowed: ['GET'] });
+        }
         sendJson(res, 200, tokensByNamespace(registry.list()));
       });
 
       server.middlewares.use('/__rafters/set', (req, res) => {
         const method = req.method;
         if (method !== 'POST' && method !== 'DELETE') {
-          return sendJson(res, 405, { error: 'POST or DELETE only' });
-        }
-        const refusal = refuseRequest(req, server);
-        if (refusal) return sendJson(res, 403, { error: refusal });
-
-        queue = queue.then(async () => {
-          let body: unknown;
-          try {
-            body = JSON.parse(await readBody(req));
-          } catch {
-            return sendJson(res, 400, { error: 'body must be JSON' });
-          }
-          const parsed = parseSetBody(body);
-          if (typeof parsed === 'string') return sendJson(res, 400, { error: parsed });
-          const action: StudioAction =
-            method === 'DELETE' ? 'delete' : parsed.value === undefined ? 'undo' : 'set';
-          const before = registry.get(parsed.name)?.value ?? null;
-          let touched: readonly string[];
-          try {
-            if (action === 'delete') {
-              touched = registry.delete(parsed.name, { reason: parsed.why ?? '' });
-            } else if (parsed.value === undefined) {
-              touched = registry.set(parsed.name);
-            } else {
-              touched = registry.set(parsed.name, parsed.value, {
-                reason: parsed.why ?? '',
-                ...(parsed.utilities ? { utilities: true } : {}),
-              });
-            }
-          } catch (error) {
-            const status = error instanceof TokenInUseError ? 409 : 400;
-            return sendJson(res, status, { error: (error as Error).message });
-          }
-          if (touched.length === 0) {
-            return sendJson(res, 409, {
-              error: `Token "${parsed.name}" has no change to undo`,
-            });
-          }
-          saveRegistryToDir(tokensDir, registry);
-          await regenerate();
-          server.ws.send({ type: 'custom', event: 'rafters:css-updated' });
-          const token = registry.get(parsed.name);
-          appendLog(logPath, {
-            at: new Date().toISOString(),
-            action,
-            name: parsed.name,
-            before,
-            after: token?.value ?? null,
-            why: action === 'undo' ? null : (parsed.why ?? null),
-            // More than one name is a colour family and its steps.
-            ...(touched.length > 1 ? { tokens: [...touched] } : {}),
+          return refuse(res, 'method-not-allowed', 'POST or DELETE only', {
+            allowed: ['POST', 'DELETE'],
           });
-          sendJson(res, 200, action === 'delete' ? { deleted: touched } : { token: token ?? null });
-        });
+        }
+        if (refuseRequest(req, res, server)) return;
+
+        // Every throw becomes a refusal, so a failed write never leaves the
+        // queue rejected and the writes behind it skipped.
+        queue = queue.then(() => write(req, res, method).catch((error) => refuseError(res, error)));
       });
+
+      async function write(
+        req: IncomingMessage,
+        res: ServerResponse,
+        method: 'POST' | 'DELETE',
+      ): Promise<void> {
+        let body: unknown;
+        try {
+          body = JSON.parse(await readBody(req));
+        } catch {
+          return refuse(res, 'body-not-json', 'body must be JSON');
+        }
+        const parsed = parseSetBody(body);
+        if ('field' in parsed) {
+          return refuse(res, 'body-invalid', parsed.message, { field: parsed.field });
+        }
+        const action: StudioAction =
+          method === 'DELETE' ? 'delete' : parsed.value === undefined ? 'undo' : 'set';
+        const before = registry.get(parsed.name)?.value ?? null;
+        let touched: readonly string[];
+        if (action === 'delete') {
+          touched = registry.delete(parsed.name, { reason: parsed.why ?? '' });
+        } else if (parsed.value === undefined) {
+          touched = registry.set(parsed.name);
+        } else {
+          touched = registry.set(parsed.name, parsed.value, {
+            reason: parsed.why ?? '',
+            ...(parsed.utilities ? { utilities: true } : {}),
+          });
+        }
+        if (touched.length === 0) {
+          return refuse(res, 'nothing-to-undo', `Token "${parsed.name}" has no change to undo`, {
+            name: parsed.name,
+          });
+        }
+        saveRegistryToDir(tokensDir, registry);
+        await regenerate();
+        server.ws.send({ type: 'custom', event: 'rafters:css-updated' });
+        const token = registry.get(parsed.name);
+        appendLog(logPath, {
+          at: new Date().toISOString(),
+          action,
+          name: parsed.name,
+          before,
+          after: token?.value ?? null,
+          why: action === 'undo' ? null : (parsed.why ?? null),
+          // More than one name is a colour family and its steps.
+          ...(touched.length > 1 ? { tokens: [...touched] } : {}),
+        });
+        sendJson(res, 200, action === 'delete' ? { deleted: touched } : { token: token ?? null });
+      }
     },
   };
 }
@@ -206,15 +213,87 @@ function studioApi(
  * Origin) may write, and only as JSON, so a page on another site cannot post
  * here: Vite's CORS middleware only sets headers.
  */
-function refuseRequest(req: IncomingMessage, server: ViteDevServer): string | undefined {
+function refuseRequest(req: IncomingMessage, res: ServerResponse, server: ViteDevServer): boolean {
   const type = req.headers['content-type'] ?? '';
-  if (!type.startsWith('application/json')) return 'Content-Type must be application/json';
+  if (!type.startsWith('application/json')) {
+    refuse(res, 'unsupported-media-type', 'Content-Type must be application/json', {
+      expected: 'application/json',
+    });
+    return true;
+  }
   const origin = req.headers.origin;
-  if (origin === undefined) return undefined;
+  if (origin === undefined) return false;
   const address = server.httpServer?.address();
   const port = address && typeof address === 'object' ? address.port : undefined;
   const own = [`http://localhost:${port}`, `http://127.0.0.1:${port}`];
-  return own.includes(origin) ? undefined : `origin ${origin} may not write`;
+  if (own.includes(origin)) return false;
+  refuse(res, 'origin-refused', `origin ${origin} may not write`, { origin });
+  return true;
+}
+
+/** Each code's HTTP status and the detail fields its body carries (#2876). */
+const REFUSALS: Record<StudioErrorCode, { status: number; details: readonly string[] }> = {
+  'method-not-allowed': { status: 405, details: ['allowed'] },
+  'origin-refused': { status: 403, details: ['origin'] },
+  'unsupported-media-type': { status: 415, details: ['expected'] },
+  'body-not-json': { status: 400, details: [] },
+  'body-invalid': { status: 400, details: ['field'] },
+  'reason-required': { status: 422, details: ['name', 'action'] },
+  'unknown-token': { status: 404, details: ['name'] },
+  'token-invalid': { status: 422, details: ['name', 'issues'] },
+  'literal-color': { status: 422, details: ['name', 'path'] },
+  'name-rejected': { status: 422, details: ['name', 'reason'] },
+  'name-taken': { status: 409, details: ['name', 'takenBy'] },
+  'token-in-use': { status: 409, details: ['name', 'readers'] },
+  'token-undeletable': { status: 409, details: ['name', 'reason'] },
+  'circular-dependency': { status: 409, details: ['cycle'] },
+  'nothing-to-undo': { status: 409, details: ['name'] },
+  'color-out-of-gamut': { status: 422, details: ['requested', 'nearest', 'deltaE', 'limit'] },
+  internal: { status: 500, details: [] },
+};
+
+function refuse(
+  res: ServerResponse,
+  code: StudioErrorCode,
+  message: string,
+  details: Record<string, unknown> = {},
+): void {
+  sendJson(res, REFUSALS[code].status, { error: { code, message, ...details } });
+}
+
+function isStudioErrorCode(code: unknown): code is StudioErrorCode {
+  return STUDIO_ERROR_CODES.some((c) => c === code);
+}
+
+/**
+ * A thrown error's refusal, read from its code and the properties that code
+ * names; an error without a Studio code is internal. An error's `name` is its
+ * class, so the token's name is read from `tokenName`.
+ */
+function refuseError(res: ServerResponse, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  const fields: Record<string, unknown> =
+    error !== null && typeof error === 'object' ? { ...error } : {};
+  const code = fields.code;
+  if (!isStudioErrorCode(code)) return refuse(res, 'internal', message);
+  const details: Record<string, unknown> = {};
+  for (const field of REFUSALS[code].details) {
+    const value = fields[field === 'name' ? 'tokenName' : field];
+    details[field] = field === 'issues' ? issuesOf(value) : value;
+  }
+  refuse(res, code, message, details);
+}
+
+/** A schema error's issues as `{ path, message }`, the path dotted. */
+function issuesOf(value: unknown): { path: string; message: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((issue: unknown) => {
+    const { path, message } = (issue ?? {}) as { path?: unknown; message?: unknown };
+    return {
+      path: Array.isArray(path) ? path.join('.') : '',
+      message: typeof message === 'string' ? message : '',
+    };
+  });
 }
 
 type StudioAction = 'set' | 'undo' | 'delete';
@@ -241,13 +320,23 @@ interface SetBody {
   utilities?: boolean;
 }
 
-function parseSetBody(body: unknown): SetBody | string {
-  if (!body || typeof body !== 'object') return 'body must be an object';
+interface BodyInvalid {
+  field: string;
+  message: string;
+}
+
+function parseSetBody(body: unknown): SetBody | BodyInvalid {
+  if (!body || typeof body !== 'object')
+    return { field: 'body', message: 'body must be an object' };
   const { name, value, why, utilities } = body as Record<string, unknown>;
-  if (typeof name !== 'string' || name.length === 0) return 'name is required';
-  if (why !== undefined && typeof why !== 'string') return 'why must be a string';
+  if (typeof name !== 'string' || name.length === 0) {
+    return { field: 'name', message: 'name is required' };
+  }
+  if (why !== undefined && typeof why !== 'string') {
+    return { field: 'why', message: 'why must be a string' };
+  }
   if (utilities !== undefined && typeof utilities !== 'boolean') {
-    return 'utilities must be a boolean';
+    return { field: 'utilities', message: 'utilities must be a boolean' };
   }
   return {
     name,

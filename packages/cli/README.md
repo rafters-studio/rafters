@@ -108,7 +108,7 @@ curl -X POST http://127.0.0.1:7777/__rafters/set \
   -d '{"name": "fill-glass", "value": {"foreground": {"family": "zinc", "position": "900"}, "background": {"color": {"family": "zinc", "position": "100"}, "alpha": 70}, "backdrop": {"blur": "md"}}, "why": "frosted panels"}'
 ```
 
-`POST /__rafters/set { name, value?, why }` sets a token, records your reason, cascades, saves `.rafters/tokens/` and regenerates `rafters.css`. A name starting `fill-` that does not exist yet creates a designer fill, exported as `bg-fill-<name>`; a fill needs a `foreground`. Add `"clip": "text"` to a fill to paint its background or gradient through the glyphs, with the foreground as the colour where clipping is unsupported; every Typography component takes `fill="bg-fill-<name>"`. Any other new kebab-case name with a colour value, in any CSS format (`#c8a24b`, `rgb()`, `hsl()`, `oklch()`, a named colour) or as `{l, c, h}`, creates a colour family pinned at 500 with steps 50 to 950; add `"utilities": true` to emit its `bg-<name>-<step>` utilities before any role uses it. A colour value on an existing family rebuilds it from the new seed, dropping step overrides and keeping its utilities. A name, or any step or fill it would occupy, that already exists is refused as taken. With no value it undoes one step, which removes a fill or colour family `set` created; on a token with nothing to undo it answers 409. A value with no `why` is refused, and so is an invalid value, with the registry's error naming the field. Colours in a fill are always references (`{family, position}` or `{token}`), never literals. `GET /__rafters/tokens` lists every token by namespace with its override and chain. Requests must be JSON, from no origin or the server's own. Running it again while it runs prints the existing URL.
+`POST /__rafters/set { name, value?, why }` sets a token, records your reason, cascades, saves `.rafters/tokens/` and regenerates `rafters.css`. A name starting `fill-` that does not exist yet creates a designer fill, exported as `bg-fill-<name>`; a fill needs a `foreground`. Add `"clip": "text"` to a fill to paint its background or gradient through the glyphs, with the foreground as the colour where clipping is unsupported; every Typography component takes `fill="bg-fill-<name>"`. Any other new kebab-case name with a colour value, in any CSS format (`#c8a24b`, `rgb()`, `hsl()`, `oklch()`, a named colour) or as `{l, c, h}`, creates a colour family pinned at 500 with steps 50 to 950; add `"utilities": true` to emit its `bg-<name>-<step>` utilities before any role uses it. A colour value on an existing family rebuilds it from the new seed, dropping step overrides and keeping its utilities. A name, or any step or fill it would occupy, that already exists is refused as taken. With no value it undoes one step, which removes a fill or colour family `set` created; on a token with nothing to undo it answers 409. A value with no `why` is refused, and so is an invalid value, with the field it names. Colours in a fill are always references (`{family, position}` or `{token}`), never literals. `GET /__rafters/tokens` lists every token by namespace with its override and chain. Requests must be JSON, from no origin or the server's own. Running it again while it runs prints the existing URL.
 
 `DELETE /__rafters/set { name, why }` removes a whole fill, or a colour family with its eleven steps, whoever made it (`set`, `rafters import` or `init`), saves and regenerates as POST does, and answers `{ "deleted": [names] }`. It refuses a step (`gold-500`), naming the family to delete instead, and any token the system makes (spacing, typography, a role, a semantic colour). While any other token reads the fill or family (`{ family }`, `{ token }` or `dependsOn`), it answers 409 naming every reader, and changes nothing. A `why` is required.
 
@@ -119,6 +119,30 @@ curl -X DELETE http://127.0.0.1:7777/__rafters/set \
 ```
 
 Every change Studio makes appends one JSON line to `.rafters/studio.log`: `at`, `action` (`set`, `undo` or `delete`), `name`, `before` (null when created), `after` (null when removed), `why` (null for undo) and, for a colour family, `tokens`, every name it touched. A refused request writes nothing. Studio only ever appends to the log; git holds the history.
+
+Every refusal answers `{ "error": { "code", "message", ...details } }`. `code` is one of `STUDIO_ERROR_CODES` from `@rafters/shared`, `message` is a sentence for a person, and the details are exactly the fields listed for the code. A `path` is dotted (`value.background.color`).
+
+| code | status | details | Studio's response |
+|---|---|---|---|
+| `method-not-allowed` | 405 | `allowed: string[]` | bug in the client |
+| `origin-refused` | 403 | `origin` | bug in the client |
+| `unsupported-media-type` | 415 | `expected: 'application/json'` | bug in the client |
+| `body-not-json` | 400 | none | bug in the client |
+| `body-invalid` | 400 | `field` (`name`, `why`, `utilities`, or `body` when the body is not an object) | bug in the client |
+| `reason-required` | 422 | `name`, `action: 'set' \| 'delete'` | ask for a why |
+| `unknown-token` | 404 | `name` | refresh the token list |
+| `token-invalid` | 422 | `name`, `issues: {path, message}[]` | show the field errors |
+| `literal-color` | 422 | `name`, `path` | offer to create a colour token |
+| `name-rejected` | 422 | `name`, `reason` | show the naming rule |
+| `name-taken` | 409 | `name`, `takenBy` | offer to edit the existing token |
+| `token-in-use` | 409 | `name`, `readers: string[]` | list the readers |
+| `token-undeletable` | 409 | `name`, `reason` | explain why it stays |
+| `circular-dependency` | 409 | `cycle: string[]` | show the cycle |
+| `nothing-to-undo` | 409 | `name` | disable undo |
+| `color-out-of-gamut` | 422 | `requested`, `nearest`, `deltaE`, `limit` (OKLCH) | offer the nearest colour |
+| `internal` | 500 | none | report a bug |
+
+`GET /__rafters/tokens` only refuses with `method-not-allowed`. `color-out-of-gamut` is reserved: nothing raises it yet.
 
 ### `rafters mcp`
 

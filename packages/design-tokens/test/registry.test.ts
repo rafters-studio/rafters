@@ -1,10 +1,20 @@
 import type { ColorValue, Token } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  CircularDependencyError,
   contrastPlugin,
+  generateBaseSystem,
+  LiteralColourError,
+  MissingReasonError,
+  NameTakenError,
+  REGISTRY_PLUGINS,
   scalePlugin,
   statePlugin,
+  TokenInUseError,
+  TokenNameError,
+  TokenParseError,
   TokenRegistry,
+  UndeletableTokenError,
   UnknownTokenError,
 } from '../src/index.js';
 
@@ -230,5 +240,119 @@ describe('TokenRegistry', () => {
       expect(t?.accessibilityLevel).toBe('AAA');
       expect(t?.appliesWhen).toEqual(['hero sections']);
     });
+  });
+});
+
+// #2876: each error carries a Studio code and the facts its refusal reports.
+describe('error codes', () => {
+  const FG = { family: 'zinc', position: '900' };
+
+  function base(): TokenRegistry {
+    return new TokenRegistry(generateBaseSystem().allTokens, REGISTRY_PLUGINS);
+  }
+
+  function thrown(run: () => unknown): unknown {
+    try {
+      run();
+    } catch (error) {
+      return error;
+    }
+    throw new Error('nothing was thrown');
+  }
+
+  it('reason-required names the token and the action', () => {
+    const r = base();
+    const set = thrown(() => r.set('spacing-base', '1rem', { reason: '' }));
+    expect(set).toBeInstanceOf(MissingReasonError);
+    expect(set).toMatchObject({
+      code: 'reason-required',
+      tokenName: 'spacing-base',
+      action: 'set',
+    });
+    const del = thrown(() => r.delete('spacing-base', { reason: '' }));
+    expect(del).toMatchObject({ code: 'reason-required', action: 'delete' });
+    expect((del as Error).message).toBe('Token "spacing-base" cannot be deleted without a reason');
+  });
+
+  it('unknown-token names the token', () => {
+    const error = thrown(() => base().set('spacing-huge', '9rem', { reason: 'x' }));
+    expect(error).toBeInstanceOf(UnknownTokenError);
+    expect(error).toMatchObject({ code: 'unknown-token', tokenName: 'spacing-huge' });
+  });
+
+  it('token-invalid names the token and its issues', () => {
+    const r = base();
+    const error = thrown(() =>
+      r.set('fill-glass', { foreground: FG, clip: 'border' } as never, { reason: 'x' }),
+    );
+    expect(error).toBeInstanceOf(TokenParseError);
+    expect(error).not.toBeInstanceOf(LiteralColourError);
+    expect(error).toMatchObject({ code: 'token-invalid', tokenName: 'fill-glass' });
+    expect((error as TokenParseError).issues.map((i) => i.path.join('.'))).toEqual(['value.clip']);
+  });
+
+  it('literal-color names the token and the path of the literal', () => {
+    const r = base();
+    const value = { foreground: FG, background: { color: 'oklch(0.6 0.1 240)' } };
+    const error = thrown(() => r.set('fill-glass', value as never, { reason: 'x' }));
+    expect(error).toBeInstanceOf(LiteralColourError);
+    expect(error).toBeInstanceOf(TokenParseError);
+    expect(error).toMatchObject({
+      code: 'literal-color',
+      tokenName: 'fill-glass',
+      path: 'value.background.color',
+    });
+  });
+
+  it('a missing foreground is token-invalid, not a literal colour', () => {
+    const r = base();
+    const error = thrown(() => r.set('fill-glass', {} as never, { reason: 'x' }));
+    expect(error).toMatchObject({ code: 'token-invalid' });
+  });
+
+  it('name-rejected names the token and the rule', () => {
+    const error = thrown(() => base().set('fill-Glass', { foreground: FG }, { reason: 'x' }));
+    expect(error).toBeInstanceOf(TokenNameError);
+    expect(error).toMatchObject({
+      code: 'name-rejected',
+      tokenName: 'fill-Glass',
+      reason: 'a fill name must be lowercase kebab-case',
+    });
+  });
+
+  it('name-taken names the token and its holder', () => {
+    const r = base();
+    r.set('fill-gold', { foreground: FG }, { reason: 'x' });
+    const error = thrown(() => r.set('gold', '#c8a24b', { reason: 'x' }));
+    expect(error).toBeInstanceOf(NameTakenError);
+    expect(error).toMatchObject({ code: 'name-taken', tokenName: 'gold', takenBy: 'fill-gold' });
+  });
+
+  it('token-in-use names the token and its readers', () => {
+    const r = base();
+    r.set('gold', '#c8a24b', { reason: 'x' });
+    r.set('fill-glass', { foreground: { family: 'gold', position: '500' } }, { reason: 'x' });
+    const error = thrown(() => r.delete('gold', { reason: 'x' }));
+    expect(error).toBeInstanceOf(TokenInUseError);
+    expect(error).toMatchObject({
+      code: 'token-in-use',
+      tokenName: 'gold',
+      readers: ['fill-glass'],
+    });
+  });
+
+  it('token-undeletable names the token and why it stays', () => {
+    const error = thrown(() => base().delete('spacing-base', { reason: 'x' }));
+    expect(error).toBeInstanceOf(UndeletableTokenError);
+    expect(error).toMatchObject({
+      code: 'token-undeletable',
+      tokenName: 'spacing-base',
+      reason: 'the system makes it, so it cannot be deleted',
+    });
+  });
+
+  it('circular-dependency carries the cycle', () => {
+    const error = new CircularDependencyError(['a', 'b', 'a']);
+    expect(error).toMatchObject({ code: 'circular-dependency', cycle: ['a', 'b', 'a'] });
   });
 });

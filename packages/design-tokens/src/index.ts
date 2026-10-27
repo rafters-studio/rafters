@@ -81,10 +81,14 @@ export {
   statePlugin,
 } from './plugins/index.js';
 export {
+  LiteralColourError,
+  MissingReasonError,
   type RegistryFilter,
   TokenParseError,
   TokenRegistry,
   NameTakenError,
   TokenInUseError,
+  TokenNameError,
+  UndeletableTokenError,
   UnknownTokenError,
 } from './registry.js';
