@@ -126,10 +126,9 @@ wrapping an enabled control does not dim. The sibling `.peer` layout keeps its
 The label dims when it contains a disabled control (option A of #2656),
 because the props-only previews wrap the control in the label, and neither a
 `peer` marker on RadioGroupItem (sibling layout only) nor the composition #2519
-asks for dims that markup. The
-label's opacity multiplies with the control's own `disabled:opacity-50`, so a
-wrapped disabled control reads at about 0.35, dimmer than in the sibling
-layout.
+asks for dims that markup. The label's opacity multiplies with the control's
+own `disabled:opacity-50`, so a wrapped disabled control reads at about 0.35,
+dimmer than in the sibling layout.
 
 ## shadcn drop-in parity
 
