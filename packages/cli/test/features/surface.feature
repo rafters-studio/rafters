@@ -42,7 +42,9 @@ Feature: surfaces are bg-surface-* fills with a surface prop (#2830)
     Then its root element carries that surface's literal bg-surface- class
 
   @criterion-5
-  Scenario: existing bg-card and text-*-foreground readers render unchanged
+  Scenario: existing bg-card and text-*-foreground readers read their tokens, before and after a role changes
     Given a freshly initialised project
     When rafters.css is exported and compiled with real Tailwind
-    Then bg-card and every text-*-foreground class compute the same values as before this change, in light and in dark
+    Then bg-card and every text-*-foreground class compute the same colour as its token, in light and in dark
+    When a role that surfaces depend on changes and rafters.css is exported and compiled with real Tailwind
+    Then bg-card and every text-*-foreground class compute the same colour as its token, in light and in dark
