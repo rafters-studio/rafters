@@ -2,10 +2,10 @@
  * Harmony generation for design systems using pure OKLCH hue rotation.
  *
  * Rule: harmonies are PURE HUE ROTATIONS. L and C are never mutated.
- * Only H changes. Every harmony output goes through toNearestGamut() then
- * roundOKLCH(). The scale is different: generateOKLCHScale returns unmapped
- * steps, and buildColorValue maps them into the family's ceiling with
- * mapScaleToGamut (gamut.ts).
+ * Only H changes. Every harmony output goes through clampColor(), which
+ * drops chroma into sRGB and rounds inside it. The scale is different:
+ * generateOKLCHScale returns unmapped steps, and buildColorValue maps them
+ * into the family's ceiling with mapScaleToGamut (gamut.ts).
  */
 
 import type { ColorHarmonies, OKLCH } from '@rafters/shared';
