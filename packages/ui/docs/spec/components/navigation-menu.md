@@ -124,7 +124,7 @@ The Astro component is data-driven (`items`), so its slot names carry the item v
 
 ## Top-level link
 
-Current choice (2026-10-19): a `NavigationMenuLink` that sits directly in a `NavigationMenuItem` in the bar matches the trigger beside it with no prop and no `className`, because the two are peer items in one bar and a props-only consumer has no other way to make them match (#2659); revisable.
+A `NavigationMenuLink` that sits directly in a `NavigationMenuItem` in the bar matches the trigger beside it with no prop and no `className`, because the two are peer items in one bar and a props-only consumer has no other way to make them match (#2659).
 
 - The link class carries the trigger's type role, height and alignment scoped to a link directly in the item: `[li>&]:text-label-medium [li>&]:ts-label-medium [li>&]:h-11 @md:[li>&]:h-10 [li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:px-4 [li>&]:py-2`. Its font-size, font-weight, line-height and height equal the trigger's.
 - A link inside a `NavigationMenuContent` panel is not a direct child of the item, so it keeps its own type and the stacked title-over-description layout.

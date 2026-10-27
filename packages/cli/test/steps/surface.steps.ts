@@ -3,7 +3,7 @@
  * fill named bg-surface-<name> whose parts reference that surface's tokens,
  * and every surface-bearing component takes a surface prop.
  *
- * The measured surface list (current choice, 2026-10-23, revisable): every
+ * The measured surface list: every
  * semantic default X with an X-foreground pair (background pairs with
  * foreground), minus the state names (-hover, -active, -focus, -disabled,
  * -selected, -invalid, -valid) and any name whose bg-surface-* is already a
