@@ -23,7 +23,7 @@ patchedDependencies:
 # .pnpmfile.mjs). An entry here wins over the toolchain's, so this block holds only what
 # rafters keeps for itself plus packages the toolchain does not manage.
 catalog:
-  '@rafters/toolchain': ^0.1.3
+  '@rafters/toolchain': ^0.1.4
   '@axe-core/playwright': ^4.11.0
   # @vitest/browser-playwright dev-pins playwright ^1.62.1; keep the runner in step.
   '@playwright/test': ^1.62.1
@@ -50,10 +50,11 @@ catalog:
   react: ^19.2.0
   react-dom: ^19.2.0
   stoker: ^2.0.1
-  # rafters stays on TypeScript 5.9 over the toolchain's 7: tsup's .d.ts emit and astro
-  # check do not run on the native compiler yet.
+  # rafters stays on TypeScript 5.9 over the toolchain's 7, which ships no compiler API:
+  # tsup's .d.ts step in packages/cli fails, and apps/registry's own code imports
+  # typescript's API (astro check itself runs on the TypeScript 6 the toolchain gives it).
   typescript: 5.9.3
-  # The toolchain's vite is vite-plus-core; rafters keeps upstream vite until it chooses vite-plus.
+  # The toolchain's vite is vite-plus-core, which is out of scope (#2885); rafters keeps upstream vite.
   vite: ^8.1.1
   vitest: ^5.0.0
   vitest-axe: ^1.0.0-pre.3
@@ -61,7 +62,7 @@ catalog:
   zocker: 3.0.0
 
 configDependencies:
-  '@rafters/toolchain': 0.1.3
+  '@rafters/toolchain': 0.1.4
 
 minimumReleaseAgeExclude:
   - '@rafters/toolchain'

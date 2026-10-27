@@ -6,8 +6,8 @@ importers:
   .:
     configDependencies:
       '@rafters/toolchain':
-        specifier: 0.1.3
-        version: 0.1.3
+        specifier: 0.1.4
+        version: 0.1.4
     packageManagerDependencies:
       pnpm:
         specifier: 12.9.1
@@ -92,8 +92,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rafters/toolchain@0.1.3':
-    resolution: {integrity: sha512-+gDgVc98qUhgzN8TSdWoNjvSapGqJBNu9SzUoIi+BG7h49cuMd3ndnQhHIIgVNPbHmAkbiNhAn4fezhsz5TEVA==}
+  '@rafters/toolchain@0.1.4':
+    resolution: {integrity: sha512-OQ074yC/gWg0S4FhEWSxKmAPZ6bgZyu5WsZY5ApMv0upQU9mPQr1n4taTAci/dEhm1+fbKhy7FiSQlttW4mr9A==}
 
   pnpm@12.9.1:
     resolution: {integrity: sha512-BrBV//XNINwSeB3hc87TMQzglRvy7GICEaFgRdVETVyTpmMhB2TvKaZTphBFm6A2jw50+E2AxUcjz5Wq57wNbQ==}
@@ -144,7 +144,7 @@ snapshots:
   '@pnpm/exe.win32-x64@12.9.1':
     optional: true
 
-  '@rafters/toolchain@0.1.3': {}
+  '@rafters/toolchain@0.1.4': {}
 
   pnpm@12.9.1:
     optionalDependencies:
@@ -179,7 +179,7 @@ catalogs:
       specifier: ^1.62.1
       version: 1.63.0
     '@rafters/toolchain':
-      specifier: ^0.1.3
+      specifier: ^0.1.4
       version: 0.1.4
     '@testing-library/jest-dom':
       specifier: ^6.6.3
@@ -455,7 +455,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       vite:
-        specifier: ^8.1.1
+        specifier: 'catalog:'
         version: 8.1.5(@types/node@24.10.0)(esbuild@0.27.3)(jiti@2.7.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
     devDependencies:
       '@astrojs/compiler-rs':
