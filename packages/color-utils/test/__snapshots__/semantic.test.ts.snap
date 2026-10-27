@@ -46,9 +46,9 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
     "info": [
       {
         "alpha": 1,
-        "c": 0.12,
-        "h": 233,
-        "l": 0.585,
+        "c": 0.115,
+        "h": 230,
+        "l": 0.58,
       },
       {
         "alpha": 1,
@@ -58,9 +58,9 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
       },
       {
         "alpha": 1,
-        "c": 0.102,
-        "h": 225,
-        "l": 0.539,
+        "c": 0.096,
+        "h": 220,
+        "l": 0.53,
       },
     ],
     "success": [
@@ -250,9 +250,9 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
     "info": [
       {
         "alpha": 1,
-        "c": 0.12,
-        "h": 233,
-        "l": 0.585,
+        "c": 0.115,
+        "h": 230,
+        "l": 0.58,
       },
       {
         "alpha": 1,
@@ -262,9 +262,9 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
       },
       {
         "alpha": 1,
-        "c": 0.102,
-        "h": 225,
-        "l": 0.539,
+        "c": 0.096,
+        "h": 220,
+        "l": 0.53,
       },
     ],
     "success": [
@@ -324,7 +324,7 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
       },
       {
         "alpha": 1,
-        "c": 0.2,
+        "c": 0.199,
         "h": 15,
         "l": 0.5,
       },
@@ -344,7 +344,7 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
       },
       {
         "alpha": 1,
-        "c": 0.2,
+        "c": 0.199,
         "h": 15,
         "l": 0.5,
       },
@@ -352,61 +352,61 @@ exports[`generateSemanticColorSuggestions (seed-derived, anchored to colorWheel 
     "info": [
       {
         "alpha": 1,
-        "c": 0.125,
-        "h": 235,
-        "l": 0.589,
+        "c": 0.115,
+        "h": 230,
+        "l": 0.58,
       },
       {
         "alpha": 1,
-        "c": 0.147,
-        "h": 241,
-        "l": 0.632,
+        "c": 0.144,
+        "h": 240,
+        "l": 0.63,
       },
       {
         "alpha": 1,
-        "c": 0.102,
-        "h": 225,
-        "l": 0.539,
+        "c": 0.096,
+        "h": 220,
+        "l": 0.53,
       },
     ],
     "success": [
       {
         "alpha": 1,
-        "c": 0.177,
-        "h": 144,
-        "l": 0.552,
+        "c": 0.172,
+        "h": 145,
+        "l": 0.55,
       },
       {
         "alpha": 1,
-        "c": 0.162,
-        "h": 152,
-        "l": 0.609,
+        "c": 0.148,
+        "h": 155,
+        "l": 0.6,
       },
       {
         "alpha": 1,
-        "c": 0.154,
-        "h": 138,
-        "l": 0.502,
+        "c": 0.145,
+        "h": 135,
+        "l": 0.5,
       },
     ],
     "warning": [
       {
         "alpha": 1,
-        "c": 0.155,
-        "h": 82,
-        "l": 0.752,
+        "c": 0.153,
+        "h": 85,
+        "l": 0.75,
       },
       {
         "alpha": 1,
         "c": 0.164,
-        "h": 93,
-        "l": 0.802,
+        "h": 95,
+        "l": 0.8,
       },
       {
         "alpha": 1,
-        "c": 0.152,
-        "h": 70,
-        "l": 0.702,
+        "c": 0.147,
+        "h": 75,
+        "l": 0.7,
       },
     ],
   },

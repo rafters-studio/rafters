@@ -167,11 +167,11 @@ describe('toNearestGamut', () => {
     expect(isInSRGBGamut(result.color)).toBe(true);
   });
 
-  it('preserves hue approximately when snapping', () => {
+  it('keeps lightness and hue exactly and takes the sRGB ceiling chroma (#2878)', () => {
     const result = toNearestGamut(p3Green);
-    // Gamut mapping may shift hue slightly; allow 10 degrees tolerance
-    const hueDiff = Math.abs(result.color.h - p3Green.h);
-    expect(hueDiff).toBeLessThan(10);
+    expect(result.color.l).toBe(p3Green.l);
+    expect(result.color.h).toBe(p3Green.h);
+    expect(result.color).toEqual(toGamutCeiling(p3Green, 'srgb'));
   });
 
   it('reduces chroma minimally', () => {

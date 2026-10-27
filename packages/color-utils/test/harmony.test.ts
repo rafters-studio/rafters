@@ -236,6 +236,30 @@ describe('generateHarmony', () => {
   });
 
   describe('gamut clamping', () => {
+    it('keeps the base lightness and the rotated hue when a rotation leaves sRGB (#2878)', () => {
+      const result = generateHarmony(orange);
+      const rotations: [OKLCH, number][] = [
+        [result.complementary, 180],
+        [result.triadic[1] as OKLCH, 120],
+        [result.triadic[2] as OKLCH, 240],
+        ...([-45, -30, -15, 15, 30, 45].map((d, i) => [result.analogous[i] as OKLCH, d]) as [
+          OKLCH,
+          number,
+        ][]),
+        [result.tetradic[1] as OKLCH, 90],
+        [result.tetradic[2] as OKLCH, 180],
+        [result.tetradic[3] as OKLCH, 270],
+        [result.splitComplementary[1] as OKLCH, 150],
+        [result.splitComplementary[2] as OKLCH, 210],
+      ];
+      expect(rotations.some(([color]) => color.c < orange.c)).toBe(true);
+      for (const [color, degrees] of rotations) {
+        expect(color.l).toBe(orange.l);
+        expect(color.h).toBe((orange.h + degrees + 360) % 360);
+        expect(color.c).toBeLessThanOrEqual(orange.c);
+      }
+    });
+
     it('all OKLCH values have l in [0, 1]', () => {
       const result = generateHarmony(orange);
       const all = getAllColors(result);

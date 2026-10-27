@@ -336,8 +336,7 @@ describe('semanticFor — surface derivations (border, ring, subtle)', () => {
 describe('generateSemanticColorSuggestions (seed-derived, anchored to colorWheel formulas)', () => {
   it('derives chroma from the seed: a muted seed yields muted status colors', async () => {
     const { generateSemanticColorSuggestions, statusAnchor } = await import('../src/semantic.js');
-    const { toNearestGamut } = await import('../src/gamut.js');
-    const { roundOKLCH } = await import('../src/conversion.js');
+    const { clampColor } = await import('../src/gamut.js');
     const vivid = generateSemanticColorSuggestions(red);
     const muted = generateSemanticColorSuggestions(gray);
     for (const role of ['destructive', 'success', 'warning', 'info'] as const) {
@@ -345,7 +344,7 @@ describe('generateSemanticColorSuggestions (seed-derived, anchored to colorWheel
         expect((muted[role][i] as OKLCH).c).toBeLessThan((vivid[role][i] as OKLCH).c);
       }
       // Variant 1 IS the wheel anchor (gamut-clamped for storage) — single source of truth.
-      expect(vivid[role][0]).toEqual(roundOKLCH(toNearestGamut(statusAnchor(role, red)).color));
+      expect(vivid[role][0]).toEqual(clampColor(statusAnchor(role, red)));
     }
   });
 
@@ -368,6 +367,30 @@ describe('generateSemanticColorSuggestions (seed-derived, anchored to colorWheel
       }
       const hues = new Set((out[role] as OKLCH[]).map((v) => v.h));
       expect(hues.size, `${role} variants should be distinct`).toBeGreaterThan(1);
+    }
+  });
+
+  it('keeps each variant on its band-clamped hue when the anchor leaves sRGB (#2878)', async () => {
+    const { generateSemanticColorSuggestions, statusAnchor } = await import('../src/semantic.js');
+    const { isInSRGBGamut } = await import('../src/gamut.js');
+    const vivid: OKLCH = { l: 0.6, c: 0.4, h: 25, alpha: 1 };
+    const out = generateSemanticColorSuggestions(vivid);
+    const hues = {
+      destructive: [25, 30, 15],
+      success: [145, 155, 135],
+      warning: [85, 95, 75],
+      info: [230, 240, 220],
+    } as const;
+    for (const role of ['success', 'warning', 'info'] as const) {
+      expect(isInSRGBGamut(statusAnchor(role, vivid)), role).toBe(false);
+    }
+    for (const role of ['destructive', 'success', 'warning', 'info'] as const) {
+      const anchor = statusAnchor(role, vivid);
+      for (const [i, variant] of (out[role] as OKLCH[]).entries()) {
+        expect(variant.h, `${role}[${i}]`).toBe(hues[role][i]);
+        expect(variant.l, `${role}[${i}]`).toBeCloseTo(anchor.l + ([0, 0.05, -0.05][i] ?? 0), 3);
+        expect(isInSRGBGamut(variant), `${role}[${i}]`).toBe(true);
+      }
     }
   });
 
