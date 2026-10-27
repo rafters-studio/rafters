@@ -7,14 +7,14 @@ effect. The stock-layout carrier.
 Files (`src/components/grid/`):
 
 ```
-grid.behavior.ts   grid.classes.ts   grid.tsx   grid.element.ts   grid.astro
+grid.behavior.ts   grid.classes.ts   grid.tsx   grid.astro
 ```
 
 `grid.behavior.ts` holds the score AND `bindGrid(root)` -- the DOM-native
-client both the `<rafters-grid>` web component (`grid.element.ts`) and the
-Astro `<script>` (`grid.astro`) import. React (`grid.tsx`) reads the
+client the
+Astro `<script>` (`grid.astro`) imports. React (`grid.tsx`) reads the
 projection declaratively via `createBehavior` + `useMemory` +
-`useBehaviorEffects` (no `useBehavior`). One score, three performances.
+`useBehaviorEffects` (no `useBehavior`). One score, two performances.
 
 ## Rulings (Sean, 2026-07-03)
 
@@ -53,6 +53,19 @@ SCHEMA — layout JSON in the token registry, named slots, generator-emitted
 selection classes. Geometry only, ever: the first conditional or binding in
 that JSON is the template framework boundary 5 prohibits.
 
+## Item content
+
+The content of a `Grid.Item` fills the item. The item is placed by its
+spans (or by `data-priority` under a stock layout) and its content takes the
+item's full block size, so a Card in a primary bento item is as tall as both
+rows plus the gap, and the tiles in a row are one height. `Grid.Item` carries
+`grid` for this: its auto track stretches to the item's area and its child
+stretches to the track. Placement is unchanged.
+
+The item makes its content fill, not Card, because the outcome is about a grid
+item's content rather than only Cards, and it reaches every child placed in a
+grid.
+
 ## Oracle dispositions (boundary 9)
 
 | Oracle feature | Disposition |
@@ -65,7 +78,7 @@ that JSON is the template framework boundary 5 prohibits.
 | responsive columns object on the VIEWPORT axis | ported per documented intent (page-level layouts respond to viewport); container-axis variant pending ratification |
 | editable / showColumnDropZones / GridItemDropZone / onConfigChange | stripped — studio-layer concern (pending ratification); onConfigChange was a void'd dead callback |
 
-## Three-framework dispositions
+## Framework dispositions
 
 - **`role="grid"` opt-in attribute is `grid-role`.** On a light-DOM host a
   bare `role="grid"` both collides with the platform `role` attribute and is
@@ -73,16 +86,14 @@ that JSON is the template framework boundary 5 prohibits.
   `bindGrid` reads `grid-role` and PROJECTS the honest `role="grid"` onto the
   root once the structure exists. React keeps the idiomatic `role` prop (it
   renders role and rows in the same commit, so there is no bare-role window).
-- **`grid-roving` executor resolves focus via `getRootNode()`.** Not
-  `document.activeElement` -- inside a shadow tree that reports the host, so a
-  shadow performance would never match a cell. Identical to `document` in
-  light DOM (carried from the WC port).
+- **`grid-roving` executor resolves focus via `getRootNode()`**, which is
+  `document` in light DOM.
 - **Astro conformance is not exercised.** `grid.astro` ships and SSRs the
   initial projection, but the repo has no `conformance [astro]` harness on
-  `feat/behavior-layer`, so the matrix leaves `astro: "missing"`. React and
-  WC drive the one score under the shared harness (`react`/`wc: "verified"`).
+  `feat/behavior-layer`, so the matrix leaves `astro: "missing"`. React
+  drives the one score under the shared harness (`react: "verified"`).
 
-## Three-gotcha ledger
+## Gotcha ledger
 
 1. **Controlled-callback before/after: N/A.** Grid has no controlled value
    and no actions (`GridActions = Record<never, never>`), so there is no
@@ -91,9 +102,6 @@ that JSON is the template framework boundary 5 prohibits.
 2. **`aria-manager` `{ validate: false }`.** The score's projection is
    already resolved, so `bindGrid` applies it with `validate:false` to skip
    author-input coercion (which would flip the string `'false'` to truthy).
-3. **WC bind deferred one microtask.** `grid.element.ts` binds in a
-   `queueMicrotask` because `connectedCallback` can fire before the light-DOM
-   row/gridcell children are parsed.
 
 ## WCAG obligations
 

@@ -1,4 +1,4 @@
-import { type OverrideKind, OverrideKindSchema } from '@rafters/shared';
+import { type OverrideKind, OverrideKindSchema, type StudioErrorCode } from '@rafters/shared';
 import { z } from 'zod';
 
 export type Plugin = {
@@ -40,9 +40,13 @@ export type SetOptions = {
   reason: string;
   context?: string;
   kind?: OverrideKind;
+  // TokenRegistry.set only: mark a created colour family generateUtilityClass.
+  utilities?: boolean;
 };
 
 export class CircularDependencyError extends Error {
+  readonly code: StudioErrorCode = 'circular-dependency';
+
   constructor(public readonly cycle: readonly string[]) {
     super(`Circular dependency: ${cycle.join(' -> ')}`);
     this.name = 'CircularDependencyError';
@@ -85,6 +89,25 @@ export class TokenGraph {
     };
     this.nodes.set(name, next);
     this.cascadeFrom(name);
+  }
+
+  // Return a token to its override's previousValue and drop the override.
+  revert(name: string): void {
+    const existing = this.nodes.get(name);
+    if (!existing?.userOverride) return;
+    this.takeSnapshot();
+    this.nodes.set(name, {
+      name,
+      value: existing.userOverride.previousValue,
+      ...(existing.binding ? { binding: existing.binding } : {}),
+    });
+    this.cascadeFrom(name);
+  }
+
+  remove(name: string): void {
+    if (!this.nodes.has(name)) return;
+    this.takeSnapshot();
+    this.nodes.delete(name);
   }
 
   // Hydrate a node from persisted state. No cascade fires; the caller

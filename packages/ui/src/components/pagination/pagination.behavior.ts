@@ -10,7 +10,7 @@ import type { BehaviorSpec } from '../../lib/contract';
  * `aria-current="page"` (it stays clickable -- unlike a breadcrumb's current
  * page), the Previous/Next controls project `aria-disabled="true"` at the
  * boundaries, and the ellipsis is an `aria-hidden="true"` decoration pairing a
- * glyph with an sr-only "More pages" label. None of that is a projection the
+ * glyph with a screen-reader-only "More pages" label. None of that is a projection the
  * score computes; it is markup the decorators write from their own props, so
  * the score projects nothing.
  *

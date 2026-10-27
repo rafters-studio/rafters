@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { DropdownMenuConfig, DropdownMenuState } from './dropdown-menu.behavior';
 
 export interface DropdownMenuClassSet {
@@ -7,6 +8,8 @@ export interface DropdownMenuClassSet {
   checkboxItem: string;
   radioItem: string;
   itemIndicator: string;
+  startIcon: string;
+  itemLabel: string;
   checkIcon: string;
   radioDot: string;
   separator: string;
@@ -21,6 +24,9 @@ const triggerClasses =
   'inline-flex items-center justify-center gap-2 rounded-md ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
+
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
 // color. Enter/exit is PRESENCE (#1996): the menu is present-but-hidden, so the
 // keyframe starts as the node leaves display:none -- no @starting-style -- and
@@ -34,13 +40,18 @@ const triggerClasses =
 // matrix declares two moments, and the day one is retuned a shared name would
 // drag the other with it. Collapsing distinct cells is the #2012 defect.
 //
-// NO motion-reduce:animate-none -- the generated utility zeroes
+// NO reduced-motion animation escape -- the generated utility zeroes
 // animation-duration under the media query instead, which keeps the keyframe's
-// end state. animate-none here would win destructively: `animation: none`
+// end state. An animation reset here would win destructively: `animation: none`
 // resets the shorthand and discards the zeroed duration with it.
+//
+// THE ROW (#2459): the content is a grid on grid-cols-menu-row (indicator,
+// icon, label, end) and each item a subgrid row, so the columns line up across
+// items and the icon sits on the right on a dir="rtl" page with no direction
+// class.
 const contentClasses =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -78,42 +89,54 @@ const contentClasses =
 // question (the two rows share one element and the vocabulary has no
 // per-property delay), not something this file can resolve.
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm px-2 py-1.5 ' +
+  'has-data-[icon=inline-start]:ps-1.5 text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const itemClasses = `${itemBase} gap-2 px-2 py-1.5`;
+const itemClasses = itemBase;
 
-const checkboxItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const checkboxItemClasses = itemBase;
 
-const radioItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const radioItemClasses = itemBase;
 
-const itemIndicatorClasses = 'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
+const itemIndicatorClasses =
+  'col-start-1 row-start-1 me-2 flex h-3.5 w-3.5 items-center justify-center';
+
+// The wrapper only places and hides: the brand brings its icons, sizing
+// included. The margin spaces the icon from the label.
+const startIconClasses = 'col-start-2 row-start-1 me-2 inline-grid place-items-center';
+
+// The label cell takes the label column and the end column, so a shortcut
+// pushed to the end with ms-auto sits at the row's end.
+const itemLabelClasses = 'col-start-3 col-span-2 row-start-1 flex min-w-0 items-center gap-2';
 
 const checkIconClasses = 'h-4 w-4';
 
 const radioDotClasses = 'h-2 w-2 rounded-full bg-current';
 
-const separatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
+const separatorClasses = 'col-span-full -mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcutClasses = 'ml-auto text-shortcut ts-shortcut opacity-60';
+const shortcutClasses = 'ms-auto text-shortcut ts-shortcut opacity-60';
 
-const labelClasses = 'px-2 py-1.5 text-label-medium ts-label-medium';
+const labelClasses = 'col-span-full px-2 py-1.5 text-label-medium ts-label-medium';
 
-const groupClasses = '';
+const groupClasses = 'grid grid-cols-subgrid col-span-full';
 
 export function dropdownMenuClasses(
-  _config: DropdownMenuConfig,
+  config: DropdownMenuConfig,
   _state: DropdownMenuState,
 ): DropdownMenuClassSet {
   return {
     trigger: triggerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,
     itemIndicator: itemIndicatorClasses,
+    startIcon: startIconClasses,
+    itemLabel: itemLabelClasses,
     checkIcon: checkIconClasses,
     radioDot: radioDotClasses,
     separator: separatorClasses,

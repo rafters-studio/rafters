@@ -9,6 +9,7 @@ import {
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { computePosition } from '../../primitives/collision-detector';
+import { menubarClasses } from './menubar.classes';
 import { createRovingFocus } from '../../primitives/roving-focus';
 import {
   dropdownMenu,
@@ -40,6 +41,10 @@ import {
  * disclosable projection is dropdown-menu's, evaluated at `active === value`.
  */
 export interface MenubarConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled open menu ('' = none). Passed fresh, never stored. */
   value?: string | undefined;
   /** Uncontrolled seed. */
@@ -94,7 +99,7 @@ export type MenubarActions = {
   prev: MenubarStep;
 };
 
-export type MenubarPart = 'root' | 'trigger' | 'content' | 'item';
+export type MenubarPart = 'root' | 'trigger' | 'content' | 'item' | 'startIcon';
 
 /** The effective open menu: controlled value shadows intrinsic state. */
 export function activeMenu(state: MenubarState, config: MenubarConfig): string | null {
@@ -160,6 +165,20 @@ const bar: Slice<MenubarConfig, MenubarState, MenubarActions, MenubarPart> = {
 };
 
 /**
+ * The decorative icon beside a trigger's label and beside each item's label.
+ * Present only when the author gives an icon; it occurs once per place, so the
+ * binding projects aria-hidden onto every one it finds. The wrapper carries the
+ * hiding because a child the author writes cannot be guaranteed to, so the label
+ * alone is the accessible name with no script run.
+ */
+const icons: Slice<MenubarConfig, Record<never, never>, Record<never, never>, 'startIcon'> = {
+  name: 'menubar-icons',
+  parts: { startIcon: { optional: true, many: true } },
+  initialState: () => ({}),
+  aria: () => ({ startIcon: { 'aria-hidden': 'true' } }),
+};
+
+/**
  * The glue: the keymap between the menus. The trigger and the menu keys are
  * dropdown-menu's own keymap, asked as if that one menu were closed (trigger)
  * or open (menu); what the glue adds is ArrowRight/ArrowLeft inside an open
@@ -203,6 +222,7 @@ export function menubarInstanceAria(
       trigger: ids.trigger ?? '',
       content: ids.content ?? '',
       item: '',
+      startIcon: '',
     },
   );
   const attrs = menu[part] ?? {};
@@ -210,7 +230,7 @@ export function menubarInstanceAria(
 }
 
 export const menubar: BehaviorSpec<MenubarConfig, MenubarState, MenubarActions, MenubarPart> = {
-  ...compose('menubar', bar, glue),
+  ...compose('menubar', bar, icons, glue),
   instanceAria: menubarInstanceAria,
 };
 
@@ -392,7 +412,13 @@ export function bindMenubar(root: HTMLElement): () => void {
     loop: config.loop ?? true,
   });
 
-  const rootIds = { root: root.id, trigger: '', content: '', item: '' } as PartIds<MenubarPart>;
+  const rootIds = {
+    root: root.id,
+    trigger: '',
+    content: '',
+    item: '',
+    startIcon: '',
+  } as PartIds<MenubarPart>;
 
   // Resolved projection: apply raw (validate:false skips aria-manager's
   // author-input coercion that would flip the string 'false' to truthy).
@@ -408,6 +434,13 @@ export function bindMenubar(root: HTMLElement): () => void {
     const state = memory.get();
     const active = activeMenu(state, config);
     applyProjection(root, menubar.aria(state, config, rootIds).root ?? {});
+    // The icon part occurs once per trigger and per item; project onto every one.
+    const iconAria = menubar.aria(state, config, rootIds).startIcon ?? {};
+    for (const scope of [root, ...contents]) {
+      for (const icon of scope.querySelectorAll<HTMLElement>('[data-part="startIcon"]')) {
+        applyProjection(icon, iconAria);
+      }
+    }
     for (const trigger of triggers) {
       const value = trigger.dataset['value'];
       if (value === undefined) continue;
@@ -541,4 +574,47 @@ export function bindMenubar(root: HTMLElement): () => void {
       parent.insertBefore(content, next?.parentNode === parent ? next : null);
     }
   };
+}
+
+/** Items already gathered by wrapMenubarIcons, so a second call is a no-op. */
+const wrappedItems = new WeakSet<Element>();
+
+/**
+ * Wrap each `slot="start-icon"` child in the decorative wrapper the behavior
+ * projects aria-hidden onto, before the bind reads the parts. A direct child of
+ * a trigger goes before its label; a direct child of an item goes before its
+ * text, and the item's remaining children are gathered into the label column.
+ * The light DOM has no slot assignment, so the slot attribute is only the
+ * author's marker.
+ */
+export function wrapMenubarIcons(root: HTMLElement): void {
+  const className = menubarClasses({}, menubar.initialState({}));
+  const wrap = (child: Element, cls: string): HTMLElement => {
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = 'startIcon';
+    wrapper.dataset['icon'] = 'inline-start';
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = cls;
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    return wrapper;
+  };
+  for (const trigger of root.querySelectorAll('[data-part="trigger"]')) {
+    const child = trigger.querySelector(':scope > [slot="start-icon"]');
+    if (!child || trigger.querySelector(':scope > [data-part="startIcon"]')) continue;
+    trigger.insertBefore(wrap(child, className.triggerStartIcon), trigger.firstChild);
+  }
+  for (const item of root.querySelectorAll('[data-part="item"]')) {
+    if (wrappedItems.has(item)) continue;
+    wrappedItems.add(item);
+    const child = item.querySelector(':scope > [slot="start-icon"]');
+    const icon = child ? wrap(child, className.itemStartIcon) : null;
+    const text = document.createElement('span');
+    text.className = className.itemText;
+    for (const node of Array.from(item.childNodes)) {
+      if (node !== child) text.appendChild(node);
+    }
+    if (icon) item.appendChild(icon);
+    item.appendChild(text);
+  }
 }

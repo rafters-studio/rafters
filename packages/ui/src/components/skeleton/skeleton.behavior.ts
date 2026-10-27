@@ -27,14 +27,19 @@ import type { BehaviorSpec } from '../../lib/contract';
  * across every framework.
  *
  * Motion intent is a feedback-loop shimmer, consumed via the generated
- * `animate-pulse-shimmer` cell utility (#2154); duration comes from
- * the `period-shimmer` token. The shimmer runs unchanged under
+ * pulse-shimmer cell utility (#2154); duration comes from
+ * the shimmer period token. The shimmer runs unchanged under
  * `prefers-reduced-motion` -- a period-kind cell is exempt from the
  * reduced-motion zeroing law, because a stopped work loop says the work
  * stopped (#2155).
  */
 
-export type SkeletonConfig = Record<never, never>;
+export interface SkeletonConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
+}
 export type SkeletonState = Record<never, never>;
 export type SkeletonActions = Record<never, never>;
 export type SkeletonPart = 'root';

@@ -18,12 +18,12 @@
  * DO: Place a Container directly in a Grid and give it colSpan/rowSpan -- no Grid.Item wrapper needed
  * NEVER: Nest containers unnecessarily
  * NEVER: Use margins for spacing - let parent Grid handle gaps
- * NEVER: Use @container without w-full in flex/grid contexts (causes width collapse in Tailwind v4)
+ * NEVER: Use a container query context without full width in flex/grid contexts (causes width collapse in Tailwind v4)
  * NEVER: Write raw sticky/fixed/z-* utilities -- use position and depth props
  *
  * @example
  * ```tsx
- * <Container as="header" position="sticky" depth="navigation" fill="background" size="full" padding="4">
+ * <Container as="header" position="sticky" depth="navigation" size="full" padding="4">
  *   <nav>Site navigation</nav>
  * </Container>
  * <Container as="main" size="6xl" padding="6">
@@ -77,6 +77,8 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   position?: ContainerPosition;
   depth?: ContainerDepth;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export const Container = React.forwardRef<HTMLElement, ContainerProps>(
@@ -94,6 +96,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       position,
       depth,
       fill,
+      surface,
       className,
       style,
       children,
@@ -114,6 +117,7 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
       position,
       depth,
       fill,
+      surface,
     };
 
     const classes = containerClasses(config, {});
@@ -132,7 +136,6 @@ export const Container = React.forwardRef<HTMLElement, ContainerProps>(
         'data-part': 'root',
         className: classy(classes.root, className) || undefined,
         style: Object.keys(containerStyle).length > 0 ? containerStyle : undefined,
-        'data-fill': fill || undefined,
         ...props,
       },
       children,

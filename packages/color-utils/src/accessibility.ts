@@ -1,11 +1,24 @@
 /**
- * Accessibility contrast calculation and compliance checking functions
+ * Accessibility contrast calculation and compliance checking functions.
+ *
+ * Every colour is measured as stored, in the gamut it is stored in (sRGB or
+ * Display P3), never through a clipped sRGB copy.
+ *
+ * - WCAG 2.2 contrast: relative luminance is the colour's CIE XYZ (D65) Y
+ *   (colorjs.io 'xyz-d65'). Y exists for any colour, so no gamut mapping is
+ *   needed, and an sRGB colour's ratio matches the sRGB-channel formula.
+ * - APCA contrast (informational): luminance from APCA's own per-space
+ *   function -- sRGBtoY for an sRGB colour (0-255 channels), displayP3toY for
+ *   a P3 colour (0-1 channels) -- chosen by getGamutTier. A colour beyond P3
+ *   is first mapped into P3 with toGamutCeiling(colour, 'p3').
  */
 
 import type { ColorValue, OKLCH } from '@rafters/shared';
-import { APCAcontrast, sRGBtoY } from 'apca-w3';
+import { APCAcontrast, displayP3toY, sRGBtoY } from 'apca-w3';
 import Color from 'colorjs.io';
 import { z } from 'zod';
+import { getGamutTier, toGamutCeiling } from './gamut.js';
+import { POSITION_TO_INDEX } from './scale-positions.js';
 
 /** White reference color for contrast calculations. */
 export const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
@@ -13,7 +26,7 @@ export const CONTRAST_WHITE: OKLCH = { l: 1, c: 0, h: 0, alpha: 1 };
 /** Black reference color for contrast calculations. */
 export const CONTRAST_BLACK: OKLCH = { l: 0, c: 0, h: 0, alpha: 1 };
 
-/** WCAG 2.1 minimum contrast ratios, by conformance level and text size. */
+/** WCAG 2.2 minimum contrast ratios, by conformance level and text size. */
 const WCAG_CONTRAST_THRESHOLDS = {
   AA: { normal: 4.5, large: 3.0 },
   AAA: { normal: 7.0, large: 4.5 },
@@ -50,29 +63,15 @@ export function minFontSizeForAPCA(contrast: number): number {
 }
 
 /**
- * Convert OKLCH to relative luminance for WCAG calculations
+ * Relative luminance for WCAG 2.2: the colour's CIE XYZ (D65) Y, read from
+ * the colour itself with no sRGB step, so a P3 colour is measured as stored.
  */
 function getRelativeLuminance(oklch: OKLCH): number {
-  const color = new Color('oklch', [oklch.l, oklch.c, oklch.h]);
-  const srgb = color.to('srgb');
-
-  // WCAG formula for relative luminance
-  const toLinear = (val: number): number => {
-    if (val <= 0.03928) {
-      return val / 12.92;
-    }
-    return ((val + 0.055) / 1.055) ** 2.4;
-  };
-
-  const r = toLinear(srgb.r);
-  const g = toLinear(srgb.g);
-  const b = toLinear(srgb.b);
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return new Color('oklch', [oklch.l, oklch.c, oklch.h]).to('xyz-d65').coords[1] ?? 0;
 }
 
 /**
- * Calculate WCAG 2.1 contrast ratio between two colors
+ * Calculate WCAG 2.2 contrast ratio between two colors
  */
 export function calculateWCAGContrast(foreground: OKLCH, background: OKLCH): number {
   const l1 = getRelativeLuminance(foreground);
@@ -85,31 +84,37 @@ export function calculateWCAGContrast(foreground: OKLCH, background: OKLCH): num
 }
 
 /**
- * Calculate APCA contrast for modern accessibility
- * Uses the official APCA algorithm via apca-w3 library
+ * A channel of an in-gamut colour, guarded only against float noise: colorjs
+ * can return a value a hair outside [0, 1] for a colour inside the gamut, and
+ * apca-w3 raises each channel to 2.4, which is NaN for a negative base. This
+ * is not a gamut clip -- the colour is already inside the space measured.
+ */
+function inGamutChannel(value: number | null | undefined): number {
+  return Math.min(1, Math.max(0, value ?? 0));
+}
+
+/**
+ * APCA luminance of a colour in the gamut it is stored in: sRGBtoY (0-255
+ * channels) for an sRGB colour, displayP3toY (0-1 channels) for a P3 colour.
+ * A colour beyond P3 is mapped into P3 with toGamutCeiling first.
+ */
+function getAPCALuminance(oklch: OKLCH): number {
+  const tier = getGamutTier(oklch);
+  if (tier === 'srgb') {
+    const [r, g, b] = new Color('oklch', [oklch.l, oklch.c, oklch.h]).to('srgb').coords;
+    return sRGBtoY([inGamutChannel(r) * 255, inGamutChannel(g) * 255, inGamutChannel(b) * 255]);
+  }
+  const inP3 = tier === 'out' ? toGamutCeiling(oklch, 'p3') : oklch;
+  const [r, g, b] = new Color('oklch', [inP3.l, inP3.c, inP3.h]).to('p3').coords;
+  return displayP3toY([inGamutChannel(r), inGamutChannel(g), inGamutChannel(b)]);
+}
+
+/**
+ * Calculate APCA contrast (informational) via the apca-w3 library, from
+ * each colour's luminance in the gamut it is stored in.
  */
 export function calculateAPCAContrast(foreground: OKLCH, background: OKLCH): number {
-  // Convert OKLCH to RGB arrays for APCA
-  const foregroundColor = new Color('oklch', [foreground.l, foreground.c, foreground.h]);
-  const backgroundColorObj = new Color('oklch', [background.l, background.c, background.h]);
-
-  const fgRgb = foregroundColor.to('srgb');
-  const bgRgb = backgroundColorObj.to('srgb');
-
-  // Convert to 0-255 RGB values for apca-w3
-  const fgR = Math.max(0, Math.min(255, (fgRgb.r || 0) * 255));
-  const fgG = Math.max(0, Math.min(255, (fgRgb.g || 0) * 255));
-  const fgB = Math.max(0, Math.min(255, (fgRgb.b || 0) * 255));
-  const bgR = Math.max(0, Math.min(255, (bgRgb.r || 0) * 255));
-  const bgG = Math.max(0, Math.min(255, (bgRgb.g || 0) * 255));
-  const bgB = Math.max(0, Math.min(255, (bgRgb.b || 0) * 255));
-
-  // Calculate luminance values
-  const fgY = sRGBtoY([fgR, fgG, fgB]);
-  const bgY = sRGBtoY([bgR, bgG, bgB]);
-
-  // Use official APCA calculation
-  const result = APCAcontrast(fgY, bgY);
+  const result = APCAcontrast(getAPCALuminance(foreground), getAPCALuminance(background));
   return typeof result === 'number' ? result : 0;
 }
 
@@ -230,6 +235,14 @@ export function generateAccessibilityMetadata(scale: OKLCH[]): AccessibilityMeta
 }
 
 /**
+ * The step a family's on-white/on-black figures are measured on: the 600
+ * step, where the seed lands (after any seed adjustment). buildColorValue and
+ * rebakeAccessibility both read it, so re-baking an unchanged family is a
+ * no-op.
+ */
+export const REFERENCE_STEP_INDEX = 6;
+
+/**
  * Assemble the WCAG half of ColorValue.accessibility for a scale: pair
  * matrices plus on-white/on-black ratios and pass flags for a reference
  * color. Shared by buildColorValue (which adds APCA on top) and
@@ -264,6 +277,8 @@ export function assembleWcagAccessibility(
 
 /**
  * Re-derive accessibility metadata for a ColorValue whose scale changed.
+ * On-white and on-black are measured on the recorded anchor step when the
+ * value has one (createNormalizedScale), else on the 600 step.
  * A family value supplied without its WCAG pair matrices would starve the
  * contrast/state/invert selection downstream -- this guard re-bakes them.
  * No-op for values without a scale. (Moved from the removed CLI set command;
@@ -271,7 +286,9 @@ export function assembleWcagAccessibility(
  */
 export function rebakeAccessibility(value: ColorValue): ColorValue {
   if (!('scale' in value) || !Array.isArray(value.scale)) return value;
-  const reference = value.scale[5] ?? value.scale[0];
+  const anchorIndex =
+    value.anchor === undefined ? REFERENCE_STEP_INDEX : POSITION_TO_INDEX[value.anchor];
+  const reference = value.scale[anchorIndex ?? REFERENCE_STEP_INDEX] ?? value.scale[0];
   if (!reference) return value;
   return { ...value, accessibility: assembleWcagAccessibility(value.scale, reference) };
 }

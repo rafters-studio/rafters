@@ -1,0 +1,34 @@
+{
+  "framework": "next",
+  "componentTarget": "react",
+  "componentsPath": "components/ui",
+  "primitivesPath": "lib/primitives",
+  "compositesPath": "composites",
+  "rulesPath": "lib/rules",
+  "cssPath": "src/app/globals.css",
+  "exports": {
+    "tailwind": true,
+    "typescript": true,
+    "dtcg": false,
+    "compiled": false,
+    "documentation": false
+  },
+  "intent": "efficient",
+  "fonts": {
+    "path": null,
+    "imports": [
+      "@fontsource-variable/noto-sans"
+    ],
+    "scripts": [
+      "Latn",
+      "Grek",
+      "Cyrl"
+    ]
+  },
+  "installed": {
+    "components": [],
+    "primitives": [],
+    "composites": [],
+    "rules": []
+  }
+}

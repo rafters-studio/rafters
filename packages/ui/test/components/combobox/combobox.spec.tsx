@@ -6,7 +6,8 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ICON_SVG_16, installIconLayout, rect } from './icon-layout';
 import {
   Combobox,
   ComboboxContent,
@@ -296,5 +297,137 @@ describe('combobox [react]', () => {
     expect(input().disabled).toBe(true);
     await user.click(toggle());
     expect(content().hidden).toBe(true);
+  });
+});
+
+describe('combobox icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+  const iconScene = (
+    <Combobox defaultOpen>
+      <ComboboxInput aria-label="Framework" startIcon={svg(ICON_SVG_16)} />
+      <ComboboxContent>
+        <ComboboxItem value="react" startIcon={svg(ICON_SVG_16)}>
+          React
+        </ComboboxItem>
+        <ComboboxItem value="vue">Vue</ComboboxItem>
+      </ComboboxContent>
+    </Combobox>
+  );
+
+  it('the input icon sits before the text, and the option icon before its label', () => {
+    render(iconScene);
+    const field = body().querySelector('[data-part="field"]') as HTMLElement;
+    const inputIcon = rect(field, '[data-part="startIcon"]');
+    const trig = rect(field, '[data-part="trigger"]');
+    expect(inputIcon.right).toBeLessThanOrEqual(trig.left);
+    const item = option('react');
+    const itemIcon = rect(item, '[data-part="startIcon"]');
+    const text = (item.lastElementChild as HTMLElement).getBoundingClientRect();
+    expect(itemIcon.right).toBeLessThanOrEqual(text.left + 0.5);
+    expect(Math.abs(itemIcon.top - text.top)).toBeLessThan(text.height);
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    render(iconScene);
+    const item = option('react');
+    const itemIcon = rect(item, '[data-part="startIcon"]');
+    const text = (item.lastElementChild as HTMLElement).getBoundingClientRect();
+    expect(itemIcon.left).toBeGreaterThan(text.left);
+    const field = body().querySelector('[data-part="field"]') as HTMLElement;
+    expect(rect(field, '[data-part="startIcon"]').left).toBeGreaterThan(
+      rect(field, '[data-part="trigger"]').left,
+    );
+  });
+
+  it('an icon keeps its own size', () => {
+    render(iconScene);
+    expect(rect(body(), '[data-part="field"] > [data-part="startIcon"]').width).toBe(16);
+    expect(rect(option('react'), '[data-part="startIcon"]').width).toBe(16);
+  });
+
+  it('each wrapper is aria-hidden per the contract and absent when no icon is given', () => {
+    render(iconScene);
+    const wrappers = body().querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(2);
+    for (const wrapper of wrappers) {
+      expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper.getAttribute('data-icon')).toBe('inline-start');
+    }
+    expect(option('vue').querySelector('[data-part="startIcon"]')).toBeNull();
+    cleanup();
+    render(<TestCombobox />);
+    expect(body().querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('an option label is its text alone, even when the icon svg has a title', async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox>
+        <ComboboxInput aria-label="Framework" />
+        <ComboboxContent>
+          <ComboboxItem
+            value="react"
+            startIcon={
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <title>Atom icon</title>
+              </svg>
+            }
+          >
+            React
+          </ComboboxItem>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await user.click(toggle());
+    await user.click(option('react'));
+    expect(input().value).toBe('React');
+  });
+});
+
+describe('combobox seeded value fills the input [react]', () => {
+  it('defaultValue renders the input with its option label on first render', () => {
+    render(
+      <Combobox defaultValue="react">
+        <Combobox.Input placeholder="Select framework..." />
+        <Combobox.Content>
+          <Combobox.Item value="react">React</Combobox.Item>
+          <Combobox.Item value="vue">Vue</Combobox.Item>
+        </Combobox.Content>
+      </Combobox>,
+    );
+    expect(input()).toHaveValue('React');
+  });
+
+  it('a controlled value renders the input with its option label on first render', () => {
+    render(<TestCombobox value="vue" />);
+    expect(input()).toHaveValue('Vue');
+  });
+
+  it('finds the option inside a group', () => {
+    render(
+      <Combobox defaultValue="vue" defaultOpen>
+        <Combobox.Input />
+        <Combobox.Content>
+          <Combobox.Group>
+            <Combobox.Item value="react">React</Combobox.Item>
+            <Combobox.Item value="vue">Vue</Combobox.Item>
+          </Combobox.Group>
+        </Combobox.Content>
+      </Combobox>,
+    );
+    expect(input()).toHaveValue('Vue');
+    expect(option('vue').getAttribute('data-state')).toBe('checked');
+  });
+
+  it('a seeded value that matches no option leaves the input empty', () => {
+    render(<TestCombobox defaultValue="ember" />);
+    expect(input()).toHaveValue('');
   });
 });

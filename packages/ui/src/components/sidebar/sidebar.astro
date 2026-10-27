@@ -82,22 +82,30 @@ interface Props {
   id: string;
   side?: SidebarSide;
   variant?: SidebarVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   collapsible?: SidebarConfig['collapsible'];
   defaultOpen?: boolean;
+  contained?: boolean;
 }
 
 const {
   id,
   side = 'left',
   variant = 'sidebar',
+  fill,
+  surface,
   collapsible = 'offcanvas',
   defaultOpen = true,
+  contained = false,
 } = Astro.props;
 
 const config: SidebarConfig = { defaultOpen, side, variant, collapsible };
 const state = sidebar.initialState(config);
 const classes = sidebarClasses();
-const panelClass = sidebarPanelClasses(side, variant);
+const panelClass = sidebarPanelClasses(side, variant, fill, surface);
 
 const ids = {} as PartIds<SidebarPart>;
 for (const part of Object.keys(sidebar.parts) as SidebarPart[]) ids[part] = `${id}-${part}`;
@@ -110,6 +118,7 @@ const aria = sidebar.aria(state, config, ids);
   data-variant={variant}
   data-collapsible={collapsible}
   data-default-open={String(defaultOpen)}
+  data-contained={contained ? 'true' : undefined}
   class={classes.provider}
 >
   <button type="button" id={ids.trigger} data-part="trigger" class={classes.trigger} {...aria.trigger}>

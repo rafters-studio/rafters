@@ -23,10 +23,10 @@ export const progressContainerClasses = 'relative w-full overflow-hidden rounded
  * TRANSITION, named as composed generics; `ease-standard` was the half of the
  * row this file had not yet named.
  *
- * NARROWED FROM `transition-all` TO THE PROPERTY THE ROW NAMES. The
+ * NARROWED FROM AN ALL-PROPERTIES TRANSITION TO THE PROPERTY THE ROW NAMES. The
  * performances set `style.width` (progress.tsx, and `bindProgress` in
  * progress.behavior.ts), so `transition-[width]` is the fill and nothing else.
- * `transition-all` also timed the variant's `bg-*` colour, which no row
+ * The all-properties transition also timed the variant's `bg-*` colour, which no row
  * assigns -- motion the matrix never granted. The property name is not a
  * value; the duration and easing still come from the tokens.
  *

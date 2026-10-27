@@ -9,18 +9,21 @@ import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import {
-  contrastPlugin,
-  invertPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
-  scalePlugin,
-  statePlugin,
 } from '@rafters/design-tokens';
 import { RegistryClient } from '../registry/client.js';
-import type { RegistryFile, RegistryItem, RegistryItemType } from '../registry/types.js';
+import {
+  ComponentTargetSchema,
+  type RegistryFile,
+  type RegistryItem,
+  type RegistryItemType,
+} from '../registry/types.js';
 import {
   type ComponentTarget,
+  FRAMEWORK_SPECS,
   resolveComponentTarget,
   targetToExtension,
 } from '../utils/detect.js';
@@ -34,7 +37,11 @@ import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebu
 import { getRaftersPaths, type PathField, resolveRoot } from '../utils/paths.js';
 import { buildUpdateCandidates, readInstallRoots } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
-import { migrateConfig, type RaftersConfig } from '../config/rafters-config.js';
+import {
+  migrateConfig,
+  type RaftersConfig,
+  UnsupportedComponentTargetError,
+} from '../config/rafters-config.js';
 
 export interface AddOptions {
   list?: boolean;
@@ -44,8 +51,6 @@ export interface AddOptions {
   registryUrl?: string;
   agent?: boolean;
 }
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
 
 /**
  * Regenerate the output artifacts after an install/update changes the installed
@@ -81,6 +86,8 @@ export async function regenerateAfterInstall(cwd: string, config: RaftersConfig)
       contentSources: resolveContentSources(cwd, config),
       darkMode: config.darkMode ?? 'class',
       includeImport: config.source !== 'shadcn',
+      fontImports: config.fonts?.imports ?? [],
+      projectRoot: cwd,
     });
   } catch (err) {
     log({
@@ -106,11 +113,12 @@ async function isInitialized(cwd: string): Promise<boolean> {
 /**
  * Load rafters config from .rafters/config.rafters.json
  */
-async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
+export async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
   const paths = getRaftersPaths(cwd);
+  let config: RaftersConfig;
   try {
     const content = await readFile(paths.config, 'utf-8');
-    return migrateConfig(
+    config = migrateConfig(
       JSON.parse(content) as Record<string, unknown>,
     ) as unknown as RaftersConfig;
   } catch (err) {
@@ -124,6 +132,11 @@ async function loadConfig(cwd: string): Promise<RaftersConfig | null> {
     }
     return null;
   }
+  const target: unknown = config.componentTarget;
+  if (target !== undefined && !ComponentTargetSchema.safeParse(target).success) {
+    throw new UnsupportedComponentTargetError(target, paths.config);
+  }
+  return config;
 }
 
 /**
@@ -140,7 +153,7 @@ export function resolveRegistryUrl(
 /**
  * Save config back to .rafters/config.rafters.json
  */
-async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
+export async function saveConfig(cwd: string, config: RaftersConfig): Promise<void> {
   const paths = getRaftersPaths(cwd);
   await writeFile(paths.config, JSON.stringify(config, null, 2));
 }
@@ -209,7 +222,7 @@ const SHARED_EXTENSIONS = new Set(['.behavior.ts', '.classes.ts']);
  * target-specific component file (.tsx = React, .astro = Astro, etc.).
  * Everything else is framework-agnostic and installs for all targets.
  */
-const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
+const FRAMEWORK_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
 
 /**
  * Check if a file path is a shared/auxiliary file that installs regardless of
@@ -233,8 +246,6 @@ function isSharedFile(path: string): boolean {
 /**
  * Targets where falling back to .tsx is reasonable -- the framework can render
  * React components (Astro with @astrojs/react, future Vue/Svelte wrappers).
- * WC projects cannot use React components, so a missing .element.ts must error,
- * not silently install unusable .tsx files.
  */
 const REACT_FALLBACK_TARGETS = new Set<ComponentTarget>(['astro', 'vue', 'svelte']);
 
@@ -262,19 +273,11 @@ export function selectFilesForFramework(
   }
 
   // Fallback: use .tsx files only for targets that can render React components.
-  // WC projects cannot use React components -- return only shared files so the
-  // caller can detect the missing component and error.
   if (REACT_FALLBACK_TARGETS.has(target)) {
     const fallbackFiles = files.filter((f) => f.path.endsWith('.tsx'));
     if (fallbackFiles.length > 0) {
       return { files: [...fallbackFiles, ...shared], fallback: true };
     }
-  }
-
-  // Target has no matching files and no React fallback -- return only shared
-  // files. For targets like `wc`, this signals the component is unavailable.
-  if (target !== 'react' && !REACT_FALLBACK_TARGETS.has(target)) {
-    return { files: shared, fallback: false };
   }
 
   // React target or react-fallback target with no .tsx either -- return everything
@@ -349,7 +352,7 @@ export function isInstalledOnDisk(
       : item.files;
 
   for (const file of filesToCheck) {
-    if (fileExists(cwd, transformPath(file.path, config, cwd))) return true;
+    if (fileExists(cwd, fileProjectPath(file, item, config, cwd))) return true;
   }
   return false;
 }
@@ -454,6 +457,37 @@ export function substrateProjectPath(
 ): string {
   const sourceRoot = sourceRootFor(config, cwd);
   return sourceRoot ? join(sourceRoot, registryPath) : registryPath;
+}
+
+/**
+ * Where a served file installs in the project. A file carrying an explicit
+ * `target` (#2022) installs at that path under the configured directory its
+ * `type` names; every other file keeps the placement its served path implies
+ * (substrate under the source root, the rest via transformPath).
+ */
+export function fileProjectPath(
+  file: RegistryFile,
+  item: RegistryItem,
+  config: RaftersConfig | null,
+  cwd: string = process.cwd(),
+): string {
+  if (file.target !== undefined && file.type !== undefined) {
+    const sourceRoot = sourceRootFor(config, cwd);
+    const bases = {
+      'registry:ui': () => rootFor(config?.componentsPath, cwd, 'components/ui'),
+      'registry:block': () => rootFor(config?.compositesPath, cwd, 'composites'),
+      'registry:file': () => rootFor(config?.rulesPath, cwd, 'lib/rules'),
+      'registry:hook': () => join(sourceRoot, 'hooks'),
+      'registry:lib': () =>
+        item.type === 'primitive'
+          ? rootFor(config?.primitivesPath, cwd, 'lib/primitives')
+          : join(sourceRoot, 'lib'),
+    } satisfies Record<NonNullable<RegistryFile['type']>, () => string>;
+    return join(bases[file.type](), file.target);
+  }
+  return item.type === 'substrate'
+    ? substrateProjectPath(file.path, config, cwd)
+    : transformPath(file.path, config, cwd);
 }
 
 /**
@@ -659,12 +693,7 @@ async function installItem(
   }
 
   for (const file of filesToInstall) {
-    // Transform the path based on project config. Substrate carries its kind in
-    // the path (`<kind>/<name>.ts`) and installs under the source root.
-    const projectPath =
-      item.type === 'substrate'
-        ? substrateProjectPath(file.path, config, cwd)
-        : transformPath(file.path, config, cwd);
+    const projectPath = fileProjectPath(file, item, config, cwd);
     const targetPath = join(cwd, projectPath);
 
     // Check if file exists and handle overwrite
@@ -886,6 +915,9 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     overwrite: options.overwrite ?? false,
   });
 
+  const frameworkNote = config ? FRAMEWORK_SPECS[config.framework].note : undefined;
+  if (frameworkNote) log({ event: 'add:framework_note', message: frameworkNote });
+
   // Resolve all items and their dependencies
   const allItems: RegistryItem[] = [];
   const seen = new Set<string>();
@@ -897,7 +929,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
           const composite = await client.fetchComposite(itemName);
           seen.add(itemName);
           allItems.push(composite);
-          for (const dep of composite.primitives) {
+          for (const dep of composite.registryDependencies ?? composite.primitives) {
             if (!seen.has(dep)) {
               const depItems = await client.resolveDependencies(dep, seen);
               allItems.push(...depItems);

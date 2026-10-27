@@ -25,12 +25,12 @@
  *
  * // Square image
  * <AspectRatio ratio={1}>
- *   <img src="/photo.jpg" alt="Photo" className="object-cover" />
+ *   <img src="/photo.jpg" alt="Photo" style={{ objectFit: 'cover' }} />
  * </AspectRatio>
  *
  * // 4:3 thumbnail
  * <AspectRatio ratio={4 / 3}>
- *   <img src="/thumb.jpg" alt="Thumbnail" className="object-cover" />
+ *   <img src="/thumb.jpg" alt="Thumbnail" style={{ objectFit: 'cover' }} />
  * </AspectRatio>
  * ```
  */
@@ -49,9 +49,10 @@ export const AspectRatio = React.forwardRef<HTMLDivElement, AspectRatioProps>(
     const config: AspectRatioConfig = { ratio };
     const classes = aspectRatioClasses(config, {});
 
-    // The one style channel: the ratio is data-driven, so it rides inline
-    // (aspectRatio is unitless in React, serialised as `aspect-ratio: 1.777`).
-    const ratioStyle: React.CSSProperties = { ...style, aspectRatio: resolveRatio(config) };
+    // The one style channel: the ratio is data-driven, so it rides inline.
+    // It is a STRING because preact/compat appends `px` to a numeric
+    // aspectRatio, which the browser then drops as an invalid value.
+    const ratioStyle: React.CSSProperties = { ...style, aspectRatio: String(resolveRatio(config)) };
 
     return (
       <div

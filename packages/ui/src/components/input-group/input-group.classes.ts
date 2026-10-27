@@ -13,7 +13,7 @@ import type {
  *
  * Token and semantic classes only. Heights come from the shared size
  * vocabulary, type from the `text-body-small ts-body-small` role token (never a raw
- * `text-sm`), colours from the frozen semantic tokens.
+ * small text size), colours from the frozen semantic tokens.
  */
 
 /** Addon fill treatment. Purely decorative -- it carries no behavior, so unlike
@@ -31,7 +31,7 @@ export interface InputGroupClassSet {
 /**
  * The box: a flex row that owns the border, the radius, and -- via
  * `focus-within` -- the one focus ring for the whole assembly. `bg-transparent`,
- * never `bg-background`: the control inherits the surface it sits on (the
+ * never the background token: the control inherits the surface it sits on (the
  * fill-never-background rule, the same correction the standalone input made).
  * Validity is styled off the projected `data-state`, so light-DOM markup, the
  * Web Component, and React all pick up the destructive border with no extra
@@ -53,7 +53,7 @@ const rootClasses =
   'data-[state=invalid]:border-destructive data-[state=invalid]:focus-within:ring-destructive-ring ' +
   'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed';
 
-/** Per-size heights, ported from the oracle. `text-sm` becomes the
+/** Per-size heights, ported from the oracle. The oracle's small text size becomes the
  *  `text-body-small ts-body-small` typography role token. */
 const sizeClasses: Record<InputGroupSize, string> = {
   sm: 'h-9 text-body-small ts-body-small',
@@ -79,8 +79,8 @@ const addonBaseClasses = 'flex items-center justify-center shrink-0 text-muted-f
 /** The divider sits on the side facing the control, so the affix reads as
  *  attached to it rather than floating in the box. */
 const addonPositionClasses: Record<InputGroupAddonPosition, string> = {
-  start: 'border-r border-input',
-  end: 'border-l border-input',
+  start: 'border-e border-input',
+  end: 'border-s border-input',
 };
 
 const addonVariantClasses: Record<InputGroupAddonVariant, string> = {

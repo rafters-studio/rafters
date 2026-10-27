@@ -20,7 +20,7 @@
  * <Separator />
  *
  * // Vertical toolbar divider
- * <Separator orientation="vertical" className="h-4" />
+ * <Separator orientation="vertical" />
  * ```
  */
 import * as React from 'react';

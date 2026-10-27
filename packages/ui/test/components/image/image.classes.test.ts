@@ -35,15 +35,15 @@ describe('image classes', () => {
     expect(frame).toContain(imageRadiusClasses.full);
   });
 
-  it('fill resolves through fill-resolver onto the frame (fill, not background)', () => {
-    const { frame } = imageClasses({ fill: 'muted' }, {});
-    expect(frame).toContain('bg-muted');
-    expect(frame).toContain('text-muted-foreground');
+  it('a bg-fill- fill lands on the frame (fill, not background)', () => {
+    const { frame } = imageClasses({ fill: 'bg-fill-glass' }, {});
+    expect(frame.split(' ')).toContain('bg-fill-glass');
   });
 
   it('an absent or invalid fill adds no surface class', () => {
     expect(imageClasses({}, {}).frame).not.toContain('bg-');
     expect(imageClasses({ fill: 'not a fill' }, {}).frame).not.toContain('bg-');
+    expect(imageClasses({ fill: 'muted' }, {}).frame).not.toContain('bg-');
   });
 
   it('the img fills the frame in block flow', () => {

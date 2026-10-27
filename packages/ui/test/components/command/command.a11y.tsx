@@ -17,12 +17,30 @@ interface SceneProps {
   label?: string;
   disabledItem?: string;
   grouped?: boolean;
+  icons?: boolean;
 }
 
-function Items({ disabledItem }: { disabledItem?: string | undefined }) {
+const mark = (
+  <svg width="16" height="16" viewBox="0 0 24 24">
+    <title>Calendar mark</title>
+    <rect width="24" height="24" fill="currentColor" />
+  </svg>
+);
+
+function Items({
+  disabledItem,
+  icons = false,
+}: {
+  disabledItem?: string | undefined;
+  icons?: boolean;
+}) {
   return (
     <>
-      <CommandItem value="calendar" disabled={disabledItem === 'calendar'}>
+      <CommandItem
+        value="calendar"
+        disabled={disabledItem === 'calendar'}
+        startIcon={icons ? mark : undefined}
+      >
         Calendar
       </CommandItem>
       <CommandItem value="search" disabled={disabledItem === 'search'}>
@@ -35,7 +53,7 @@ function Items({ disabledItem }: { disabledItem?: string | undefined }) {
   );
 }
 
-function Scene({ disabledItem, grouped = true, ...props }: SceneProps) {
+function Scene({ disabledItem, grouped = true, icons = false, ...props }: SceneProps) {
   return (
     <Command {...props}>
       <CommandInput aria-label="Command" placeholder="Type a command..." />
@@ -43,10 +61,10 @@ function Scene({ disabledItem, grouped = true, ...props }: SceneProps) {
         <CommandEmpty>No results found.</CommandEmpty>
         {grouped ? (
           <CommandGroup heading="Suggestions">
-            <Items disabledItem={disabledItem} />
+            <Items disabledItem={disabledItem} icons={icons} />
           </CommandGroup>
         ) : (
-          <Items disabledItem={disabledItem} />
+          <Items disabledItem={disabledItem} icons={icons} />
         )}
       </CommandList>
     </Command>
@@ -62,6 +80,7 @@ const scenes: ReadonlyArray<[string, SceneProps]> = [
   ['custom listbox label', { label: 'Actions' }],
   ['with a disabled option', { disabledItem: 'search' }],
   ['ungrouped options', { grouped: false }],
+  ['with a start icon', { icons: true }],
 ];
 
 for (const [name, props] of scenes) {

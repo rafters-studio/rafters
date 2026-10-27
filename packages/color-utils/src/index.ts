@@ -9,6 +9,7 @@ export {
   calculateAPCAContrast,
   calculateWCAGContrast,
   generateAccessibilityMetadata,
+  REFERENCE_STEP_INDEX,
   rebakeAccessibility,
 } from './accessibility.js';
 
@@ -42,17 +43,30 @@ export {
 
 // Gamut
 export {
+  ALLOW_P3,
   computeGamutBoundaries,
   type GamutBoundaryPoint,
+  type GamutCeiling,
   type GamutTier,
   getGamutTier,
   isInP3Gamut,
   isInSRGBGamut,
+  mapScaleToGamut,
+  toGamutCeiling,
   toNearestGamut,
 } from './gamut.js';
 
 // Harmony
 export { generateHarmony, generateOKLCHScale } from './harmony.js';
+
+// Normalized scale (#2872)
+export { createNormalizedScale } from './normalized-scale.js';
+export {
+  CHROMA_SHARE,
+  HUE_DRIFT_BANDS,
+  HUE_DRIFT_SAMPLES,
+  LIGHTNESS_LADDERS,
+} from './normalized-scale-constants.js';
 
 // Manipulation
 export { adjustHue } from './manipulation.js';

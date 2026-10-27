@@ -4,7 +4,12 @@
 
 import type { OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
+import { rebakeAccessibility } from '../src/accessibility.js';
 import { buildColorValue } from '../src/builder.js';
+import { roundOKLCH } from '../src/conversion.js';
+import { getGamutTier, toGamutCeiling } from '../src/gamut.js';
+import { generateOKLCHScale } from '../src/harmony.js';
+import { SCALE_POSITIONS } from '../src/scale-positions.js';
 
 describe('buildColorValue', () => {
   // Reference colors for testing
@@ -76,13 +81,26 @@ describe('buildColorValue', () => {
       expect(result.scale[10]?.l).toBeLessThan(0.1);
     });
 
-    it('maintains the base hue throughout scale', () => {
-      const result = buildColorValue(blue);
-
-      for (const color of result.scale) {
-        // Hue should be preserved (with rounding tolerance)
-        expect(color.h).toBe(240);
+    it('keeps the base hue on every step that needed no gamut mapping', () => {
+      // An sRGB seed: steps already in sRGB are not moved and keep the hue
+      // exactly. Mapped steps must land in sRGB; their hue is held by the
+      // #2873 seed test below.
+      const muted: OKLCH = { l: 0.5, c: 0.05, h: 240, alpha: 1 };
+      const unmapped = SCALE_POSITIONS.map((pos) => generateOKLCHScale(muted)[pos]);
+      const result = buildColorValue(muted);
+      expect(result.seedAdjusted).toBeUndefined();
+      let kept = 0;
+      for (const [i, color] of result.scale.entries()) {
+        const before = unmapped[i];
+        if (before && getGamutTier(before) === 'srgb') {
+          expect(color).toEqual(before);
+          expect(color.h).toBe(240);
+          kept++;
+        } else {
+          expect(getGamutTier(color)).toBe('srgb');
+        }
       }
+      expect(kept).toBeGreaterThan(5);
     });
   });
 
@@ -444,35 +462,139 @@ describe('buildColorValue', () => {
     });
   });
 
-  describe('performance', () => {
-    it('completes quickly for single color', () => {
-      const start = performance.now();
-      buildColorValue(blue);
-      const duration = performance.now() - start;
+  describe('batch generation', () => {
+    it('builds a complete ColorValue for a single color', () => {
+      const value = buildColorValue(blue);
 
-      // Should complete in under 50ms
-      expect(duration).toBeLessThan(50);
+      expect(value.name).toBeTruthy();
+      expect(value.scale.length).toBeGreaterThan(0);
     });
 
-    it('handles batch generation efficiently', () => {
-      const colors: OKLCH[] = Array.from({ length: 100 }, (_, i) => ({
+    it('builds one distinct ColorValue per input in a batch', () => {
+      const colors: OKLCH[] = Array.from({ length: 24 }, (_, i) => ({
         l: 0.5,
         c: 0.15,
-        h: (i * 3.6) % 360,
+        h: (i * 15) % 360,
         alpha: 1,
       }));
 
-      const start = performance.now();
-      for (const color of colors) {
-        buildColorValue(color);
-      }
-      const duration = performance.now() - start;
+      const results = colors.map((color) => buildColorValue(color));
 
-      // A sanity bound against pathological regressions, not a benchmark:
-      // 100 colors take ~1 s on a laptop and ~2 s on a GitHub Actions runner
-      // (the first CI run of this suite measured 2007 ms against a 2000 ms
-      // bound). Keep the budget loose enough that runner speed never fails it.
-      expect(duration).toBeLessThan(10_000);
+      // Work-count assertion in place of a wall-clock budget: one value per
+      // input, none dropped or collapsed into another.
+      expect(results).toHaveLength(colors.length);
+      expect(new Set(results.map((r) => r.tokenId)).size).toBe(colors.length);
+    });
+  });
+
+  describe('stored steps say what they are (#2672)', () => {
+    const fireTruck: OKLCH = { l: 0.55, c: 0.2, h: 0, alpha: 1 };
+    const blue260: OKLCH = { l: 0.55, c: 0.2, h: 260, alpha: 1 };
+    const sky: OKLCH = { l: 0.55, c: 0.12, h: 210, alpha: 1 };
+    const citrine: OKLCH = { l: 0.55, c: 0.12, h: 90, alpha: 1 };
+    const zinc: OKLCH = { l: 0.55, c: 0.01, h: 260, alpha: 1 };
+    const tooLight: OKLCH = { l: 0.9, c: 0.1, h: 30, alpha: 1 };
+    const families = [
+      fireTruck,
+      blue260,
+      sky,
+      citrine,
+      zinc,
+      tooLight,
+      blue,
+      red,
+      gray,
+      white,
+      black,
+    ];
+
+    it('puts every step of the four default families in sRGB', () => {
+      for (const seed of [fireTruck, blue260, sky, citrine]) {
+        const value = buildColorValue(seed);
+        for (const step of value.scale) expect(getGamutTier(step)).toBe('srgb');
+      }
+    });
+
+    it("records seedAdjusted with reason 'gamut' for the P3 seeds", () => {
+      for (const seed of [sky, citrine]) {
+        expect(getGamutTier(seed)).toBe('p3');
+        const value = buildColorValue(seed);
+        expect(value.seedAdjusted?.reason).toBe('gamut');
+        expect(value.seedAdjusted?.from).toEqual(seed);
+        expect(value.seedAdjusted?.to).toEqual(value.scale[6]);
+      }
+    });
+
+    it('returns strictly falling lightness from 50 to 950', () => {
+      for (const seed of families) {
+        const { scale } = buildColorValue(seed);
+        for (let i = 1; i < scale.length; i++) {
+          expect(scale[i]?.l).toBeLessThan(scale[i - 1]?.l as number);
+        }
+      }
+    });
+
+    it('records one gamut tier per step, equal to getGamutTier of that step', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        expect(value.gamut).toHaveLength(value.scale.length);
+        for (const [i, step] of value.scale.entries()) {
+          expect(value.gamut?.[i]).toBe(getGamutTier(step));
+        }
+      }
+    });
+
+    it("records a seed moved by the lightness bounds with reason 'lightness-bounds'", () => {
+      const value = buildColorValue(tooLight);
+      expect(value.seedAdjusted?.reason).toBe('lightness-bounds');
+      expect(value.seedAdjusted?.from.l).toBe(0.9);
+      expect(value.seedAdjusted?.to).toEqual(value.scale[6]);
+    });
+
+    it('never moves the seed unrecorded: without seedAdjusted, the 600 step is the seed', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        if (value.seedAdjusted) continue;
+        expect(value.scale[6]).toEqual(roundOKLCH(seed));
+      }
+    });
+
+    it('keeps every step within 1 degree of its generated hue for the #2873 seeds', () => {
+      const seeds: OKLCH[] = [
+        { l: 0.517, c: 0.107, h: 234, alpha: 1 },
+        { l: 0.375, c: 0.061, h: 236, alpha: 1 },
+        { l: 0.213, c: 0.061, h: 236, alpha: 1 },
+        { l: 0.725, c: 0.166, h: 53, alpha: 1 },
+        { l: 0.418, c: 0.127, h: 51, alpha: 1 },
+        { l: 0.817, c: 0.167, h: 247, alpha: 1 },
+      ];
+      const hueGap = (a: number, b: number) => {
+        const d = Math.abs(a - b) % 360;
+        return Math.min(d, 360 - d);
+      };
+      for (const seed of seeds) {
+        const value = buildColorValue(seed);
+        // The builder's own seed: a P3 seed is first mapped into sRGB.
+        const built = getGamutTier(seed) === 'p3' ? toGamutCeiling(seed, 'srgb') : seed;
+        const generated = generateOKLCHScale(built);
+        for (const [i, step] of value.scale.entries()) {
+          const pos = SCALE_POSITIONS[i] as (typeof SCALE_POSITIONS)[number];
+          const expected = generated[pos] as OKLCH;
+          if (step.c > 0.02) expect(hueGap(step.h, expected.h)).toBeLessThanOrEqual(1);
+          if (i > 0) expect(step.l).toBeLessThan(value.scale[i - 1]?.l as number);
+          expect(getGamutTier(step)).toBe('srgb');
+        }
+        if (value.seedAdjusted) expect(value.seedAdjusted.reason).toBe('gamut');
+      }
+    });
+
+    it('re-baking an unchanged family returns the same onWhite and onBlack', () => {
+      for (const seed of families) {
+        const value = buildColorValue(seed);
+        const rebaked = rebakeAccessibility(value);
+        expect(rebaked.accessibility?.onWhite).toEqual(value.accessibility?.onWhite);
+        expect(rebaked.accessibility?.onBlack).toEqual(value.accessibility?.onBlack);
+      }
     });
   });
 });

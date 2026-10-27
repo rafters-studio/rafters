@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { MenubarConfig, MenubarState } from './menubar.behavior';
 
 export interface MenubarClassSet {
@@ -8,6 +9,9 @@ export interface MenubarClassSet {
   checkboxItem: string;
   radioItem: string;
   itemIndicator: string;
+  triggerStartIcon: string;
+  itemStartIcon: string;
+  itemText: string;
   checkIcon: string;
   radioDot: string;
   separator: string;
@@ -44,12 +48,16 @@ const rootClasses = 'flex h-9 items-center gap-1 rounded-md border bg-background
 // (fast, standard). The trigger stays put and only its fill and text colour
 // move, so the row is a transition of the colour properties.
 const triggerClasses =
-  'flex cursor-default select-none items-center rounded-sm px-3 py-1 ' +
+  'inline-grid grid-flow-col cursor-default select-none items-center rounded-sm px-3 py-1 ' +
+  'has-data-[icon=inline-start]:ps-2 ' +
   'text-label-medium ts-label-medium outline-none ' +
   'transition-colors duration-fast ease-standard ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ' +
   'disabled:pointer-events-none disabled:opacity-50';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // z-depth-dropdown is the semantic depth token; fill (bg-popover), not a raw
 // color. The menu's coordinates are written by positionMenubarContent, not
@@ -69,13 +77,13 @@ const triggerClasses =
 //   reads that alias back, so the closed pose sits at the pop extent and the
 //   open pose at full size.
 //
-// `transition`, not `transition-all`: the named default set covers opacity and
+// `transition`, not the all-properties transition: the named default set covers opacity and
 // scale but not the inset properties, and positionMenubarContent rewrites
-// `left`/`top` on every open. Under `transition-all` a menu reopened after a
+// `left`/`top` on every open. Transitioning every property, a menu reopened after a
 // scroll would slide from its old place, a movement no row assigns.
 const contentClasses =
-  'fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg ' +
+  'grid grid-cols-menu-row fixed z-depth-dropdown min-w-48 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg ' +
   'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
   'transition duration-fast ease-exit ' +
   'data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
@@ -100,48 +108,64 @@ const contentClasses =
 // rows share one element) this file cannot resolve -- dropdown-menu's items
 // carry the same note.
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const itemClasses = `${itemBase} gap-2 px-2 py-1.5`;
+// The content is a grid on grid-cols-menu-row (indicator, icon, label, end) and
+// each item is a subgrid row over it, so every row in a menu shares its columns:
+// the check, the icon and the label line up across items, and the icon sits on
+// the right of the label on a dir="rtl" page with no direction class.
+const itemClasses = `${itemBase} px-2 py-1.5`;
 
-const checkboxItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const checkboxItemClasses = `${itemBase} px-2 py-1.5`;
 
-const radioItemClasses = `${itemBase} py-1.5 pl-8 pr-2`;
+const radioItemClasses = `${itemBase} px-2 py-1.5`;
 
-const itemIndicatorClasses = 'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
+const itemIndicatorClasses =
+  'col-start-1 row-start-1 me-2 flex h-3.5 w-3.5 items-center justify-center';
+
+// The wrappers only place and hide: the brand brings its icons, sizing included.
+const triggerStartIconClasses = 'me-2 inline-grid place-items-center';
+const itemStartIconClasses = 'col-start-2 row-start-1 me-2 inline-grid place-items-center';
+
+// The label column spans the label and end columns, so a shortcut can sit at
+// the far end of the row.
+const itemTextClasses = 'col-start-3 col-span-2 row-start-1 flex min-w-0 items-center gap-2';
 
 const checkIconClasses = 'h-4 w-4';
 
 const radioDotClasses = 'h-2 w-2 rounded-full bg-current';
 
-const separatorClasses = '-mx-1 my-1 h-px border-0 bg-muted';
+const separatorClasses = 'col-span-full -mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcutClasses = 'ml-auto text-shortcut ts-shortcut opacity-60';
+const shortcutClasses = 'ms-auto text-shortcut ts-shortcut opacity-60';
 
-const labelClasses = 'px-2 py-1.5 text-label-medium ts-label-medium';
+const labelClasses = 'col-span-full px-2 py-1.5 text-label-medium ts-label-medium';
 
-const groupClasses = '';
+const groupClasses = 'grid grid-cols-subgrid col-span-full';
 
 // Aligns inset labels/items with the checkbox/radio indicator column.
-const insetClasses = 'pl-8';
+const insetClasses = 'ps-8';
 
 // The React host the menus portal into, right after the bar. It generates no
 // box of its own, so it never joins the layout the bar sits in; the menus
 // inside are fixed-positioned under their triggers.
 const menuHostClasses = 'contents';
 
-export function menubarClasses(_config: MenubarConfig, _state: MenubarState): MenubarClassSet {
+export function menubarClasses(config: MenubarConfig, _state: MenubarState): MenubarClassSet {
   return {
     root: rootClasses,
     trigger: triggerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,
     itemIndicator: itemIndicatorClasses,
+    triggerStartIcon: triggerStartIconClasses,
+    itemStartIcon: itemStartIconClasses,
+    itemText: itemTextClasses,
     checkIcon: checkIconClasses,
     radioDot: radioDotClasses,
     separator: separatorClasses,

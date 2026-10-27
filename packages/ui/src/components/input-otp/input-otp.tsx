@@ -222,6 +222,17 @@ export function InputOTP({
     if (input && input.value !== effective) input.value = effective;
   }, [effective]);
 
+  // Seat the caret after the seeded code on mount. React seeds the field by
+  // writing `.value`, which leaves the caret at the end; preact/compat writes
+  // only `.defaultValue`, which leaves it at 0, so a Backspace after a
+  // programmatic focus (or autoFocus) deleted nothing (#2790).
+  React.useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+  }, []);
+
   const aria = inputOtpBehavior.aria(state, config, {
     root: '',
     input: '',

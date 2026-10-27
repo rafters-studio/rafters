@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClassy, classy as defaultClassy, token } from '../../src/primitives/classy';
+import {
+  createClassy,
+  classy as defaultClassy,
+  SURFACE_CLASSES,
+  token,
+} from '../../src/primitives/classy';
 
 describe('classy - basic merging', () => {
   it('merges strings, arrays and objects', () => {
@@ -60,5 +65,76 @@ describe('classy - layout utilities pass through', () => {
     const out = c('flex', 'gap-4', 'p-4', 'bg-primary');
     expect(out).toBe('flex gap-4 p-4 bg-primary');
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('classy - named grid track utility', () => {
+  it('keeps grid-cols-menu-row and drops the arbitrary track list it replaces', () => {
+    const spy = vi.fn();
+    const c = createClassy({ warn: spy });
+    expect(c('grid grid-cols-menu-row')).toBe('grid grid-cols-menu-row');
+    expect(spy).not.toHaveBeenCalled();
+    expect(c('grid grid-cols-[auto_auto_1fr_auto]')).toBe('grid');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('classy.fill - the bg-fill- shape guard (FR-RAF-FILL-003)', () => {
+  const surface = 'bg-card text-card-foreground';
+
+  it('a single bg-fill- token wins over the surface, unchanged and silent', () => {
+    const warn = vi.fn();
+    expect(createClassy({ warn }).fill('bg-fill-glass', surface)).toBe('bg-fill-glass');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('no fill leaves the surface standing, silently', () => {
+    const warn = vi.fn();
+    const c = createClassy({ warn });
+    expect(c.fill(undefined, surface)).toBe(surface);
+    expect(c.fill('', surface)).toBe(surface);
+    expect(c.fill(undefined)).toBe('');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'bg-red-500',
+    'bg-fill-glass extra',
+    'background',
+    'muted/50',
+    'bg-fill-',
+    'bg-fill-[x]',
+  ])('drops %s with a warning naming it, and the surface stands', (value) => {
+    const warn = vi.fn();
+    expect(createClassy({ warn }).fill(value, surface)).toBe(surface);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain(`'${value}'`);
+  });
+});
+
+describe('classy.surface - the surface prop (FR-RAF-FILL-004)', () => {
+  const base = 'bg-popover text-popover-foreground';
+
+  it('a surface name picks its literal bg-surface- class over the base', () => {
+    expect(createClassy().surface('card', base)).toBe('bg-surface-card');
+    expect(createClassy().surface('primary-subtle', base)).toBe('bg-surface-primary-subtle');
+  });
+
+  it.each([undefined, '', 'nope', 'bg-surface-card', 'toString', 42])(
+    'leaves the base standing for %s',
+    (name) => {
+      expect(createClassy().surface(name, base)).toBe(base);
+    },
+  );
+
+  it('every class is the literal bg-surface- class of its name', () => {
+    for (const [name, cls] of Object.entries(SURFACE_CLASSES)) {
+      expect(cls).toBe(`bg-surface-${name}`);
+    }
+  });
+
+  it('a fill still wins over a surface', () => {
+    const c = createClassy();
+    expect(c.fill('bg-fill-glass', c.surface('card', base))).toBe('bg-fill-glass');
   });
 });

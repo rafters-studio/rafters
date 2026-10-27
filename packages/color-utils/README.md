@@ -73,10 +73,20 @@ everywhere, `p3` needs a wide-gamut screen, `out` is displayable nowhere.
 
 - `getGamutTier(oklch)` — which tier a color falls in.
 - `isInSRGBGamut(oklch)` / `isInP3Gamut(oklch)` — the two boundary checks.
-- `toNearestGamut(oklch)` — snap an out-of-gamut color into sRGB. Returns
+- `toNearestGamut(oklch)` — snap an out-of-gamut color into sRGB, keeping lightness, hue and alpha; only chroma drops. Returns
   `{ color, tier }`: the snapped OKLCH and the tier it landed in.
 - `computeGamutBoundaries(hue, steps?)` — the boundary points a picker draws
   against.
+- `toGamutCeiling(oklch, ceiling)` — map one color into `'srgb'` or `'p3'`;
+  unchanged when already inside.
+- `mapScaleToGamut(scale, ceiling)` — map every step of a scale into the
+  ceiling, keeping lightness strictly falling.
+- `ALLOW_P3` — whether a family may keep Display P3 steps; `false`.
+
+`buildColorValue` builds every family inside a ceiling its seed sets: `'p3'`
+only when the seed is a P3 color and `ALLOW_P3` is on, else `'srgb'`. The
+result records each step's tier in `gamut`, and `seedAdjusted` whenever the
+seed was moved (by the lightness bounds or into the gamut).
 
 Boundary checks run through `colorjs.io`, so sRGB and P3 agree with what the
 browser will render.

@@ -110,7 +110,7 @@ describe('drawer classes', () => {
 
   it('header and footer respond to the container, not the viewport', () => {
     const classes = classesFor();
-    expect(classes.header).toContain('@md:text-left');
+    expect(classes.header).toContain('@md:text-start');
     expect(classes.header).not.toContain('sm:');
     expect(classes.footer).not.toContain('sm:');
   });

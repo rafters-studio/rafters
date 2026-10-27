@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.4.3",
+  "version": "0.5.4",
   "description": "Design Intelligence CLI. Scaffold tokens, import existing shadcn/Tailwind v4 sources, add components, and serve an MCP server so AI agents read decisions instead of guessing.",
   "homepage": "https://rafters.studio",
   "license": "MIT",
@@ -42,19 +42,21 @@
     "@antfu/ni": "^28.1.0",
     "@inquirer/prompts": "^8.2.0",
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "@tailwindcss/cli": "^4.1.18",
     "commander": "^13.0.0",
     "css-tree": "^3.2.1",
     "execa": "^9.6.1",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "vite": "^8.1.1"
   },
   "devDependencies": {
+    "@astrojs/compiler-rs": "0.4.0",
     "@playwright/test": "catalog:",
     "@rafters/color-utils": "workspace:*",
     "@rafters/composites": "workspace:*",
     "@rafters/design-tokens": "workspace:*",
     "@rafters/math-utils": "workspace:*",
     "@rafters/shared": "workspace:*",
+    "@tailwindcss/cli": "^4.1.18",
     "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "playwright-bdd": "catalog:",

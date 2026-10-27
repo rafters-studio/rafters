@@ -105,7 +105,7 @@ function shortenForExit(band: MotionBand): MotionBand {
  * drifted down to their minimums (the flat 200/300/400 ladder). Restoring the
  * banded baseline in #1991 separated the two and exposed which one was meant.
  *
- * `elegant` is the measured peak for motion-duration in the 30-site study and is
+ * `elegant` is the measured peak for rafters-duration in the 30-site study and is
  * the one intent that genuinely positions itself inside the band.
  *
  * The remaining three are NOT researched. They take `null` for the same reason

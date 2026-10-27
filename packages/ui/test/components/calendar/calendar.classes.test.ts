@@ -7,14 +7,7 @@
  */
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
 import {
   calendarBehavior,
@@ -64,6 +57,17 @@ describe('calendar classes', () => {
     expect(day).toContain('data-[in-range=true]:bg-accent');
     expect(day).toContain('data-[outside=true]:opacity-50');
     expect(day).toContain('data-[disabled=true]:cursor-not-allowed');
+  });
+
+  it('the day cell is a table cell: no display utility, centred with table properties', () => {
+    // #2637: a display utility on the <td> pulls it out of table layout and the
+    // days stack in one column.
+    const tokens = classesFor().day.split(/\s+/);
+    for (const display of ['flex', 'inline-flex', 'grid', 'inline-grid', 'block', 'inline-block']) {
+      expect(tokens).not.toContain(display);
+    }
+    expect(tokens).toContain('text-center');
+    expect(tokens).toContain('align-middle');
   });
 
   it('the grid consumes the month-change cell as a keyframe', () => {
@@ -119,12 +123,7 @@ const sheet = (): Promise<string> => {
   if (compiled) return compiled;
   compiled = (async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/calendar')],
     });

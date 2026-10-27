@@ -8,7 +8,7 @@ Status: DRAFT. Second test article. Validates composition (Spec 02).
 > DIRECTLY: a `startDialogModalEffects({ content, getTrigger, onDismiss })`
 > function in `dialog.behavior.ts` starts `createFocusTrap` + `preventBodyScroll`
 > + `onPointerDownOutside` on open and tears them down on close, called by both
-> `bindDialog` (WC/Astro) and a React `useEffect`. dialog is the OVERLAY reference
+> `bindDialog` (Astro) and a React `useEffect`. dialog is the OVERLAY reference
 > for this pattern -- see `05-authoring.md`. Do not reintroduce an effect list.
 
 Files (`src/components/dialog/`):
@@ -17,7 +17,7 @@ Files (`src/components/dialog/`):
 dialog.classes.ts    dialog.behavior.ts    dialog.tsx
 ```
 
-Tests mirror into `test/components/dialog/`. WC and Astro not yet written.
+Tests mirror into `test/components/dialog/`. Astro not yet written.
 
 ## Composition
 
@@ -38,6 +38,8 @@ consumer callbacks fire once per real transition.
 
 ```ts
 interface DialogConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;        // controlled
   defaultOpen?: boolean; // uncontrolled seed
   modal?: boolean;       // default true
@@ -49,6 +51,18 @@ type DialogActions = { open: undefined; close: undefined };
 No `toggle` action: the trigger dispatches `open` or `close` computed from
 the effective value, so intrinsic state can never drift from a controlled
 consumer.
+
+### Fill and surface
+
+`DialogContent` takes `fill` and `surface`, which change the surface of its panel
+(`dialog.classes.ts:98`):
+
+- The base surface is `bg-surface-card`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

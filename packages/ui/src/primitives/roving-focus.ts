@@ -78,7 +78,7 @@ export interface RovingFocusOptions {
 function getFocusableItems(container: HTMLElement): HTMLElement[] {
   const items = Array.from(
     container.querySelectorAll<HTMLElement>(
-      '[data-roving-item], [role="menuitem"], [role="option"], [role="radio"], [role="tab"]',
+      '[data-roving-item], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="radio"], [role="tab"]',
     ),
   );
 

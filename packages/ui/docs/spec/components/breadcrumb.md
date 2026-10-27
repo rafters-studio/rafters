@@ -2,18 +2,17 @@
 
 Status: DRAFT. Static score (imitates Card and Container). No state, no actions,
 no keymap, no effects, no motion block beyond the link's hover-colour intent.
-The wayfinding archetype: a pure static performed across all three frameworks
-(React, the `<rafters-breadcrumb>` web component, and Astro).
+The wayfinding archetype: a pure static performed in React and Astro.
 
 Files (`src/components/breadcrumb/`):
 
 ```
 breadcrumb.behavior.ts   breadcrumb.classes.ts   breadcrumb.tsx
-breadcrumb.element.ts     breadcrumb.astro
+breadcrumb.astro
 ```
 
 Tests mirror into `test/components/breadcrumb/` (behavior, classes, React
-conformance, Astro conformance, WC conformance).
+conformance, Astro conformance).
 
 ## Purpose
 
@@ -36,8 +35,6 @@ projects no ARIA, holds no state, and runs no effects. There is therefore
   out, slots through.
 - `breadcrumb.astro` ships **no** `<script>` -- server-rendered markup with the
   fixed landmark and a default slot; nothing to hydrate.
-- `breadcrumb.element.ts` performs **no** binding -- the web component renders
-  the nav landmark with a default slot, once.
 
 The score is declared only so the conformance harness can assert the one real
 contract (the `root` part renders and projects no ARIA) identically across
@@ -86,17 +83,42 @@ composes inside" (boundary 5).
 
 ### Framework slot model
 
-React composes freely: the consumer nests the family by hand. The web component
-and Astro performances own only the nav landmark and expose a single default
+React composes freely: the consumer nests the family by hand. The Astro
+performance owns only the nav landmark and expose a single default
 slot; the consumer composes plain semantic children (the `ol`/`li`/`a`/current
 marker) into it. The visual rhythm lives on those slotted children via the
 shared class strings in `breadcrumb.classes.ts`, resolved from the compiled
-utility sheet -- so there is no shadow-scoped descendant CSS to maintain.
+utility sheet.
 
 `BreadcrumbPage` and `BreadcrumbEllipsis` render their `span` nodes via
 `React.createElement` rather than JSX -- the same raw-element disposition Card
 and Alert record while the new tree's Typography component does not exist yet; a
 navigation marker is not prose, so no typography role component fits it either.
+
+## Icons beside a label
+
+Two optional props place decorative icons around the label of a `BreadcrumbLink` or a `BreadcrumbPage`, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `BreadcrumbLink` and `BreadcrumbPage` | `endIcon: ReactNode` on the same |
+| Astro | `<slot name="start-icon" />` of `breadcrumb-link.astro` and `breadcrumb-page.astro` | `<slot name="end-icon" />` of the same |
+
+The Astro performance owns only the nav landmark, so Astro gains two small sub-components for the places an icon sits.
+
+```html
+<a href="/" class="inline-grid grid-flow-col items-center gap-1.5 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Home
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</a>
+```
+
+- `startIcon` and `endIcon` are optional behavior parts, present only when the author gives an icon. The behavior projects `aria-hidden="true"` on each through `aria`, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The link and the page are grids (`inline-grid grid-flow-col items-center gap-1.5`). The icon wrappers and the label are columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-0` and `has-data-[icon=inline-end]:pe-0`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- An icon-only home crumb is not decorative: it needs an accessible name and is out of scope here.
 
 ## Config, state, actions
 
@@ -116,9 +138,12 @@ default chevron.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | root | always | none projected -- the `aria-label="Breadcrumb"` landmark label is fixed native markup, not a score projection |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 
-There is exactly one behavioral part. List/item/link/page/separator/ellipsis are
-structural composition, not ARIA-bearing parts of the score (boundary 5).
+List/item/link/page/separator/ellipsis are structural composition, not
+ARIA-bearing parts of the score (boundary 5). The two icon parts are the
+exception: they are decorative wrappers the score hides.
 
 ## Keyboard and effects
 
@@ -139,16 +164,12 @@ non-interactive.
 | `BreadcrumbEllipsis` role=presentation + aria-hidden + sr-only "More" | contract |
 | `transition-colors duration-150 motion-reduce:transition-none` on the link | contract -- the sole motion intent (hover colour), recorded as `motion.current` in the matrix |
 | inline `ChevronRight`/`MoreHorizontal` SVGs (no icon dependency) | contract -- carried verbatim |
-| old WC `:host { display: block }` | changed to `:host { display: contents }` so the nav landmark is the box, matching the React/Astro roots (the Container disposition) |
 
 ## Deltas from the oracle
 
-1. `data-part="root"` added to the nav across all three performances so the
+1. `data-part="root"` added to the nav across both performances so the
    conformance harness can locate the single declared part.
-2. The WC host moves from `display: block` to `display: contents` -- the nav
-   landmark inside the shadow is the box, not the custom element, matching
-   React and Astro (Container's disposition).
-3. `BreadcrumbPage`/`BreadcrumbEllipsis` render their spans via
+2. `BreadcrumbPage`/`BreadcrumbEllipsis` render their spans via
    `createElement` (Typography-pending disposition), semantics unchanged.
 
 ## shadcn drop-in parity

@@ -93,6 +93,9 @@ interface MenubarContextValue {
   /** The portal target for the menus, once mounted. */
   menuHost: HTMLElement | null;
   classes: MenubarClassSet;
+  /** Drive the score from a keydown on the bar or inside a menu. Returns early
+   *  when the event is already defaultPrevented. */
+  driveKey: (event: React.KeyboardEvent<HTMLElement>) => void;
 }
 
 const MenubarContext = React.createContext<MenubarContextValue | null>(null);
@@ -240,11 +243,12 @@ export function Menubar({
     return stop;
   }, [active, menuHost, byId, request]);
 
-  // One root keydown handler drives the score for the triggers AND the portaled
-  // menus (React events bubble through the portal), so the part wrappers stay
-  // pure click adapters.
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(event);
+  // The score's keydown half, run from the root for the triggers and from each
+  // menu for its own keys: a menu is portaled out of the bar, so each menu
+  // drives the score from its own keydown, under every renderer, as the bind
+  // does. A key one level claims is preventDefaulted, so the other level skips
+  // it and every key is handled once.
+  const driveKey = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     const partEl = (event.target as HTMLElement).closest<HTMLElement>('[data-part]');
     const part = partEl?.dataset['part'] as MenubarPart | undefined;
@@ -278,8 +282,13 @@ export function Menubar({
     request(action, { values: menubarValues(bar), from: currentActive(), loop });
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    driveKey(event);
+  };
+
   const classes = menubarClasses(config, state);
-  const aria = menubar.aria(state, config, { root: '', trigger: '', content: '', item: '' });
+  const aria = menubar.aria(state, config, NO_IDS);
 
   const contextValue: MenubarContextValue = {
     state,
@@ -291,6 +300,7 @@ export function Menubar({
     instanceId,
     menuHost,
     classes,
+    driveKey,
   };
 
   return (
@@ -332,14 +342,24 @@ export function MenubarMenu({ value, children }: MenubarMenuProps) {
   return <MenubarMenuContext.Provider value={contextValue}>{children}</MenubarMenuContext.Provider>;
 }
 
+/** The ids a part carries when it has no instance of its own. */
+const NO_IDS = { root: '', trigger: '', content: '', item: '', startIcon: '' };
+
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
 export interface MenubarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function MenubarTrigger({
   className,
   children,
   asChild,
+  startIcon,
   onClick,
   ...props
 }: MenubarTriggerProps) {
@@ -372,8 +392,20 @@ export function MenubarTrigger({
     return React.cloneElement(children, mergeProps(partProps, childProps) as React.Attributes);
   }
 
+  const iconAria = menubar.aria(state, config, NO_IDS).startIcon;
+
   return (
     <button type="button" className={classy(classes.trigger, className)} {...partProps} {...props}>
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.triggerStartIcon}
+          {...iconAria}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {children}
     </button>
   );
@@ -387,6 +419,10 @@ export function MenubarPortal({ children }: { children: React.ReactNode }) {
 
 export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 /**
@@ -397,8 +433,17 @@ export interface MenubarContentProps extends React.HTMLAttributes<HTMLDivElement
  * until that host mounts). Present but inert while closed: the closed pose is
  * CSS off data-state, so the exit can play.
  */
-export function MenubarContent({ className, children, asChild, ...props }: MenubarContentProps) {
-  const { state, config, active, menuHost, classes } = useMenubarContext('MenubarContent');
+export function MenubarContent({
+  fill,
+  surface,
+  className,
+  children,
+  asChild,
+  onKeyDown,
+  ...props
+}: MenubarContentProps) {
+  const { state, config, active, menuHost, classes, driveKey } =
+    useMenubarContext('MenubarContent');
   const { value, triggerId, contentId } = useMenuContext('MenubarContent');
   const aria = menubarInstanceAria('content', value, state, config, {
     trigger: triggerId,
@@ -419,6 +464,10 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
     // of the accessibility tree and the tab order. Never `hidden`: display:
     // none would stop the transition.
     inert: !shown,
+    onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event);
+      driveKey(event);
+    },
   };
 
   const content =
@@ -428,7 +477,16 @@ export function MenubarContent({ className, children, asChild, ...props }: Menub
         mergeProps(partProps, children.props as Record<string, unknown>) as React.Attributes,
       )
     ) : (
-      <div className={classy(classes.content, className)} {...partProps} {...props}>
+      <div
+        className={classy(
+          fill || surface
+            ? menubarClasses({ ...config, fill, surface }, state).content
+            : classes.content,
+          className,
+        )}
+        {...partProps}
+        {...props}
+      >
         {children}
       </div>
     );
@@ -481,6 +539,8 @@ export interface MenubarItemProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   inset?: boolean;
   disabled?: boolean;
   asChild?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
   onSelect?: (event: Event) => void;
 }
 
@@ -488,13 +548,14 @@ export function MenubarItem({
   className,
   children,
   inset,
+  startIcon,
   disabled = false,
   asChild,
   onSelect,
   onClick,
   ...props
 }: MenubarItemProps) {
-  const { classes } = useMenubarContext('MenubarItem');
+  const { classes, state, config } = useMenubarContext('MenubarItem');
   const select = useItemSelect(disabled, onSelect);
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -525,7 +586,17 @@ export function MenubarItem({
       {...partProps}
       {...props}
     >
-      {children}
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.itemStartIcon}
+          {...menubar.aria(state, config, NO_IDS).startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }
@@ -595,7 +666,7 @@ export function MenubarCheckboxItem({
         { className: classes.itemIndicator, 'aria-hidden': 'true' },
         checked ? <CheckIcon className={classes.checkIcon} /> : null,
       )}
-      {children}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }
@@ -682,7 +753,7 @@ export function MenubarRadioItem({
           ? React.createElement('span', { className: classes.radioDot, 'aria-hidden': 'true' })
           : null,
       )}
-      {children}
+      <span className={classes.itemText}>{children}</span>
     </div>
   );
 }

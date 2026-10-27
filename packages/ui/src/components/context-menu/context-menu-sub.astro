@@ -18,7 +18,9 @@
  * reveal or the transition -- both are gone the instant JS flips it to open.
  */
 import ContextMenuSub from './context-menu-sub.astro';
+import { contextMenu, type ContextMenuPart } from './context-menu.behavior';
 import { contextMenuClasses } from './context-menu.classes';
+import type { PartIds } from '../../lib/contract';
 
 type SubEntry =
   | { type?: 'item'; label: string; disabled?: boolean }
@@ -28,13 +30,30 @@ interface Props {
   id: string;
   label: string;
   subItems: SubEntry[];
+  icons?: Record<string, string>;
 }
 
-const { id, label, subItems } = Astro.props;
+const { id, label, subItems, icons = {} } = Astro.props;
 const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
+const aria = contextMenu.aria({ open: false, x: 0, y: 0 }, {}, {} as PartIds<ContextMenuPart>);
+
+/**
+ * Icon markup arrives as a prop keyed by suffix ('' is this sub-trigger, '-<n>'
+ * its n-th item, '-<n>-<m>' below that), because a template only sees its own
+ * slots. A nested sub gets the keys under its own index, re-rooted.
+ */
+function nested(n: number): Record<string, string> {
+  const prefix = `-${n}`;
+  const out: Record<string, string> = {};
+  for (const [key, html] of Object.entries(icons)) {
+    if (key === prefix) out[''] = html;
+    else if (key.startsWith(`${prefix}-`)) out[key.slice(prefix.length)] = html;
+  }
+  return out;
+}
 ---
 
-<div data-part="sub">
+<div data-part="sub" class={classes.sub}>
   <div
     data-part="sub-trigger"
     id={`${id}-trigger`}
@@ -45,7 +64,19 @@ const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
     data-state="closed"
     class={classes.subTrigger}
   >
-    {label}
+    {
+      icons[''] !== undefined && (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          class={classes.startIcon}
+          {...aria.startIcon}
+        >
+          <Fragment set:html={icons['']} />
+        </span>
+      )
+    }
+    <span data-part="label" class={classes.itemLabel}>{label}</span>
     <svg
       class={classes.subTriggerChevron}
       fill="none"
@@ -74,6 +105,7 @@ const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
             id={`${id}-sub-${subIndex}`}
             label={subEntry.label}
             subItems={subEntry.subItems}
+            icons={nested(subIndex)}
           />
         ) : (
           <div
@@ -83,7 +115,19 @@ const classes = contextMenuClasses({}, { open: false, x: 0, y: 0 });
             data-disabled={subEntry.disabled ? '' : undefined}
             class={classes.item}
           >
-            {subEntry.label}
+            {icons[`-${subIndex}`] !== undefined && (
+              <span
+                data-part="startIcon"
+                data-icon="inline-start"
+                class={classes.startIcon}
+                {...aria.startIcon}
+              >
+                <Fragment set:html={icons[`-${subIndex}`]} />
+              </span>
+            )}
+            <span data-part="label" class={classes.itemLabel}>
+              {subEntry.label}
+            </span>
           </div>
         ),
       )

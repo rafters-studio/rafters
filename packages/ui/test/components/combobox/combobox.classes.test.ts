@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { combobox } from '../../../src/components/combobox/combobox.behavior';
 import { comboboxClasses } from '../../../src/components/combobox/combobox.classes';
 
@@ -69,6 +70,56 @@ describe('combobox classes', () => {
     // The delay generic is the whole row, and it resolves to 0ms at the
     // efficient intent: that zero is the assignment rather than a gap.
     expect(classes.item).toContain('delay-stagger-step');
+  });
+
+  it('the field, content, and options are a grid on the menu-row track list', () => {
+    const tokens = (value: string) => value.split(/\s+/);
+    expect(tokens(classes.field)).toEqual(expect.arrayContaining(['grid', 'grid-cols-menu-row']));
+    expect(tokens(classes.content)).toEqual(expect.arrayContaining(['grid', 'grid-cols-menu-row']));
+    for (const key of ['item', 'group'] as const) {
+      expect(tokens(classes[key])).toEqual(
+        expect.arrayContaining(['grid', 'grid-cols-subgrid', 'col-span-full']),
+      );
+    }
+  });
+
+  it('no class in the set names a physical direction', () => {
+    for (const value of Object.values(classes)) {
+      expect(value).not.toMatch(/(^|[\s:])-?(p[lr]|m[lr]|left|right|float)-/);
+    }
+  });
+
+  it('the icon wrappers place and hide, never size', () => {
+    for (const value of [classes.startIcon, classes.itemStartIcon]) {
+      expect(value.split(/\s+/)).toEqual(
+        expect.arrayContaining(['inline-grid', 'place-items-center']),
+      );
+      expect(value).not.toMatch(/(^|\s)(size|w|h)-/);
+    }
+  });
+
+  it('the input tightens its start padding only when an icon is present', () => {
+    expect(classes.field).toContain('has-data-[icon=inline-start]:[&>input]:ps-9');
+  });
+
+  it('classy keeps every layout literal', () => {
+    const layout =
+      /grid|col-|row-start|place-items|has-data|(^|:)p[se]-|(^|:)m[se]-|pointer-events/;
+    for (const key of [
+      'field',
+      'content',
+      'item',
+      'group',
+      'trigger',
+      'input',
+      'startIcon',
+      'itemStartIcon',
+    ] as const) {
+      const kept = classy(classes[key]).split(' ');
+      for (const literal of classes[key].split(/\s+/).filter((c) => layout.test(c))) {
+        expect(kept, `classy dropped ${literal} from ${key}`).toContain(literal);
+      }
+    }
   });
 
   it('declares no raw numeric duration or hand-picked easing', () => {

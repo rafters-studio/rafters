@@ -1,17 +1,17 @@
 # Component Spec — Kbd
 
 Status: DRAFT. Wave-2 static score (imitates Container/Card). No state, no
-actions, no keymap, no effects, no motion block. A pure static performed across
-all three frameworks (React, the `<rafters-kbd>` web component, and Astro).
+actions, no keymap, no effects, no motion block. A pure static performed in
+React and Astro.
 
 Files (`src/components/kbd/`):
 
 ```
-kbd.behavior.ts   kbd.classes.ts   kbd.tsx   kbd.element.ts   kbd.astro
+kbd.behavior.ts   kbd.classes.ts   kbd.tsx   kbd.astro
 ```
 
 Tests mirror into `test/components/kbd/` (behavior, classes, React
-conformance, WC conformance, Astro conformance).
+conformance, Astro conformance).
 
 ## Purpose
 
@@ -34,8 +34,6 @@ no state, and runs no effects. There is therefore **nothing to bind**:
   through, the semantic `<kbd>` element is fixed.
 - `kbd.astro` ships **no** `<script>` -- it is server-rendered markup with the
   shared class string and a default slot; there is nothing to hydrate.
-- `kbd.element.ts` performs **no** binding -- the web component renders the
-  `<kbd>` cap with the shared classes and a default slot, once.
 
 The score is declared at all only so the conformance harness can assert the
 one real contract (the `root` part renders and projects no ARIA) identically
@@ -44,16 +42,30 @@ across every framework.
 ## Config, state, actions
 
 ```ts
-type KbdConfig = Record<never, never>;
+interface KbdConfig {
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
+}
 type KbdState = Record<never, never>;
 type KbdActions = Record<never, never>;
 ```
 
-`KbdConfig` is empty by construction: the oracle exposes
-no variants, sizes, or attributes on any of its three targets. Config in, one
-class string out. `kbdClasses(config, state) => { root }` returns the base cap
-string regardless of config or state -- the single projection every
-performance reads.
+The oracle exposes no variants, sizes, or attributes on any of its targets,
+so `KbdConfig` carries only `fill` and `surface`. Config in, one class string
+out: `kbdClasses(config, state) => { root }` returns the cap's structure plus
+its surface -- the single projection every performance reads.
+
+### Fill and surface
+
+`Kbd` takes `fill` and `surface`, which change the surface of its root
+(`kbd.classes.ts:30`):
+
+- The base surface is `border-border bg-muted text-muted-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 
@@ -81,27 +93,22 @@ None. The cap is a static chip; the matrix records no motion intents.
 
 | Oracle feature | Disposition |
 | --- | --- |
-| Semantic `<kbd>` element, all three targets | contract |
+| Semantic `<kbd>` element, both targets | contract |
 | Base cap: `inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-code-small text-muted-foreground shadow-sm` | contract -- ported verbatim from the old kbd |
-| No variants, sizes, or attributes on any target | contract -- `KbdConfig` is empty; the WC keeps an empty `observedAttributes` |
+| No variants, sizes, or attributes on any target | contract -- `KbdConfig` is empty |
 | `forwardRef<HTMLElement>` (React) | contract -- Kbd is frequently wrapped by Tooltip/Popover shortcut rows; ref forwarding is load-bearing |
-| `:host { display: inline-flex }` shim (WC) | contract -- a `<kbd>` is inline, so the host is inline-flex (not card's block) |
-| `composeKbdClasses()` helper (old `kbd.element.ts`) | dropped -- superseded by the shared `kbdClasses({}, {}).root` projection all three performances read; a parallel helper would be a second source of the same string |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags (old `kbd.tsx`) | dropped from the tag block -- the registry parses the four required tags (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`); the extras were prose, recoverable from the oracle. `@example` is kept as documentation, not a parsed tag |
 
 ## Deltas from the oracle
 
 1. Each performance renders `data-part="root"` on the `<kbd>` so the
-   conformance harness locates the root in light DOM and in the shadow root
-   alike -- the oracle carried no `data-part`.
-2. The WC's `composeKbdClasses()` helper is dropped in favour of the shared
-   `kbdClasses` projection; one score, one class string, three performances.
+   conformance harness locates the root -- the oracle carried no `data-part`.
 
 ## shadcn drop-in parity
 
 The oracle is rafters' own library, and its Kbd is a single semantic `<kbd>`
 element with a base class string -- there is no `KbdGroup` wrapper or variant
-surface on any of the three oracle targets. shadcn's more recent `Kbd`/`KbdGroup`
+surface on any of the oracle targets. shadcn's more recent `Kbd`/`KbdGroup`
 pair (a group wrapper plus per-key caps) is a superset the oracle never adopted;
 this port preserves the oracle's single-element surface faithfully rather than
 fabricate a `KbdGroup` the tree never had. A consumer composes a combination the

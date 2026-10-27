@@ -17,16 +17,15 @@ Per component, three kinds of file and nothing else:
   trap, dismiss, roving, announce) is COMPOSED from primitives in a function in
   this file that each framework boundary calls -- see `bindX` below.
 - **`x.classes.ts` = the view.** Class strings. No logic.
-- **`x.tsx` / `x.element.ts` / `x.astro` = decorators over the behavior.**
+- **`x.tsx` / `x.astro` = decorators over the behavior.**
   Each is a thin wrapper that adds exactly two things around the invariant
   behavior core, and nothing else: the **view** (`x.classes.ts`) and the
-  framework **wiring** (the runtime adapter). React reads the projections
-  declaratively via `useMemory`; the WC decorates with the custom-element
-  lifecycle, Astro with SSR markup -- both call the *same* `bindX`. One
-  behavior, three decorators, zero drift, because there is only one behavior
-  file.
+  framework **wiring**. React reads the projections
+  declaratively via `useMemory`; Astro decorates with SSR markup, and its
+  script calls `bindX`. One behavior, two decorators, zero drift, because
+  there is only one behavior file.
 
-  **Every decorator carries the complete intelligence JSDoc block.** All three
+  **Every decorator carries the complete intelligence JSDoc block.** Both
   framework files must open with the same 6-tag intelligence block, parsed by
   `component-intelligence.ts`:
 
@@ -46,8 +45,8 @@ Per component, three kinds of file and nothing else:
   cognitive-load budget system all extract from these tags. A decorator
   without them is invisible to the intelligence layer -- agents get
   `intelligence: undefined` and guess at design decisions the tags exist to
-  encode. The block must be identical across all three decorators for a
-  component; write it once and carry it to all three files.
+  encode. The block must be identical across both decorators for a
+  component; write it once and carry it to both files.
 
   Decorator in *spirit*, not GoF-strict -- read the word as the shape, not the
   taxonomy. The framework file **adapts one runtime to the one behavior** and
@@ -101,9 +100,8 @@ three-way "which mechanism?" fork.
 - `hooks/use-memory.ts` -- `useMemory` (the one surviving React hook,
   `useSyncExternalStore`). React runs a behavior's composed primitives in a plain
   `useEffect` that calls the same composition function `bindX` does.
-- `primitives/rafters-element.ts` -- the shadow-DOM WC base (for pure statics).
 
-## `bindX` -- the DOM-native client (WC + Astro share it)
+## `bindX` -- the DOM-native client (Astro's script calls it)
 
 Lives in the behavior file. Shape (see `bindDialog`, `bindRadioGroup`). Two
 composition shapes: a **direct call** when it is one primitive (`radio-group`:
@@ -132,7 +130,7 @@ bind and the React `useEffect`):
 
 | archetype | reference | shape |
 |---|---|---|
-| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. WC = `RaftersElement` shadow + `<slot>`. |
+| pure static | `container`, `card` | no `bindX`, no `useBehavior`/`useMemory`; the decorators are markup + classes + slots only. |
 | simple-interactive | `button` | `bindButton`; native `<button>` fulfils Enter/Space, so wire `click` only. Composes `sr-announcer` on the loading edge (one-shot). |
 | static + composed | `grid` | static except it composes `roving-focus` (2D, `{ columns }`) when `role=grid`. |
 | text-input | `input` | primary state is a **value**; `setValue` gated by disabled/readonly; native input owns caret/IME/selection -- do not re-implement. |
@@ -200,15 +198,13 @@ Expand and collapse animate `grid-template-rows` (`0fr` <-> `1fr`), never
 **Matrix conformance is a review lane.** Every motion PR is checked row by row:
 the generics a component names must equal what the matrix assigns it.
 
-## The three gotchas (encode all three)
+## The two gotchas (encode both)
 
 1. **Controlled callback**: compare the *effective* value before against the
    *intrinsic* state after -- a controlled component's effective value never
    moves, but the consumer callback must still report the value to set.
 2. **`aria-manager` coerces**: apply a resolved projection with `{ validate: false }`,
    or the string `'false'` is read as truthy and flips to `'true'`.
-3. **WC bind deferred**: `connectedCallback` can fire before light-DOM children
-   parse -- bind on the next microtask.
 
 ## Composing motion (combination constraints)
 
@@ -250,22 +246,17 @@ rest, and the split is recorded in the data:
 - **Portaled overlays need presence tracking** -- but only for the *unguarded*
   cross-ref sources (`aria-labelledby`/`describedby`, which lack the `open`
   guard `aria-controls` has). Everything else keeps a stable id.
-- **Two WC shapes.** Behavior-carrying components are **light-DOM enhancers**
-  (the bind reads real document DOM for the primitives it composes). Pure statics are **shadow +
-  slots** (`RaftersElement`) -- simpler, but they render every region, so
-  unfilled slots become empty padded space. Accepted cost of a no-bind static.
 - `card`/`alert` render raw heading/`<p>` via `createElement` because Typography
   H-tags do not exist yet -- a tracked disposition, not the pattern.
 
-## Testing (three frameworks drive the one score)
+## Testing (two frameworks drive the one score)
 
 - Three tiers, named by suffix: `.test` unit, `.spec` integration and
   behavior, `.a11y` accessibility. Each component carries up to one file per
-  target per tier (`<name>.spec.tsx`, `<name>.element.spec.ts`,
-  `<name>.astro.spec.ts`), and each file is self-contained: it imports the
-  component, its score, vitest, and the render API, never a shared test
-  helper. There is no harness.
-- React and WC `.spec` and `.a11y` files run in the `browser` project (real
+  target per tier (`<name>.spec.tsx`, `<name>.astro.spec.ts`), and each file
+  is self-contained: it imports the component, its score, vitest, and the
+  render API, never a shared test helper. There is no harness.
+- React `.spec` and `.a11y` files run in the `browser` project (real
   chromium); `.test` files run in `unit` (happy-dom).
 - Astro files run in the `astro` project (`vitest.config.astro.ts`): `AstroContainer`
   renders SSR markup; the container does **not** run the `<script>`, so the test

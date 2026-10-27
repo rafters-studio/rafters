@@ -7,7 +7,7 @@
  * refs, missing canonical surface tokens, or syntax errors.
  *
  * Fixture coverage is incremental: extended as #1519 lands the
- * remaining `react-router` / `wc` / `vanilla` fixtures.
+ * remaining `react-router` / `vanilla` fixtures.
  */
 
 import { afterEach, describe, expect, it } from 'vitest';

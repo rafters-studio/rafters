@@ -6,11 +6,11 @@ form-value projection on the behavior layer.
 Files (`src/components/switch/`):
 
 ```
-switch.classes.ts   switch.behavior.ts   switch.tsx   switch.element.ts   switch.astro
+switch.classes.ts   switch.behavior.ts   switch.tsx   switch.astro
 ```
 
 Tests mirror into `test/components/switch/`: behavior (pure), classes parity,
-and conformance across React + WC (`vitest.config.ts`) + Astro
+and conformance across React (`vitest.config.ts`) + Astro
 (`vitest.config.astro.ts`).
 
 ## Composition
@@ -89,7 +89,7 @@ button's hard-disabled.
   the trap the old React code fought with `preventDefault`.
 - `effects(state, config)`: always `[]`. No focus-trap, roving, or announce —
   the simplest bind shape, no runner. `bindSwitch` projects aria/data-state and
-  dispatches a bubbling, composed `change` event on a real toggle (the old WC's
+  dispatches a bubbling, composed `change` event on a real toggle (the oracle's
   change contract, preserved).
 
 ## Oracle dispositions (boundary 9)
@@ -105,16 +105,13 @@ button's hard-disabled.
 | thumb travel + track color transition | contract (declared as `data-[state=checked]` CSS, not a swapped class string; durations/easing from tokens) |
 | `aria-hidden` decorative thumb | contract |
 | form-value axis: `name`/`value`/`required`, default `'on'`, omit-when-unchecked, `valueMissing` | contract — lives in the score as the pure `switchFormValue` projection |
-| WC ElementInternals form association (`formAssociated`, `attachInternals`, `setFormValue`, `setValidity`, `checkValidity`/`reportValidity`, `formReset`/`formDisabled`/`formStateRestore` callbacks) | framework-affordance — the behavior-layer WC is a thin light-DOM enhancer; the axis is exposed as pure data a form adapter reads, not rebuilt as a lifecycle machine in a decorator. Native submission via a bubble input is a future form adapter, tracked here |
-| WC `observedAttributes` + property setters + attribute reflection | framework-affordance — dropped; the light-DOM enhancer reads author/server markup and never owns attribute reflection |
-| WC bubbling composed `change` event | contract (preserved in `bindSwitch`) |
-| structural `:host { display: inline-flex }` shadow shim | dropped — no shadow tree; the enhancer decorates author light DOM |
+| bubbling composed `change` event | contract (preserved in `bindSwitch`) |
 
 ## Deltas from the oracle
 
 1. Checked presentation moved from swapped class strings
    (`bg-input` ↔ `bg-primary`, `translate-x-0` ↔ `translate-x-5`) to
-   `data-[state=checked]:` selectors over one class set, so all three
+   `data-[state=checked]:` selectors over one class set, so both
    performances animate identically off the projected `data-state` with no
    per-framework class logic (the technique input uses for validity).
 2. The React performance never participated in forms in the oracle either;

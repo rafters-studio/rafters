@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { DatePickerConfig, DatePickerState } from './date-picker.behavior';
 
 export interface DatePickerClassSet {
@@ -7,14 +8,17 @@ export interface DatePickerClassSet {
   value: string;
   /** The calendar glyph at the trailing edge of the trigger. */
   icon: string;
+  /** The decorative wrapper before the label (after it on a right-to-left page). */
+  startIcon: string;
+  /** The decorative wrapper after the label, replacing the calendar glyph. */
+  endIcon: string;
   /** The anchored popup holding the calendar. */
   content: string;
 }
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
-// and the config, and NO class. Current choice (2026-08-02): a behavior root
-// never styles itself, because layout belongs to the consumer's Container/Grid;
-// revisable.
+// and the config, and NO class. A behavior root never styles itself, because
+// layout belongs to the consumer's Container/Grid.
 
 // The trigger is a form control that opens a popup and shows a value: select's
 // trigger vocabulary (touch floor h-11 scaling down via the container query,
@@ -26,8 +30,9 @@ export interface DatePickerClassSet {
 // state, and motion.jsonl has no date-picker / trigger row for either. No row,
 // no motion: both stay instant here. Designer: assign rows if they should move.
 const triggerClasses =
-  'flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
+  'grid grid-flow-col auto-cols-auto h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
   'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
@@ -35,10 +40,16 @@ const triggerClasses =
 
 // Placeholder look keys off data-empty, which the score projects when nothing is
 // selected (select's convention).
-const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-muted-foreground';
+const valueClasses = 'pointer-events-none truncate text-start data-[empty]:text-muted-foreground';
 
 // The oracle's calendar glyph sizing and weight (select's chevron twin).
 const iconClasses = 'size-4 shrink-0 opacity-50';
+
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconWrapperClasses = 'inline-grid place-items-center';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // The popup sits on the popover depth token and fills with the popover surface
 // tokens; it hugs the calendar (shadcn's `w-auto p-0` on PopoverContent, the
@@ -57,7 +68,7 @@ const iconClasses = 'size-4 shrink-0 opacity-50';
 // The zoom rides `extent-pop`: the class picks the member (writing the
 // `--rafters-consumed-extent` alias) and `scale-(--rafters-consumed-extent)`
 // reads that alias back, as context-menu's subContent does. Closed the part
-// rests at the pop extent and opacity 0; open it is scale-100 and opacity 100.
+// rests at the pop extent and opacity 0; open it is at full scale and opacity 100.
 //
 // The part stays present: closed, it is `inert` (set by the performance, not
 // here) and `pointer-events-none`, never `hidden`, because `display: none`
@@ -67,11 +78,11 @@ const iconClasses = 'size-4 shrink-0 opacity-50';
 //
 // The transition utility is the bare `transition`: it is the one named utility
 // that covers both opacity and scale and leaves out `left`/`top`, so the
-// placement never animates. `transition-all` would animate the placement;
-// `transition-opacity` drops the zoom; an arbitrary property list is a
+// placement never animates. Transitioning every property would animate the
+// placement; an opacity-only transition drops the zoom; an arbitrary property list is a
 // bracketed value React's `classy()` drops (#2396).
 const contentClasses =
-  'fixed z-depth-popover w-auto rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none ' +
+  'fixed z-depth-popover w-auto rounded-md border p-0 shadow-md outline-none ' +
   'pointer-events-none opacity-0 extent-pop scale-(--rafters-consumed-extent) ' +
   'transition duration-fast ease-exit ' +
   'data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:scale-100 ' +
@@ -79,13 +90,15 @@ const contentClasses =
 
 /** The view: class strings keyed by config/state. No logic. */
 export function datePickerClasses(
-  _config: DatePickerConfig,
+  config: DatePickerConfig,
   _state: DatePickerState,
 ): DatePickerClassSet {
   return {
     trigger: triggerClasses,
     value: valueClasses,
     icon: iconClasses,
-    content: contentClasses,
+    startIcon: iconWrapperClasses,
+    endIcon: iconWrapperClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
   };
 }

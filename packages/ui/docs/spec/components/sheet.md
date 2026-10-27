@@ -7,11 +7,11 @@ side over a scrim and traps focus.
 Files (`src/components/sheet/`):
 
 ```
-sheet.behavior.ts    sheet.classes.ts    sheet.tsx    sheet.element.ts    sheet.astro
+sheet.behavior.ts    sheet.classes.ts    sheet.tsx    sheet.astro
 ```
 
 Tests mirror into `test/components/sheet/`: behavior (pure), classes (parity),
-and conformance across React, WC, and Astro through the shared harness.
+and conformance across React and Astro through the shared harness.
 
 ## Composition
 
@@ -25,7 +25,7 @@ The score is dialog's score. Effects-as-data is retired (Spec 03, 2026-07-19):
 the modal overlay trio is composed DIRECTLY. `startSheetModalEffects({ content,
 getTrigger, onDismiss })` starts `createFocusTrap` + `preventBodyScroll` +
 `onPointerDownOutside` on the open+modal transition and tears them down on
-close, called by both `bindSheet` (WC/Astro) and a React `useEffect`. Focus
+close, called by both `bindSheet` (Astro) and a React `useEffect`. Focus
 restore rides the trap teardown. No effect list, no second memory cell:
 `disclosable` is the one open/closed axis over the single `createBehavior` cell.
 
@@ -33,6 +33,8 @@ restore rides the trap teardown. No effect list, no second memory cell:
 
 ```ts
 interface SheetConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;        // controlled
   defaultOpen?: boolean; // uncontrolled seed
   modal?: boolean;       // default true
@@ -55,9 +57,21 @@ panel anchors to and, once motion tokens exist, the slide axis. It projects no
 ARIA, claims no key, and never enters a reducer, so it is NOT score state: it is
 a positional class variant. This preserves the shadcn surface, where `side` is a
 prop of `SheetContent` — the React performance keeps it there; the Astro
-performance takes it as a prop and the WC reads it from the authored class. The
+performance takes it as a prop. The
 matrix "states: open, side" line names the two axes of variation a sheet has;
 only `open` is a transitioning reducer state.
+
+### Fill and surface
+
+`SheetContent` takes `fill` and `surface`, which change the surface of its panel
+(`sheet.classes.ts:100`):
+
+- The base surface is `bg-background border-card-border`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 

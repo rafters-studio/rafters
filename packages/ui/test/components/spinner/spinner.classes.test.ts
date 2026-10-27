@@ -2,13 +2,10 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  contrastPlugin,
   generateBaseSystem,
-  invertPlugin,
   registryToCompiled,
-  scalePlugin,
-  statePlugin,
   TokenRegistry,
+  REGISTRY_PLUGINS,
 } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
 import { spinnerClasses } from '../../../src/components/spinner/spinner.classes';
@@ -90,12 +87,7 @@ describe('spinner classes compile (#2155)', () => {
         join(fixtureDir, 'probe.classes.ts'),
         `export const x = '${renderedClassName} motion-modal-in';\n`,
       );
-      const registry = new TokenRegistry(generateBaseSystem({}).allTokens, [
-        scalePlugin,
-        contrastPlugin,
-        statePlugin,
-        invertPlugin,
-      ]);
+      const registry = new TokenRegistry(generateBaseSystem({}).allTokens, REGISTRY_PLUGINS);
       css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });

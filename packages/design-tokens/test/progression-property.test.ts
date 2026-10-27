@@ -198,29 +198,16 @@ describe('radius and focus derive from spacing', () => {
     expect(fBase?.value).not.toMatch(/rem$/);
   });
 
-  it('the exporter rewrites spacing refs so no dangling --rafters- vars remain', () => {
+  it('every --rafters- reference in radius and focus is declared on :root (#2825)', () => {
     const system = generateBaseSystem({});
     const css = tokensToTailwind(system.allTokens, { includeImport: false }, []);
-    const lines = css.split('\n');
-
-    const radiusLines = lines.filter((l) => /--radius-/.test(l));
-    const focusLines = lines.filter((l) => /--focus-/.test(l));
-
-    expect(radiusLines.length).toBeGreaterThan(0);
-    expect(focusLines.length).toBeGreaterThan(0);
-
-    for (const line of radiusLines) {
-      expect(line, `dangling in radius: ${line.trim()}`).not.toContain(
-        'var(--rafters-spacing-base)',
-      );
-    }
-    for (const line of focusLines) {
-      expect(line, `dangling in focus: ${line.trim()}`).not.toContain(
-        'var(--rafters-spacing-base)',
-      );
-      expect(line, `dangling in focus: ${line.trim()}`).not.toContain(
-        'var(--rafters-focus-ring-width)',
-      );
+    const declared = new Set([...css.matchAll(/^\s*(--rafters-[\w-]+):/gm)].map((m) => m[1]));
+    const lines = css.split('\n').filter((l) => /--(rafters-)?(radius|focus)-/.test(l));
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      for (const ref of line.matchAll(/var\((--rafters-[\w-]+)\)/g)) {
+        expect(declared.has(ref[1] ?? ''), `dangling ${ref[1]} in ${line.trim()}`).toBe(true);
+      }
     }
   });
 
@@ -234,14 +221,13 @@ describe('radius and focus derive from spacing', () => {
     for (const token of lineHeightTokens) {
       const key = token.name.replace(/^line-height-/, '');
       // --leading-* is a Tailwind v4 NAMED theme namespace (leading-tight,
-      // leading-relaxed, ...); --line-height-* is not, so the leading-*
-      // utility compiles to nothing without this bridge. Additive: the
-      // existing --line-height-* declaration must still be present too.
+      // leading-relaxed, ...); --line-height-* is not. The key reads the
+      // token through its --rafters-* property (#2825).
       expect(css, `missing --leading-${key} theme var`).toContain(
-        `  --leading-${key}: ${token.value};`,
+        `  --leading-${key}: var(--rafters-${token.name});`,
       );
-      expect(css, `--line-height-${key} should still be emitted`).toContain(
-        `  --${token.name}: ${token.value};`,
+      expect(css, `--rafters-${token.name} should be emitted`).toContain(
+        `  --rafters-${token.name}: ${token.value};`,
       );
     }
   });

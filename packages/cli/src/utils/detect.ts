@@ -18,7 +18,7 @@ export type Framework =
   | 'remix'
   | 'react-router'
   | 'astro'
-  | 'wc'
+  | 'preact'
   | 'vanilla'
   | 'unknown';
 
@@ -29,7 +29,7 @@ export const SELECTABLE_FRAMEWORKS: ReadonlyArray<Exclude<Framework, 'unknown'>>
   'remix',
   'react-router',
   'astro',
-  'wc',
+  'preact',
   'vanilla',
 ];
 
@@ -96,10 +96,8 @@ function frameworkFromDeps(deps: Record<string, string>): Framework {
   if (deps['react-router']) return 'react-router';
   if (Object.keys(deps).some((d) => d.startsWith('@remix-run/'))) return 'remix';
   if (deps.astro) return 'astro';
-  // Web Components: `lit` (or `@lit/*`) without React. A lit+react project is
-  // still React-driven, so we only flip to `wc` when React is absent.
-  const hasLit = Boolean(deps.lit) || Object.keys(deps).some((d) => d.startsWith('@lit/'));
-  if (hasLit && !deps.react) return 'wc';
+  // Preact without React, including Vite + Preact, so it precedes `vite`.
+  if (deps.preact && !deps.react) return 'preact';
   if (deps.vite) return 'vite';
   return 'unknown';
 }
@@ -157,24 +155,24 @@ export function isTailwindV3(version: string | null): boolean {
  * Component target derived from framework.
  * Determines which file extension to prefer when installing components.
  */
-export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte' | 'wc';
+export type ComponentTarget = 'react' | 'astro' | 'vue' | 'svelte';
 
 /**
  * Map a framework to its default component target.
  * All React-based frameworks (next, vite, remix, react-router) map to 'react'.
- * `wc` projects get Web Component files; `vanilla` defaults to 'react' since
- * the React file is the shadcn drop-in form most plain-TS projects still use.
+ * `preact` gets the React files too: they run through preact/compat.
+ * `vanilla` defaults to 'react' since the React file is the shadcn drop-in
+ * form most plain-TS projects still use.
  */
 export function frameworkToTarget(framework: Framework): ComponentTarget {
   if (framework === 'astro') return 'astro';
-  if (framework === 'wc') return 'wc';
   return 'react';
 }
 
 /**
  * All supported component file extensions, derived from ComponentTarget values.
  */
-export const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'] as const;
+export const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'] as const;
 
 /**
  * Map a component target to its preferred file extension.
@@ -185,7 +183,6 @@ export function targetToExtension(target: ComponentTarget): string {
     astro: '.astro',
     vue: '.vue',
     svelte: '.svelte',
-    wc: '.element.ts',
   };
   return map[target];
 }
@@ -221,92 +218,120 @@ export interface ComponentPaths {
  *     (absent for `unknown`).
  *   - `cssLocations`: candidate paths for the user's main CSS file --
  *     where init injects the `@import ".rafters/output/rafters.css"`.
+ *   - `entryPoints`: candidate app entry files that import that CSS.
  *   - `components`: default install paths for `rafters add`.
+ *   - `note`: a setup requirement init and add print once per run.
  */
 export interface FrameworkSpec {
   label?: string;
   cssLocations: readonly string[];
+  /**
+   * Candidate app entry files, in order. When init creates the CSS file, it
+   * imports it from the first one that exists; with none, it names the first.
+   */
+  entryPoints: readonly string[];
   components: ComponentPaths;
+  /** One line init and add print for this framework, when it needs setup rafters does not do. */
+  note?: string;
+  /** The Tailwind CSS v4 install guide init names when tailwindcss is missing (#2804). */
+  tailwindGuide: string;
 }
 
 export const FRAMEWORK_SPECS: Record<Framework, FrameworkSpec> = {
   next: {
     label: 'Next.js',
     cssLocations: ['src/app/globals.css', 'app/globals.css', 'styles/globals.css'],
+    entryPoints: ['src/app/layout.tsx', 'app/layout.tsx', 'src/app/layout.jsx', 'app/layout.jsx'],
     components: {
       components: 'components/ui',
       primitives: 'lib/primitives',
       composites: 'composites',
       rules: 'lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/nextjs',
   },
   vite: {
     label: 'Vite',
     cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'src/app.css'],
+    entryPoints: ['src/main.tsx', 'src/main.ts', 'src/main.jsx', 'src/main.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/using-vite',
   },
   remix: {
     label: 'Remix',
     cssLocations: ['app/styles/global.css', 'app/globals.css', 'app/root.css'],
+    entryPoints: ['app/root.tsx', 'app/root.jsx'],
     components: {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
       composites: 'app/composites',
       rules: 'app/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
   'react-router': {
     label: 'React Router v7',
     cssLocations: ['app/app.css', 'app/root.css', 'app/styles.css', 'app/globals.css'],
+    entryPoints: ['app/root.tsx', 'app/root.jsx'],
     components: {
       components: 'app/components/ui',
       primitives: 'app/lib/primitives',
       composites: 'app/composites',
       rules: 'app/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/react-router',
   },
   astro: {
     label: 'Astro',
     cssLocations: ['src/styles/global.css', 'src/styles/globals.css', 'src/global.css'],
+    entryPoints: ['src/layouts/Layout.astro'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation/framework-guides/astro',
   },
-  wc: {
-    label: 'Web Components (custom elements, shadow DOM)',
-    cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css'],
+  preact: {
+    label: 'Preact',
+    cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'src/app.css'],
+    entryPoints: ['src/main.tsx', 'src/main.ts', 'src/main.jsx', 'src/main.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
+    note: 'Preact: rafters installs React (.tsx) components, so react and react-dom must alias to preact/compat (@preact/preset-vite sets this up).',
   },
   vanilla: {
     label: 'Vanilla (plain HTML/TS, no framework)',
     cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css'],
+    entryPoints: ['src/main.ts', 'src/main.js', 'src/index.ts', 'src/index.js'],
     components: {
       components: 'src/components/ui',
       primitives: 'src/lib/primitives',
       composites: 'src/composites',
       rules: 'src/lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
   unknown: {
     cssLocations: ['src/styles/global.css', 'src/index.css', 'styles/globals.css'],
+    entryPoints: ['src/main.ts', 'src/main.js', 'src/index.ts', 'src/index.js'],
     components: {
       components: 'components/ui',
       primitives: 'lib/primitives',
       composites: 'composites',
       rules: 'lib/rules',
     },
+    tailwindGuide: 'https://tailwindcss.com/docs/installation',
   },
 };

@@ -17,13 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { generateBaseSystem } from '../src/generators/index.js';
-import {
-  contrastPlugin,
-  invertPlugin,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '../src/index.js';
+import { TokenRegistry, REGISTRY_PLUGINS } from '../src/index.js';
 import { type OutputExports, regenerateOutputs } from '../src/outputs.js';
 
 const ALL_ON: OutputExports = {
@@ -52,12 +46,7 @@ const KNOWN_FILES = [
 
 function baseRegistry(): TokenRegistry {
   const system = generateBaseSystem({});
-  return new TokenRegistry(system.allTokens, [
-    scalePlugin,
-    contrastPlugin,
-    statePlugin,
-    invertPlugin,
-  ]);
+  return new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
 }
 
 describe('regenerateOutputs (#1944)', () => {
@@ -78,7 +67,7 @@ describe('regenerateOutputs (#1944)', () => {
     for (const filename of KNOWN_FILES) {
       expect(existsSync(join(outputDir, filename))).toBe(true);
     }
-  }, 20000);
+  });
 
   it('writes nothing when every export is disabled', async () => {
     const written = await regenerateOutputs(baseRegistry(), { outputDir, exports: ALL_OFF });
@@ -114,7 +103,7 @@ describe('regenerateOutputs (#1944)', () => {
     expect(existsSync(join(outputDir, 'rafters.json'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.standalone.css'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.documentation.css'))).toBe(false);
-  }, 20000);
+  });
 
   it('never touches a file outside the known output filename set', async () => {
     const untouched = join(outputDir, 'notes.txt');
@@ -139,5 +128,24 @@ describe('regenerateOutputs (#1944)', () => {
         },
       }),
     ).resolves.toEqual(['rafters.css']);
+  });
+
+  it('writes fontImports into rafters.css only (#2754)', async () => {
+    const SANS = '@fontsource-variable/noto-sans';
+    const registry = baseRegistry();
+    await regenerateOutputs(registry, { outputDir, exports: ALL_ON, fontImports: [SANS] });
+    const plainDir = mkdtempSync(join(tmpdir(), 'rafters-outputs-plain-'));
+    try {
+      await regenerateOutputs(registry, { outputDir: plainDir, exports: ALL_ON });
+      const css = await readFile(join(outputDir, 'rafters.css'), 'utf-8');
+      expect(css.startsWith(`@import "${SANS}";\n@import "tailwindcss";`)).toBe(true);
+      for (const name of ['rafters.standalone.css', 'rafters.documentation.css']) {
+        await expect(readFile(join(outputDir, name), 'utf-8')).resolves.toBe(
+          await readFile(join(plainDir, name), 'utf-8'),
+        );
+      }
+    } finally {
+      rmSync(plainDir, { recursive: true, force: true });
+    }
   });
 });

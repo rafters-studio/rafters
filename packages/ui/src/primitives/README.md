@@ -67,6 +67,8 @@ API
 - `classy(...inputs)` — default instance (no tokenMap, arbitrary classes blocked)
 - `createClassy({ tokenMap, allowArbitrary, warn })` — create custom instance
 - `token(key)` — mark token references for resolution
+- `classy.fill(value, surface)` — the `fill` prop's merge. A value that is exactly one `bg-fill-*` token is returned on its own and replaces `surface`; an empty or absent value returns `surface`; anything else is dropped with a warning and `surface` is returned. It checks the shape only: the registry decides which fills exist.
+- `classy.surface(name, base)` — the `surface` prop's merge. A known surface name returns its literal `bg-surface-<name>` class from `SURFACE_CLASSES`; an unknown name returns `base`, with no warning.
 
 Why no tailwind-merge?
 

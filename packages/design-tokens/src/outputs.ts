@@ -15,7 +15,8 @@
  */
 
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, unlink } from 'node:fs/promises';
+import { writeFileAtomic } from './atomic-write.js';
 import { isAbsolute, join, resolve } from 'node:path';
 import { toDTCG } from './exporters/dtcg.js';
 import {
@@ -53,6 +54,10 @@ export interface RegenerateOutputsInput {
    * consumer's own CSS already imports Tailwind (shadcn layout).
    */
   includeImport?: boolean;
+  /** Passed to registryToTailwind for rafters.css only. Not passed to the compiled or documentation sheet. */
+  fontImports?: readonly string[];
+  /** Project directory the compiled and documentation sheets resolve `@tailwindcss/cli` from first. */
+  projectRoot?: string;
 }
 
 export interface RegenerateOutputsHooks {
@@ -144,37 +149,39 @@ export async function regenerateOutputs(
     contentSources = [],
     darkMode = 'class',
     includeImport = true,
+    fontImports = [],
+    projectRoot,
   } = input;
   await mkdir(outputDir, { recursive: true });
   const written: string[] = [];
 
   if (exports.tailwind) {
-    const css = registryToTailwind(registry, { includeImport, darkMode });
-    await writeFile(join(outputDir, 'rafters.css'), css);
+    const css = registryToTailwind(registry, { includeImport, darkMode, fontImports });
+    await writeFileAtomic(join(outputDir, 'rafters.css'), css);
     written.push('rafters.css');
   }
 
   if (exports.typescript) {
     const ts = registryToTypeScript(registry, { includeJSDoc: true });
-    await writeFile(join(outputDir, 'rafters.ts'), ts);
+    await writeFileAtomic(join(outputDir, 'rafters.ts'), ts);
     written.push('rafters.ts');
   }
 
   if (exports.dtcg) {
     const dtcg = toDTCG([...registry.list()]);
-    await writeFile(join(outputDir, 'rafters.json'), JSON.stringify(dtcg, null, 2));
+    await writeFileAtomic(join(outputDir, 'rafters.json'), JSON.stringify(dtcg, null, 2));
     written.push('rafters.json');
   }
 
   if (exports.compiled) {
-    const compiled = await registryToCompiled(registry, { contentSources });
-    await writeFile(join(outputDir, 'rafters.standalone.css'), compiled);
+    const compiled = await registryToCompiled(registry, { contentSources, projectRoot });
+    await writeFileAtomic(join(outputDir, 'rafters.standalone.css'), compiled);
     written.push('rafters.standalone.css');
   }
 
   if (exports.documentation) {
-    const doc = await registryToDocumentation(registry, { contentSources });
-    await writeFile(join(outputDir, 'rafters.documentation.css'), doc);
+    const doc = await registryToDocumentation(registry, { contentSources, projectRoot });
+    await writeFileAtomic(join(outputDir, 'rafters.documentation.css'), doc);
     written.push('rafters.documentation.css');
   }
 

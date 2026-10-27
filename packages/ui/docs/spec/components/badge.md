@@ -9,7 +9,7 @@ Files (`src/components/badge/`):
 badge.classes.ts    badge.behavior.ts    badge.tsx
 ```
 
-Tests mirror into `test/components/badge/`. WC and Astro not yet written.
+Tests mirror into `test/components/badge/`. Astro not yet written.
 
 ## Purpose
 
@@ -25,9 +25,18 @@ Small label chip. Displays a short status/count label inline.
 - `variant` selects a token class pair (`bg-<word> text-<word>-foreground`)
   for the semantic fills, or a structural treatment (`outline`, `ghost`,
   `link`) for the shadcn-compatible non-fill variants. Selection only --
-  every string is a literal in `badge.classes.ts`; no `fill` prop, no
-  `resolveFillName` (that primitive is for Container's free-form signature;
-  Badge has a closed variant enum, same pattern as `button.classes.ts`).
+  every string is a literal in `badge.classes.ts`, the same pattern as
+  `button.classes.ts`.
+- `fill` takes exactly one `bg-fill-*` token. It replaces the variant's
+  surface (background, foreground and border colour); the variant's structure
+  classes stay. Any other value is dropped with a console warning and the
+  variant's surface stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`). It replaces the default variant's surface only when no
+  `variant` prop is given; an explicit `variant`, `"default"` included, beats
+  it. An unknown name is ignored.
+- Precedence: fill, then an explicit variant, then surface, then the default
+  variant (`badge.classes.ts:66-77`).
 - `size` selects the label-text scale (`text-label-small` /
   `text-label-medium`), never a raw font-size utility.
 
@@ -42,6 +51,8 @@ type BadgeSize = 'sm' | 'default' | 'lg';
 interface BadgeConfig {
   variant?: BadgeVariant;
   size?: BadgeSize;
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name
 }
 type BadgeState = Record<never, never>;
 type BadgeActions = Record<never, never>;
@@ -55,6 +66,8 @@ classes out.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | root | always | none projected -- the rendered text is the accessible name |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 
 ## Keyboard and effects
 
@@ -70,15 +83,37 @@ equally empty and nobody wrote one down.
 
 | Oracle feature | Disposition |
 | --- | --- |
-| `variant` (12-value vocabulary, all three targets) | contract |
+| `variant` (12-value vocabulary, both targets) | contract |
 | `size` (`sm \| default \| lg`) | contract |
 | Base shape: `inline-flex w-fit items-center justify-center rounded-full transition-colors duration-fast ease-standard` | contract |
 | `forwardRef<HTMLSpanElement>` | contract -- badges are frequently wrapped by Tooltip/Popover anchors; ref forwarding is load-bearing, not decoration |
-| `asChild` | deferred, not framework affordance yet. shadcn's Badge supports `asChild` via Slot; the oracle React/Astro/WC targets never did. Every asChild implementation in this tree so far (`DialogTrigger`, `DialogClose`, `NavigationMenuLink`) is a plain function component using `mergeProps`; none combines `forwardRef` with `asChild`, and Badge needs the ref. Bespoke ref-composition for one leaf component would be new shared machinery grown outside the adapter layer (boundary 00 rule 3) -- out of scope for this port. Revisit once a `composeRefs` primitive exists, or once a second forwardRef+asChild component forces the adapter to grow one. |
-| `link` variant present in React/Astro but absent from the oracle's WC (`badge.element.ts`) | not ported forward as a gap -- the React target here carries the full 12-value vocabulary; the WC binding (not yet written) should carry it too when built, closing the drift rather than repeating it |
+| `asChild` | deferred, not framework affordance yet. shadcn's Badge supports `asChild` via Slot; the oracle React/Astro targets never did. Every asChild implementation in this tree so far (`DialogTrigger`, `DialogClose`, `NavigationMenuLink`) is a plain function component using `mergeProps`; none combines `forwardRef` with `asChild`, and Badge needs the ref. Bespoke ref-composition for one leaf component would be new shared machinery grown outside the adapter layer (boundary 00 rule 3) -- out of scope for this port. Revisit once a `composeRefs` primitive exists, or once a second forwardRef+asChild component forces the adapter to grow one. |
 | WCAG/JSDoc block (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) | contract, carried into `badge.tsx` verbatim as the recorded designer decision (boundary 1: traceable, not agent-invented) |
 | `@semantic-meaning` / `@usage-patterns` / `@example` JSDoc tags | dropped from `badge.tsx` -- the issue's four required tags (`@cognitive-load`, `@attention-economics`, `@trust-building`, `@accessibility`) are the registry's parsed surface; the extra tags were prose, not contract, and are recoverable from the oracle file if a future pass wants them |
-| `data-icon` slot support (shadcn v4's `Badge` accepts icon children with `data-icon="inline-start\|inline-end"`) | dropped -- absent from the oracle across all three targets; not a migration regression, a feature the oracle never had |
+| `data-icon` slot support (shadcn v4's `Badge` accepts icon children with `data-icon="inline-start\|inline-end"`) | restored through props (#2465) -- `startIcon` / `endIcon` render wrappers that carry `data-icon` and `aria-hidden="true"`; see Icons beside a label. A bare `data-icon` child still lays out, but hiding it is the author's job |
+
+## Icons beside a label
+
+Two optional props place decorative icons beside the label, in reading order, as Button does (#2460): `startIcon` and `endIcon`. Status goes at the start, remove at the end.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+
+```html
+<span data-part="root" class="inline-grid grid-flow-col items-center gap-1 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Label
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</span>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The root is a grid (`inline-grid grid-flow-col items-center gap-1`). The label and the icon wrappers are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- A remove icon that is a control is not decorative: it needs its own button with a name, and is out of scope here.
 
 ## classes.ts
 
@@ -104,7 +139,7 @@ equally empty and nobody wrote one down.
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
+- Astro performance (same debt as the other articles).
 - `asChild` (see dispositions table above).
 - Static-score conformance is thinner than interactive articles: element +
   classes assertions + axe, scoped to the render container rather than

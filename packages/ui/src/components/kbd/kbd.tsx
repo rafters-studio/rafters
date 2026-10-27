@@ -27,11 +27,16 @@ import * as React from 'react';
 import classy from '../../primitives/classy';
 import { kbdClasses } from './kbd.classes';
 
-export type KbdProps = React.HTMLAttributes<HTMLElement>;
+export interface KbdProps extends React.HTMLAttributes<HTMLElement> {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
+}
 
 export const Kbd = React.forwardRef<HTMLElement, KbdProps>(
-  ({ className, children, ...props }, ref) => {
-    const classes = kbdClasses({}, {});
+  ({ fill, surface, className, children, ...props }, ref) => {
+    const classes = kbdClasses({ fill, surface }, {});
 
     // No effects and no optional parts -- nothing ever calls getPart, so the
     // ref is a plain forward. The score projects nothing, so there is no aria

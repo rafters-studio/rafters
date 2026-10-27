@@ -12,11 +12,11 @@ Files (`src/components/dropdown-menu/`):
 
 ```
 dropdown-menu.classes.ts   dropdown-menu.behavior.ts
-dropdown-menu.tsx          dropdown-menu.element.ts   dropdown-menu.astro
+dropdown-menu.tsx          dropdown-menu.astro
 ```
 
 Tests mirror into `test/components/dropdown-menu/`: behavior (pure), classes
-parity, and conformance across React + WC + Astro via the shared harness.
+parity, and conformance across React + Astro via the shared harness.
 
 ## Composition
 
@@ -36,7 +36,7 @@ The impure work is composed directly by the bindings (there is no effect
 runner): `startDropdownMenuEffects({ content, getTrigger, onDismiss })` starts
 `createRovingFocus` (vertical) + `createTypeahead` + `onPointerDownOutside`
 (sparing the trigger) on the open transition and tears them down on close.
-`bindDropdownMenu` (WC/Astro) and a React `useEffect` call the same function.
+`bindDropdownMenu` (Astro) and a React `useEffect` call the same function.
 
 ### Highlighted item = roving-focus current item (not score state)
 
@@ -52,12 +52,25 @@ have. Reducing it to `:focus` is faithful extraction, not a dropped state.
 
 ```ts
 type DropdownMenuConfig = { open?: boolean; defaultOpen?: boolean }; // = DisclosableConfig
+// plus fill?: string (one bg-fill-* token) and surface?: string (a surface name), see Fill and surface
 type DropdownMenuState = { open: boolean };                          // intrinsic only
 type DropdownMenuActions = { open: undefined; close: undefined };
 ```
 
 No `toggle` action: the trigger dispatches `open` or `close` computed from the
 effective value, so intrinsic state can never drift from a controlled consumer.
+
+### Fill and surface
+
+`DropdownMenuContent` takes `fill` and `surface`, which change the surface of the menu panel
+(`dropdown-menu.classes.ts:133`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 
@@ -91,6 +104,24 @@ stable.
   dispatches the score's `close`. It is deliberately NOT a score keymap action --
   activation is a consumer concern; only its state effect (close) is the score's.
 
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of an item: `startIcon`, on `DropdownMenuItem`, `DropdownMenuCheckboxItem` and `DropdownMenuRadioItem`. There is no end icon: the end of an item is the shortcut, and checkbox and radio items already draw their indicator at the start, so `startIcon` sits after the indicator.
+
+| Target | Item |
+| --- | --- |
+| React | `<DropdownMenu.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon-{index}" />`, index being the item's position in `items` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label alone is the accessible name. Typeahead reads the item text without the icon.
+- The content is a grid on `grid-cols-menu-row` (indicator, icon, label, end) and each item and group a subgrid row, so columns line up across items and the icon mirrors on a `dir="rtl"` page. The label sits in a cell of its own spanning the label and end columns, so a shortcut pushed with `ms-auto` lands at the row's end. No physical direction class remains in `dropdown-menu.classes.ts`.
+- An item tightens its inline-start padding only when an icon is present (`has-data-[icon=inline-start]:ps-1.5`).
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+
 ## Motion
 
 Enter/exit and interaction motion are left UNDECLARED. The semantic
@@ -115,7 +146,7 @@ from/to values and a presence adapter to keep the exiting node mounted.
 | focus first item on open | contract |
 | Enter/Space activates a menu item | contract (div-as-button click path; state effect is the score's `close`) |
 | asChild on Trigger / Content / Item | framework affordance (React) |
-| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); in WC/Astro `aria-checked` is author markup the bind does not own |
+| checkbox toggle / radio selection | framework affordance (React `onCheckedChange`/`onValueChange`); in Astro `aria-checked` is author markup the bind does not own |
 | Sub / SubTrigger / SubContent (nested submenus) | dropped -- the issue's state model is "open, highlighted item" (no submenu-open axis); faithful submenu open-on-hover needs `hover-delay` (the issue adds no primitives) or the oracle's raw `setTimeout` (a forbidden half-solution); neither cited reference has submenus. Tracked for a later wave |
 | collision-aware positioning (computePosition on scroll/resize) | dropped -- positioning is not behavior state and not modelled here (same disposition select took); reduced positioning fidelity vs the old React-only path |
 | Portal (portals the content to `document.body`) | framework affordance -> pass-through: the menu lives in light DOM present-but-hidden, so there is no portal to open; the API is preserved |
@@ -125,7 +156,7 @@ from/to values and a presence adapter to keep the exiting node mounted.
 
 - 1.3.1 / 4.1.2: `aria-haspopup="menu"`, `role="menu"` + `aria-orientation`,
   `aria-controls`/`aria-labelledby` wired to real DOM ids, asserted by the
-  harness against rendered markup in all three frameworks.
+  harness against rendered markup in both frameworks.
 - 2.1.1: full keyboard operation -- open, arrow-rove, Home/End, typeahead,
   activate, Escape.
 - 2.4.3 Focus Order: opening moves focus to the first item; Escape/activate

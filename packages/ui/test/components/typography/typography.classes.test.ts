@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  COLOR,
   resolveTypography,
   tokenPropsToClasses,
   typographyClasses,
@@ -55,14 +56,55 @@ describe('token-prop overrides', () => {
   });
 });
 
-describe('color is a fill signature', () => {
-  it('a plain word emits text-{word}', () => {
-    expect(resolveTypography('p', { color: 'accent' })).toContain('text-accent');
+describe('color resolves through a literal map', () => {
+  it('a mapped colour emits its whole text class', () => {
+    expect(resolveTypography('p', { color: 'muted-foreground' }).split(' ')).toContain(
+      'text-muted-foreground',
+    );
   });
 
-  it('an invalid signature emits nothing for the color dimension', () => {
-    // Empty override string is skipped; the variant default still lands.
-    expect(resolveTypography('p', { color: 'foreground' })).toContain('text-foreground');
+  it('an unmapped value, a retired v2 signature included, emits no colour class', () => {
+    for (const value of ['muted', 'muted/50', 'primary-to-accent', 'accent']) {
+      expect(tokenPropsToClasses({ color: value })).toBe('');
+    }
+  });
+});
+
+describe('fill, then color, then the variant default (#2860)', () => {
+  const VARIANTS = Object.keys(typographyClasses) as (keyof typeof typographyClasses)[];
+  const textColour = (classes: string) =>
+    classes.split(' ').filter((c) => Object.values(COLOR).includes(c));
+
+  it('a fill replaces the variant default colour on every variant', () => {
+    for (const variant of VARIANTS) {
+      const classes = resolveTypography(variant, { fill: 'bg-fill-blaze' });
+      expect(classes.split(' '), variant).toContain('bg-fill-blaze');
+      expect(textColour(classes), variant).toEqual([]);
+    }
+  });
+
+  it('a fill wins over the color prop', () => {
+    const classes = resolveTypography('h1', { fill: 'bg-fill-blaze', color: 'primary' });
+    expect(classes.split(' ')).toContain('bg-fill-blaze');
+    expect(textColour(classes)).toEqual([]);
+  });
+
+  it('a fill replaces the variant surface and keeps its other dimensions', () => {
+    const mark = resolveTypography('mark', { fill: 'bg-fill-blaze' }).split(' ');
+    expect(mark).not.toContain('bg-accent');
+    expect(mark).toContain('px-1');
+    const code = resolveTypography('code', { fill: 'bg-fill-blaze' }).split(' ');
+    expect(code).not.toContain('bg-muted');
+    expect(code).toContain('font-mono');
+  });
+
+  it('a value that is not one bg-fill- token is dropped and the colour stands', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const classes = resolveTypography('h1', { fill: 'bg-red-500', color: 'primary' }).split(' ');
+    expect(classes).not.toContain('bg-red-500');
+    expect(classes).toContain('text-primary');
+    expect(resolveTypography('mark', { fill: 'muted/50' })).toBe(resolveTypography('mark'));
+    warn.mockRestore();
   });
 });
 

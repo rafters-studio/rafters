@@ -71,6 +71,10 @@ type AccessibleName = { 'aria-label': string } | { 'aria-labelledby': string };
  */
 interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   loading?: boolean;
   softDisabled?: boolean;
   toggle?: boolean;
@@ -79,6 +83,10 @@ interface ButtonBaseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   onPressedChange?: (pressed: boolean) => void;
   loadingAnnouncement?: string;
   loadedAnnouncement?: string;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export type ButtonProps = ButtonBaseProps &
@@ -87,7 +95,9 @@ export type ButtonProps = ButtonBaseProps &
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
   const {
     className,
-    variant = 'default',
+    variant: variantProp,
+    fill,
+    surface,
     size = 'default',
     disabled = false,
     loading = false,
@@ -99,13 +109,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     loadingAnnouncement,
     loadedAnnouncement,
     onClick,
+    startIcon,
+    endIcon,
     children,
     type,
     ...rest
   } = props;
+  const variant = variantProp ?? 'default';
 
   const config: ButtonConfig = {
     variant,
+    fill,
+    // An explicit variant, `default` included, beats surface (FR-RAF-FILL-004).
+    surface: variantProp === undefined ? surface : undefined,
     size,
     toggle,
     defaultPressed,
@@ -194,9 +210,31 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
       ) : null}
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          id={ids.startIcon}
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       <span data-part="label" id={ids.label}>
         {children}
       </span>
+      {endIcon != null && endIcon !== false ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          id={ids.endIcon}
+          className={classes.endIcon}
+          {...aria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
     </button>
   );
 });

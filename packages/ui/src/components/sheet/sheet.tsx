@@ -28,19 +28,6 @@
  *   </SheetContent>
  * </Sheet>
  *
- * // Or with namespace syntax
- * <Sheet>
- *   <Sheet.Trigger asChild>
- *     <Button variant="outline">Open</Button>
- *   </Sheet.Trigger>
- *   <Sheet.Content side="right">
- *     <Sheet.Header>
- *       <Sheet.Title>Sheet Title</Sheet.Title>
- *     </Sheet.Header>
- *     Sheet content here
- *   </Sheet.Content>
- * </Sheet>
- *
  * // Hide close button if needed
  * <SheetContent showCloseButton={false}>...</SheetContent>
  * ```
@@ -318,10 +305,16 @@ export interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> 
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function SheetContent({
   side = 'right',
+  fill,
+  surface,
   showCloseButton,
   forceMount,
   container,
@@ -389,7 +382,7 @@ export function SheetContent({
       ref={presenceRef}
       tabIndex={-1}
       hidden={present ? undefined : true}
-      className={classy(sheetContentClasses(side), className)}
+      className={classy(sheetContentClasses(side, fill, surface), className)}
       {...aria.content}
       onKeyDown={handleKeyDown}
       {...props}

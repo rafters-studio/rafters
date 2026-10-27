@@ -1,14 +1,8 @@
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 import { buttonClasses, buttonVariants } from '../../../src/components/button/button.classes';
 
@@ -106,6 +100,49 @@ describe('button classes', () => {
     }
   });
 
+  it('the root is a grid whose columns follow reading order, with no physical direction', () => {
+    const { root } = classesFor(base);
+    const tokens = root.split(' ');
+    for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-2']) {
+      expect(tokens).toContain(literal);
+    }
+    expect(tokens).not.toContain('inline-flex');
+    expect(root).not.toMatch(/(^|\s)(p[lr]|m[lr]|left|right|float)-/);
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    const { startIcon, endIcon } = classesFor(base);
+    expect(startIcon).toBe('inline-grid place-items-center');
+    expect(endIcon).toBe('inline-grid place-items-center');
+  });
+
+  it('padding tightens per side with logical classes on every text size', () => {
+    for (const size of ['default', 'xs', 'sm', 'lg'] as const) {
+      const { root } = classesFor({ ...base, size });
+      expect(root).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(root).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+    }
+    for (const size of ['icon', 'icon-xs', 'icon-sm', 'icon-lg'] as const) {
+      expect(classesFor({ ...base, size }).root).not.toContain('has-data-');
+    }
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const size of ['default', 'xs', 'sm', 'lg'] as const) {
+      const set = classesFor({ ...base, size });
+      const kept = classy(set.root).split(' ');
+      const added = set.root
+        .split(' ')
+        .filter((c) => c.includes('has-data-') || c === 'inline-grid' || c === 'grid-flow-col');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) {
+        expect(kept, `classy dropped ${literal}`).toContain(literal);
+      }
+      expect(classy(set.startIcon)).toBe(set.startIcon);
+      expect(classy(set.endIcon)).toBe(set.endIcon);
+    }
+  });
+
   it('buttonVariants matches the root projection', () => {
     expect(buttonVariants({ variant: 'destructive', size: 'lg' })).toBe(
       classesFor({ variant: 'destructive', size: 'lg' }).root,
@@ -129,12 +166,7 @@ const sheet = (): Promise<string> => {
   if (compiled) return compiled;
   compiled = (async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/button')],
     });
@@ -168,5 +200,26 @@ describe('button motion candidates compile (#2272)', () => {
     // components, so the emitted value is not byte-identical to the source.
     const css = await sheet();
     expect(css).toMatch(/--animate-spin-spin:\s*spin\s*var\(--rafters-period-spin\)\s*infinite/);
+  }, 120_000);
+});
+
+describe('button icon candidates compile', () => {
+  it('every icon candidate became a real rule, on logical edges', async () => {
+    const css = await sheet();
+    const sizes = ['default', 'xs', 'sm', 'lg'] as const;
+    const candidates = [
+      ...sizes.flatMap((size) => classesFor({ ...base, size }).root.split(' ')),
+      ...classesFor(base).startIcon.split(' '),
+    ].filter(
+      (c) =>
+        c.includes('data-[icon') ||
+        c === 'inline-grid' ||
+        c === 'grid-flow-col' ||
+        c === 'place-items-center',
+    );
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+    expect(css).toMatch(/padding-inline-start/);
+    expect(css).toMatch(/padding-inline-end/);
   }, 120_000);
 });

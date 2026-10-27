@@ -17,6 +17,18 @@ import { parse, type Spec } from 'comment-parser';
  */
 type RegistryItemType = 'ui' | 'primitive' | 'composite' | 'rule' | 'substrate';
 
+/**
+ * Per-file registry type (#2022). Matches the CLI's RegistryFileTypeSchema.
+ * While the old fields are still served, the `registry:*` value lives only on
+ * each file; the item-level `type` keeps the old value for released CLIs.
+ */
+type RegistryFileType =
+  | 'registry:ui'
+  | 'registry:lib'
+  | 'registry:hook'
+  | 'registry:block'
+  | 'registry:file';
+
 // Intelligence metadata extracted from JSDoc comments
 export interface ComponentIntelligence {
   cognitiveLoad?: number; // 0-10 scale
@@ -35,6 +47,9 @@ export interface RegistryFile {
   content: string;
   dependencies: string[]; // e.g., ["lodash@4.17.21"] - versioned
   devDependencies: string[]; // e.g., ["vitest"] - from @devDependencies JSDoc
+  type: RegistryFileType;
+  /** Install path relative to the configured directory for `type`, where the served path does not imply it. */
+  target?: string;
 }
 
 /** A structured, machine-actionable cross-prop rule -- never a prose string. */
@@ -79,7 +94,12 @@ export interface RegistryItem {
   name: string;
   type: RegistryItemType;
   description?: string;
+  /** Kept for released CLIs (<= 0.4.4); same names as registryDependencies. */
   primitives: string[];
+  /** Every registry item this item's files import: components, primitives, substrate. */
+  registryDependencies: string[];
+  /** npm dependencies hoisted from files[].dependencies, versions kept. */
+  dependencies: string[];
   files: RegistryFile[];
   rules?: string[];
   intelligence?: ComponentIntelligence;
@@ -93,6 +113,19 @@ export interface RegistryIndex {
   composites: string[];
   rules: string[];
   substrate: string[];
+}
+
+/**
+ * The item-level dependency fields, derived from what the loader already
+ * collected: registryDependencies is the cross-item graph (the same names the
+ * legacy `primitives` field carries), dependencies is the files' npm deps hoisted.
+ */
+function dependencyFields(
+  primitives: string[],
+  files: RegistryFile[],
+): Pick<RegistryItem, 'primitives' | 'registryDependencies' | 'dependencies'> {
+  const npm = new Set(files.flatMap((file) => file.dependencies));
+  return { primitives, registryDependencies: [...primitives], dependencies: [...npm].sort() };
 }
 
 /**
@@ -126,14 +159,13 @@ function getCompositesPath(): string {
 /**
  * Component file extensions to discover.
  * The .tsx file is the primary; others are framework-specific variants.
- * .element.ts is the Web Component target, parallel to .tsx/.astro/.vue/.svelte.
  */
-const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte', '.element.ts'];
+const COMPONENT_EXTENSIONS = ['.tsx', '.astro', '.vue', '.svelte'];
 
 /**
  * Shared auxiliary file suffixes bundled with components.
  * `.behavior.ts` is the score -- the single source of truth every framework
- * variant (.tsx, .element.ts, .astro) imports; without it the served component
+ * variant (.tsx, .astro) imports; without it the served component
  * is non-functional. The rest provide class maps, types, constants, or
  * shadow-DOM styles shared across variants.
  */
@@ -335,13 +367,20 @@ export function loadSubstrate(name: string): RegistryItem | null {
 
     const { content, ext } = loaded;
     const { allExternalDeps, devDependencies, intelligence } = analyzeSource(content, true);
+    const files: RegistryFile[] = [
+      {
+        path: `${kind}/${name}${ext}`,
+        content,
+        dependencies: allExternalDeps,
+        devDependencies,
+        type: kind === 'hooks' ? 'registry:hook' : 'registry:lib',
+      },
+    ];
     const result: RegistryItem = {
       name,
       type: 'substrate',
-      primitives: extractSubstrateDepNames(content),
-      files: [
-        { path: `${kind}/${name}${ext}`, content, dependencies: allExternalDeps, devDependencies },
-      ],
+      ...dependencyFields(extractSubstrateDepNames(content), files),
+      files,
     };
     if (intelligence) result.intelligence = intelligence;
     return result;
@@ -391,19 +430,16 @@ export function loadComposite(name: string): RegistryItem | null {
     const parsed = JSON.parse(content) as { blocks?: Array<{ type: string }> };
     const componentDeps = extractComponentDeps(parsed.blocks ?? []);
 
-    return {
-      name,
-      type: 'composite',
-      primitives: componentDeps,
-      files: [
-        {
-          path: `composites/${name}.composite.json`,
-          content,
-          dependencies: [],
-          devDependencies: [],
-        },
-      ],
-    };
+    const files: RegistryFile[] = [
+      {
+        path: `composites/${name}.composite.json`,
+        content,
+        dependencies: [],
+        devDependencies: [],
+        type: 'registry:block',
+      },
+    ];
+    return { name, type: 'composite', ...dependencyFields(componentDeps, files), files };
   } catch (err: unknown) {
     if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;
@@ -471,6 +507,7 @@ export function loadCompositesRuntime(): RegistryItem {
       content,
       dependencies: COMPOSITES_RUNTIME_DEPENDENCIES[filename] ?? [],
       devDependencies: [],
+      type: 'registry:block',
     };
   });
 
@@ -479,7 +516,7 @@ export function loadCompositesRuntime(): RegistryItem {
     type: 'composite' as RegistryItemType,
     description:
       'Composites runtime: block tree walker, JSX/MDX serializers, registry, bridge, and manifest types.',
-    primitives: [...primitives].sort(),
+    ...dependencyFields([...primitives].sort(), files),
     files,
   };
 }
@@ -957,7 +994,7 @@ export function loadComponent(name: string): RegistryItem | null {
   const resolved = resolveComponentDir(name);
   if (!resolved) return null;
   const componentDir = resolved.dir;
-  const files: RegistryFile[] = [];
+  const files: Array<Omit<RegistryFile, 'type' | 'target'>> = [];
   let primitivesAll: string[] = [];
   let intelligence: ReturnType<typeof parseJSDocFromSource> | undefined;
 
@@ -1220,6 +1257,17 @@ export function loadComponent(name: string): RegistryItem | null {
   }
   primitivesAll = [...new Set([...primitivesAll, ...substrateDeps])];
 
+  // Cross-component imports from ANY served file (variants, shared .classes /
+  // .behavior files, subsystem files), type-only included: a type import still
+  // has to resolve for the consumer's tsc.
+  for (const file of files) {
+    for (const match of file.content.matchAll(IMPORT_REGEX)) {
+      const owner = crossComponentOwner(match[1]);
+      if (owner && owner !== resolved.owner)
+        primitivesAll = [...new Set([...primitivesAll, owner])];
+    }
+  }
+
   // Drop deps that are actually the component's OWN sibling/sub-component files
   // or subsystem files (e.g. context-menu-sub.astro, or files under the component folder).
   // They live in this folder, so they are never standalone registry items --
@@ -1231,11 +1279,20 @@ export function loadComponent(name: string): RegistryItem | null {
   }
   primitivesAll = primitivesAll.filter((dep) => !ownBasenames.has(stripExt(dep)));
 
+  // Every component file is registry:ui. An .astro file carries an explicit
+  // target (relative to componentsPath): its placement is not implied by the
+  // React-first served layout.
+  const typedFiles: RegistryFile[] = files.map((file) => {
+    const typed: RegistryFile = { ...file, type: 'registry:ui' };
+    if (file.path.endsWith('.astro')) typed.target = file.path.replace(/^components\/ui\//, '');
+    return typed;
+  });
+
   const result: RegistryItem = {
     name,
     type: 'ui',
-    primitives: primitivesAll,
-    files,
+    ...dependencyFields(primitivesAll, typedFiles),
+    files: typedFiles,
   };
 
   if (intelligence) {
@@ -1289,6 +1346,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
         content,
         dependencies: allExternalDeps,
         devDependencies,
+        type: 'registry:lib',
       },
     ];
 
@@ -1305,6 +1363,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
           content: siblingLoaded.content,
           dependencies: siblingAnalysis.allExternalDeps,
           devDependencies: siblingAnalysis.devDependencies,
+          type: 'registry:lib',
         });
       }
     }
@@ -1312,7 +1371,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
     const result: RegistryItem = {
       name,
       type: 'primitive',
-      primitives: primitiveDeps,
+      ...dependencyFields(primitiveDeps, files),
       files,
     };
 
@@ -1397,6 +1456,17 @@ function extractDependencies(content: string): {
   }
 
   return { external, internal };
+}
+
+/**
+ * The component a cross-component specifier names, or null. Components are
+ * nested (`<name>/<name>.tsx`), so `../sheet/sheet` and `../grid/grid.classes`
+ * reach into another component's directory, and that directory is the item
+ * the importer depends on (#2022).
+ */
+function crossComponentOwner(specifier: string): string | null {
+  const owner = specifier.match(/^\.\.\/([^./][^/]*)\/[^/]+$/)?.[1];
+  return owner && existsSync(join(getComponentsPath(), owner)) ? owner : null;
 }
 
 /**

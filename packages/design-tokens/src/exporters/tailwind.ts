@@ -13,9 +13,17 @@
  * @see https://ui.shadcn.com/docs/theming
  */
 
-import { oklchToCSS } from '@rafters/color-utils';
+import { oklchToCSS, SCALE_POSITIONS } from '@rafters/color-utils';
 import * as csstree from 'css-tree';
-import type { ColorReference, ColorValue, Token, TypographyElementOverride } from '@rafters/shared';
+import {
+  type ColorReference,
+  type ColorValue,
+  type FillValue,
+  FillValueSchema,
+  SEMANTIC_FAMILY_ROLES,
+  type Token,
+  type TypographyElementOverride,
+} from '@rafters/shared';
 import type { MotionNamespace } from '../generators/motion.js';
 import type { TokenRegistry } from '../registry.js';
 
@@ -29,9 +37,31 @@ export interface TailwindExportOptions {
   includeImport?: boolean;
   /** Dark mode strategy: 'class' (.dark class toggle) or 'media' (OS preference). Default: 'class' */
   darkMode?: 'class' | 'media';
+  /**
+   * Font stylesheets to load, e.g. ['@fontsource-variable/noto-sans'].
+   * Each distinct entry becomes one `@import "<entry>";` line, in list order,
+   * as the first lines of the sheet. Absent or empty = output identical to today.
+   */
+  fontImports?: readonly string[];
 }
 
-const SHADOW_PART_SUFFIX = /-(offset-x|offset-y|blur|spread|color)$/;
+const INVALID_FONT_IMPORT = /["\\\r\n]/;
+
+/**
+ * One `@import "<entry>";` line per distinct entry, in list order (first
+ * occurrence wins). Throws before anything is emitted on an entry that cannot
+ * be written as one valid `@import` line.
+ */
+function fontImportLines(entries: readonly string[] = []): string[] {
+  for (const entry of entries) {
+    if (entry === '' || INVALID_FONT_IMPORT.test(entry)) {
+      throw new Error(
+        `Invalid font import ${JSON.stringify(entry)}: expected a package specifier or URL with no quotes, backslashes or line breaks`,
+      );
+    }
+  }
+  return [...new Set(entries)].map((entry) => `@import "${entry}";`);
+}
 
 /**
  * THE FIVE MOTION NAMESPACES (ruling 019fc49f, issue #1991).
@@ -121,31 +151,15 @@ function motionNamespaceParts(name: string): { namespace: MotionNamespace; membe
   return { namespace: match[1] as MotionNamespace, member: match[2] };
 }
 
-/** Check if a shadow token name is a decomposed part rather than a composite */
-function isShadowDecomposedPart(name: string): boolean {
-  return SHADOW_PART_SUFFIX.test(name);
-}
-
-/** Check if a breakpoint token is a media query condition, not a dimension */
-function isMediaQueryToken(token: Token): boolean {
-  return typeof token.value === 'string' && token.value.startsWith('(');
-}
-
 /**
  * Group tokens by their namespace
  */
 interface GroupedTokens {
   semantic: Token[];
   color: Token[];
-  spacing: Token[];
-  typography: Token[];
-  radius: Token[];
-  shadow: Token[];
-  depth: Token[];
   motion: Token[];
-  breakpoint: Token[];
-  focus: Token[];
   'typography-composite': Token[];
+  /** Tokens in no namespace the exporter knows: emitted raw. */
   other: Token[];
 }
 
@@ -197,6 +211,8 @@ function getSemanticMappingsFromTokens(
  */
 function tokenValueToCSS(token: Token): string | null {
   const { value } = token;
+  // A fill is a recipe, written as its bg-fill-* utility, never a property.
+  if (token.namespace === 'fill') return null;
 
   // String values pass through, but skip JSON object/array strings
   if (typeof value === 'string') {
@@ -222,8 +238,8 @@ function tokenValueToCSS(token: Token): string | null {
         // forced to 1 because the old formatter never emitted a fourth
         // channel at all, even for an imported color carrying alpha < 1.
         // This holds for every OKLCH this exporter can receive, not only
-        // the already-rounded output of generateOKLCHScale/hardcoded
-        // defaults -- see the imported-primary fixture test below.
+        // the already-rounded output of the default seeded families
+        // -- see the imported-primary fixture test below.
         return oklchToCSS({
           l: Number(baseColor.l.toFixed(3)),
           c: Number(baseColor.c.toFixed(3)),
@@ -249,74 +265,193 @@ function groupTokens(tokens: Token[]): GroupedTokens {
   const groups: GroupedTokens = {
     semantic: [],
     color: [],
-    spacing: [],
-    typography: [],
-    radius: [],
-    shadow: [],
-    depth: [],
     motion: [],
-    breakpoint: [],
-    focus: [],
     'typography-composite': [],
     other: [],
   };
 
   for (const token of tokens) {
-    switch (token.namespace) {
-      case 'semantic':
-        groups.semantic.push(token);
-        break;
-      case 'color':
-        groups.color.push(token);
-        break;
-      case 'spacing':
-        groups.spacing.push(token);
-        break;
-      case 'typography':
-        groups.typography.push(token);
-        break;
-      case 'radius':
-        groups.radius.push(token);
-        break;
-      case 'shadow':
-        groups.shadow.push(token);
-        break;
-      case 'depth':
-        groups.depth.push(token);
-        break;
-      case 'motion':
-        groups.motion.push(token);
-        break;
-      case 'breakpoint':
-        groups.breakpoint.push(token);
-        break;
-      case 'focus':
-        groups.focus.push(token);
-        break;
-      case 'typography-composite':
-        groups['typography-composite'].push(token);
-        break;
-      default:
-        groups.other.push(token);
+    const ns = token.namespace;
+    if (ns === 'semantic' || ns === 'color' || ns === 'motion' || ns === 'typography-composite') {
+      groups[ns].push(token);
+    } else if (!MAPPED_GROUPS.has(ns)) {
+      // The mapped namespaces are written by the theme mapping, not by group.
+      groups.other.push(token);
     }
   }
 
   return groups;
 }
 
+/** Every token by name: the owner walk reads tokens outside the semantic group. */
+export type TokenIndex = ReadonlyMap<string, Token>;
+
+const FAMILY_ROLES: ReadonlySet<string> = new Set(SEMANTIC_FAMILY_ROLES);
+const SCALE_STEPS: ReadonlySet<string> = new Set(SCALE_POSITIONS);
+const DARK_SUFFIX = '--dark';
+const OWNER_WALK_HOPS = 12;
+/** The binding inputs that name the token (or palette) a token is derived from. */
+const BINDING_PARENT_KEYS = ['familyName', 'against', 'from', 'fromToken'] as const;
+type BindingParentKey = (typeof BINDING_PARENT_KEYS)[number];
+
+function indexTokens(tokens: Token[]): TokenIndex {
+  const index = new Map<string, Token>();
+  for (const token of tokens) index.set(token.name, token);
+  return index;
+}
+
+function semanticTokensOf(tokens: TokenIndex): Token[] {
+  return [...tokens.values()].filter((t) => t.namespace === 'semantic');
+}
+
+function withoutDarkSuffix(name: string): string {
+  return name.endsWith(DARK_SUFFIX) ? name.slice(0, -DARK_SUFFIX.length) : name;
+}
+
+function bindingInput(token: Token, key: BindingParentKey): string | null {
+  const input = token.binding?.input;
+  if (typeof input !== 'object' || input === null || !(key in input)) return null;
+  const value: unknown = (input as Record<string, unknown>)[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function bindingParent(token: Token): string | null {
+  for (const key of BINDING_PARENT_KEYS) {
+    const parent = bindingInput(token, key);
+    if (parent) return parent;
+  }
+  return null;
+}
+
+/** A family role that has a semantic root token in this token set. */
+function isRoleRoot(name: string, tokens: TokenIndex): boolean {
+  return FAMILY_ROLES.has(name) && tokens.get(name)?.namespace === 'semantic';
+}
+
+/** The family roles that have a root token, in SEMANTIC_FAMILY_ROLES order. */
+function rolesWithRoot(tokens: TokenIndex): string[] {
+  return SEMANTIC_FAMILY_ROLES.filter((role) => isRoleRoot(role, tokens));
+}
+
+/**
+ * The family role that owns a semantic token: walk its binding inputs upward
+ * until a role root. `X--dark` walks as `X`. A walk that reaches a palette
+ * family (or a token with no binding) ends with no owner.
+ */
+function findRoleOwner(name: string, tokens: TokenIndex): string | null {
+  let current = withoutDarkSuffix(name);
+  for (let hops = 0; ; hops++) {
+    if (isRoleRoot(current, tokens)) return current;
+    const token = tokens.get(current);
+    if (!token || token.namespace !== 'semantic') return null;
+    const parent = bindingParent(token);
+    if (!parent) return null;
+    if (hops === OWNER_WALK_HOPS) {
+      throw new Error(
+        `Role owner walk for semantic token "${name}" did not end within ${OWNER_WALK_HOPS} hops`,
+      );
+    }
+    current = withoutDarkSuffix(parent);
+  }
+}
+
+function colorPosition(token: Token | undefined): string | null {
+  const value = token?.value;
+  if (typeof value !== 'object' || value === null || !('position' in value)) return null;
+  return String(value.position);
+}
+
+function storedFamily(token: Token | undefined): string | null {
+  const value = token?.value;
+  if (typeof value !== 'object' || value === null || !('family' in value)) return null;
+  return value.family;
+}
+
+/** What a role's scale points at: another role's scale, or a palette. */
+type RoleScaleSource = { layer: 'rafters' | 'color'; family: string };
+
+/**
+ * A role's scale follows what the registry stores for its root. A stored
+ * family that is another role hangs the scale off that role. A stored palette
+ * hangs it off the role its scale binding names only when that role's scale
+ * resolves to the same palette (the default: primary stores zinc, its binding
+ * names neutral, neutral is zinc); otherwise (a role set to another palette)
+ * the scale sits on the stored palette.
+ */
+function roleScaleSource(role: string, tokens: TokenIndex, seen: Set<string>): RoleScaleSource {
+  const root = tokens.get(role);
+  const stored = storedFamily(root);
+  if (!root || !stored) throw new Error(`Role "${role}" stores no family for its scale`);
+  if (stored !== role && isRoleRoot(stored, tokens)) return { layer: 'rafters', family: stored };
+  const bound = root.binding?.plugin === 'scale' ? bindingInput(root, 'familyName') : null;
+  if (
+    bound !== null &&
+    bound !== role &&
+    isRoleRoot(bound, tokens) &&
+    rolePalette(bound, tokens, new Set(seen)) === stored
+  ) {
+    return { layer: 'rafters', family: bound };
+  }
+  return { layer: 'color', family: stored };
+}
+
+/** The palette a role's scale finally resolves to. */
+function rolePalette(role: string, tokens: TokenIndex, seen = new Set<string>()): string {
+  if (seen.has(role)) throw new Error(`Role scales form a cycle at "${role}"`);
+  seen.add(role);
+  const source = roleScaleSource(role, tokens, seen);
+  return source.layer === 'rafters' ? rolePalette(source.family, tokens, seen) : source.family;
+}
+
+/** The palette a stored family resolves to: a role's palette, or the family itself. */
+function familyPalette(family: string, tokens: TokenIndex): string {
+  return isRoleRoot(family, tokens) ? rolePalette(family, tokens) : family;
+}
+
+/**
+ * The role a token's stored palette reference renders through, by the rules
+ * above, or null when it renders the palette step as stored (or stores a role
+ * already). A role root (or its `--dark`) goes through the role its scale
+ * hangs off; any other token through its owning role, when that role's scale
+ * resolves to the stored palette. The DTCG export uses this so its edges
+ * match the CSS.
+ */
+export function roleForPaletteReference(name: string, tokens: TokenIndex): string | null {
+  const family = storedFamily(tokens.get(name));
+  if (family === null || isRoleRoot(family, tokens)) return null;
+  const base = withoutDarkSuffix(name);
+  if (isRoleRoot(base, tokens)) {
+    const source = roleScaleSource(base, tokens, new Set([base]));
+    return source.layer === 'rafters' && rolePalette(source.family, tokens) === family
+      ? source.family
+      : null;
+  }
+  const owner = findRoleOwner(name, tokens);
+  return owner !== null && rolePalette(owner, tokens) === family ? owner : null;
+}
+
 /**
  * Generate @theme inline block for semantic color bridges
- * These reference :root variables and must use @theme inline for dynamic resolution
+ * These reference :root variables and must use @theme inline for dynamic resolution.
+ * Every role step gets a bridge too, so Tailwind generates its utilities
+ * (bg-primary-950 reads --rafters-primary-950).
  * @see https://tailwindcss.com/docs/theme#using-custom-values
  */
-function generateThemeInlineBlock(semanticTokens: Token[]): string {
-  const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
+function generateThemeInlineBlock(tokens: TokenIndex): string {
+  const semanticMappings = getSemanticMappingsFromTokens(semanticTokensOf(tokens));
   const lines: string[] = [];
   lines.push('@theme inline {');
 
   // Semantic color bridges (reference :root variables)
   for (const name of Object.keys(semanticMappings)) {
     lines.push(`  --color-${name}: var(--${name});`);
+  }
+
+  // Role step bridges (reference the role layer in :root)
+  for (const role of rolesWithRoot(tokens)) {
+    for (const step of SCALE_POSITIONS) {
+      lines.push(`  --color-${role}-${step}: var(--rafters-${role}-${step});`);
+    }
   }
 
   lines.push('}');
@@ -326,22 +461,73 @@ function generateThemeInlineBlock(semanticTokens: Token[]): string {
 /**
  * Generate :root block with --rafters-* namespace and dark mode via .dark class
  * Reads semantic mappings from actual tokens in the registry.
+ *
+ * The role layer comes first: one 50-950 scale per family role with a root,
+ * pointing at its palette or at another role's scale. Every semantic
+ * declaration then points at its owning role's step, so changing a role's
+ * scale moves every token the role owns. A token with no owning role, or
+ * whose stored palette is not its owner's (a dependent set to another
+ * palette), stays on its palette step: the CSS renders what the registry
+ * stores.
  */
-function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' = 'class'): string {
-  const semanticMappings = getSemanticMappingsFromTokens(semanticTokens);
+function generateRootBlock(tokens: TokenIndex, darkMode: 'class' | 'media' = 'class'): string {
+  const semanticMappings = getSemanticMappingsFromTokens(semanticTokensOf(tokens));
   const lines: string[] = [];
   lines.push(':root, :host {');
 
+  // Role layer: the same scale in light and dark
+  for (const role of rolesWithRoot(tokens)) {
+    const { layer, family } = roleScaleSource(role, tokens, new Set([role]));
+    for (const step of SCALE_POSITIONS) {
+      lines.push(`  --rafters-${role}-${step}: var(--${layer}-${family}-${step});`);
+    }
+  }
+
+  lines.push('');
+
+  // A semantic declaration: its owning role at its own step, or its palette
+  // step when no role owns it. The step is the light token's position for
+  // light and the --dark token's for dark; it must agree with the registry's.
+  const declaration = (name: string, mode: 'light' | 'dark', paletteRef: string): string => {
+    const owner = findRoleOwner(name, tokens);
+    const own = tokens.get(mode === 'light' ? name : `${name}${DARK_SUFFIX}`) ?? tokens.get(name);
+    const family = storedFamily(own);
+    const cssStep = colorPosition(own);
+    const checkedStep = (): string => {
+      const registryStep = paletteRef.match(/-(\d+)$/)?.[1] ?? null;
+      if (cssStep === null || cssStep !== registryStep || !SCALE_STEPS.has(cssStep)) {
+        throw new Error(
+          `Semantic token "${name}" (${mode}): CSS step ${cssStep ?? 'none'} disagrees with registry step ${registryStep ?? 'none'}`,
+        );
+      }
+      return cssStep;
+    };
+    if (
+      owner !== null &&
+      family !== null &&
+      familyPalette(family, tokens) === rolePalette(owner, tokens)
+    ) {
+      return `var(--rafters-${owner}-${checkedStep()})`;
+    }
+    // A token stored on another role than its owner's (a foreground that
+    // fell back to the neutral, #2668) rides that role's step, so it follows
+    // that role.
+    if (family !== null && isRoleRoot(family, tokens)) {
+      return `var(--rafters-${family}-${checkedStep()})`;
+    }
+    return `var(--color-${paletteRef})`;
+  };
+
   // Light mode --rafters-* tokens
   for (const [name, mapping] of Object.entries(semanticMappings)) {
-    lines.push(`  --rafters-${name}: var(--color-${mapping.light});`);
+    lines.push(`  --rafters-${name}: ${declaration(name, 'light', mapping.light)};`);
   }
 
   lines.push('');
 
   // Dark mode --rafters-dark-* tokens
   for (const [name, mapping] of Object.entries(semanticMappings)) {
-    lines.push(`  --rafters-dark-${name}: var(--color-${mapping.dark});`);
+    lines.push(`  --rafters-dark-${name}: ${declaration(name, 'dark', mapping.dark)};`);
   }
 
   lines.push('');
@@ -349,6 +535,13 @@ function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' 
   // Semantic tokens default to light mode
   for (const name of Object.keys(semanticMappings)) {
     lines.push(`  --${name}: var(--rafters-${name});`);
+  }
+
+  // The mapped namespaces' --rafters-* layer, as stored (#2825)
+  const layer = tokenLayerLines(tokens);
+  if (layer.length > 0) {
+    lines.push('');
+    lines.push(...layer);
   }
 
   lines.push('}');
@@ -367,10 +560,11 @@ function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' 
     lines.push('  :root {');
   }
 
+  const indent = darkMode === 'media' ? '    ' : '  ';
   for (const name of Object.keys(semanticMappings)) {
-    const indent = darkMode === 'media' ? '    ' : '  ';
     lines.push(`${indent}--${name}: var(--rafters-dark-${name});`);
   }
+  for (const line of tokenLayerDarkLines(tokens)) lines.push(`${indent}${line}`);
 
   if (darkMode === 'media') {
     lines.push('  }');
@@ -382,10 +576,557 @@ function generateRootBlock(semanticTokens: Token[], darkMode: 'class' | 'media' 
 }
 
 /**
+ * Every colour utility root Tailwind offers, as of 4.3.3. An older version
+ * ignores a root it does not know, without error.
+ */
+const TAILWIND_COLOR_ROOTS =
+  'accent,bg,border,border-b,border-be,border-bs,border-e,border-l,border-r,border-s,border-t,border-x,border-y,caret,decoration,divide,drop-shadow,fill,from,inset-ring,inset-shadow,mask-b-from,mask-b-to,mask-conic-from,mask-conic-to,mask-l-from,mask-l-to,mask-linear-from,mask-linear-to,mask-r-from,mask-r-to,mask-radial-from,mask-radial-to,mask-t-from,mask-t-to,mask-x-from,mask-x-to,mask-y-from,mask-y-to,outline,placeholder,ring,ring-offset,scrollbar-thumb,scrollbar-track,shadow,stroke,text,text-shadow,to,via';
+
+/**
+ * One `@source inline` per colour family marked `generateUtilityClass` (a
+ * family added by a `--map color:<name>` entry, #2813), so Tailwind generates
+ * every colour utility for its steps without seeing them in a scanned file.
+ */
+function generateFamilyInlineSources(colorTokens: readonly Token[]): string | null {
+  const lines = colorTokens
+    .filter(
+      (t) => t.generateUtilityClass === true && typeof t.value === 'object' && 'scale' in t.value,
+    )
+    .map(
+      (t) =>
+        `@source inline("{${TAILWIND_COLOR_ROOTS}}-${t.name}-{${SCALE_POSITIONS.join(',')}}");`,
+    );
+  return lines.length > 0 ? lines.join('\n') : null;
+}
+
+/** A registry namespace the theme mapping reads. */
+export type ThemeMappingGroup =
+  | 'spacing'
+  | 'radius'
+  | 'shadow'
+  | 'typography'
+  | 'typography-composite'
+  | 'depth'
+  | 'breakpoint'
+  | 'focus'
+  | 'fill';
+
+/** One theme key a row writes. */
+export interface ThemeMappingKey {
+  /** The Tailwind theme key, e.g. `--text-{1}`. */
+  readonly key: string;
+  /** The token whose value the key carries, e.g. `line-height-{1}`. Absent: the matched token. */
+  readonly reads?: string;
+}
+
+/** A utility that shows a row working, and the token and property it reads. */
+export interface ThemeMappingProbe {
+  readonly utility: string;
+  readonly token: string;
+  readonly property: string;
+}
+
+/** One row of the theme mapping: a registry token pattern and the theme keys it feeds. */
+export interface ThemeMappingRow {
+  readonly group: ThemeMappingGroup;
+  /** The token names the row maps. Capture groups fill `{1}`, `{2}` in the key templates. */
+  readonly token: RegExp;
+  /** Token names the pattern catches that the row does not map. */
+  readonly except?: RegExp;
+  /** The values the row maps; absent maps every value. */
+  readonly value?: RegExp;
+  /** The value is a JSON object whose string fields fill `{field}` in the key templates. */
+  readonly json?: boolean;
+  readonly keys: readonly ThemeMappingKey[];
+  /** Keys written once per entry of the JSON value's `responsive` object; `{bp}` is the entry's name. */
+  readonly responsiveKeys?: readonly ThemeMappingKey[];
+  /**
+   * The utility the row writes for each matched token, in place of theme keys:
+   * `@utility <name> { @apply <the recipe's stock classes>; }`.
+   */
+  readonly utility?: string;
+  /** The key carries the stored value itself: media and container queries cannot read var(). */
+  readonly literal?: boolean;
+  /** The value a probe stores in each probe token, and the utilities that must follow it. */
+  readonly probeValue: string;
+  readonly probes: readonly ThemeMappingProbe[];
+}
+
+/**
+ * THE THEME MAPPING: each registry token pattern, the Tailwind v4 theme key
+ * whose stock utility reads it, and the probes that show it working (#2825).
+ *
+ * Every key carries `var(--rafters-<token>)`, and `:root` sets
+ * `--rafters-<token>` to the stored value, so a token change reaches its
+ * utility the way colour does. A literal row carries the value itself.
+ * A token in a mapped namespace that matches no row gets no theme key.
+ * A utility row (the fill row) writes a utility built from stock Tailwind
+ * classes; its probe colour is a family step, literal in `@theme`.
+ *
+ * A new namespace adds rows here; the writer below applies them for both the
+ * consumer sheet and the static sheet.
+ */
+export const THEME_MAPPING: readonly ThemeMappingRow[] = [
+  {
+    group: 'spacing',
+    token: /^spacing-base$/,
+    keys: [{ key: '--spacing' }],
+    probeValue: '0.3rem',
+    probes: [
+      { utility: 'p-8', token: 'spacing-base', property: 'padding' },
+      { utility: 'h-10', token: 'spacing-base', property: 'height' },
+      { utility: 'gap-1.5', token: 'spacing-base', property: 'gap' },
+    ],
+  },
+  {
+    group: 'spacing',
+    token: /^spacing-(.+)$/,
+    except: /^spacing-(base|progression)$/,
+    keys: [{ key: '--spacing-{1}' }],
+    probeValue: '1.1rem',
+    probes: [{ utility: 'p-4', token: 'spacing-4', property: 'padding' }],
+  },
+  {
+    group: 'radius',
+    token: /^radius$/,
+    keys: [{ key: '--radius' }],
+    probeValue: '0.7rem',
+    probes: [{ utility: 'rounded', token: 'radius', property: 'border-radius' }],
+  },
+  {
+    group: 'radius',
+    token: /^radius-(.+)$/,
+    except: /-(tl|tr|bl|br)$/,
+    keys: [{ key: '--radius-{1}' }],
+    probeValue: '0.9rem',
+    probes: [
+      { utility: 'rounded-md', token: 'radius-md', property: 'border-radius' },
+      { utility: 'rounded-t-lg', token: 'radius-lg', property: 'border-top-left-radius' },
+    ],
+  },
+  {
+    group: 'shadow',
+    token: /^shadow$/,
+    keys: [{ key: '--shadow' }],
+    probeValue: '0 2px 5px 0 rgb(1 2 3 / 0.4)',
+    probes: [{ utility: 'shadow', token: 'shadow', property: '--tw-shadow' }],
+  },
+  {
+    group: 'shadow',
+    token: /^shadow-(.+)$/,
+    except: /^shadow-(base-unit|progression|rung-\d+)$|-(offset-x|offset-y|blur|spread|color)$/,
+    keys: [{ key: '--shadow-{1}' }],
+    probeValue: '0 3px 7px 0 rgb(4 5 6 / 0.4)',
+    probes: [
+      { utility: 'shadow-md', token: 'shadow-md', property: '--tw-shadow' },
+      { utility: 'shadow-primary', token: 'shadow-primary', property: '--tw-shadow' },
+    ],
+  },
+  {
+    group: 'typography',
+    token: /^font-size-(.+)$/,
+    keys: [
+      { key: '--text-{1}' },
+      { key: '--text-{1}--line-height', reads: 'line-height-{1}' },
+      { key: '--text-{1}--letter-spacing', reads: 'letter-spacing-{1}' },
+    ],
+    probeValue: '2.9rem',
+    probes: [{ utility: 'text-4xl', token: 'font-size-4xl', property: 'font-size' }],
+  },
+  {
+    group: 'typography',
+    token: /^line-height-(.+)$/,
+    keys: [{ key: '--leading-{1}' }],
+    probeValue: '1.9',
+    probes: [
+      { utility: 'leading-7', token: 'line-height-7', property: 'line-height' },
+      { utility: 'leading-none', token: 'line-height-none', property: 'line-height' },
+    ],
+  },
+  {
+    group: 'typography',
+    token: /^letter-spacing-(.+)$/,
+    keys: [{ key: '--tracking-{1}' }],
+    probeValue: '-0.031em',
+    probes: [
+      { utility: 'tracking-tight', token: 'letter-spacing-tight', property: 'letter-spacing' },
+    ],
+  },
+  {
+    group: 'typography',
+    token: /^font-weight-(.+)$/,
+    keys: [{ key: '--font-weight-{1}' }],
+    probeValue: '650',
+    probes: [{ utility: 'font-bold', token: 'font-weight-bold', property: 'font-weight' }],
+  },
+  {
+    group: 'typography',
+    token: /^font-(sans|mono|serif|heading|body|code)$/,
+    keys: [{ key: '--font-{1}' }],
+    probeValue: 'Probe Face, monospace',
+    probes: [{ utility: 'font-mono', token: 'font-mono', property: 'font-family' }],
+  },
+  {
+    group: 'typography-composite',
+    token: /^(.+)$/,
+    json: true,
+    keys: [
+      { key: '--text-{1}', reads: 'font-size-{fontSize}' },
+      { key: '--text-{1}--line-height', reads: 'line-height-{lineHeight}' },
+      { key: '--text-{1}--letter-spacing', reads: 'letter-spacing-{letterSpacing}' },
+      { key: '--text-{1}--font-weight', reads: 'font-weight-{fontWeight}' },
+      { key: '--rafters-ts-{1}', reads: 'font-{fontFamily}' },
+    ],
+    responsiveKeys: [
+      { key: '--rafters-ts-{1}-{bp}', reads: 'font-size-{fontSize}' },
+      { key: '--rafters-ts-{1}-{bp}-leading', reads: 'line-height-{fontSize}' },
+    ],
+    probeValue: '3.1rem',
+    probes: [
+      { utility: 'text-display-medium', token: 'font-size-4xl', property: 'font-size' },
+      { utility: 'ts-display-medium', token: 'font-heading', property: 'font-family' },
+    ],
+  },
+  {
+    group: 'depth',
+    token: /^depth-(.+)$/,
+    value: /^-?\d+$/,
+    keys: [{ key: '--z-index-depth-{1}' }],
+    probeValue: '41',
+    probes: [
+      { utility: 'z-depth-modal', token: 'depth-modal', property: 'z-index' },
+      { utility: 'z-depth-below', token: 'depth-below', property: 'z-index' },
+    ],
+  },
+  {
+    group: 'breakpoint',
+    token: /^breakpoint-(.+)$/,
+    except: /-max$|^breakpoint-scale$/,
+    value: /^[^(]/,
+    keys: [{ key: '--breakpoint-{1}' }],
+    literal: true,
+    probeValue: '50rem',
+    probes: [{ utility: 'md:p-4', token: 'breakpoint-md', property: 'padding' }],
+  },
+  {
+    group: 'breakpoint',
+    token: /^container-(.+)$/,
+    keys: [{ key: '--container-{1}' }],
+    literal: true,
+    probeValue: '33rem',
+    probes: [
+      { utility: '@lg:p-4', token: 'container-lg', property: 'padding' },
+      { utility: 'max-w-md', token: 'container-md', property: 'max-width' },
+    ],
+  },
+  {
+    group: 'focus',
+    token: /^focus-ring-width$/,
+    keys: [
+      { key: '--default-ring-width' },
+      { key: '--ring-width-2' },
+      { key: '--outline-width-2' },
+    ],
+    probeValue: '0.15rem',
+    probes: [
+      { utility: 'ring', token: 'focus-ring-width', property: '--tw-ring-shadow' },
+      { utility: 'ring-2', token: 'focus-ring-width', property: '--tw-ring-shadow' },
+      { utility: 'outline-2', token: 'focus-ring-width', property: 'outline-width' },
+    ],
+  },
+  {
+    group: 'focus',
+    token: /^focus-offset$/,
+    keys: [{ key: '--ring-offset-width-2' }, { key: '--outline-offset-2' }],
+    probeValue: '0.2rem',
+    probes: [
+      { utility: 'ring-offset-2', token: 'focus-offset', property: '--tw-ring-offset-width' },
+      { utility: 'outline-offset-2', token: 'focus-offset', property: 'outline-offset' },
+    ],
+  },
+  {
+    group: 'fill',
+    token: /^fill-(.+)$/,
+    keys: [],
+    utility: 'bg-fill-{1}',
+    literal: true,
+    probeValue: 'oklch(0.41 0.12 30)',
+    probes: [{ utility: 'bg-fill-probe', token: 'zinc-500', property: 'background-color' }],
+  },
+  {
+    // A surface is a fill named `surface-<name>` (FR-RAF-FILL-004).
+    group: 'fill',
+    token: /^surface-(.+)$/,
+    keys: [],
+    utility: 'bg-surface-{1}',
+    literal: true,
+    probeValue: 'oklch(0.41 0.12 30)',
+    probes: [{ utility: 'bg-surface-probe', token: 'zinc-500', property: 'background-color' }],
+  },
+];
+
+const MAPPED_GROUPS: ReadonlySet<string> = new Set(THEME_MAPPING.map((row) => row.group));
+
+/** One theme key the mapping writes for a stored token. */
+interface MappedKey {
+  key: string;
+  /** The token the key carries. */
+  reads: string;
+  literal: boolean;
+}
+
+/** Fill `{name}` placeholders from `fields`; null when one has no value. */
+function fillTemplate(template: string, fields: Readonly<Record<string, string>>): string | null {
+  let missing = false;
+  const filled = template.replace(/\{([A-Za-z0-9]+)\}/g, (_all, name: string) => {
+    const value = fields[name];
+    if (value === undefined) missing = true;
+    return value ?? '';
+  });
+  return missing ? null : filled;
+}
+
+/** The string fields of a JSON object token value, and its `responsive` entries. */
+function jsonFields(
+  token: Token,
+): { fields: Record<string, string>; responsive: Record<string, Record<string, string>> } | null {
+  if (typeof token.value !== 'string') return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(token.value);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+  const strings = (o: object): Record<string, string> =>
+    Object.fromEntries(
+      Object.entries(o).filter((e): e is [string, string] => typeof e[1] === 'string'),
+    );
+  const responsive: Record<string, Record<string, string>> = {};
+  if ('responsive' in parsed && typeof parsed.responsive === 'object' && parsed.responsive) {
+    for (const [bp, entry] of Object.entries(parsed.responsive)) {
+      if (typeof entry === 'object' && entry !== null) responsive[bp] = strings(entry);
+    }
+  }
+  return { fields: strings(parsed), responsive };
+}
+
+/** Every theme key the mapping writes for these tokens, in row order. */
+function mappedKeys(tokens: TokenIndex): MappedKey[] {
+  const out: MappedKey[] = [];
+  for (const row of THEME_MAPPING) {
+    for (const token of tokens.values()) {
+      if (token.namespace !== row.group || token.name.endsWith(DARK_SUFFIX)) continue;
+      const match = row.token.exec(token.name);
+      if (!match || row.except?.test(token.name)) continue;
+      const captures = Object.fromEntries(match.slice(1).map((c, i) => [String(i + 1), c]));
+      const specs: Array<[ThemeMappingKey, Record<string, string>]> = [];
+      if (row.json) {
+        const parsed = jsonFields(token);
+        if (parsed === null) continue;
+        const base = { ...parsed.fields, ...captures };
+        for (const key of row.keys) specs.push([key, base]);
+        for (const [bp, entry] of Object.entries(parsed.responsive)) {
+          for (const key of row.responsiveKeys ?? []) specs.push([key, { ...base, ...entry, bp }]);
+        }
+      } else {
+        const value = tokenValueToCSS(token);
+        if (value === null || (row.value && !row.value.test(value))) continue;
+        for (const key of row.keys) specs.push([key, captures]);
+      }
+      for (const [spec, fields] of specs) {
+        const key = fillTemplate(spec.key, fields);
+        const reads = spec.reads === undefined ? token.name : fillTemplate(spec.reads, fields);
+        if (key === null || reads === null || !tokens.has(reads)) continue;
+        out.push({ key, reads, literal: row.literal === true });
+      }
+    }
+  }
+  return out;
+}
+
+/** The mapped theme keys as `@theme` lines: a `--rafters-*` reference, or the literal value. */
+function themeMappingLines(tokens: TokenIndex): string[] {
+  return mappedKeys(tokens).map(({ key, reads, literal }) => {
+    const source = tokens.get(reads);
+    const value = literal && source ? tokenValueToCSS(source) : `var(--rafters-${reads})`;
+    return `  ${key}: ${value};`;
+  });
+}
+
+type FillParts = NonNullable<FillValue['dark']>;
+type FillColour = NonNullable<FillParts['foreground']>;
+
+/** A state block and the variant its classes take. */
+const FILL_STATES = [
+  ['hover', 'hover'],
+  ['active', 'active'],
+  ['focus', 'focus-visible'],
+  ['disabled', 'disabled'],
+] as const;
+
+/** A recipe number as a utility value: the named step when whole, else an arbitrary value. */
+function fillNumber(n: number, named: string, arbitrary: string, hint = ''): string {
+  return Number.isInteger(n) ? `${n}${named}` : `[${hint}${n}${arbitrary}]`;
+}
+
+/** An angle utility, negated with a leading `-` as Tailwind spells it. */
+function fillAngle(root: string, angle: number): string {
+  return `${angle < 0 ? '-' : ''}${root}-${fillNumber(Math.abs(angle), '', 'deg')}`;
+}
+
+/** A registry colour as a utility's colour name, with its alpha modifier. */
+function fillColour(colour: FillColour, alpha?: number): string {
+  const name = 'token' in colour ? colour.token : `${colour.family}-${colour.position}`;
+  return alpha === undefined ? name : `${name}/${alpha}`;
+}
+
+function fillGradientClasses(gradient: NonNullable<FillParts['gradient']>): string[] {
+  let base: string;
+  if (gradient.type === 'radial') base = 'bg-radial';
+  else if (gradient.type === 'conic') {
+    base = gradient.angle === undefined ? 'bg-conic' : fillAngle('bg-conic', gradient.angle);
+  } else if (gradient.direction) base = `bg-linear-${gradient.direction}`;
+  else if (gradient.angle !== undefined) base = fillAngle('bg-linear', gradient.angle);
+  else base = 'bg-linear-to-b';
+  const out = [gradient.interpolation ? `${base}/${gradient.interpolation}` : base];
+  for (const prefix of ['from', 'via', 'to'] as const) {
+    const stop = gradient[prefix];
+    if (!stop) continue;
+    out.push(`${prefix}-${fillColour(stop.color, stop.alpha)}`);
+    if (stop.position !== undefined) out.push(`${prefix}-${fillNumber(stop.position, '%', '%')}`);
+  }
+  return out;
+}
+
+/** Where background-clip text paints, the glyphs take the background, not the foreground. */
+const FILL_CLIP_TEXT_COLOUR = 'supports-[background-clip:text]:text-transparent';
+
+/**
+ * The stock classes of one block of a recipe. A mask with no positions writes
+ * no mask. Under a text clip each foreground is followed by the transparent
+ * text colour, so the foreground holds only where background-clip text fails.
+ */
+function fillPartClasses(parts: FillParts, clipText = false): string[] {
+  const out: string[] = [];
+  if (parts.background) {
+    out.push(`bg-${fillColour(parts.background.color, parts.background.alpha)}`);
+  }
+  if (parts.gradient) out.push(...fillGradientClasses(parts.gradient));
+  const { mask, backdrop } = parts;
+  for (const edge of ['from', 'to'] as const) {
+    const at = mask?.[edge];
+    if (mask && at !== undefined) {
+      out.push(`mask-${mask.type}-${edge}-${fillNumber(at, '%', '%', 'length:')}`);
+    }
+  }
+  if (backdrop?.blur) out.push(`backdrop-blur-${backdrop.blur}`);
+  for (const filter of ['brightness', 'contrast', 'saturate', 'grayscale', 'opacity'] as const) {
+    const n = backdrop?.[filter];
+    if (n !== undefined) out.push(`backdrop-${filter}-${fillNumber(n, '', '%')}`);
+  }
+  if (parts.blend) out.push(`bg-blend-${parts.blend}`);
+  if (parts.foreground) {
+    out.push(`text-${fillColour(parts.foreground)}`);
+    if (clipText) out.push(FILL_CLIP_TEXT_COLOUR);
+  }
+  if (parts.border) out.push(`border-${fillColour(parts.border)}`);
+  return out;
+}
+
+/** A recipe's stock class list: its parts, then `dark:` parts, then each state's variant parts. */
+function fillClasses(recipe: FillValue): string[] {
+  const clip = recipe.clip === 'text';
+  const out = fillPartClasses(recipe, clip);
+  if (clip) out.push('bg-clip-text');
+  if (recipe.dark) out.push(...fillPartClasses(recipe.dark, clip).map((c) => `dark:${c}`));
+  for (const [state, variant] of FILL_STATES) {
+    const block = recipe[state];
+    if (!block) continue;
+    out.push(...fillPartClasses(block, clip).map((c) => `${variant}:${c}`));
+    if (block.dark) {
+      out.push(...fillPartClasses(block.dark, clip).map((c) => `dark:${variant}:${c}`));
+    }
+  }
+  return out;
+}
+
+/**
+ * Each fill as its utility row's `@utility`, built only from stock Tailwind
+ * classes and registry colours, and one `@source inline` line naming every
+ * one, so a fill named only in data still renders (FR-RAF-FILL-002).
+ */
+function generateFillUtilities(tokens: TokenIndex): string | null {
+  const blocks: string[] = [];
+  const names: string[] = [];
+  for (const row of THEME_MAPPING) {
+    if (row.utility === undefined) continue;
+    for (const token of tokens.values()) {
+      if (token.namespace !== row.group) continue;
+      const match = row.token.exec(token.name);
+      if (!match || row.except?.test(token.name)) continue;
+      const captures = Object.fromEntries(match.slice(1).map((c, i) => [String(i + 1), c]));
+      const name = fillTemplate(row.utility, captures);
+      if (name === null) continue;
+      const classes = fillClasses(FillValueSchema.parse(token.value));
+      names.push(name);
+      blocks.push(`@utility ${name} {\n  @apply ${classes.join(' ')};\n}`);
+    }
+  }
+  if (names.length === 0) return null;
+  return [...blocks, `@source inline("${names.join(' ')}");`].join('\n');
+}
+
+/**
+ * The `--rafters-*` layer for the mapped namespaces: every token whose value
+ * is CSS, as stored. A `<token>--dark` sibling sets `--rafters-dark-<token>`.
+ */
+function tokenLayerLines(tokens: TokenIndex): string[] {
+  const lines: string[] = [];
+  for (const token of tokens.values()) {
+    if (!MAPPED_GROUPS.has(token.namespace)) continue;
+    const value = tokenValueToCSS(token);
+    if (value === null) continue;
+    const dark = token.name.endsWith(DARK_SUFFIX);
+    const name = dark ? `dark-${withoutDarkSuffix(token.name)}` : token.name;
+    lines.push(`  --rafters-${name}: ${value};`);
+  }
+  return lines;
+}
+
+/**
+ * The dark-mode switch for mapped tokens with a dark sibling, the colour
+ * pattern: the `--rafters-*` property (which utilities that inline their
+ * theme value read) and each theme key that carries it.
+ */
+function tokenLayerDarkLines(tokens: TokenIndex): string[] {
+  const darkOf = (name: string): boolean => {
+    const own = tokens.get(name);
+    return (
+      own !== undefined && tokenValueToCSS(own) !== null && tokens.has(`${name}${DARK_SUFFIX}`)
+    );
+  };
+  const lines: string[] = [];
+  for (const token of tokens.values()) {
+    if (
+      MAPPED_GROUPS.has(token.namespace) &&
+      !token.name.endsWith(DARK_SUFFIX) &&
+      darkOf(token.name)
+    ) {
+      lines.push(`--rafters-${token.name}: var(--rafters-dark-${token.name});`);
+    }
+  }
+  for (const { key, reads, literal } of mappedKeys(tokens)) {
+    if (!literal && darkOf(reads)) lines.push(`${key}: var(--rafters-dark-${reads});`);
+  }
+  return lines;
+}
+
+/**
  * Generate @theme block with raw color scales and utility tokens
  * Note: Semantic color bridges are NOT included here - they go in @theme inline
  */
-function generateThemeBlock(groups: GroupedTokens): string {
+function generateThemeBlock(groups: GroupedTokens, tokens: TokenIndex): string {
   const lines: string[] = [];
   lines.push('@theme {');
 
@@ -398,89 +1139,11 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Spacing tokens -- Tailwind v4 reads --spacing-* for p-*, m-*, gap-*
-  // Token values reference var(--rafters-spacing-base) for the :root layer,
-  // but @theme needs var(--spacing-base) since that's the @theme variable name
-  if (groups.spacing.length > 0) {
-    for (const token of groups.spacing) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      const key = token.name.replace(/^spacing-/, '');
-      const themeValue = value.replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)');
-      lines.push(`  --spacing-${key}: ${themeValue};`);
-    }
-    lines.push('');
-  }
-
-  // Typography tokens
-  if (groups.typography.length > 0) {
-    for (const token of groups.typography) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      lines.push(`  --${token.name}: ${value};`);
-      if (token.lineHeight) {
-        lines.push(`  --${token.name}--line-height: ${token.lineHeight};`);
-      }
-      // Tailwind v4 reads --leading-* as a NAMED theme namespace for the
-      // leading-* utility (leading-tight, leading-relaxed, ...). The registry
-      // names these tokens line-height-*, so bridge to the Tailwind-native
-      // name here -- same stripped-prefix pattern as --spacing-* / --radius-*
-      // below. Additive: --line-height-* keeps carrying its existing meaning
-      // (the font-size-*--line-height pairing) for whatever already reads it.
-      if (token.name.startsWith('line-height-')) {
-        const key = token.name.replace(/^line-height-/, '');
-        lines.push(`  --leading-${key}: ${value};`);
-      }
-    }
-    lines.push('');
-  }
-
-  // Radius tokens -- Tailwind v4 reads --radius-* for rounded-*
-  // Rewrite internal var names to @theme names: radius-base derives from
-  // spacing-base (#2035), so the spacing reference must also be rewritten.
-  if (groups.radius.length > 0) {
-    for (const token of groups.radius) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      const key = token.name.replace(/^radius-/, '');
-      const themeValue = value
-        .replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)')
-        .replaceAll('var(--rafters-radius-base)', 'var(--radius-base)')
-        .replaceAll('var(--rafters-radius-tl)', 'var(--radius-tl)')
-        .replaceAll('var(--rafters-radius-tr)', 'var(--radius-tr)')
-        .replaceAll('var(--rafters-radius-bl)', 'var(--radius-bl)')
-        .replaceAll('var(--rafters-radius-br)', 'var(--radius-br)');
-      lines.push(`  --radius-${key}: ${themeValue};`);
-    }
-    lines.push('');
-  }
-
-  // Shadow tokens -- Tailwind v4 reads --shadow-* for shadow-*
-  // Decomposed parts are emitted as --rafters-* (not --shadow-*) so composite
-  // tokens can reference them via var(--rafters-shadow-offset-x) etc.
-  if (groups.shadow.length > 0) {
-    for (const token of groups.shadow) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      if (isShadowDecomposedPart(token.name)) {
-        // Decomposed parts: --rafters-* only, no Tailwind utility
-        lines.push(`  --rafters-${token.name}: ${value};`);
-      } else {
-        // Composites: --shadow-* for Tailwind utility generation
-        const key = token.name.replace(/^shadow-/, '');
-        lines.push(`  --shadow-${key}: ${value};`);
-      }
-    }
-    lines.push('');
-  }
-
-  // Depth (z-index) tokens
-  if (groups.depth.length > 0) {
-    for (const token of groups.depth) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      lines.push(`  --${token.name}: ${value};`);
-    }
+  // Spacing, radius, shadow, typography, depth, breakpoint and focus: the
+  // theme mapping, one generic writer (#2825).
+  const mapped = themeMappingLines(tokens);
+  if (mapped.length > 0) {
+    lines.push(...mapped);
     lines.push('');
   }
 
@@ -491,13 +1154,9 @@ function generateThemeBlock(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens (raw values for non-duration/easing)
+  // Motion tokens other than the namespace leaves
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      // Duration and easing tokens get special Tailwind-native names below
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
-        continue;
-      if (token.name.startsWith('motion-easing-')) continue;
       if (motionNamespaceParts(token.name)) continue;
       const value = tokenValueToCSS(token);
       if (value === null) continue;
@@ -518,33 +1177,6 @@ function generateThemeBlock(groups: GroupedTokens): string {
   const animationKeys = generateMotionAnimationKeys(groups.motion);
   if (animationKeys) {
     lines.push(animationKeys);
-    lines.push('');
-  }
-
-  // Breakpoint tokens (exclude media query tokens -- their values are
-  // conditions like "(prefers-reduced-motion: reduce)", not dimensions,
-  // and Tailwind would generate invalid CSS like @media (width >= ...))
-  if (groups.breakpoint.length > 0) {
-    for (const token of groups.breakpoint) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      if (isMediaQueryToken(token)) continue;
-      lines.push(`  --${token.name}: ${value};`);
-    }
-    lines.push('');
-  }
-
-  // Focus tokens -- focus-ring-width derives from spacing-base (#2035),
-  // and per-config tokens chain through focus-ring-width.
-  if (groups.focus.length > 0) {
-    for (const token of groups.focus) {
-      const value = tokenValueToCSS(token);
-      if (value === null) continue;
-      const themeValue = value
-        .replaceAll('var(--rafters-spacing-base)', 'var(--spacing-base)')
-        .replaceAll('var(--rafters-focus-ring-width)', 'var(--focus-ring-width)');
-      lines.push(`  --${token.name}: ${themeValue};`);
-    }
     lines.push('');
   }
 
@@ -696,39 +1328,40 @@ function generateKeyframes(motionTokens: Token[]): string {
 }
 
 /**
- * Depth words as real utilities (#1638 S3, the Tailwind namespace rule).
+ * Named grid track lists for rows a component lays out as columns.
  *
- * Agents need WORDS to say where something sits -- z-depth-modal, not z-40 --
- * and components already use this vocabulary (sheet, alert-dialog,
- * context-menu, date-picker). Tailwind v4 does not theme z-index, so without
- * these @utility rules every z-depth-* class is a silent no-op.
+ * `classy` drops arbitrary track lists (`grid-cols-[auto_auto_1fr_auto]`), so a
+ * track list a component needs is a named utility. grid-cols-menu-row is the
+ * menu-style row: indicator, icon, label, end (shortcut or chevron). Columns
+ * lay out in reading order, so the row mirrors on a dir="rtl" page.
+ *
+ * grid-cols-affix-start/end/both are the field row: a flexible field with a
+ * decorative icon beside it on one side or both. One list per combination, so
+ * an absent icon leaves no empty track and no stray gap.
  */
-function generateDepthUtilities(depthTokens: Token[]): string {
-  if (depthTokens.length === 0) return '';
-  const lines: string[] = ['/* Depth (z-index) utilities -- words over numbers */'];
-  for (const token of depthTokens) {
-    // Only z-index-valued tokens become utilities; reference tokens like
-    // depth-scale (JSON) have no --var in :root to point at.
-    if (typeof token.value !== 'string' || !/^-?\d+$/.test(token.value)) continue;
-    lines.push(`@utility z-${token.name} {`);
-    lines.push(`  z-index: var(--${token.name});`);
-    lines.push('}');
-  }
-  return lines.join('\n');
+function generateGridTrackUtilities(): string {
+  return [
+    '/* Grid track lists -- named, because classy skips arbitrary track lists */',
+    '@utility grid-cols-menu-row {',
+    '  grid-template-columns: auto auto 1fr auto; /* indicator, icon, label, end */',
+    '}',
+    '@utility grid-cols-affix-start {',
+    '  grid-template-columns: auto 1fr; /* start icon, field */',
+    '}',
+    '@utility grid-cols-affix-end {',
+    '  grid-template-columns: 1fr auto; /* field, end icon */',
+    '}',
+    '@utility grid-cols-affix-both {',
+    '  grid-template-columns: auto 1fr auto; /* start icon, field, end icon */',
+    '}',
+  ].join('\n');
 }
 
 /**
- * Generate @utility classes from composite typography tokens.
- *
- * Each composite produces a @utility block using CSS properties with var() references.
- * var() is correct HERE because this is the exporter layer -- the boundary between
- * tokens and CSS. Components reference `text-display-medium` and never see var().
+ * Named Tailwind tracking values. The DTCG exporter resolves a composite's
+ * named letter-spacing key with these; the CSS path reads the registry.
  */
-/**
- * Named Tailwind tracking values -- used when a composite specifies a named
- * letter-spacing key rather than a scale position.
- */
-const NAMED_TRACKING: Record<string, string> = {
+export const NAMED_TRACKING: Record<string, string> = {
   tighter: '-0.05em',
   tight: '-0.025em',
   normal: '0em',
@@ -736,73 +1369,6 @@ const NAMED_TRACKING: Record<string, string> = {
   wider: '0.05em',
   widest: '0.1em',
 };
-
-function trackingRef(key: string): string {
-  const named = NAMED_TRACKING[key];
-  if (named !== undefined) return named;
-  return `var(--letter-spacing-${key})`;
-}
-
-interface ParsedComposite {
-  name: string;
-  fontFamily: string;
-  fontSize: string;
-  fontWeight: string;
-  lineHeight: string;
-  letterSpacing: string;
-  responsive?: Record<string, { fontSize?: string }>;
-}
-
-function parseComposites(compositeTokens: Token[]): ParsedComposite[] {
-  return compositeTokens
-    .map((t) => {
-      try {
-        const parsed = JSON.parse(t.value as string) as Omit<ParsedComposite, 'name'>;
-        return { name: t.name, ...parsed };
-      } catch {
-        return null;
-      }
-    })
-    .filter((m): m is NonNullable<typeof m> => m !== null);
-}
-
-/**
- * Generate the @theme inline block for typography composition assignments.
- * Each composition becomes --text-{name} entries selecting scale positions
- * via var(), plus --rafters-ts-{name} entries for font-family (which
- * --text-* cannot carry). Zero new values -- pure references.
- */
-function generateTypographyCompositeThemeInline(compositeTokens: Token[]): string {
-  const mappings = parseComposites(compositeTokens);
-  if (mappings.length === 0) return '';
-
-  const lines: string[] = [];
-  lines.push('@theme inline {');
-
-  for (const m of mappings) {
-    lines.push(`  --text-${m.name}: var(--font-size-${m.fontSize});`);
-    lines.push(`  --text-${m.name}--line-height: var(--font-size-${m.lineHeight}--line-height);`);
-    lines.push(`  --text-${m.name}--letter-spacing: ${trackingRef(m.letterSpacing)};`);
-    lines.push(`  --text-${m.name}--font-weight: var(--font-weight-${m.fontWeight});`);
-
-    lines.push(`  --rafters-ts-${m.name}: var(--font-${m.fontFamily});`);
-
-    if (m.responsive) {
-      for (const [bp, overrides] of Object.entries(m.responsive)) {
-        if (overrides.fontSize) {
-          lines.push(`  --rafters-ts-${m.name}-${bp}: var(--font-size-${overrides.fontSize});`);
-          lines.push(
-            `  --rafters-ts-${m.name}-${bp}-leading: var(--font-size-${overrides.fontSize}--line-height);`,
-          );
-        }
-      }
-    }
-    lines.push('');
-  }
-
-  lines.push('}');
-  return lines.join('\n');
-}
 
 /**
  * Emit the single @utility ts-* wildcard. Carries font-family and
@@ -1322,27 +1888,43 @@ export function tokensToTailwind(
     throw new Error('Registry is empty');
   }
 
+  const fontLines = fontImportLines(options.fontImports);
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = [...fontLines];
 
   // Tailwind import
   if (includeImport) {
     sections.push('@import "tailwindcss";');
+  }
+  if (includeImport || fontLines.length > 0) {
     sections.push('');
   }
 
   // @theme block with raw color scales and utility tokens
-  const themeBlock = generateThemeBlock(groups);
+  const tokensByName = indexTokens(tokens);
+  const themeBlock = generateThemeBlock(groups, tokensByName);
   sections.push(themeBlock);
   sections.push('');
 
+  const familySources = generateFamilyInlineSources(groups.color);
+  if (familySources) {
+    sections.push(familySources);
+    sections.push('');
+  }
+
+  const fillUtilities = generateFillUtilities(tokensByName);
+  if (fillUtilities) {
+    sections.push(fillUtilities);
+    sections.push('');
+  }
+
   // @theme inline block for semantic color bridges (reference :root variables)
-  const themeInlineBlock = generateThemeInlineBlock(groups.semantic);
+  const themeInlineBlock = generateThemeInlineBlock(tokensByName);
   sections.push(themeInlineBlock);
   sections.push('');
 
   // :root block with --rafters-* namespace and dark mode
-  const rootBlock = generateRootBlock(groups.semantic, options.darkMode ?? 'class');
+  const rootBlock = generateRootBlock(tokensByName, options.darkMode ?? 'class');
   sections.push(rootBlock);
   sections.push('');
 
@@ -1360,25 +1942,11 @@ export function tokensToTailwind(
     sections.push(reducedMotionLaw);
   }
 
-  // Typography composition assignments (@theme inline + ts-* utility)
-  const typographyThemeInline = generateTypographyCompositeThemeInline(
-    groups['typography-composite'],
-  );
-  if (typographyThemeInline) {
-    sections.push('');
-    sections.push(typographyThemeInline);
-  }
+  // Typography composition ts-* utility (its keys come from the theme mapping)
   const typographyTsUtility = generateTypographyCompositeUtility(groups['typography-composite']);
   if (typographyTsUtility) {
     sections.push('');
     sections.push(typographyTsUtility);
-  }
-
-  // Depth (z-index) @utility words
-  const depthUtilities = generateDepthUtilities(groups.depth);
-  if (depthUtilities) {
-    sections.push('');
-    sections.push(depthUtilities);
   }
 
   // The five motion namespaces (duration-*, ease-*, delay-*, extent-*, period-*)
@@ -1406,6 +1974,10 @@ export function tokensToTailwind(
     sections.push('');
     sections.push(overrideCSS);
   }
+
+  // Named grid track lists (grid-cols-menu-row)
+  sections.push('');
+  sections.push(generateGridTrackUtilities());
 
   // Article type system - @layer base with @apply compositions
   sections.push('');
@@ -1446,7 +2018,7 @@ export function registryToTailwind(
  * Generate @theme block with var() references instead of actual values
  * Used for Studio static CSS - Tailwind processes once and references CSS variables
  */
-function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
+function generateThemeBlockWithVarRefs(groups: GroupedTokens, tokens: TokenIndex): string {
   const lines: string[] = [];
   lines.push('@theme {');
 
@@ -1458,58 +2030,10 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Spacing tokens -- strip namespace prefix for Tailwind v4
-  if (groups.spacing.length > 0) {
-    for (const token of groups.spacing) {
-      const key = token.name.replace(/^spacing-/, '');
-      lines.push(`  --spacing-${key}: var(--rafters-${token.name});`);
-    }
-    lines.push('');
-  }
-
-  // Typography tokens
-  if (groups.typography.length > 0) {
-    for (const token of groups.typography) {
-      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
-      if (token.lineHeight) {
-        lines.push(`  --${token.name}--line-height: var(--rafters-${token.name}--line-height);`);
-      }
-      // Same --leading-* bridge as the dynamic path (generateThemeBlock) --
-      // the two must stay in parity or Studio's leading-* utilities compile
-      // to nothing while the consumer sheet's work.
-      if (token.name.startsWith('line-height-')) {
-        const key = token.name.replace(/^line-height-/, '');
-        lines.push(`  --leading-${key}: var(--rafters-${token.name});`);
-      }
-    }
-    lines.push('');
-  }
-
-  // Radius tokens -- strip namespace prefix for Tailwind v4
-  if (groups.radius.length > 0) {
-    for (const token of groups.radius) {
-      const key = token.name.replace(/^radius-/, '');
-      lines.push(`  --radius-${key}: var(--rafters-${token.name});`);
-    }
-    lines.push('');
-  }
-
-  // Shadow tokens -- strip namespace prefix for Tailwind v4
-  // Skip decomposed parts -- only composites map to Tailwind utilities
-  if (groups.shadow.length > 0) {
-    for (const token of groups.shadow) {
-      if (isShadowDecomposedPart(token.name)) continue;
-      const key = token.name.replace(/^shadow-/, '');
-      lines.push(`  --shadow-${key}: var(--rafters-${token.name});`);
-    }
-    lines.push('');
-  }
-
-  // Depth (z-index) tokens
-  if (groups.depth.length > 0) {
-    for (const token of groups.depth) {
-      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
-    }
+  // The theme mapping: byte-identical to the dynamic path (#2825).
+  const mapped = themeMappingLines(tokens);
+  if (mapped.length > 0) {
+    lines.push(...mapped);
     lines.push('');
   }
 
@@ -1523,12 +2047,9 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
     lines.push('');
   }
 
-  // Motion tokens (raw values for non-duration/easing)
+  // Motion tokens other than the namespace leaves
   if (groups.motion.length > 0) {
     for (const token of groups.motion) {
-      if (token.name.startsWith('motion-duration-') && token.name !== 'motion-duration-base')
-        continue;
-      if (token.name.startsWith('motion-easing-')) continue;
       // Semantic motion tokens are JSON specs consumed by generateMotionUtilities,
       // not raw custom properties -- no --var to reference.
       if (token.name.startsWith('motion-semantic-')) continue;
@@ -1556,23 +2077,6 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
   const animationKeys = generateMotionAnimationKeys(groups.motion);
   if (animationKeys) {
     lines.push(animationKeys);
-    lines.push('');
-  }
-
-  // Breakpoint tokens (exclude media query tokens)
-  if (groups.breakpoint.length > 0) {
-    for (const token of groups.breakpoint) {
-      if (isMediaQueryToken(token)) continue;
-      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
-    }
-    lines.push('');
-  }
-
-  // Focus tokens
-  if (groups.focus.length > 0) {
-    for (const token of groups.focus) {
-      lines.push(`  --${token.name}: var(--rafters-${token.name});`);
-    }
     lines.push('');
   }
 
@@ -1610,7 +2114,11 @@ function generateThemeBlockWithVarRefs(groups: GroupedTokens): string {
  * await writeFile('.rafters/output/rafters.tailwind.css', staticCSS);
  * ```
  */
-export function registryToTailwindStatic(registry: TokenRegistry): string {
+export function registryToTailwindStatic(
+  registry: TokenRegistry,
+  options?: Pick<TailwindExportOptions, 'fontImports'>,
+): string {
+  // Fills reach no export until #2828 teaches the exporters about them.
   const tokens = [...registry.list()];
 
   if (tokens.length === 0) {
@@ -1618,21 +2126,28 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   }
 
   const groups = groupTokens(tokens);
-  const sections: string[] = [];
+  const sections: string[] = fontImportLines(options?.fontImports);
 
   // Tailwind import
   sections.push('@import "tailwindcss";');
   sections.push('');
 
   // @theme block with var() references (static - processed once by Tailwind)
-  const themeBlock = generateThemeBlockWithVarRefs(groups);
+  const tokensByName = indexTokens(tokens);
+  const themeBlock = generateThemeBlockWithVarRefs(groups, tokensByName);
   sections.push(themeBlock);
   sections.push('');
 
-  // @theme inline block for semantic color bridges
-  const themeInlineBlock = generateThemeInlineBlock(groups.semantic);
+  // @theme inline block for semantic color bridges and role step bridges
+  const themeInlineBlock = generateThemeInlineBlock(tokensByName);
   sections.push(themeInlineBlock);
   sections.push('');
+
+  const fillUtilities = generateFillUtilities(tokensByName);
+  if (fillUtilities) {
+    sections.push(fillUtilities);
+    sections.push('');
+  }
 
   // Keyframes for animations (these don't change with token values)
   const keyframes = generateKeyframes(groups.motion);
@@ -1652,17 +2167,16 @@ export function registryToTailwindStatic(registry: TokenRegistry): string {
   // carry the --animate-* keys, and Tailwind generates the utilities from them,
   // so the parity gap this block used to work around no longer exists.
 
-  // Typography composition assignments + ts-* utility
-  const staticTypoTheme = generateTypographyCompositeThemeInline(groups['typography-composite']);
-  if (staticTypoTheme) {
-    sections.push('');
-    sections.push(staticTypoTheme);
-  }
+  // Typography composition ts-* utility (its keys come from the theme mapping)
   const staticTypoUtility = generateTypographyCompositeUtility(groups['typography-composite']);
   if (staticTypoUtility) {
     sections.push('');
     sections.push(staticTypoUtility);
   }
+
+  // Named grid track lists (grid-cols-menu-row)
+  sections.push('');
+  sections.push(generateGridTrackUtilities());
 
   // Article type system - @layer base with @apply compositions
   sections.push('');
@@ -1687,6 +2201,31 @@ export interface CompiledCssOptions {
    * emitted (no utility rules).
    */
   contentSources?: string[];
+  /**
+   * Project directory to resolve `@tailwindcss/cli` from before falling back
+   * to rafters' own location. rafters does not depend on the CLI; a project
+   * that wants compiled output installs it, and `pnpm dlx rafters` runs from
+   * a cache whose resolution path never reaches the project.
+   */
+  projectRoot?: string | undefined;
+}
+
+/**
+ * Directory of the `@tailwindcss/cli` package, resolved from `projectRoot`
+ * first and then from this module. Undefined when neither resolves it.
+ */
+async function resolveTailwindCliDir(projectRoot: string | undefined): Promise<string | undefined> {
+  const { createRequire } = await import('node:module');
+  const { join, dirname } = await import('node:path');
+  const bases = [...(projectRoot ? [join(projectRoot, 'package.json')] : []), import.meta.url];
+  for (const base of bases) {
+    try {
+      return dirname(createRequire(base).resolve('@tailwindcss/cli/package.json'));
+    } catch {
+      // Not resolvable from this base; try the next.
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -1714,7 +2253,7 @@ export async function registryToCompiled(
   registry: TokenRegistry,
   options: CompiledCssOptions = {},
 ): Promise<string> {
-  const { minify = true, contentSources = [] } = options;
+  const { minify = true, contentSources = [], projectRoot } = options;
 
   // Theme body without its own @import -- the standalone sheet supplies the
   // import with source(none) below so utilities come only from contentSources.
@@ -1728,16 +2267,10 @@ export async function registryToCompiled(
 
   const { execFileSync } = await import('node:child_process');
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { createRequire } = await import('node:module');
+  const { join } = await import('node:path');
 
-  // Resolve the @tailwindcss/cli package location using createRequire
-  const require = createRequire(import.meta.url);
-  let pkgDir: string;
-  try {
-    const pkgJsonPath = require.resolve('@tailwindcss/cli/package.json');
-    pkgDir = dirname(pkgJsonPath);
-  } catch {
+  const pkgDir = await resolveTailwindCliDir(projectRoot);
+  if (!pkgDir) {
     throw new Error('Failed to resolve @tailwindcss/cli');
   }
 
@@ -1917,13 +2450,17 @@ function deriveCandidates(themeCSS: string): string[] {
       for (const p of RADIUS_UTILITIES) candidates.add(`${p}-${slug}`);
     } else if (name.startsWith('shadow-') && !/-(blur|spread|offset|color|inset)/.test(name)) {
       candidates.add(`shadow-${name.slice(7)}`);
-    } else if (name.startsWith('font-size-')) {
-      candidates.add(`text-${name.slice(10)}`);
+    } else if (name === 'radius' || name === 'shadow') {
+      candidates.add(name === 'radius' ? 'rounded' : 'shadow');
     } else if (name.startsWith('font-weight-')) {
       candidates.add(`font-${name.slice(12)}`);
+    } else if (name.startsWith('font-')) {
+      candidates.add(name);
+    } else if (name.startsWith('z-index-')) {
+      candidates.add(`z-${name.slice(8)}`);
     } else if (name.startsWith('ease-')) {
       candidates.add(name);
-    } else if (name.startsWith('leading-')) {
+    } else if (name.startsWith('leading-') || name.startsWith('tracking-')) {
       candidates.add(name);
     } else if (name.startsWith('animate-')) {
       candidates.add(name);
@@ -1968,24 +2505,19 @@ function deriveCandidates(themeCSS: string): string[] {
  */
 export async function registryToDocumentation(
   registry: TokenRegistry,
-  options: { minify?: boolean; contentSources?: string[] } = {},
+  options: { minify?: boolean; contentSources?: string[]; projectRoot?: string | undefined } = {},
 ): Promise<string> {
-  const { minify = true, contentSources = [] } = options;
+  const { minify = true, contentSources = [], projectRoot } = options;
   const themeBody = registryToTailwind(registry, { includeImport: false });
   const candidates = deriveCandidates(themeBody);
 
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { createRequire } = await import('node:module');
+  const { join } = await import('node:path');
 
-  const require = createRequire(import.meta.url);
-  let pkgDir: string;
-  try {
-    const pkgJsonPath = require.resolve('@tailwindcss/cli/package.json');
-    pkgDir = dirname(pkgJsonPath);
-  } catch {
+  const pkgDir = await resolveTailwindCliDir(projectRoot);
+  if (!pkgDir) {
     throw new Error(
-      'Failed to resolve @tailwindcss/cli -- install it to generate documentation CSS',
+      'Failed to resolve @tailwindcss/cli -- the documentation export needs it installed in your project (pnpm add -D @tailwindcss/cli)',
     );
   }
 

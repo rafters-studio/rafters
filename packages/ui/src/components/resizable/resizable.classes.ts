@@ -35,7 +35,7 @@ const rootDirectionClasses: Record<ResizableDirection, string> = {
 // panels track it EXACTLY, no class expresses "instant", and any nonzero
 // duration is the defect. So the drag turns the transition OFF rather than
 // shortening it -- the one thing this row can be given is silence, and it is
-// spelled as `transition-none` only because the keyboard-step row above puts a
+// spelled as a no-transition utility only because the keyboard-step row above puts a
 // live transition on the same element that has to be taken back. The only
 // marker a stylesheet can see is `data-dragging`, which
 // `composeResizableInteractions` sets on the dragged HANDLE -- not on the root
@@ -65,7 +65,7 @@ const basePanelClasses =
 const baseHandleClasses =
   'relative flex items-center justify-center bg-border ' +
   'transition-[color,background-color,border-color,box-shadow] duration-fast ease-standard ' +
-  'after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 ' +
+  'after:absolute after:inset-y-0 after:inset-x-0 after:mx-auto ' +
   'hover:bg-muted ' +
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
   'data-[dragging]:bg-primary ' +

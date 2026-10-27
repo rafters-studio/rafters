@@ -49,14 +49,60 @@
 import * as React from 'react';
 import classy from '../../primitives/classy';
 import { mergeProps } from '../../primitives/slot';
+import { breadcrumb } from './breadcrumb.behavior';
 import {
   breadcrumbEllipsisClasses,
+  breadcrumbIconClasses,
   breadcrumbItemClasses,
   breadcrumbLinkClasses,
   breadcrumbListClasses,
   breadcrumbPageClasses,
   breadcrumbSeparatorClasses,
 } from './breadcrumb.classes';
+
+const iconAria = breadcrumb.aria({}, {}, { root: '', startIcon: '', endIcon: '' });
+
+interface BreadcrumbIconProps {
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
+}
+
+/** The label with its icon wrappers; a wrapper renders only when its icon is given. */
+function withIcons(
+  startIcon: React.ReactNode,
+  children: React.ReactNode,
+  endIcon: React.ReactNode,
+): React.ReactNode {
+  const has = (icon: React.ReactNode) => icon != null && icon !== false;
+  if (!has(startIcon) && !has(endIcon)) return children;
+  return (
+    <>
+      {has(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={breadcrumbIconClasses}
+          {...iconAria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      {children}
+      {has(endIcon) ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          className={breadcrumbIconClasses}
+          {...iconAria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
+    </>
+  );
+}
 
 export interface BreadcrumbProps extends React.ComponentPropsWithoutRef<'nav'> {}
 
@@ -91,12 +137,13 @@ export const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProp
 );
 BreadcrumbItem.displayName = 'BreadcrumbItem';
 
-export interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<'a'> {
+export interface BreadcrumbLinkProps
+  extends React.ComponentPropsWithoutRef<'a'>, BreadcrumbIconProps {
   asChild?: boolean;
 }
 
 export const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
-  ({ asChild, className, children, ...props }, ref) => {
+  ({ asChild, className, children, startIcon, endIcon, ...props }, ref) => {
     const cls = classy(breadcrumbLinkClasses, className);
 
     if (asChild && React.isValidElement(children)) {
@@ -117,19 +164,24 @@ export const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLink
         childPropsTyped,
       );
 
-      return React.cloneElement(child, mergedProps as Partial<Record<string, unknown>>);
+      return React.cloneElement(
+        child,
+        mergedProps as Partial<Record<string, unknown>>,
+        withIcons(startIcon, childPropsTyped['children'] as React.ReactNode, endIcon),
+      );
     }
 
     return (
       <a ref={ref} className={cls} {...props}>
-        {children}
+        {withIcons(startIcon, children, endIcon)}
       </a>
     );
   },
 );
 BreadcrumbLink.displayName = 'BreadcrumbLink';
 
-export interface BreadcrumbPageProps extends React.ComponentPropsWithoutRef<'span'> {}
+export interface BreadcrumbPageProps
+  extends React.ComponentPropsWithoutRef<'span'>, BreadcrumbIconProps {}
 
 /**
  * The current page: a non-clickable `role="link" aria-disabled="true"
@@ -139,7 +191,7 @@ export interface BreadcrumbPageProps extends React.ComponentPropsWithoutRef<'spa
  * navigation marker, not prose, so no typography role component fits it.
  */
 export const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPageProps>(
-  ({ className, children, ...props }, ref) =>
+  ({ className, children, startIcon, endIcon, ...props }, ref) =>
     React.createElement(
       'span',
       {
@@ -150,7 +202,7 @@ export const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPagePr
         className: classy(breadcrumbPageClasses, className),
         ...props,
       },
-      children,
+      withIcons(startIcon, children, endIcon),
     ),
 );
 BreadcrumbPage.displayName = 'BreadcrumbPage';

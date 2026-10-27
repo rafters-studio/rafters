@@ -7,35 +7,39 @@
  */
 
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { checkbox, confirm, select } from '@inquirer/prompts';
-import { SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
+import { SCALE_POSITIONS } from '@rafters/color-utils';
 import {
   type BaseSystemConfig,
   type ColorDeclaration,
   classifyDeclarations,
-  contrastPlugin,
+  DEFAULT_SCRIPTS,
   type DetectedFont,
+  detectFamilySeeds,
+  detectFontImports,
   extractShadcnRoot,
   extractThemeBlocks,
+  fontImportsFor,
+  fontStackFor,
   generateBaseSystem,
+  generateNamespaces,
   getAdapter,
   importColorFamily,
-  invertPlugin,
   loadRegistryFromDir,
+  REGISTRY_PLUGINS,
   regenerateOutputs,
   resolveContentSources,
+  resolvePaletteStep,
+  SCRIPT_FONTS,
   saveRegistryToDir,
-  scalePlugin,
   senseShadcnCss,
-  statePlugin,
   TokenRegistry,
 } from '@rafters/design-tokens';
-import type { OKLCH } from '@rafters/shared';
-
-const REGISTRY_PLUGINS = [scalePlugin, contrastPlugin, statePlugin, invertPlugin];
+import { SEMANTIC_FAMILY_ROLES } from '@rafters/shared';
+import { z } from 'zod';
 
 import {
   type ComponentTarget,
@@ -58,6 +62,13 @@ import {
 import { hasStoredTokens, regenerateMotionNamespace } from '../utils/motion-rebuild.js';
 import { getRaftersPaths } from '../utils/paths.js';
 import { isAgentMode, log, setAgentMode } from '../utils/ui.js';
+import {
+  applyCssImport,
+  type CssImportPlan,
+  planCssImport,
+  printCssImportReport,
+  readCssImport,
+} from './import.js';
 import { updateDependencies } from '../utils/update-dependencies.js';
 // The config shape and its migration now live in a leaf module with no
 // `@rafters/design-tokens` edge, so the MCP plugin bundle can reach them
@@ -70,178 +81,148 @@ export type { FontsConfig, RaftersConfig };
 
 interface InitOptions {
   rebuild?: boolean;
+  /** Stylesheet to import by `map` (#2763); replaces source CSS sensing. */
+  cssImport?: string;
+  /** `--map` values: JSON objects or `target=--property` pairs. */
+  map?: string[];
   reset?: boolean;
   agent?: boolean;
   /**
    * Override detected framework. When set, skips the auto-detect + prompt
    * fallback. Valid values: next | vite | remix | react-router | astro |
-   * wc | vanilla.
+   * vanilla.
    */
   framework?: string;
+  /**
+   * Writing systems the project supports, as comma-separated ISO 15924
+   * codes (e.g. `Latn,Arab`). Skips the writing-systems prompt.
+   */
+  scripts?: string;
 }
 
-async function backupCss(cssPath: string): Promise<string> {
-  const backupPath = cssPath.replace(/\.css$/, '.backup.css');
-  await copyFile(cssPath, backupPath);
-  return backupPath;
+const RAFTERS_CSS = '.rafters/output/rafters.css';
+
+/** An `.old.css` already sits where init would move the entry CSS (#2798). */
+class EntryCssConflictError extends Error {
+  override name = 'EntryCssConflictError';
+}
+
+/** `src/index.css` -> `src/index.old.css`: where init moves the original. */
+function oldCssPath(cssPath: string): string {
+  return cssPath.replace(/\.css$/, '.old.css');
+}
+
+/** The entry CSS init found, with its content before init touched it. */
+interface ExistingEntryCss {
+  cssPath: string;
+  original: string;
+}
+
+/** Relative import specifier from one project file to another. */
+function importSpecifier(fromFile: string, toFile: string): string {
+  const rel = relative(dirname(fromFile), toFile).split(sep).join('/');
+  return rel.startsWith('../') ? rel : `./${rel}`;
 }
 
 /**
- * Block-level source cleaning after an applied import (#1647).
- *
- * Values now live in .rafters/tokens and emit through rafters.css, so token
- * layers left in the source override the system in the cascade:
- * - `@theme inline` blocks are removed entirely -- they are token bridges by
- *   definition, and rafters.css emits the canonical bridge.
- * - `:root` blocks (anywhere, including under @media) lose ALL custom-property
- *   declarations; non-custom-prop declarations (color-scheme, ...) survive.
- *   A block left with no content is removed; an at-rule shell emptied by that
- *   removal is removed too.
- * Plain `@theme` blocks are untouched: non-imported props there (custom
- * fonts, ...) are intentional user tokens. Pre-strip backup is the recovery
- * path. Brace matching is character-depth based; brace characters inside
- * string values are not handled (acceptable for token layers).
+ * Refuse before anything is written when the entry CSS is not wired yet and
+ * its `.old.css` exists: moving the original there would overwrite it.
  */
-export function cleanSourceCssBlocks(content: string): string {
-  type Block = {
-    headerStart: number;
-    bodyStart: number;
-    end: number;
-    header: string;
-  };
-
-  function parseBlocks(src: string): Block[] {
-    const blocks: Block[] = [];
-    let depth = 0;
-    const headerStack: number[] = [];
-    let segmentStart = 0;
-    for (let i = 0; i < src.length; i++) {
-      const ch = src.charAt(i);
-      if (ch === '{') {
-        headerStack.push(segmentStart);
-        depth++;
-        if (depth >= 1) {
-          blocks.push({
-            headerStart: segmentStart,
-            bodyStart: i + 1,
-            end: -1,
-            header: src.slice(segmentStart, i).trim(),
-          });
-        }
-        segmentStart = i + 1;
-      } else if (ch === '}') {
-        depth--;
-        const open = blocks
-          .slice()
-          .reverse()
-          .find((b) => b.end === -1);
-        if (open) open.end = i + 1;
-        headerStack.pop();
-        segmentStart = i + 1;
-      } else if (ch === ';') {
-        segmentStart = i + 1;
-      }
-    }
-    return blocks.filter((b) => b.end !== -1);
-  }
-
-  function isContentEmpty(body: string): boolean {
-    return body.replace(/\/\*[\s\S]*?\*\//g, '').trim().length === 0;
-  }
-
-  let out = content;
-  // Iterate until stable: removing inner blocks can empty outer shells.
-  for (let pass = 0; pass < 10; pass++) {
-    const blocks = parseBlocks(out);
-    let edited = false;
-    // Walk innermost-last so splices don't invalidate earlier ranges;
-    // process one edit per pass for simplicity and re-parse.
-    for (const block of blocks.sort((a, b) => b.headerStart - a.headerStart)) {
-      const header = block.header;
-      if (/^@theme\s+inline$/.test(header)) {
-        out = out.slice(0, block.headerStart) + out.slice(block.end);
-        edited = true;
-        break;
-      }
-      if (header === ':root' || /(^|,)\s*:root\s*$/.test(header)) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        const cleanedBody = body.replace(/--[\w-]+\s*:[^;{}]*;?/g, '');
-        if (isContentEmpty(cleanedBody)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-        if (cleanedBody !== body) {
-          out = out.slice(0, block.bodyStart) + cleanedBody + out.slice(block.end - 1);
-          edited = true;
-          break;
-        }
-        continue;
-      }
-      if (header.startsWith('@media') || header.startsWith('@supports')) {
-        const body = out.slice(block.bodyStart, block.end - 1);
-        if (isContentEmpty(body)) {
-          out = out.slice(0, block.headerStart) + out.slice(block.end);
-          edited = true;
-          break;
-        }
-      }
-    }
-    if (!edited) break;
-  }
-  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+function assertEntryCssMovable(cwd: string, existing: ExistingEntryCss | null): void {
+  if (existing === null || existing.original.includes(RAFTERS_CSS)) return;
+  const { cssPath } = existing;
+  const oldPath = oldCssPath(cssPath);
+  if (!existsSync(join(cwd, oldPath))) return;
+  throw new EntryCssConflictError(
+    `${oldPath} already exists. Init moves the original ${cssPath} there before writing a new ${cssPath} that imports rafters.css, and will not overwrite it. Rename or delete ${oldPath}, then run rafters init again.`,
+  );
 }
 
-async function stripImportedDeclarations(
+/**
+ * Import the created entry CSS from the app entry init found, once. With no
+ * entry file, nothing is written and the caller reports the line to add.
+ */
+async function importFromAppEntry(
   cwd: string,
   cssPath: string,
-  importedNames: string[],
-): Promise<void> {
-  if (importedNames.length === 0) return;
-  const fullPath = join(cwd, cssPath);
-  const content = await readFile(fullPath, 'utf-8');
-  const pattern = new RegExp(importedNames.map((n) => `^\\s*--${n}[^;]*;\\s*$`).join('|'), 'gm');
-  const cleaned = cleanSourceCssBlocks(content.replace(pattern, ''));
-  const collapsed = cleaned.replace(/\n{3,}/g, '\n\n');
-  await writeFile(fullPath, collapsed);
+  framework: Framework,
+  found: string | undefined,
+): Promise<{ entryPoint: string; importLine: string; entryWired: boolean }> {
+  const entryPoint = found ?? FRAMEWORK_SPECS[framework].entryPoints[0] ?? 'src/main.ts';
+  const specifier = importSpecifier(entryPoint, cssPath);
+  const importLine = `import '${specifier}';`;
+  if (found === undefined) return { entryPoint, importLine, entryWired: false };
+  const content = await readFile(join(cwd, found), 'utf-8');
+  if (!content.includes(specifier)) {
+    let next: string;
+    if (found.endsWith('.astro')) {
+      next = content.startsWith('---')
+        ? content.replace(/^---.*\n/, (fence) => `${fence}${importLine}\n`)
+        : `---\n${importLine}\n---\n${content}`;
+    } else {
+      const directive = content.match(/^\s*(['"])use [\w-]+\1;?[^\n]*\n/)?.[0] ?? '';
+      next = `${directive}${importLine}\n${content.slice(directive.length)}`;
+    }
+    await writeFile(join(cwd, found), next);
+  }
+  return { entryPoint, importLine, entryWired: true };
 }
 
-async function updateMainCss(cwd: string, cssPath: string, themePath: string): Promise<void> {
-  const fullCssPath = join(cwd, cssPath);
-  const cssContent = await readFile(fullCssPath, 'utf-8');
-
-  // Calculate relative path from CSS file to theme.css
-  const cssDir = join(cwd, cssPath, '..');
-  const themeFullPath = join(cwd, themePath);
-  const relativeThemePath = relative(cssDir, themeFullPath);
-
-  // Check if already imported
-  if (cssContent.includes('.rafters/output/rafters.css')) {
-    log({ event: 'init:css_already_imported', cssPath });
-    return;
+/**
+ * Wire rafters.css into the project's entry CSS (#2798) and return its path.
+ * An entry that already imports rafters.css is left alone. An existing entry
+ * moves to `<name>.old.css`, byte for byte and not imported; with none, the
+ * framework's canonical file is created (`src/index.css` when unknown). The
+ * new entry imports Tailwind once in the chain: the shadcn rafters.css
+ * carries no `@import "tailwindcss"`, every other one does.
+ */
+async function wireEntryCss(
+  cwd: string,
+  existing: ExistingEntryCss | null,
+  source: string | undefined,
+  framework: Framework,
+): Promise<string> {
+  if (existing?.original.includes(RAFTERS_CSS)) {
+    log({ event: 'init:css_already_imported', cssPath: existing.cssPath });
+    return existing.cssPath;
   }
-
-  // Backup the original
-  await backupCss(fullCssPath);
-
-  // The theme.css already includes @import "tailwindcss", so we just need to import it
-  // Replace the tailwindcss import with our theme import
-  let newContent: string;
-  if (cssContent.includes('@import "tailwindcss"')) {
-    newContent = cssContent.replace('@import "tailwindcss";', `@import "${relativeThemePath}";`);
-  } else if (cssContent.includes("@import 'tailwindcss'")) {
-    newContent = cssContent.replace("@import 'tailwindcss';", `@import "${relativeThemePath}";`);
-  } else {
-    // No tailwind import found, prepend the theme import
-    newContent = `@import "${relativeThemePath}";\n\n${cssContent}`;
+  // A created file goes in the same root as the app entry init found
+  // (`app/layout.tsx` -> `app/globals.css`); `cssLocations[0]` otherwise.
+  const spec = FRAMEWORK_SPECS[framework];
+  const found = spec.entryPoints.find((p) => existsSync(join(cwd, p)));
+  const entryRoot = found?.split('/')[0];
+  const entryPath =
+    existing?.cssPath ??
+    (framework === 'unknown'
+      ? undefined
+      : (spec.cssLocations.find((l) => l.split('/')[0] === entryRoot) ?? spec.cssLocations[0])) ??
+    'src/index.css';
+  const fullPath = join(cwd, entryPath);
+  const content = `${source === 'shadcn' ? '@import "tailwindcss";\n' : ''}@import "${importSpecifier(entryPath, RAFTERS_CSS)}";\n`;
+  if (existing === null) {
+    await mkdir(dirname(fullPath), { recursive: true });
+    await writeFile(fullPath, content);
+    const entry = await importFromAppEntry(cwd, entryPath, framework, found);
+    log({
+      event: 'init:css_created',
+      cssPath: entryPath,
+      ...entry,
+      message: entry.entryWired
+        ? `Created ${entryPath}, imported from ${entry.entryPoint}.`
+        : `Created ${entryPath}. Add ${entry.importLine} to ${entry.entryPoint} so the app loads it.`,
+    });
+    return entryPath;
   }
-
-  await writeFile(fullCssPath, newContent);
+  const oldPath = oldCssPath(entryPath);
+  await rename(fullPath, join(cwd, oldPath));
+  await writeFile(fullPath, content);
   log({
-    event: 'init:css_updated',
-    cssPath,
-    themePath: relativeThemePath,
+    event: 'init:css_replaced',
+    cssPath: entryPath,
+    oldPath,
+    message: `Replaced ${entryPath}; its original content is in ${oldPath}, which is not imported. Carry over anything you still need from it.`,
   });
+  return entryPath;
 }
 
 /**
@@ -351,6 +332,114 @@ async function resolveFramework(
   return picked;
 }
 
+/** `fonts.scripts` as stored in config.rafters.json: external data, narrowed here. */
+const StoredScriptsSchema = z.array(z.string()).optional();
+
+/** The stored fill file, read only for its tokens; its other fields are kept. */
+const StoredFillFileSchema = z.looseObject({ tokens: z.array(z.unknown()) });
+
+/**
+ * Ask which writing systems the project supports (#2742). One choice per
+ * Noto family in SCRIPT_FONTS; Latin, Greek and Cyrillic share one choice.
+ * DEFAULT_SCRIPTS are preselected. Returns ISO 15924 codes.
+ */
+export async function promptScripts(): Promise<string[]> {
+  const choices: Array<{ name: string; value: string[]; checked: boolean }> = [];
+  for (const [code, font] of Object.entries(SCRIPT_FONTS)) {
+    const existing = choices.find((c) => c.name === font.label);
+    if (existing) {
+      existing.value.push(code);
+      existing.checked = existing.checked && DEFAULT_SCRIPTS.includes(code);
+      continue;
+    }
+    choices.push({ name: font.label, value: [code], checked: DEFAULT_SCRIPTS.includes(code) });
+  }
+  const selections = await checkbox({
+    message: 'Which writing systems will this project support?',
+    choices,
+    required: true,
+  });
+  return selections.flat();
+}
+
+/**
+ * Resolve the project's writing systems: the `--scripts` flag wins, then the
+ * interactive prompt, then DEFAULT_SCRIPTS. Validated by `fontStackFor`
+ * (throws naming an unknown code) so the caller can run this before any write.
+ */
+async function resolveScripts(flag: string | undefined, agentMode: boolean): Promise<string[]> {
+  let scripts: string[];
+  if (flag !== undefined) {
+    scripts = flag
+      .split(',')
+      .map((code) => code.trim())
+      .filter((code) => code !== '');
+  } else if (!agentMode && isInteractive()) {
+    scripts = await promptScripts();
+  } else {
+    scripts = [...DEFAULT_SCRIPTS];
+  }
+  fontStackFor(scripts);
+  return scripts;
+}
+
+/**
+ * Is this value a `font-sans` stack `fontStackFor` produces (the default
+ * stack included)? Anything else is the project's own font.
+ */
+function isScriptFontStack(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const codes: string[] = [];
+  for (const part of value.split(',').map((p) => p.trim())) {
+    if (part === 'sans-serif') continue;
+    const family = part.replace(/^['"]|['"]$/g, '');
+    const entry = Object.entries(SCRIPT_FONTS).find(([, font]) => font.family === family);
+    if (entry === undefined) return false;
+    codes.push(entry[0]);
+  }
+  return fontStackFor(codes) === value;
+}
+
+/**
+ * Install the writing systems' font packages before init writes anything
+ * (#2742). Returns the scripts whose fonts are installed. A failed install
+ * is the user's call: interactive init names the packages and asks to
+ * continue without them (the answer defaults to no); `--agent` or no TTY
+ * fails with the `pnpm add` command. Either refusal leaves the project
+ * untouched.
+ */
+async function installScriptFonts(
+  scripts: readonly string[],
+  cwd: string,
+  agentMode: boolean,
+): Promise<string[]> {
+  const packages = fontImportsFor(scripts);
+  if (packages.length === 0) return [...scripts];
+  try {
+    await updateDependencies(packages, [], { cwd });
+    return [...scripts];
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    const failure = `Could not install the fonts ${packages.join(', ')}. Nothing was written. Install them with \`pnpm add ${packages.join(' ')}\` and run init again.`;
+    if (agentMode || !isInteractive()) {
+      throw new Error(`${failure}\n${cause}`);
+    }
+    log({ event: 'init:font_install_failed', packages, error: cause });
+    const proceed = await confirm({
+      message: `Could not install ${packages.join(', ')}. Continue without these fonts?`,
+      default: false,
+    });
+    if (!proceed) throw new Error(failure);
+    // One install call: when it fails, none of the packages is installed.
+    return [];
+  }
+}
+
+/** Merge import lists in order, each entry once. */
+function mergeImports(...lists: readonly (readonly string[])[]): string[] {
+  return [...new Set(lists.flat())];
+}
+
 /**
  * Prompt user for export format selections
  * Returns defaults if not in an interactive terminal
@@ -389,44 +478,50 @@ async function promptExportFormats(existingConfig?: ExportConfig): Promise<Expor
 }
 
 /**
- * Check if @tailwindcss/cli is installed (required for compiled CSS output)
+ * Check if @tailwindcss/cli is installed (required for compiled CSS output),
+ * resolving from the project at `cwd` first and then from rafters itself, the
+ * same order the compiled export resolves it in.
  */
-export function isTailwindCliInstalled(): boolean {
-  const require = createRequire(import.meta.url);
-  try {
-    require.resolve('@tailwindcss/cli/package.json');
-    return true;
-  } catch (err: unknown) {
-    if (err instanceof Error && 'code' in err && err.code === 'MODULE_NOT_FOUND') {
-      return false;
+export function isTailwindCliInstalled(cwd: string): boolean {
+  for (const base of [join(cwd, 'package.json'), import.meta.url]) {
+    try {
+      createRequire(base).resolve('@tailwindcss/cli/package.json');
+      return true;
+    } catch (err: unknown) {
+      if (!(err instanceof Error && 'code' in err && err.code === 'MODULE_NOT_FOUND')) {
+        throw err;
+      }
     }
-    throw err;
   }
+  return false;
 }
 
 /**
- * Prompt to install @tailwindcss/cli (required for compiled CSS output).
- * In non-interactive/agent mode, throws with install instructions.
+ * Install @tailwindcss/cli into the project (required for compiled CSS output).
+ * Agent mode installs without asking; interactive mode asks first; any other
+ * non-interactive run throws with install instructions.
  */
 export async function ensureTailwindCli(cwd: string): Promise<void> {
-  if (!isInteractive() || isAgentMode()) {
-    throw new Error(
-      'Standalone CSS export requires @tailwindcss/cli. Install it as a dev dependency in your project.',
-    );
-  }
+  if (!isAgentMode()) {
+    if (!isInteractive()) {
+      throw new Error(
+        'Standalone CSS export requires @tailwindcss/cli. Install it as a dev dependency in your project.',
+      );
+    }
 
-  const shouldInstall = await confirm({
-    message: 'Standalone CSS requires @tailwindcss/cli. Install it now?',
-    default: true,
-  });
+    const shouldInstall = await confirm({
+      message: 'Standalone CSS requires @tailwindcss/cli. Install it now?',
+      default: true,
+    });
 
-  if (!shouldInstall) {
-    throw new Error('Standalone CSS export requires @tailwindcss/cli.');
+    if (!shouldInstall) {
+      throw new Error('Standalone CSS export requires @tailwindcss/cli.');
+    }
   }
 
   await updateDependencies([], ['@tailwindcss/cli'], { cwd });
 
-  if (!isTailwindCliInstalled()) {
+  if (!isTailwindCliInstalled(cwd)) {
     throw new Error(
       '@tailwindcss/cli was installed but cannot be resolved. Try installing at the workspace root.',
     );
@@ -448,10 +543,11 @@ export async function generateOutputs(
   source: string | undefined,
   darkMode: 'class' | 'media' = 'class',
   config?: RaftersConfig | null,
+  fontImports: readonly string[] = config?.fonts?.imports ?? [],
 ): Promise<string[]> {
   const contentSources = config ? resolveContentSources(cwd, config) : [];
 
-  if (exports.compiled && !isTailwindCliInstalled()) {
+  if (exports.compiled && !isTailwindCliInstalled(cwd)) {
     log({ event: 'init:prompting_exports' });
     await ensureTailwindCli(cwd);
   }
@@ -465,6 +561,8 @@ export async function generateOutputs(
     contentSources,
     darkMode,
     includeImport: source !== 'shadcn',
+    fontImports,
+    projectRoot: cwd,
   });
 }
 
@@ -496,10 +594,22 @@ async function regenerateFromExisting(
     existingConfig.rulesPath = frameworkPaths.rules;
   }
 
-  // Deleted token namespaces (#1638 S2 elevation, #1637 fill): drop the
-  // stale files so their dead tokens stop reloading on every rebuild.
+  // Writing systems (#2742): validated before anything below writes. An
+  // existing project with no `fonts.scripts` keeps today's default.
+  // The fonts install next, still before any write; only installed fonts
+  // reach the stack and `fonts.imports`.
+  const storedScripts = StoredScriptsSchema.parse(existingConfig?.fonts?.scripts);
+  if (storedScripts !== undefined) fontStackFor(storedScripts);
+  const installedScripts =
+    storedScripts === undefined
+      ? undefined
+      : await installScriptFonts(storedScripts, cwd, isAgentMode);
+  const scriptStack = installedScripts === undefined ? undefined : fontStackFor(installedScripts);
+
+  // Deleted token namespace (#1638 S2 elevation): drop the stale file so its
+  // dead tokens stop reloading on every rebuild. Fills are designer-authored
+  // tokens again (FR-RAF-FILL-001) and survive the rebuild.
   await rm(join(paths.tokens, 'elevation.rafters.json'), { force: true });
-  await rm(join(paths.tokens, 'fill.rafters.json'), { force: true });
 
   // Motion is system-generated end to end (#2208): same treatment, except the
   // namespace is still alive, so it is rewritten rather than dropped. Only for
@@ -515,6 +625,44 @@ async function regenerateFromExisting(
 
   if (registry.size() === 0) {
     throw new Error('No tokens found. Cannot regenerate without existing tokens.');
+  }
+
+  // `font-sans` follows `fonts.scripts` only while it is a stack the
+  // writing systems produce; any other value is the project's own font.
+  if (scriptStack !== undefined) {
+    const fontSans = registry.get('font-sans');
+    if (
+      fontSans !== undefined &&
+      fontSans.value !== scriptStack &&
+      isScriptFontStack(fontSans.value)
+    ) {
+      if (fontSans.userOverride) {
+        registry.set('font-sans', scriptStack, { reason: 'rebuilt from fonts.scripts' });
+      } else {
+        registry.define({ ...fontSans, value: scriptStack });
+      }
+      saveRegistryToDir(paths.tokens, registry);
+      log({ event: 'init:font_stack_rebuilt', fontSans: scriptStack });
+    }
+  }
+
+  // Surface fills (FR-RAF-FILL-004): a project from before them gets each
+  // missing one; an existing surface fill, overridden or not, is never changed.
+  const missingSurfaces = generateNamespaces(['surface']).allTokens.filter(
+    (token) => !registry.has(token.name),
+  );
+  if (missingSurfaces.length > 0) {
+    for (const token of missingSurfaces) registry.define(token);
+    // Only the fill file is written: every other stored file stays as it is.
+    const fillFile = join(paths.tokens, 'fill.rafters.json');
+    const stored = StoredFillFileSchema.parse(
+      existsSync(fillFile) ? JSON.parse(await readFile(fillFile, 'utf8')) : { tokens: [] },
+    );
+    await writeFile(
+      fillFile,
+      `${JSON.stringify({ ...stored, namespace: 'fill', tokens: [...stored.tokens, ...missingSurfaces] }, null, 2)}\n`,
+    );
+    log({ event: 'init:surfaces_added', surfaces: missingSurfaces.map((t) => t.name) });
   }
 
   // Get unique namespaces for logging
@@ -542,6 +690,17 @@ async function regenerateFromExisting(
 
   // Ensure output directory exists
   await mkdir(paths.output, { recursive: true });
+
+  if (existingConfig && installedScripts !== undefined) {
+    // Replace the script packages; keep every other recorded import. Done
+    // before the outputs so rafters.css imports what the config records.
+    const scriptPackages = new Set(Object.values(SCRIPT_FONTS).map((f) => f.package));
+    const detected = (existingConfig.fonts?.imports ?? []).filter((i) => !scriptPackages.has(i));
+    existingConfig.fonts = {
+      ...existingConfig.fonts,
+      imports: mergeImports(detected, fontImportsFor(installedScripts)),
+    };
+  }
 
   const outputs = await generateOutputs(
     cwd,
@@ -721,6 +880,22 @@ export async function init(options: InitOptions): Promise<void> {
   setAgentMode(options.agent ?? false);
   const isAgentMode = options.agent ?? false;
 
+  if (
+    (options.rebuild || options.reset) &&
+    (options.cssImport !== undefined || (options.map ?? []).length > 0)
+  ) {
+    throw new Error(
+      '--css-import and --map do not combine with --rebuild or --reset. Use rafters import --css-import <path> --map ... for an existing project.',
+    );
+  }
+
+  const cssImport =
+    options.cssImport === undefined ? undefined : await readCssImport(options.cssImport);
+  if (cssImport !== undefined && (options.map ?? []).length === 0) {
+    printCssImportReport(cssImport);
+    return;
+  }
+
   const cwd = process.cwd();
   const paths = getRaftersPaths(cwd);
 
@@ -738,6 +913,16 @@ export async function init(options: InitOptions): Promise<void> {
     hasShadcn: !!shadcn,
   });
 
+  // Refuse before any prompt or write when tailwindcss is missing (#2804)
+  if (tailwindVersion === null) {
+    const guideFramework = options.framework
+      ? await resolveFramework(detectedFramework, options.framework, isAgentMode)
+      : detectedFramework;
+    throw new Error(
+      `Tailwind CSS v4 isn't installed. Rafters needs it. Install it first (${FRAMEWORK_SPECS[guideFramework].tailwindGuide}), then run rafters init again.`,
+    );
+  }
+
   // Resolve final framework: --framework flag > detected > interactive prompt > unknown
   const framework = await resolveFramework(detectedFramework, options.framework, isAgentMode);
 
@@ -749,6 +934,9 @@ export async function init(options: InitOptions): Promise<void> {
       source: options.framework ? 'flag' : 'prompt',
     });
   }
+
+  const frameworkNote = FRAMEWORK_SPECS[framework].note;
+  if (frameworkNote) log({ event: 'init:framework_note', message: frameworkNote });
 
   // Error if Tailwind v3 is detected
   if (isTailwindV3(tailwindVersion)) {
@@ -783,6 +971,14 @@ export async function init(options: InitOptions): Promise<void> {
 
   // Fresh initialization
 
+  // The map is checked against a throwaway base system before anything,
+  // the font install included, is written.
+  let cssImportPlan: CssImportPlan | undefined;
+  if (cssImport !== undefined) {
+    const probe = new TokenRegistry(generateBaseSystem({}).allTokens, REGISTRY_PLUGINS);
+    cssImportPlan = planCssImport(probe, cssImport, options.map ?? []);
+  }
+
   // Prompt for export formats (use defaults in agent mode or non-interactive)
   let exports: ExportConfig;
   if (isAgentMode) {
@@ -797,6 +993,39 @@ export async function init(options: InitOptions): Promise<void> {
     log({ event: 'init:exports_selected', exports });
   }
 
+  // Source CSS resolution priority for both pre-generation base detection
+  // AND the later sense/apply flow:
+  //   1. shadcn's components.json `tailwind.css` IF the file actually exists
+  //   2. framework's canonical CSS location (findCssPath)
+  // shadcn configs often carry a stale Next.js path (`src/app/globals.css`)
+  // after a project migrates to Astro / Vite. Silently trusting the
+  // configured path means init reads ENOENT and skips the whole import
+  // flow without surfacing what went wrong. The file is read once, here:
+  // wiring rafters.css (#2798) moves it aside, and both base detection and
+  // sensing read this original content. A conflicting `.old.css` refuses
+  // before anything is written.
+  const entryCssPath = resolveSourceCssPath(
+    cwd,
+    framework,
+    detectedFramework,
+    project.cssPath,
+    shadcn?.tailwind?.css,
+    log,
+  );
+  const existingEntry =
+    entryCssPath === null || !existsSync(join(cwd, entryCssPath))
+      ? null
+      : { cssPath: entryCssPath, original: await readFile(join(cwd, entryCssPath), 'utf-8') };
+  if (exports.tailwind) assertEntryCssMovable(cwd, existingEntry);
+
+  // Writing systems (#2742). Resolved, validated and their fonts installed
+  // before any file is written; the stack of the installed fonts lands in
+  // baseConfig so the typography generator writes `font-sans`.
+  const scripts = await resolveScripts(options.scripts, isAgentMode);
+  log({ event: 'init:scripts_selected', scripts });
+  const installedScripts = await installScriptFonts(scripts, cwd, isAgentMode);
+  const scriptImports = fontImportsFor(installedScripts);
+
   // Phase A: install-time generation. Spacing-base detection runs FIRST
   // -- the cascade flows from baseSpacingUnit through five namespaces
   // (resolveConfig in generators/types.ts derives baseFontSize,
@@ -807,81 +1036,59 @@ export async function init(options: InitOptions): Promise<void> {
   // bake values numerically at generation time and would not update.
   // See legion reflection 019e57d8 for the full invariant.
   const adapter = getAdapter(source ?? 'tailwind');
-  const baseConfig: Partial<BaseSystemConfig> = {};
-  // Source CSS resolution priority for both pre-generation base detection
-  // AND the later sense/apply flow:
-  //   1. shadcn's components.json `tailwind.css` IF the file actually exists
-  //   2. framework's canonical CSS location (findCssPath)
-  // shadcn configs often carry a stale Next.js path (`src/app/globals.css`)
-  // after a project migrates to Astro / Vite. Silently trusting the
-  // configured path means init reads ENOENT and skips the whole import
-  // flow without surfacing what went wrong.
-  const sourceCssPathForBase = resolveSourceCssPath(
-    cwd,
-    framework,
-    detectedFramework,
-    project.cssPath,
-    shadcn?.tailwind?.css,
-    log,
-  );
-  if (sourceCssPathForBase !== null) {
-    try {
-      const cssForBase = await readFile(join(cwd, sourceCssPathForBase), 'utf-8');
-      // Per-detector wiring: each adapter method returns an object with
-      // an optional key; if the value is present, it lands on the matching
-      // BaseSystemConfig override and fires its own `init:import_*_applied`
-      // event for telemetry.
-      const baseSlots = [
-        {
-          detect: () => adapter.detectSpacing(cssForBase).base,
-          field: 'baseSpacingUnit',
-          event: 'init:import_spacing_applied',
-          eventKey: 'baseSpacingUnit',
-        },
-        {
-          detect: () => adapter.detectRadius(cssForBase).base,
-          field: 'baseRadiusOverride',
-          event: 'init:import_radius_applied',
-          eventKey: 'baseRadius',
-        },
-        {
-          detect: () => adapter.detectFontSize(cssForBase).base,
-          field: 'baseFontSizeOverride',
-          event: 'init:import_font_size_applied',
-          eventKey: 'baseFontSize',
-        },
-        {
-          detect: () => adapter.detectFocusRing(cssForBase).width,
-          field: 'focusRingWidthOverride',
-          event: 'init:import_focus_ring_applied',
-          eventKey: 'focusRingWidth',
-        },
-        // Motion duration is intentionally not imported -- rafters' motion
-        // system is research-backed and most projects' `--duration-base`
-        // values are unresearched defaults. See importers/bases.ts for the
-        // policy note; designers can `rafters set motion-duration-base ...`
-        // after init to override explicitly.
-      ] as const;
-      for (const slot of baseSlots) {
-        const value = slot.detect();
-        if (value === undefined) continue;
-        baseConfig[slot.field] = value;
-        log({
-          event: slot.event,
-          cssPath: sourceCssPathForBase,
-          [slot.eventKey]: value,
-        });
-      }
-    } catch (err) {
-      // ENOENT is a soft skip -- the later sensing pass will surface the
-      // missing-file state via its own log. Any other read failure
-      // propagates so the user sees it.
-      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
+  const baseConfig: Partial<BaseSystemConfig> = { fontFamily: fontStackFor(installedScripts) };
+  if (existingEntry !== null && cssImportPlan === undefined) {
+    const cssForBase = existingEntry.original;
+    // Per-detector wiring: each adapter method returns an object with
+    // an optional key; if the value is present, it lands on the matching
+    // BaseSystemConfig override and fires its own `init:import_*_applied`
+    // event for telemetry.
+    const baseSlots = [
+      {
+        detect: () => adapter.detectSpacing(cssForBase).base,
+        field: 'baseSpacingUnit',
+        event: 'init:import_spacing_applied',
+        eventKey: 'baseSpacingUnit',
+      },
+      {
+        detect: () => adapter.detectRadius(cssForBase).base,
+        field: 'baseRadiusOverride',
+        event: 'init:import_radius_applied',
+        eventKey: 'baseRadius',
+      },
+      {
+        detect: () => adapter.detectFontSize(cssForBase).base,
+        field: 'baseFontSizeOverride',
+        event: 'init:import_font_size_applied',
+        eventKey: 'baseFontSize',
+      },
+      {
+        detect: () => adapter.detectFocusRing(cssForBase).width,
+        field: 'focusRingWidthOverride',
+        event: 'init:import_focus_ring_applied',
+        eventKey: 'focusRingWidth',
+      },
+      // Motion duration is intentionally not imported -- rafters' motion
+      // system is research-backed and most projects' `--duration-base`
+      // values are unresearched defaults. See importers/bases.ts for the
+      // policy note; designers can `rafters set motion-duration-base ...`
+      // after init to override explicitly.
+    ] as const;
+    for (const slot of baseSlots) {
+      const value = slot.detect();
+      if (value === undefined) continue;
+      baseConfig[slot.field] = value;
+      log({
+        event: slot.event,
+        cssPath: existingEntry.cssPath,
+        [slot.eventKey]: value,
+      });
     }
   }
 
   const system = generateBaseSystem(baseConfig);
   const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+  if (cssImportPlan !== undefined) applyCssImport(registry, cssImportPlan);
 
   log({
     event: 'init:generated',
@@ -904,35 +1111,21 @@ export async function init(options: InitOptions): Promise<void> {
   });
 
   // Generate outputs based on export config
-  const outputs = await generateOutputs(cwd, paths, registry, exports, source);
-
-  // Find and update the main CSS file (if not using shadcn which has its own CSS path).
-  // `project.cssPath` is computed against the auto-detected framework; if the
-  // resolved framework differs, re-walk under the new framework.
-  let detectedCssPath: string | null = null;
-  // Same resolution helper as pre-generation. When shadcn's components.json
-  // points at a missing file (common after a project migrates frameworks
-  // without updating the config) we fall back to the framework's canonical
-  // CSS location and warn loudly.
-  detectedCssPath = resolveSourceCssPath(
+  const outputs = await generateOutputs(
     cwd,
-    framework,
-    detectedFramework,
-    project.cssPath,
-    shadcn?.tailwind?.css,
-    log,
+    paths,
+    registry,
+    exports,
+    source,
+    'class',
+    null,
+    scriptImports,
   );
-  if (source !== 'shadcn' && exports.tailwind) {
-    if (detectedCssPath) {
-      await updateMainCss(cwd, detectedCssPath, '.rafters/output/rafters.css');
-    } else {
-      log({
-        event: 'init:css_not_found',
-        message: 'No main CSS file found. Add @import ".rafters/output/rafters.css" manually.',
-        searchedLocations: FRAMEWORK_SPECS[framework].cssLocations,
-      });
-    }
-  }
+
+  // Wire rafters.css into the entry CSS (#2798); the config records it.
+  const detectedCssPath = exports.tailwind
+    ? await wireEntryCss(cwd, existingEntry, source, framework)
+    : (existingEntry?.cssPath ?? null);
 
   // Determine component target (which file variant to install)
   let componentTarget: ComponentTarget = frameworkToTarget(framework);
@@ -966,7 +1159,7 @@ export async function init(options: InitOptions): Promise<void> {
     cssPath: detectedCssPath,
     exports,
     intent: 'efficient',
-    fonts: { path: null, imports: [] },
+    fonts: { path: null, imports: scriptImports, scripts },
     installed: {
       components: [],
       primitives: [],
@@ -982,15 +1175,14 @@ export async function init(options: InitOptions): Promise<void> {
   // ColorReference at family@500. Defining a new family avoids the
   // blast-radius of remapping an existing one (e.g. neutral) where every
   // dependent semantic would re-color.
-  if (detectedCssPath) {
-    let sourceCss: string | null = null;
-    try {
-      sourceCss = await readFile(join(cwd, detectedCssPath), 'utf-8');
-    } catch (err) {
-      // File vanishing between detection and now is a legitimate soft skip.
-      // Other failures (permission, IO) propagate so the user sees them.
-      if (!(err instanceof Error && 'code' in err && err.code === 'ENOENT')) throw err;
-    }
+  if (existingEntry !== null && detectedCssPath !== null && cssImportPlan === undefined) {
+    // The original content: the entry on disk may be the new wired file.
+    const sourceCss: string | null = existingEntry.original;
+    // `:root` palette steps (`--color-mud-500`) and the roles that point at
+    // one through var() (#2866). Both are collected here and applied with the
+    // `@theme` palettes below, so each palette is defined once.
+    const rootPaletteSteps: ColorDeclaration[] = [];
+    const boundRoles: Array<{ role: string; family: string; position: string }> = [];
     if (sourceCss !== null) {
       const summary = senseShadcnCss(sourceCss);
       if (summary.totalDeclarations > 0) {
@@ -1017,7 +1209,26 @@ export async function init(options: InitOptions): Promise<void> {
                 message: `Import --${color.name}: ${color.value}?`,
                 default: true,
               });
-          if (accept) toImportColors.push(color);
+          if (!accept) continue;
+          if (resolvePaletteStep(sourceCss, `--${color.name}`) !== null) {
+            rootPaletteSteps.push(color);
+          } else {
+            toImportColors.push(color);
+          }
+        }
+
+        for (const decl of classification.unclassified) {
+          if (registry.get(decl.name)?.namespace !== 'semantic') continue;
+          if (boundRoles.some((b) => b.role === decl.name)) continue;
+          const step = resolvePaletteStep(sourceCss, `--${decl.name}`);
+          if (step === null) continue;
+          const accept = isAgentMode
+            ? true
+            : await confirm({
+                message: `Import --${decl.name}: ${decl.value}?`,
+                default: true,
+              });
+          if (accept) boundRoles.push({ role: decl.name, ...step });
         }
 
         const toImportNonColors: typeof nonColorDecls = [];
@@ -1078,12 +1289,16 @@ export async function init(options: InitOptions): Promise<void> {
           // produced the defaults; this pass overwrites with the imported
           // overrides cascaded through their dependents.
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, source);
-          const importedNames = [
-            ...toImportColors.map((c) => c.name),
-            ...toImportNonColors.map((d) => d.name),
-          ];
-          await stripImportedDeclarations(cwd, detectedCssPath, importedNames);
+          await generateOutputs(
+            cwd,
+            paths,
+            registry,
+            exports,
+            source,
+            'class',
+            null,
+            config.fonts?.imports ?? [],
+          );
           log({
             event: 'init:import_applied',
             count: toImportColors.length + toImportNonColors.length - skipped.length,
@@ -1105,83 +1320,59 @@ export async function init(options: InitOptions): Promise<void> {
         // owns these assignments -- the importer collects taste, does not
         // infer it from the source's existing var() mappings.
         const themeDecls = extractThemeBlocks(sourceCss);
-        if (themeDecls.length > 0) {
-          // Detect family seeds: group color-valued declarations by base
-          // name (Tailwind v4 source conventionally prefixes with `color-`;
-          // strip it). Track the position the designer authored at: prefer
-          // -500 if they wrote it (the canonical anchor when present);
-          // otherwise carry whatever position they actually wrote so the
-          // seed lands at the right index in the derived scale. Bare
-          // single-color decls (`--color-empire`) default to position 500.
-          // `buildColorValue` derives the rest of the scale around that
-          // anchor; the source's other declared positions are discarded.
-          const POSITION_SUFFIX = new RegExp(`^(.+)-(${SCALE_POSITIONS.join('|')})$`);
-          const familySeeds = new Map<
-            string,
-            { seed: OKLCH; seedPosition: (typeof SCALE_POSITIONS)[number] }
-          >();
-          for (const decl of themeDecls) {
-            // Tailwind v4 namespaces color tokens with `color-`. Gate on the
-            // prefix so a `--font-display: red` (named CSS color, parses as
-            // OKLCH) does not mint a font-display color family. Other
-            // namespaces (--font-*, --spacing-*, --radius-*, --shadow-*)
-            // have dedicated import paths and should not leak in here.
-            if (!decl.name.startsWith('color-')) continue;
-            const oklch = tryParseColor(decl.value);
-            if (oklch === null) continue;
-            const m = decl.name.match(POSITION_SUFFIX);
-            const baseName = ((m ? m[1] : decl.name) ?? decl.name).replace(/^color-/, '');
-            if (!baseName) continue;
-            // m[2] is one of SCALE_POSITIONS by construction (regex
-            // alternation), so the cast is sound when the match exists.
-            const seedPosition = (m?.[2] ?? '500') as (typeof SCALE_POSITIONS)[number];
-            const existing = familySeeds.get(baseName);
-            if (!existing || seedPosition === '500') {
-              familySeeds.set(baseName, { seed: oklch, seedPosition });
-            }
-          }
-          const families = Array.from(familySeeds, ([name, info]) => ({
-            name,
-            ...info,
-          }));
-          if (families.length > 0) {
+        {
+          // One seed per detected family, at the position the designer
+          // authored it (see `detectFamilySeeds`), over the `@theme`
+          // declarations and the `:root` palette steps together. The role
+          // walk offers the `@theme` palettes, as before.
+          const palettes = detectFamilySeeds([...themeDecls, ...rootPaletteSteps]);
+          const themeNames = new Set(detectFamilySeeds(themeDecls).map((f) => f.name));
+          const families = palettes.filter((f) => themeNames.has(f.name));
+          if (palettes.length > 0) {
             // Define every detected palette via `importColorFamily` --
             // returns the family Token + 11 per-position primitive Tokens,
             // all built via `buildColorValue` (the canonical color-utils
             // builder). Designers preserve their own family names:
             // `--color-empire-500` -> family `empire`.
-            for (const family of families) {
+            for (const family of palettes) {
               for (const t of importColorFamily(family.name, family.seedPosition, family.seed)) {
                 registry.define(t);
               }
             }
 
-            // Walk semantic roles. The designer assigns detected palettes
-            // to each role. Filter to roles that exist as semantic-namespace
-            // tokens in the registry (tertiary ships only in some configs).
-            const ALL_ROLES = [
-              'primary',
-              'secondary',
-              'tertiary',
-              'accent',
-              'highlight',
-              'neutral',
-              'muted',
-              'success',
-              'warning',
-              'destructive',
-              'info',
-            ];
-            const ROLES = ALL_ROLES.filter((r) => {
-              const tok = registry.get(r);
-              return tok !== undefined && tok.namespace === 'semantic';
-            });
+            // A role the CSS points at a palette step is set to that step,
+            // and the walk below leaves it alone.
             const assignments: Array<{
               role: string;
               family: string;
               position: string;
             }> = [];
+            const bound = new Set<string>();
+            for (const { role, family, position } of boundRoles) {
+              if (!palettes.some((f) => f.name === family)) continue;
+              registry.set(
+                role,
+                { family, position },
+                { reason: `imported from --${role} in ${detectedCssPath}` },
+              );
+              bound.add(role);
+              assignments.push({ role, family, position });
+            }
+
+            // Walk semantic roles. The designer assigns detected palettes
+            // to each role. Filter to roles that exist as semantic-namespace
+            // tokens in the registry (tertiary ships only in some configs).
+            // With no `@theme` palette there is nothing to offer, so there is
+            // no walk, as before #2866.
+            const ROLES =
+              families.length === 0
+                ? []
+                : SEMANTIC_FAMILY_ROLES.filter((r) => {
+                    const tok = registry.get(r);
+                    return tok !== undefined && tok.namespace === 'semantic';
+                  });
             for (const [i, role] of ROLES.entries()) {
+              if (bound.has(role)) continue;
               let familyChoice: string | null;
               if (isAgentMode) {
                 familyChoice = families[i]?.name ?? null;
@@ -1211,7 +1402,7 @@ export async function init(options: InitOptions): Promise<void> {
                       name: p,
                       value: p,
                     })),
-                    default: family.seedPosition,
+                    default: SCALE_POSITIONS.find((p) => p === family.seedPosition),
                   });
               registry.set(
                 role,
@@ -1224,15 +1415,20 @@ export async function init(options: InitOptions): Promise<void> {
             }
 
             saveRegistryToDir(paths.tokens, registry);
-            await generateOutputs(cwd, paths, registry, exports, source);
-            const themeImportedNames = families.flatMap((f) =>
-              SCALE_POSITIONS.map((p) => `color-${f.name}-${p}`).concat([`color-${f.name}`]),
+            await generateOutputs(
+              cwd,
+              paths,
+              registry,
+              exports,
+              source,
+              'class',
+              null,
+              config.fonts?.imports ?? [],
             );
-            await stripImportedDeclarations(cwd, detectedCssPath, themeImportedNames);
             log({
               event: 'init:import_palettes_applied',
               cssPath: detectedCssPath,
-              palettesDefined: families.map((f) => f.name),
+              palettesDefined: palettes.map((f) => f.name),
               assignments,
             });
           }
@@ -1252,6 +1448,14 @@ export async function init(options: InitOptions): Promise<void> {
     if (sourceCss !== null) {
       const detectedFonts = adapter.detectFonts(sourceCss);
       if (detectedFonts.length > 0) {
+        // The project's own web font imports sit next to the script
+        // packages in `fonts.imports` (#2742).
+        const detectedImports = detectFontImports(sourceCss);
+        if (detectedImports.length > 0) {
+          config.fonts = { ...config.fonts, imports: mergeImports(detectedImports, scriptImports) };
+          await writeFile(paths.config, JSON.stringify(config, null, 2));
+        }
+
         // Derive the role/base mapping from the registry's typography
         // graph instead of hardcoding it here. Base families are typography
         // tokens whose value is a literal font stack (no `dependsOn`);
@@ -1364,7 +1568,16 @@ export async function init(options: InitOptions): Promise<void> {
         }
         if (fontAssignments.length > 0 || definedFonts.length > 0) {
           saveRegistryToDir(paths.tokens, registry);
-          await generateOutputs(cwd, paths, registry, exports, source);
+          await generateOutputs(
+            cwd,
+            paths,
+            registry,
+            exports,
+            source,
+            'class',
+            null,
+            config.fonts?.imports ?? [],
+          );
           log({
             event: 'init:import_fonts_applied',
             cssPath: detectedCssPath,

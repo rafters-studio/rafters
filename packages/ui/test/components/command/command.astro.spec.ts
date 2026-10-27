@@ -7,6 +7,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ICON_SVG_16 } from './icon-layout';
 import Command from '../../../src/components/command/command.astro';
 import {
   bindCommand,
@@ -82,5 +83,41 @@ describe('command [astro]', () => {
     await user.click(input());
     await user.keyboard('zzz');
     expect(emptyEl().hidden).toBe(false);
+  });
+});
+
+describe('command icons [astro]', () => {
+  const withIcons = async (slot: string): Promise<string> => {
+    const container = await AstroContainer.create();
+    return container.renderToString(Command, {
+      props: { id: 'c', items, label: 'Actions' },
+      slots: { [slot]: ICON_SVG_16 },
+    });
+  };
+
+  it('SSR, no script run: the icon wrapper already has aria-hidden="true"', async () => {
+    const doc = new DOMParser().parseFromString(
+      await withIcons('start-icon-calendar'),
+      'text/html',
+    );
+    const wrappers = doc.querySelectorAll('[data-part="startIcon"]');
+    expect(wrappers).toHaveLength(1);
+    expect(wrappers[0]?.getAttribute('aria-hidden')).toBe('true');
+    expect(wrappers[0]?.getAttribute('data-icon')).toBe('inline-start');
+    expect(doc.querySelector('[data-value="search"] [data-part="startIcon"]')).toBeNull();
+  });
+
+  it('renders no wrapper when no icon slot is given', async () => {
+    await mount();
+    expect(document.body.querySelector('[data-part="startIcon"]')).toBeNull();
+  });
+
+  it('the icon sits before the label and the shortcut stays last', async () => {
+    document.body.innerHTML = await withIcons('start-icon-settings');
+    expect([...option('settings').children].map((el) => el.getAttribute('data-part'))).toEqual([
+      'startIcon',
+      'label',
+      'shortcut',
+    ]);
   });
 });

@@ -1,10 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { configDefaults, defineConfig } from 'vitest/config';
+import { compileCss } from './test/browser/compile-css.command';
 import { a11yOnly } from './vitest.astro.shared';
 
 /**
- * One config, three projects, one per test tier (#2326):
+ * One config, four projects (#2326, #2744):
  *
  * - `unit`: pure TS, behavior scores, classes, primitives, and the React/WC
  *   `.test` files, under happy-dom with isolation off.
@@ -13,8 +15,11 @@ import { a11yOnly } from './vitest.astro.shared';
  * - `astro`: SSR through the Container API, referenced by path because
  *   `getViteConfig` from `astro/config` must own that project's Vite plugins
  *   and must NOT inherit the react plugin (see vitest.config.astro.ts).
+ * - `preact`: the React `.spec.tsx` / `.a11y.tsx` files again in chromium,
+ *   with React resolved to `preact/compat`. Nothing in the tests or the
+ *   components changes; only module resolution does.
  *
- * `vitest run` from this directory runs all three in one invocation and the
+ * `vitest run` from this directory runs all four in one invocation and the
  * JSON reporter writes one report per run (default path `.vitest/`, which is
  * gitignored) that veneer slices by `testResults[].name`.
  *
@@ -31,8 +36,35 @@ import { a11yOnly } from './vitest.astro.shared';
  * its own `exclude`.
  */
 
+// A function, not a shared object: Vitest writes each instance's name
+// (`<project> (chromium)`) onto the instance it is given.
+const chromium = () => ({
+  enabled: true,
+  provider: playwright(),
+  instances: [{ browser: 'chromium' as const }],
+  headless: true,
+  commands: { compileCss },
+});
+
+/**
+ * React specifiers mapped onto Preact. Regexes are anchored so `react` does
+ * not prefix-match `react/jsx-runtime` or `react-dom/client`. `react` itself
+ * goes to a shim that adds `act` (see test/preact/react-shim.ts).
+ */
+const preactAliases = [
+  { find: /^react\/jsx-runtime$/, replacement: 'preact/jsx-runtime' },
+  { find: /^react\/jsx-dev-runtime$/, replacement: 'preact/jsx-runtime' },
+  { find: /^react-dom\/test-utils$/, replacement: 'preact/test-utils' },
+  { find: /^react-dom\/client$/, replacement: 'preact/compat/client' },
+  { find: /^react-dom$/, replacement: 'preact/compat' },
+  {
+    find: /^react$/,
+    replacement: fileURLToPath(new URL('./test/preact/react-shim.ts', import.meta.url)),
+  },
+];
+
 export default defineConfig({
-  // Inherited by the two inline projects (extends: true); the astro project
+  // Inherited by the inline projects (extends: true); the astro project
   // opts out with extends: false so Astro's own transform owns its plugins.
   plugins: [react()],
   test: {
@@ -106,12 +138,22 @@ export default defineConfig({
           // without it the v6 matrix install's own node_modules gets scanned.
           exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
           setupFiles: ['./test/a11y/setup.ts'],
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            instances: [{ browser: 'chromium' }],
-            headless: true,
-          },
+          browser: chromium(),
+        },
+      },
+      {
+        extends: true,
+        resolve: { alias: preactAliases },
+        test: {
+          name: 'preact',
+          // Same chromium-tab cap as `browser`, in its own group for the same
+          // reason: projects with a capped maxWorkers cannot share a group.
+          maxWorkers: 2,
+          sequence: { groupOrder: 2 },
+          include: a11yOnly ? ['test/**/*.a11y.tsx'] : ['test/**/*.spec.tsx', 'test/**/*.a11y.tsx'],
+          exclude: [...configDefaults.exclude, 'test/**/*.astro.*'],
+          setupFiles: ['./test/a11y/setup.ts'],
+          browser: chromium(),
         },
       },
       './vitest.config.astro.ts',

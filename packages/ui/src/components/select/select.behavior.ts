@@ -35,6 +35,10 @@ import { createTypeahead } from '../../primitives/typeahead';
  * positioning fidelity vs the old React-only computePosition).
  */
 export interface SelectConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled value ('' = no selection). */
   value?: string | undefined;
   /** Uncontrolled seed. */
@@ -68,7 +72,8 @@ export type SelectActions = {
   highlight: string;
 };
 
-export type SelectPart = 'root' | 'trigger' | 'content' | 'item';
+export type SelectIconPart = 'startIcon' | 'endIcon';
+export type SelectPart = 'root' | 'trigger' | 'content' | 'item' | SelectIconPart;
 
 /** The effective open: controlled config shadows intrinsic state. */
 export function isOpen(state: SelectState, config: SelectConfig): boolean {
@@ -162,9 +167,34 @@ const selectSlice: Slice<SelectConfig, SelectState, SelectActions, SelectPart> =
   },
 };
 
+/**
+ * The decorative icon wrappers, on the trigger (beside the value) and on each
+ * item (beside the item text). Each is present only when the author gives an
+ * icon, and each projects aria-hidden="true" so the label alone is the
+ * accessible name on every target, with or without JavaScript. The wrapper
+ * carries the hiding because a child the author writes cannot be guaranteed to.
+ */
+function selectIcons(): Slice<
+  SelectConfig,
+  Record<never, never>,
+  Record<never, never>,
+  SelectIconPart
+> {
+  return {
+    name: 'select-icons',
+    parts: { startIcon: { optional: true, many: true }, endIcon: { optional: true, many: true } },
+    initialState: () => ({}),
+    aria: () => ({
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
+    }),
+  };
+}
+
 export const select: BehaviorSpec<SelectConfig, SelectState, SelectActions, SelectPart> = compose(
   'select',
   selectSlice,
+  selectIcons(),
 );
 
 /** The parts and dispatch the open-listbox trio composes against. */
@@ -240,13 +270,23 @@ export function selectItemAria(
   };
 }
 
+/** An item's own text: the decorative icon wrappers are not part of the label
+ *  (an svg `<title>` would otherwise leak into the trigger's value). */
+function itemLabel(item: HTMLElement): string {
+  const clone = item.cloneNode(true) as HTMLElement;
+  for (const icon of clone.querySelectorAll('[data-part="startIcon"], [data-part="endIcon"]')) {
+    icon.remove();
+  }
+  return (clone.textContent ?? '').trim();
+}
+
 /** The display label for a value: the selected option's trimmed text, read
  *  from the light-DOM listbox. Undefined when nothing is selected or the
  *  option is not present (the decorator then shows the placeholder). */
 export function selectedLabel(content: HTMLElement | null, value: string): string | undefined {
   if (!content || value === '') return undefined;
   for (const item of content.querySelectorAll<HTMLElement>('[data-part="item"]')) {
-    if (item.dataset['value'] === value) return (item.textContent ?? '').trim();
+    if (item.dataset['value'] === value) return itemLabel(item);
   }
   return undefined;
 }
@@ -313,8 +353,12 @@ export function bindSelect(root: HTMLElement): () => void {
     const projection = select.aria(state, config, ids);
     for (const part of Object.keys(projection) as SelectPart[]) {
       const attrs = projection[part];
-      const el = getPart(part);
-      if (el && attrs) applyProjection(el, attrs);
+      if (!attrs) continue;
+      const iconPart = part === 'startIcon' || part === 'endIcon';
+      const els = iconPart
+        ? Array.from(root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`))
+        : [getPart(part)];
+      for (const el of els) if (el) applyProjection(el, attrs);
     }
     // Per-instance option projection.
     for (const el of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {

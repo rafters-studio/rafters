@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createBehavior, type PartIds } from '../../../src/lib/contract';
 import {
+  bindCombobox,
   combobox,
   comboboxItemAria,
   isOpen,
@@ -19,6 +20,7 @@ const ids: PartIds<ComboboxPart> = {
   content: 'c',
   item: '',
   empty: 'e',
+  startIcon: '',
 };
 
 const closed: ComboboxConfig = {};
@@ -36,6 +38,7 @@ describe('combobox parts', () => {
       'input',
       'item',
       'root',
+      'startIcon',
       'trigger',
     ]);
     expect(combobox.parts.item.many).toBe(true);
@@ -279,5 +282,46 @@ describe('combobox keymap (all keys ride the input)', () => {
   it('claims no keys off the input and ignores plain typing keys', () => {
     expect(combobox.keymap({ key: 'ArrowDown' }, openState, 'content', closed)).toBeNull();
     expect(combobox.keymap({ key: 'a' }, openState, 'input', closed)).toBeNull();
+  });
+});
+
+describe('combobox icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    expect(combobox.parts.startIcon).toEqual({ optional: true, many: true });
+    expect(ariaAt(closed).startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(ariaAt(openSeed).startIcon).toEqual({ 'aria-hidden': 'true' });
+  });
+});
+
+describe('combobox bind seeds the input from the value [wc]', () => {
+  const markup = (value: string) => `
+    <rafters-combobox data-part="root" value="${value}">
+      <input data-part="input" />
+      <div data-part="content" id="c" hidden>
+        <div role="option" data-part="item" data-value="react">React</div>
+        <div role="option" data-part="item" data-value="vue">Vue</div>
+      </div>
+    </rafters-combobox>`;
+
+  const bind = (value: string): HTMLInputElement => {
+    document.body.innerHTML = markup(value);
+    const root = document.body.querySelector<HTMLElement>('rafters-combobox');
+    if (!root) throw new Error('no root');
+    bindCombobox(root);
+    const input = root.querySelector<HTMLInputElement>('[data-part="input"]');
+    if (!input) throw new Error('no input');
+    return input;
+  };
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('a value matching an item leaves the input reading its label', () => {
+    expect(bind('react').value).toBe('React');
+  });
+
+  it('a value matching no item leaves the input empty', () => {
+    expect(bind('ember').value).toBe('');
   });
 });

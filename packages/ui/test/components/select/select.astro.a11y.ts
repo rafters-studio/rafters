@@ -14,12 +14,14 @@ const options = [
 interface Scene {
   props?: Record<string, unknown>;
   open?: boolean;
+  slots?: Record<string, string>;
 }
 
-async function mount({ props = {}, open = false }: Scene): Promise<Document> {
+async function mount({ props = {}, open = false, slots = {} }: Scene): Promise<Document> {
   const container = await AstroContainer.create();
   const html = await container.renderToString(Select, {
     props: { id: 's', options, ...props },
+    slots,
   });
   const window = new Window();
   const document = window.document as unknown as Document;
@@ -53,6 +55,18 @@ const scenes: ReadonlyArray<[string, Scene]> = [
   ],
   ['open with a custom placeholder', { props: { placeholder: 'Choose one' }, open: true }],
   ['open and form associated', { props: { name: 'fruit', value: 'apple' }, open: true }],
+  [
+    'open with trigger and item icons, svg titles do not leak into the name',
+    {
+      open: true,
+      slots: {
+        'start-icon': '<svg viewBox="0 0 24 24"><title>Fruit</title></svg>',
+        'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+        'item-start-icon-apple': '<svg viewBox="0 0 24 24"><title>Apple icon</title></svg>',
+        'item-end-icon-apple': '<svg viewBox="0 0 24 24"><title>Apple badge</title></svg>',
+      },
+    },
+  ],
 ];
 
 for (const [name, scene] of scenes) {

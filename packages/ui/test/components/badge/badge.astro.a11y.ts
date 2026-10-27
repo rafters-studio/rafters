@@ -36,3 +36,23 @@ for (const size of BADGE_SIZES) {
     );
   });
 }
+
+test('badge.astro with start and end icons, svg title does not leak into the name', async ({
+  task,
+}) => {
+  const container = await AstroContainer.create();
+  const html = await container.renderToString(Badge, {
+    slots: {
+      default: 'Sent',
+      'start-icon': '<svg viewBox="0 0 24 24"><title>Mail</title></svg>',
+      'end-icon': '<svg viewBox="0 0 24 24"><title>Arrow</title></svg>',
+    },
+  });
+  const window = new Window();
+  window.document.body.innerHTML = `<main>${html}</main>`;
+  const document = window.document as unknown as Document;
+  const results = await runAxe(document.body);
+  task.meta.axe = results;
+  expect(results.violations).toEqual([]);
+  expect(document.querySelectorAll('[data-icon][aria-hidden="true"]').length).toBe(2);
+});

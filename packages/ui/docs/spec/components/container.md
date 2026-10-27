@@ -9,7 +9,7 @@ carries everything, and the performance is pure decoration application
 Files (`src/components/container/`):
 
 ```
-container.classes.ts    container.behavior.ts    container.tsx
+container.classes.ts    container.behavior.ts    container.tsx    container.astro
 ```
 
 ## Purpose
@@ -47,14 +47,13 @@ internal spacing, and layout flow, so agents never hand-roll wrapper divs.
 | Oracle feature | Disposition |
 | --- | --- |
 | as/size/padding/gap/query/queryName/colSpan/rowSpan/position/depth | contract |
-| `fill` signature (#1637, build-time safelist gate) | contract |
-| `background` legacy enum | dropped — superseded by fill (pending ratification) |
+| `fill` (exactly one `bg-fill-*` token) and `surface` (a surface name) | contract -- Container has no base surface, so with neither it paints no background; a fill beats a surface; any other fill value is dropped with a console warning, an unknown surface name is ignored (`container.classes.ts:179`) |
+| `background` legacy enum | dropped -- `fill` and `surface` are the only surface props |
 | article typography flow + max-w-prose | `max-w-prose` is the article's default measure, applied only when `size` is unset; a set `size` alone governs width (#2437). Typography flow ported VERBATIM — raw sizes, not the typography role utilities; repointing is a designer pass, flagged, not done |
 | editable / showDropZone / DropZonePlaceholder / onBackgroundChange | stripped — block-editor concern, belongs in a studio-layer wrapper (pending ratification); onBackgroundChange was a void'd dead callback |
 | position sticky/fixed bake top-anchored offsets | ported as-is; sticky-bottom impossible through the prop — flagged |
 
 ## Open
 
-- WC + Astro performances (same debt as the other articles).
 - Static-score conformance is thinner than interactive articles: element
   contract + classes assertions + axe. No interaction tier exists to run.

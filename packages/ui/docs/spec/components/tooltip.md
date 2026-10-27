@@ -7,11 +7,11 @@ effect vocabulary (Spec 03) deliberately does not carry.
 Files (`src/components/tooltip/`):
 
 ```
-tooltip.classes.ts   tooltip.behavior.ts   tooltip.tsx   tooltip.element.ts   tooltip.astro
+tooltip.classes.ts   tooltip.behavior.ts   tooltip.tsx   tooltip.astro
 ```
 
 Tests mirror into `test/components/tooltip/`: behavior (pure), classes parity,
-and conformance across React + WC + Astro through the shared harness.
+and conformance across React + Astro through the shared harness.
 
 ## Composition
 
@@ -71,7 +71,7 @@ consumer.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | trigger | always | `aria-describedby` (only while open, only to a real content id), `data-state`; `aria-expanded`/`aria-controls` suppressed (a tip is not a disclosure widget) |
-| content | while open (present-but-hidden in WC/Astro; mounted-on-open in React) | `role="tooltip"`, `data-state`, `data-side`/`data-align` stamped by the positioner |
+| content | while open (present-but-hidden in Astro; mounted-on-open in React) | `role="tooltip"`, `data-state`, `data-side`/`data-align` stamped by the positioner |
 
 Empty-id convention: when the content id is empty (`''`), the trigger projects
 no `aria-describedby`. A dangling reference is an axe violation; absence is
@@ -89,17 +89,17 @@ honest. The tip itself is never focusable and never in the tab order.
 | Oracle feature | Disposition |
 | --- | --- |
 | controlled/uncontrolled + onOpenChange | contract |
-| TooltipProvider delay defaults (delayDuration/skipDelayDuration/disableHoverableContent) | contract (React affordance; WC/Astro read the same values off attributes) |
+| TooltipProvider delay defaults (delayDuration/skipDelayDuration/disableHoverableContent) | contract (React affordance; Astro reads the same values off attributes) |
 | hover/focus open, leave/blur close, hover-open delay + skip-delay coordination | contract — moved from bespoke `setTimeout` refs into the shared `hover-delay` primitive |
 | hoverable content holds the tip open; `disableHoverableContent` opts out | contract |
 | `aria-describedby` links trigger to content while open | contract |
 | `role="tooltip"` on content | contract |
 | collision-detected positioning (side/align/sideOffset, reposition on scroll/resize) | contract — composed from `collision-detector`, shared via `positionTooltipContent` |
-| portal to `document.body` (React) | contract; WC/Astro keep the tip in light DOM, positioned `fixed`, so the primitive can read it |
+| portal to `document.body` (React) | contract; Astro keeps the tip in light DOM, positioned `fixed`, so the primitive can read it |
 | TooltipProvider / Trigger / Portal / Content surface + `Tooltip.*` namespace | contract (shadcn drop-in base + the rafters Radix-full surface). `TooltipPortal` is a thin explicit-portal wrapper mirroring `DialogPortal`; nested content skips its automatic portal |
 | asChild on Trigger | framework affordance (React) |
 | Escape dismiss | contract — the oracle React lacked it; added to satisfy the WAI-ARIA tooltip pattern the matrix accessibility note already promised |
-| CSS-only Astro (`:hover`/`:focus-within` opacity) | superseded — the Astro performance now drives the same `bindTooltip` client as the WC, so behavior cannot drift between frameworks |
+| CSS-only Astro (`:hover`/`:focus-within` opacity) | superseded — the Astro performance now drives `bindTooltip`, the client the score ships, so behavior cannot drift between frameworks |
 | always-set `aria-describedby` even while closed | defect-do-not-port — a closed tip must not describe; projected only while open |
 
 ## Deltas from the oracle

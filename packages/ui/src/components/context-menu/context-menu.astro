@@ -52,7 +52,7 @@ import type { PartIds } from '../../lib/contract';
 /** A submenu item: a leaf, or a further nested submenu. */
 type SubEntry =
   | { type?: 'item'; label: string; disabled?: boolean }
-  | { type: 'sub'; label: string; subItems: { label: string; disabled?: boolean }[] };
+  | { type: 'sub'; label: string; subItems: SubEntry[] };
 
 interface MenuEntry {
   type?: 'item' | 'separator' | 'label' | 'sub';
@@ -69,11 +69,15 @@ interface Props {
   items: MenuEntry[];
   loop?: boolean;
   avoidCollisions?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
+const { fill, surface, id, triggerLabel, items, loop = true, avoidCollisions = true } = Astro.props;
 
-const config: ContextMenuConfig = { loop, avoidCollisions };
+const config: ContextMenuConfig = { loop, avoidCollisions, fill, surface };
 const state = contextMenu.initialState(config);
 const classes = contextMenuClasses(config, state);
 
@@ -82,6 +86,32 @@ for (const part of Object.keys(contextMenu.parts) as ContextMenuPart[]) {
   ids[part] = `${id}-${part}`;
 }
 const aria = contextMenu.aria(state, config, ids);
+
+/**
+ * The icon slots of a submenu, relative to the sub-trigger's own slot
+ * `start-icon-<index>`: '' is the trigger, '-<n>' its n-th item, and so on
+ * down. Each is forwarded into the sub template as the `icons` prop.
+ */
+function subIconSuffixes(subItems: SubEntry[], prefix = ''): string[] {
+  return subItems.flatMap((entry, n) => [
+    `${prefix}-${n}`,
+    ...(entry.type === 'sub' ? subIconSuffixes(entry.subItems, `${prefix}-${n}`) : []),
+  ]);
+}
+
+// Icon markup for every icon the sub at `index` carries, rendered once here and
+// handed down as a prop keyed by suffix, because a sub template only sees its
+// own slots.
+const subIcons = new Map<number, Record<string, string>>();
+for (const [index, entry] of items.entries()) {
+  if (entry.type !== 'sub') continue;
+  const found: Record<string, string> = {};
+  for (const suffix of ['', ...subIconSuffixes(entry.subItems ?? [])]) {
+    const slot = `start-icon-${index}${suffix}`;
+    if (Astro.slots.has(slot)) found[suffix] = await Astro.slots.render(slot);
+  }
+  subIcons.set(index, found);
+}
 
 // The trigger's attributes are assembled here so the element carries no literal
 // class attribute in its tag (the inline wrapper is styling-neutral chrome).
@@ -111,7 +141,7 @@ const triggerProps = {
     {...aria.content}
   >
     {
-      items.map((entry, index) => {
+      items.map(async (entry, index) => {
         if (entry.type === 'separator') {
           return <hr class={classes.separator} />;
         }
@@ -124,6 +154,7 @@ const triggerProps = {
               id={`${id}-sub-${index}`}
               label={entry.label ?? ''}
               subItems={entry.subItems ?? []}
+              icons={subIcons.get(index) ?? {}}
             />
           );
         }
@@ -135,7 +166,19 @@ const triggerProps = {
             data-disabled={entry.disabled ? '' : undefined}
             class={classes.item}
           >
-            {entry.label}
+            {Astro.slots.has(`start-icon-${index}`) && (
+              <span
+                data-part="startIcon"
+                data-icon="inline-start"
+                class={classes.startIcon}
+                {...aria.startIcon}
+              >
+                <Fragment set:html={await Astro.slots.render(`start-icon-${index}`)} />
+              </span>
+            )}
+            <span data-part="label" class={classes.itemLabel}>
+              {entry.label}
+            </span>
             {entry.shortcut ? <kbd class={classes.shortcut}>{entry.shortcut}</kbd> : null}
           </div>
         );

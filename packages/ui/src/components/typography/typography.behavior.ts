@@ -68,6 +68,8 @@ export interface TypographyTokenProps {
   family?: string | undefined;
   align?: string | undefined;
   transform?: string | undefined;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's colour and surface. */
+  fill?: string | undefined;
 }
 
 export interface TypographyConfig extends TypographyTokenProps {

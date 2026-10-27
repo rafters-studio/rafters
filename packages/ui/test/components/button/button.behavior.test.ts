@@ -3,7 +3,13 @@ import { createBehavior } from '../../../src/lib/contract';
 import { button, type ButtonConfig } from '../../../src/components/button/button.behavior';
 
 const base: ButtonConfig = { variant: 'default', size: 'default' };
-const ids = { root: 'r', label: 'r-label', spinner: 'r-spinner' };
+const ids = {
+  root: 'r',
+  label: 'r-label',
+  spinner: 'r-spinner',
+  startIcon: 'r-start',
+  endIcon: 'r-end',
+};
 
 function ariaFor(config: Partial<ButtonConfig>) {
   const full = { ...base, ...config };
@@ -25,6 +31,14 @@ describe('button aria projection', () => {
     expect(aria.root?.['aria-busy']).toBe('true');
     expect(aria.root?.['data-state']).toBe('loading');
     expect(aria.spinner).toEqual({ 'aria-hidden': 'true' });
+  });
+
+  it('declares startIcon and endIcon as optional parts that project aria-hidden', () => {
+    expect(button.parts.startIcon).toEqual({ optional: true });
+    expect(button.parts.endIcon).toEqual({ optional: true });
+    const aria = ariaFor({});
+    expect(aria.startIcon).toEqual({ 'aria-hidden': 'true' });
+    expect(aria.endIcon).toEqual({ 'aria-hidden': 'true' });
   });
 
   it('soft-disabled: aria-disabled without native disabled', () => {

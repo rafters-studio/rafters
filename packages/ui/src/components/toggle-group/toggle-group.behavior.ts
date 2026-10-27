@@ -5,6 +5,7 @@ import {
   type BehaviorSpec,
   type PartIds,
 } from '../../lib/contract';
+import { toggleGroupClasses } from './toggle-group.classes';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createRovingFocus } from '../../primitives/roving-focus';
 
@@ -73,7 +74,7 @@ export type ToggleGroupActions = {
   toggle: string;
 };
 
-export type ToggleGroupPart = 'root' | 'item';
+export type ToggleGroupPart = 'root' | 'item' | 'startIcon' | 'endIcon';
 
 /** Normalize a controlled/default value to an array of selected strings. */
 function toArray(value: string | string[] | undefined): string[] {
@@ -114,6 +115,11 @@ const toggleGroupSlice: Slice<
   parts: {
     root: { role: 'group' },
     item: { many: true },
+    // Decorative icons beside an item's label: one pair per item, present only
+    // when the author gives an icon. The wrapper carries the hiding because a
+    // child the author writes cannot be guaranteed aria-hidden.
+    startIcon: { many: true, optional: true },
+    endIcon: { many: true, optional: true },
   },
   initialState: (config) => {
     const multiple = isMultiple(config);
@@ -149,6 +155,8 @@ const toggleGroupSlice: Slice<
       'data-orientation': orientationOf(config),
       'data-disabled': config.disabled ? 'true' : undefined,
     },
+    startIcon: { 'aria-hidden': 'true' },
+    endIcon: { 'aria-hidden': 'true' },
   }),
   // Space/Enter on an item map to toggle. Declared for the pure keymap contract;
   // the DOM binds rely on the native <button> converting Space/Enter to a click
@@ -268,4 +276,33 @@ export function bindToggleGroup(root: HTMLElement): () => void {
     stopRoving();
     root.removeEventListener('click', onClick);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of an item in the
+ * decorative wrapper the behavior projects aria-hidden onto, before the bind
+ * reads the parts. The light DOM has no slot assignment, so the slot attribute
+ * is only the author's marker; the icon is a direct child of its item button.
+ */
+export function wrapToggleGroupIcons(root: HTMLElement): void {
+  const classes = toggleGroupClasses({}, toggleGroup.initialState({}));
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
+    for (const kind of kinds) {
+      const child = item.querySelector(`:scope > [slot="${kind.slot}"]`);
+      if (!child) continue;
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = kind.part;
+      wrapper.dataset['icon'] = kind.icon;
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = kind.className;
+      child.removeAttribute('slot');
+      wrapper.appendChild(child);
+      if (kind.slot === 'start-icon') item.insertBefore(wrapper, item.firstChild);
+      else item.appendChild(wrapper);
+    }
+  }
 }

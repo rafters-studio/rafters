@@ -2,17 +2,17 @@
 
 Status: DRAFT. Static score with a CONFIG-DRIVEN projection (imitates the
 Card/Container no-bind shape, but the projection is not empty). No state, no
-actions, no keymap, no effects, no motion state. Performed across all three
-frameworks (React, the `<rafters-item>` web component, and Astro).
+actions, no keymap, no effects, no motion state. Performed across both
+frameworks (React and Astro).
 
 Files (`src/components/item/`):
 
 ```
-item.behavior.ts   item.classes.ts   item.tsx   item.element.ts   item.astro
+item.behavior.ts   item.classes.ts   item.tsx   item.astro
 ```
 
 Tests mirror into `test/components/item/` (behavior, classes, React
-conformance, WC conformance, Astro conformance).
+conformance, Astro conformance).
 
 ## Purpose
 
@@ -37,10 +37,8 @@ remember and no effect to run. So Item still needs **nothing to bind**:
   **no** `useMemory`, no subscription.
 - `item.astro` ships **no** `<script>` -- the projection is resolved at SSR and
   spread onto the row.
-- `item.element.ts` applies the projection once per observed-attribute change
-  in `render()` -- **no** binding, no event wiring.
 
-The score is a total function from config to attributes, so the three
+The score is a total function from config to attributes, so the two
 performances cannot drift; the conformance harness asserts the same projection
 against real DOM in each.
 
@@ -63,7 +61,7 @@ card/alert disposition); under the flex row/column they lay out identically.
 ### Framework slot model
 
 React composes freely (`icon` and `description` are props, children are the
-label). The web component and Astro cannot nest arbitrary children into regions
+label). Astro cannot nest arbitrary children into regions
 without a runtime, so they expose fixed named slots: `icon`, `description`, and
 the default slot for the label.
 
@@ -121,7 +119,7 @@ control's keyboard contract.
 | `onClick`/`onKeyDown` guarded by `disabled` in the React row | dropped -- the row is not a control; consumer/parent handlers ride `...props`. `aria-disabled:pointer-events-none` already blocks pointer interaction on a disabled row |
 | imperative `stateStyles` branch (JS picks one of disabled/selected/default) | ported as VARIANT classes -- the projection sets `aria-*`, the `aria-*:` variants style; no JS branch |
 | inner wrappers as `<span>` | ported as `<div>` -- the new tree has no Typography component (card/alert disposition); flex layout is identical |
-| React `tabIndex={undefined}` when disabled vs WC `tabIndex=-1` | reconciled to a single projected `tabindex="-1"` when disabled -- one score, no per-framework drift |
+| React `tabIndex={undefined}` when disabled | reconciled to a single projected `tabindex="-1"` when disabled -- one score, no per-framework drift |
 
 ## Deltas from the oracle
 
@@ -130,7 +128,7 @@ control's keyboard contract.
 2. State visuals move from an imperative JS branch to `aria-*` variant classes
    driven by the projection -- one source of truth, styled declaratively.
 3. The disabled tab-order is reconciled to a single projected `tabindex="-1"`,
-   ending the oracle's React-vs-WC discrepancy.
+   ending the oracle's per-framework discrepancy.
 4. Inner text wrappers are `div`s (no Typography component yet).
 
 ## shadcn drop-in parity

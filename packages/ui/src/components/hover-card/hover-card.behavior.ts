@@ -18,6 +18,10 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 import type { Align, Side } from '../../primitives/types';
 
 export interface HoverCardConfig extends DisclosableConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** When true, moving the pointer onto the content does NOT hold it open.
    *  Default false (content is hoverable, so the pointer can travel onto it).
    *  Reflected as `data-disable-hoverable-content` and read by the CSS reveal

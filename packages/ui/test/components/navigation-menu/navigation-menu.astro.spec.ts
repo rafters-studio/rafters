@@ -40,9 +40,12 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function render(props: Record<string, unknown> = {}): Promise<string> {
+async function render(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): Promise<string> {
   const container = await AstroContainer.create();
-  return container.renderToString(NavigationMenu, { props: { id: 'nav', items, ...props } });
+  return container.renderToString(NavigationMenu, { props: { id: 'nav', items, ...props }, slots });
 }
 
 async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
@@ -193,5 +196,34 @@ describe('navigation-menu [astro]', () => {
     await user.click(trigger('products'));
     expect(state('products')).toBe('open');
     expect(trigger('products').getAttribute('aria-expanded')).toBe('true');
+  });
+});
+
+describe('navigation-menu.astro icons', () => {
+  const slots = {
+    'products:start-icon': '<svg><title>Box</title></svg>',
+    'products:end-icon': '<svg></svg>',
+    'products:1:start-icon': '<svg></svg>',
+  };
+
+  it('the server markup already hides each wrapper, before any script runs', async () => {
+    document.body.innerHTML = await render({}, slots); // no bind: the SSR render alone
+    const wrappers = [...document.querySelectorAll('[data-icon]')];
+    expect(wrappers.length).toBe(3);
+    for (const wrapper of wrappers) expect(wrapper.getAttribute('aria-hidden')).toBe('true');
+    const trigger = document.querySelector('[data-part="trigger"][data-value="products"]')!;
+    expect([...trigger.children].map((el) => el.getAttribute('data-icon'))).toEqual([
+      'inline-start',
+      'inline-end',
+    ]);
+    const links = [...document.querySelectorAll('[data-part="content"][data-value="products"] a')];
+    expect(links[0]?.querySelector('[data-part]')).toBeNull();
+    expect(links[1]?.querySelector('[data-part="startIcon"]')).not.toBeNull();
+  });
+
+  it('no wrapper when no icon slot is given', async () => {
+    const root = await mount();
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
   });
 });

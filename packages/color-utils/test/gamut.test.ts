@@ -10,8 +10,89 @@ import {
   getGamutTier,
   isInP3Gamut,
   isInSRGBGamut,
+  mapScaleToGamut,
+  toGamutCeiling,
   toNearestGamut,
 } from '../src/gamut.js';
+import { generateOKLCHScale } from '../src/harmony.js';
+import {
+  ALLOW_P3,
+  mapScaleToGamut as mapFromIndex,
+  toGamutCeiling as ceilingFromIndex,
+} from '../src/index.js';
+import { SCALE_POSITIONS } from '../src/scale-positions.js';
+
+describe('gamut ceiling (#2672)', () => {
+  const p3Seeds: OKLCH[] = [
+    { l: 0.55, c: 0.12, h: 210, alpha: 1 },
+    { l: 0.55, c: 0.12, h: 90, alpha: 1 },
+  ];
+
+  it('exports ALLOW_P3 as false, and toGamutCeiling and mapScaleToGamut', () => {
+    expect(ALLOW_P3).toBe(false);
+    expect(mapFromIndex).toBe(mapScaleToGamut);
+    expect(ceilingFromIndex).toBe(toGamutCeiling);
+  });
+
+  it('toGamutCeiling leaves a colour inside the ceiling unchanged and maps one outside into it', () => {
+    const inside: OKLCH = { l: 0.5, c: 0.05, h: 240, alpha: 1 };
+    expect(toGamutCeiling(inside, 'srgb')).toEqual(inside);
+    const out: OKLCH = { l: 0.7, c: 0.35, h: 150, alpha: 1 };
+    expect(getGamutTier(out)).toBe('out');
+    expect(isInSRGBGamut(toGamutCeiling(out, 'srgb'))).toBe(true);
+    expect(isInP3Gamut(toGamutCeiling(out, 'p3'))).toBe(true);
+  });
+
+  it("mapScaleToGamut(scale, 'p3') leaves no P3 seed's step out, and steps already in P3 unchanged", () => {
+    for (const seed of p3Seeds) {
+      expect(getGamutTier(seed)).toBe('p3');
+      const scale = SCALE_POSITIONS.map((pos) => generateOKLCHScale(seed)[pos]).filter(
+        (step): step is OKLCH => step !== undefined,
+      );
+      expect(scale.some((step) => getGamutTier(step) === 'out')).toBe(true);
+      const mapped = mapScaleToGamut(scale, 'p3');
+      for (const [i, step] of mapped.entries()) {
+        expect(getGamutTier(step)).not.toBe('out');
+        const before = scale[i];
+        if (before && isInP3Gamut(before)) expect(step).toEqual(before);
+        if (i > 0) expect(step.l).toBeLessThan((mapped[i - 1] as OKLCH).l);
+      }
+    }
+  });
+
+  it('toGamutCeiling keeps lightness and hue and reduces chroma to the edge (#2873)', () => {
+    const out: OKLCH = { l: 0.7, c: 0.35, h: 150, alpha: 1 };
+    for (const ceiling of ['srgb', 'p3'] as const) {
+      const mapped = toGamutCeiling(out, ceiling);
+      expect(mapped.l).toBe(out.l);
+      expect(mapped.h).toBe(out.h);
+      expect(mapped.alpha).toBe(out.alpha);
+      expect(mapped.c).toBeLessThan(out.c);
+      expect(ceiling === 'srgb' ? isInSRGBGamut(mapped) : isInP3Gamut(mapped)).toBe(true);
+      // The largest chroma inside: a little more is outside.
+      const more = { ...mapped, c: mapped.c + 0.002 };
+      expect(ceiling === 'srgb' ? isInSRGBGamut(more) : isInP3Gamut(more)).toBe(false);
+    }
+  });
+
+  it('mapScaleToGamut keeps every step lightness and hue, reducing chroma only (#2873)', () => {
+    const scale: OKLCH[] = [
+      { l: 0.951, c: 0.4, h: 150, alpha: 1 },
+      { l: 0.95, c: 0.08, h: 150, alpha: 1 },
+      { l: 0.3, c: 0.2, h: 234, alpha: 1 },
+      { l: 0.15, c: 0.12, h: 51, alpha: 1 },
+    ];
+    const mapped = mapScaleToGamut(scale, 'srgb');
+    for (const [i, step] of mapped.entries()) {
+      const before = scale[i] as OKLCH;
+      expect(isInSRGBGamut(step)).toBe(true);
+      expect(step.l).toBe(before.l);
+      expect(step.h).toBe(before.h);
+      expect(step.c).toBeLessThanOrEqual(before.c);
+      if (i > 0) expect(step.l).toBeLessThan((mapped[i - 1] as OKLCH).l);
+    }
+  });
+});
 
 // Tolerance constant used in boundary computation
 const TOLERANCE = 0.001;
@@ -86,11 +167,11 @@ describe('toNearestGamut', () => {
     expect(isInSRGBGamut(result.color)).toBe(true);
   });
 
-  it('preserves hue approximately when snapping', () => {
+  it('keeps lightness and hue exactly and takes the sRGB ceiling chroma (#2878)', () => {
     const result = toNearestGamut(p3Green);
-    // Gamut mapping may shift hue slightly; allow 10 degrees tolerance
-    const hueDiff = Math.abs(result.color.h - p3Green.h);
-    expect(hueDiff).toBeLessThan(10);
+    expect(result.color.l).toBe(p3Green.l);
+    expect(result.color.h).toBe(p3Green.h);
+    expect(result.color).toEqual(toGamutCeiling(p3Green, 'srgb'));
   });
 
   it('reduces chroma minimally', () => {

@@ -9,10 +9,10 @@ Files (`src/components/input/`):
 
 ```
 input.classes.ts    input.behavior.ts    input.tsx
-input.element.ts     input.astro
+input.astro
 ```
 
-Tests mirror into `test/components/input/`. React and WC are
+Tests mirror into `test/components/input/`. React is
 conformance-verified against the shared harness; Astro ships (`input.astro`)
 but has no test harness yet (mirrors dialog/navigation-menu).
 
@@ -57,10 +57,12 @@ for an edit the field would not have accepted.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | input | always | `aria-invalid` (always `true`/`false`), `aria-required` (when required), `aria-describedby` (only when invalid AND the error id is real), `data-state` (`invalid`/`default`) |
+| startIcon | only when an icon is given | `aria-hidden="true"` |
+| endIcon | only when an icon is given | `aria-hidden="true"` |
 | error | consumer renders | referenced by `aria-describedby`; carries no aria of its own (like dialog's title/description -- an id target only) |
 
 The `error` id is sourced deterministically, NOT from a mounted child: React
-takes it from the `errorId` prop, the WC/Astro bind reads
+takes it from the `errorId` prop, the Astro bind reads
 `getPart('error')?.id`. Because the id never comes from a rendered child,
 React needs no presence tracking (no `useState`/`setPart`) -- the "track
 presence for unguarded cross-ref parts" note (dialog) does not apply here.
@@ -70,7 +72,36 @@ Empty-id convention (ratified 2026-07-08): an absent error resolves to `''`,
 and the projection drops `aria-describedby` rather than dangle it (an axe
 violation).
 
-## The three gotchas
+## Icons beside the field
+
+Two optional props place decorative icons around the field, in reading order (the same two as Button): `startIcon` (search, currency) and `endIcon` (clear, unit).
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+
+```html
+<div data-part="row" class="grid grid-flow-col grid-cols-affix-both items-center gap-2 ...">
+  <div data-part="addonStart" data-position="start">
+    <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  </div>
+  <input data-part="input" ... />
+  <div data-part="addonEnd" data-position="end">
+    <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+  </div>
+</div>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The icons ride InputGroup's `addonStart` / `addonEnd` parts (`input-group.md`), with `data-position` from the same projection. There is no second affix implementation; Input only draws no divider, because an icon is not a labelled affix.
+- With no icon the field renders bare, as before. With an icon it sits in a row that draws the border, the focus ring, the invalid border and the dim off the field inside it (`focus-within`, `has-[[aria-invalid=true]]`, `has-disabled`), and the field draws none.
+- The row is a grid (`grid grid-flow-col items-center gap-2`). The icons and the field are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class. The track list is a named utility, one per combination (`grid-cols-affix-start`, `grid-cols-affix-end`, `grid-cols-affix-both`), because `classy` skips arbitrary track lists and an absent icon must leave no empty track and no stray gap.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- An icon that carries meaning on its own (an icon-only control, a status with no text) needs an accessible name, not `aria-hidden`; it is not a `startIcon`.
+
+## The two gotchas
 
 1. **Controlled callback compares effective-before vs INTRINSIC-after.**
    `request` reads `effectiveValue(before)` then, after dispatch, the raw
@@ -89,9 +120,6 @@ violation).
    what makes this gotcha load-bearing here. (React writes the resolved
    strings directly as JSX attributes, so it is unaffected -- the coercion
    only exists on the DOM-native path.)
-3. **WC bind deferred one microtask.** `connectedCallback` can fire before the
-   light-DOM `<input>` is parsed, so `input.element.ts` binds in
-   `queueMicrotask`.
 
 ## Keyboard, effects, and value-sync
 
@@ -128,8 +156,8 @@ controller to port. The primitives the matrix once planned are dispositioned:
 1. Fill is `bg-transparent`, never `bg-background`: the control inherits the
    surface it sits on (the fill-never-background rule).
 2. Validity styling keys off the projected `aria-invalid`
-   (`aria-invalid:border-destructive`), so light-DOM markup, the WC, and React
-   all pick up the destructive border with no extra class.
+   (`aria-invalid:border-destructive`), so the Astro markup and React
+   both pick up the destructive border with no extra class.
 
 ## WCAG 2.1 AA obligations
 

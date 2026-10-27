@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
 
 /**
@@ -9,8 +10,8 @@ import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
  *
  * MOTION IS DECLARED, and every declaration below names a motion.jsonl row.
  * This file used to carry three vocabularies at once -- the oracle's literals
- * (`duration-200`), a rafters generic with no curve (`duration-fast` alone),
- * stock Tailwind curves, `animate-pulse`, and `motion-reduce:` escapes on both
+ * (a literal 200ms duration), a rafters generic with no curve (`duration-fast` alone),
+ * stock Tailwind curves, the stock pulse animation, and `motion-reduce:` escapes on both
  * mechanisms. The six rows sidebar is assigned, and where each lands:
  *
  *   item / active change  color, fast, standard   -> the four button classes
@@ -25,7 +26,7 @@ import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
  *
  * NO `motion-reduce:` anywhere, on either mechanism. The reduced-motion law is
  * written once on the duration and delay leaves; a component-level escape fights
- * it, and `motion-reduce:animate-none` fights it destructively -- `animation:
+ * it, and a reduced-motion animation reset fights it destructively -- `animation:
  * none` resets the whole shorthand and discards the zeroed duration with it.
  */
 export interface SidebarClassSet {
@@ -51,10 +52,21 @@ export interface SidebarClassSet {
   menuSkeletonText: string;
   menuSub: string;
   menuSubItem: string;
+  menuButtonStartIcon: string;
+  menuButtonEndIcon: string;
+  menuButtonLabel: string;
   separator: string;
 }
 
-const providerClasses = 'group/sidebar-wrapper flex min-h-svh w-full';
+// Viewport-height by default: the full-page rail. `contained` on the provider
+// (it renders `data-contained="true"`) bounds the family to the provider's own
+// container instead -- the provider fills it, and the panel and the inset read
+// that attribute through the named `sidebar-wrapper` group. A percentage height
+// under an auto-height parent resolves to auto, so a contained sidebar in an
+// unsized box grows to its content rather than collapsing.
+const providerClasses =
+  'group/sidebar-wrapper flex min-h-svh w-full ' +
+  'data-[contained=true]:h-full data-[contained=true]:min-h-0';
 
 // The one panel. Mobile: a fixed overlay panel (a modal dialog while open; the
 // bind `hidden`s it when closed). Desktop (md:): a sticky rail whose width
@@ -75,7 +87,7 @@ const providerClasses = 'group/sidebar-wrapper flex min-h-svh w-full';
 // name and none is invented here.
 //
 // What IS consumed is the tier and the curve, on the property this rail actually
-// moves: it collapses its own `width` (w-64 -> w-12 for the icon rail, -> w-0
+// moves: it collapses its own `width` (16rem -> 3rem for the icon rail, -> 0
 // for offcanvas), which is what the rows' structural extent ("rail width")
 // describes and what the sibling content reflows against. No literal, no
 // physical side, no invented name. Reported on #2302.
@@ -83,19 +95,32 @@ const providerClasses = 'group/sidebar-wrapper flex min-h-svh w-full';
 // `md:`-scoped, because below that breakpoint the same element is the fixed
 // mobile overlay, whose presence Sheet owns (see mobilePanelClasses) -- a
 // width transition there would time a panel that is `hidden` when closed.
+/** The panel's base surface (background, foreground, border colour); a fill
+ *  replaces it on the desktop panel and the mobile overlay alike. */
+const panelSurfaceClasses = 'bg-surface-sidebar';
+
 const panelBaseClasses =
-  'flex flex-col bg-sidebar text-sidebar-foreground ' +
+  'flex flex-col ' +
   'fixed inset-y-0 z-depth-modal h-svh w-72 ' +
   'md:sticky md:top-0 md:z-depth-navigation md:h-svh md:w-64 ' +
+  // Contained (#2657): drop the viewport height and let the provider's row
+  // stretch the panel to its own height, less the floating/inset margin. One
+  // non-arbitrary rule for every variant; it outranks each `md:h-*` above.
+  'md:group-data-[contained=true]/sidebar-wrapper:h-auto ' +
   'md:transition-[width] md:duration-normal md:ease-enter ' +
   'md:data-[state=collapsed]:duration-moderate md:data-[state=collapsed]:ease-exit ' +
   'md:data-[state=collapsed]:data-[collapsible=icon]:w-12 ' +
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:w-0 ' +
   'md:data-[state=collapsed]:data-[collapsible=offcanvas]:overflow-hidden';
 
+// PHYSICAL ON PURPOSE. `side` names the screen edge the panel is anchored to
+// ("left" or "right"), like Sheet's side classes, so it does not mirror with the
+// page direction: a left sidebar is on the left of an rtl page too.
 const panelSideClasses: Record<SidebarSide, string> = {
-  left: 'left-0 border-r border-sidebar-border',
-  right: 'right-0 border-l border-sidebar-border',
+  // physical: the panel is pinned to the left edge
+  left: 'left-0 border-r',
+  // physical: the panel is pinned to the right edge
+  right: 'right-0 border-l',
 };
 
 const panelVariantClasses: Record<SidebarVariant, string> = {
@@ -105,11 +130,16 @@ const panelVariantClasses: Record<SidebarVariant, string> = {
 };
 
 /** The panel class: the axis-carrying base plus the anchored side and the
- *  surface variant. The single source of the panel class -- every performance
- *  calls this, so side and variant (decoration the score never touches) are the
- *  only arguments. */
-export function sidebarPanelClasses(side: SidebarSide, variant: SidebarVariant): string {
-  return `${panelBaseClasses} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
+ *  surface variant, its surface replaced by a winning fill. The single source of
+ *  the panel class -- every performance calls this, so side, variant and fill
+ *  (decoration the score never touches) are the only arguments. */
+export function sidebarPanelClasses(
+  side: SidebarSide,
+  variant: SidebarVariant,
+  fill?: string,
+  surface?: string,
+): string {
+  return `${panelBaseClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
 }
 
 const triggerClasses = 'inline-flex size-7 items-center justify-center';
@@ -121,8 +151,8 @@ const triggerClasses = 'inline-flex size-7 items-center justify-center';
 // normal, spring-smooth) and `.../ close` (moderate, exit) are consumed on THE
 // NODE THIS CLASS LANDS ON, by Sheet rather than by this string: sidebar.tsx
 // passes `classes.mobilePanel` as SheetContent's className, and sheet.classes.ts
-// already carries `data-[state=open]:animate-fade-in-normal-spring-smooth
-// data-[state=closed]:animate-fade-out-moderate-exit`. Those are the same two
+// already carries the open fade-in (normal, spring-smooth) and the closed
+// fade-out (moderate, exit). Those are the same two
 // (shape, tier, curve) triples the generator emits for sidebar's own cells --
 // `sidebar-overlay-mobile-open`/`-close` deduplicate onto the identical utility
 // names -- so the moment is animated exactly once, on the right element.
@@ -135,19 +165,27 @@ const triggerClasses = 'inline-flex size-7 items-center justify-center';
 // the cell's own `meaning` -- "the fade is emitted and the slide is not, because
 // the vocabulary has no side-agnostic slide shape". Four of sidebar's six rows
 // name a slide; none of the four can express it.
-const mobilePanelClasses = 'flex h-full w-full flex-col bg-sidebar text-sidebar-foreground';
+const mobilePanelClasses = 'flex h-full w-full flex-col';
 
 // The desktop drag rail: a hairline hit target on the collapsing edge. Hidden on
 // mobile (the overlay owns dismissal there). NO ROW for the hairline's own hover
 // -- the matrix's sidebar rows cover `item`, `root` and the mobile overlay, and
 // a drag rail is none of the three -- so the color swap on `hover:after:` is
 // instant. Reported on #2302.
+//
+// The hairline centers itself in the hit target with auto inline margins, so it
+// has no direction. The two `group-data-[side=...]` classes are PHYSICAL ON
+// PURPOSE: the rail sits on the screen edge the panel is anchored to (see
+// panelSideClasses), which does not mirror.
 const railClasses =
   'absolute inset-y-0 z-depth-navigation hidden w-4 -translate-x-1/2 cursor-ew-resize md:flex ' +
-  'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border ' +
+  'after:absolute after:inset-y-0 after:inset-x-0 after:mx-auto after:w-0.5 hover:after:bg-sidebar-border ' +
+  // physical: the rail hangs off the right edge of a left sidebar, and the reverse
   'group-data-[side=left]:-right-4 group-data-[side=right]:left-0';
 
-const insetClasses = 'relative flex min-h-svh w-full flex-1 flex-col bg-background';
+const insetClasses =
+  'relative flex min-h-svh w-full flex-1 flex-col bg-background ' +
+  'group-data-[contained=true]/sidebar-wrapper:min-h-0';
 
 const headerClasses = 'flex flex-col gap-2 p-2';
 const footerClasses = 'flex flex-col gap-2 p-2';
@@ -158,20 +196,20 @@ const contentClasses =
 
 const groupClasses = 'relative flex w-full min-w-0 flex-col p-2';
 
-// NO ROW for the label hiding as the rail collapses to icons (`opacity-0`,
-// `-mt-8`). The `root / collapse` row times the rail's width, not its children,
+// NO ROW for the label hiding as the rail collapses to icons (zero opacity,
+// negative top margin). The `root / collapse` row times the rail's width, not its children,
 // so the label snaps. Reported on #2302.
 const groupLabelClasses =
   'flex h-8 shrink-0 items-center rounded-md px-2 text-label-small ts-label-small text-sidebar-foreground/70 ' +
   'outline-none ring-sidebar-ring focus-visible:ring-2 ' +
   'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0';
 
-// `sidebar / item / hover` -- color, fast, standard. `transition-transform` was
+// `sidebar / item / hover` -- color, fast, standard. A transform transition was
 // the wrong property as well as an incomplete generic: nothing on this button
 // transforms; what changes on hover is `background` and `text`, exactly the
 // properties the row names.
 const groupActionClasses =
-  'absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
+  'absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 after:absolute after:-inset-2 md:after:hidden ' +
@@ -190,7 +228,12 @@ const menuItemClasses = 'group/menu-item relative';
 // transition times whichever fires. Reported on #2302 -- the active-change row
 // is marked `proposed` and unreviewed.
 const menuButtonBaseClasses =
-  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left ' +
+  'peer/menu-button inline-grid w-full grid-flow-col items-center gap-2 overflow-hidden rounded-md p-2 text-start ' +
+  // Padding tightens on the icon's own side only, in logical edges, so the start
+  // icon sits on the right of the label on a dir="rtl" page. The collapsed rail
+  // keeps its square, centered icon.
+  'has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 ' +
+  'group-data-[collapsible=icon]:has-data-[icon=inline-start]:ps-2 ' +
   'text-label-medium ts-label-medium outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground ' +
@@ -226,17 +269,17 @@ export function sidebarMenuButtonClasses(
     .join(' ');
 }
 
-// `sidebar / item / hover` -- color, fast, standard. Same `transition-transform`
+// `sidebar / item / hover` -- color, fast, standard. Same transform transition
 // mis-naming groupAction carried, corrected the same way.
 const menuActionClasses =
-  'absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
+  'absolute end-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden';
 
-// NO ROW for the show-on-hover action's reveal (`md:opacity-0` ->
-// `opacity-100`). None of the sidebar rows names that fade, so it is instant.
+// NO ROW for the show-on-hover action's reveal (zero opacity at md and up ->
+// full opacity). None of the sidebar rows names that fade, so it is instant.
 // Reported on #2302.
 const menuActionShowOnHoverClasses =
   'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 ' +
@@ -244,32 +287,32 @@ const menuActionShowOnHoverClasses =
   'md:opacity-0';
 
 const menuBadgeClasses =
-  'pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center ' +
+  'pointer-events-none absolute end-1 flex h-5 min-w-5 select-none items-center justify-center ' +
   'rounded-md px-1 text-label-small ts-label-small tabular-nums text-sidebar-foreground ' +
   'peer-hover/menu-button:text-sidebar-accent-foreground ' +
   'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground ' +
   'group-data-[collapsible=icon]:hidden';
 
 // NO SIDEBAR ROW for the loading placeholder. The matrix assigns the moment
-// once, as `skeleton / root / waiting` -- a loop taking `period-shimmer`, which
+// once, as `skeleton / root / waiting` -- a loop taking the shimmer period, which
 // the generator emits as the `animate-pulse-shimmer` utility. These two are a
 // sidebar-flavoured skeleton and borrow that cell rather than invent a period of
 // their own; reported on #2302 so the matrix can decide whether sidebar wants a
 // row.
 //
-// What is gone: stock Tailwind's `animate-pulse` (whose duration is a literal
-// nothing in this system can retune) and `motion-reduce:animate-none`. A loop is
+// What is gone: stock Tailwind's pulse animation (whose duration is a literal
+// nothing in this system can retune) and the reduced-motion animation reset. A loop is
 // exempt from the reduced-motion zero BY DESIGN -- work loops slow, they never
-// stop -- and `animate-none` would win destructively anyway, resetting the whole
+// stop -- and `animation: none` would win destructively anyway, resetting the whole
 // shorthand and discarding the leaf's zeroed duration with it.
 const menuSkeletonClasses = 'flex h-8 items-center gap-2 rounded-md px-2';
 const menuSkeletonIconClasses =
   'size-4 shrink-0 animate-pulse-shimmer rounded-md bg-sidebar-accent';
 const menuSkeletonTextClasses =
-  'h-4 max-w-[--skeleton-width] flex-1 animate-pulse-shimmer rounded-md bg-sidebar-accent';
+  'h-4 max-w-(--skeleton-width) flex-1 animate-pulse-shimmer rounded-md bg-sidebar-accent';
 
 const menuSubClasses =
-  'ml-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border py-0.5 pl-2.5 ' +
+  'ms-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-s border-sidebar-border py-0.5 ps-2.5 ' +
   'group-data-[collapsible=icon]:hidden';
 
 const menuSubItemClasses = 'relative';
@@ -277,7 +320,8 @@ const menuSubItemClasses = 'relative';
 // `sidebar / item / hover` and `sidebar / item / active change` again -- a
 // submenu entry is an item. Same one declaration for both rows.
 const menuSubButtonBaseClasses =
-  'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 ' +
+  'inline-grid h-7 w-full min-w-0 -translate-x-px grid-flow-col items-center gap-2 overflow-hidden rounded-md px-2 ' +
+  'has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 ' +
   'text-sidebar-foreground outline-none ring-sidebar-ring transition-colors duration-fast ' +
   'ease-standard hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ' +
   'focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground ' +
@@ -295,18 +339,26 @@ export function sidebarMenuSubButtonClasses(size: 'sm' | 'md' = 'md'): string {
   return `${menuSubButtonBaseClasses} ${menuSubButtonSizeClasses[size]}`;
 }
 
+// The wrappers only place and hide: the brand brings its icons, sizing included.
+// The label is visually hidden on the collapsed icon rail, so the start icon is
+// all that shows while the label stays the accessible name; the end icon hides.
+const menuButtonStartIconClasses = 'inline-grid place-items-center';
+const menuButtonEndIconClasses =
+  'inline-grid place-items-center group-data-[collapsible=icon]:hidden';
+const menuButtonLabelClasses = 'group-data-[collapsible=icon]:sr-only';
+
 const separatorClasses = 'mx-2 h-px w-auto bg-sidebar-border';
 
 /** The side/variant-independent class set. The panel class is NOT here (it
  *  depends on side + variant, produced by `sidebarPanelClasses`), and the
  *  variant-bearing button classes are their own functions. Everything below is
  *  invariant across side, variant, and state. */
-export function sidebarClasses(): SidebarClassSet {
+export function sidebarClasses(fill?: string, surface?: string): SidebarClassSet {
   return {
     provider: providerClasses,
     trigger: triggerClasses,
     rail: railClasses,
-    mobilePanel: mobilePanelClasses,
+    mobilePanel: `${mobilePanelClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))}`,
     inset: insetClasses,
     header: headerClasses,
     footer: footerClasses,
@@ -325,6 +377,9 @@ export function sidebarClasses(): SidebarClassSet {
     menuSkeletonText: menuSkeletonTextClasses,
     menuSub: menuSubClasses,
     menuSubItem: menuSubItemClasses,
+    menuButtonStartIcon: menuButtonStartIconClasses,
+    menuButtonEndIcon: menuButtonEndIconClasses,
+    menuButtonLabel: menuButtonLabelClasses,
     separator: separatorClasses,
   };
 }

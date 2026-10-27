@@ -81,6 +81,9 @@ interface Item {
   shortcut?: string;
 }
 
+// Icons ride named slots: `start-icon-{menu.value}` beside a trigger's label and
+// `start-icon-{menu.value}-{index}` beside the item at that index.
+
 interface Menu {
   value: string;
   label: string;
@@ -91,15 +94,25 @@ interface Props {
   id: string;
   menus: Menu[];
   loop?: boolean;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { id, menus, loop = true } = Astro.props;
+const { fill, surface, id, menus, loop = true } = Astro.props;
 
-const config: MenubarConfig = { loop };
+const config: MenubarConfig = { loop, fill, surface };
 const state = menubar.initialState(config);
 const classes = menubarClasses(config, state);
 
-const ids: PartIds<MenubarPart> = { root: `${id}-root`, trigger: '', content: '', item: '' };
+const ids: PartIds<MenubarPart> = {
+  root: `${id}-root`,
+  trigger: '',
+  content: '',
+  item: '',
+  startIcon: '',
+};
 const rootAria = menubar.aria(state, config, ids);
 const instanceIds = (value: string) => ({
   trigger: `${id}-trigger-${value}`,
@@ -115,7 +128,7 @@ const instanceIds = (value: string) => ({
   {...rootAria.root}
 >
   {
-    menus.map((menu) => (
+    menus.map(async (menu) => (
       <button
         type="button"
         id={instanceIds(menu.value).trigger}
@@ -124,12 +137,22 @@ const instanceIds = (value: string) => ({
         class={classes.trigger}
         {...menubarInstanceAria('trigger', menu.value, state, config, instanceIds(menu.value))}
       >
+        {Astro.slots.has(`start-icon-${menu.value}`) && (
+          <span
+            data-part="startIcon"
+            data-icon="inline-start"
+            class={classes.triggerStartIcon}
+            {...rootAria.startIcon}
+          >
+            <Fragment set:html={await Astro.slots.render(`start-icon-${menu.value}`)} />
+          </span>
+        )}
         {menu.label}
       </button>
     ))
   }
   {
-    menus.map((menu) => (
+    menus.map(async (menu) => (
       <div
         id={instanceIds(menu.value).content}
         data-part="content"
@@ -138,7 +161,7 @@ const instanceIds = (value: string) => ({
         inert
         {...menubarInstanceAria('content', menu.value, state, config, instanceIds(menu.value))}
       >
-        {menu.items.map((item) => (
+        {menu.items.map(async (item, index) => (
           <div
             role="menuitem"
             data-part="item"
@@ -148,8 +171,20 @@ const instanceIds = (value: string) => ({
             tabindex={item.disabled ? undefined : -1}
             class={classes.item}
           >
-            {item.label}
-            {item.shortcut ? <span class={classes.shortcut}>{item.shortcut}</span> : null}
+            {Astro.slots.has(`start-icon-${menu.value}-${index}`) && (
+              <span
+                data-part="startIcon"
+                data-icon="inline-start"
+                class={classes.itemStartIcon}
+                {...rootAria.startIcon}
+              >
+                <Fragment set:html={await Astro.slots.render(`start-icon-${menu.value}-${index}`)} />
+              </span>
+            )}
+            <span class={classes.itemText}>
+              {item.label}
+              {item.shortcut ? <span class={classes.shortcut}>{item.shortcut}</span> : null}
+            </span>
           </div>
         ))}
       </div>

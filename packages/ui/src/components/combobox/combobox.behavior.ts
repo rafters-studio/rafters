@@ -9,6 +9,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { computePosition } from '../../primitives/collision-detector';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import type { Align, Side } from '../../primitives/types';
+import { comboboxClasses } from './combobox.classes';
 
 /**
  * Combobox: a filtering autocomplete. A single-line text input discloses a
@@ -45,6 +46,10 @@ import type { Align, Side } from '../../primitives/types';
  *    (filtered) values the binding supplies in DOM order.
  */
 export interface ComboboxConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled value ('' = no selection): shadows the intrinsic state. */
   value?: string | undefined;
   /** Uncontrolled seed for the intrinsic value. */
@@ -86,7 +91,14 @@ export type ComboboxActions = {
   select: { value: string; label: string };
 };
 
-export type ComboboxPart = 'root' | 'input' | 'trigger' | 'content' | 'item' | 'empty';
+export type ComboboxPart =
+  | 'root'
+  | 'input'
+  | 'trigger'
+  | 'content'
+  | 'item'
+  | 'empty'
+  | 'startIcon';
 
 /** The effective open: controlled config shadows intrinsic state. */
 export function isOpen(state: ComboboxState, config: ComboboxConfig): boolean {
@@ -135,6 +147,10 @@ const comboboxSlice: Slice<ComboboxConfig, ComboboxState, ComboboxActions, Combo
     item: { many: true },
     // The no-results message, shown by the binding when the filter empties.
     empty: { optional: true },
+    // The decorative icon beside the input and beside each option. Present only
+    // when the author gives an icon; it occurs once per place, so the binding
+    // projects aria-hidden onto every one it finds.
+    startIcon: { optional: true, many: true },
   },
   initialState: (config) => ({
     open: config.open ?? config.defaultOpen ?? false,
@@ -204,6 +220,9 @@ const comboboxSlice: Slice<ComboboxConfig, ComboboxState, ComboboxActions, Combo
       trigger: {
         'aria-label': open ? 'Close' : 'Open',
       },
+      // The icon is decorative: hidden from assistive technology in the markup
+      // itself, so the label alone is the accessible name with no script run.
+      startIcon: { 'aria-hidden': 'true' },
       content: {
         role: 'listbox',
         // The listbox is named by the input that controls it.
@@ -295,6 +314,14 @@ export function positionCombobox(
   content.setAttribute('data-align', result.align);
 }
 
+/** An option's display label: its text without the decorative icon, whose svg
+ *  may carry a <title> that is not part of the label. */
+export function optionLabel(item: HTMLElement): string {
+  const clone = item.cloneNode(true) as HTMLElement;
+  for (const icon of clone.querySelectorAll('[data-part="startIcon"]')) icon.remove();
+  return (clone.textContent ?? '').trim();
+}
+
 /** A visible, enabled option element -- the set the filter leaves showing and
  *  navigation/commit operate over (shared so all readers agree). */
 function isVisibleOption(item: HTMLElement): boolean {
@@ -345,6 +372,16 @@ export function bindCombobox(root: HTMLElement): () => void {
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
   const { memory, dispatch } = createBehavior(combobox, config);
+
+  // A seeded value shows its option's label in the input, the text a select of
+  // that option writes. Before the first render, which mirrors the query into
+  // the input. A seed matching no option leaves the input empty.
+  const seeded = selectedValue(memory.get(), config);
+  for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
+    if (seeded === '' || item.dataset['value'] !== seeded) continue;
+    memory.patch({ query: optionLabel(item) });
+    break;
+  }
 
   const positionOptions: ComboboxPositionOptions = {
     side: (root.getAttribute('side') as Side | null) ?? undefined,
@@ -399,12 +436,19 @@ export function bindCombobox(root: HTMLElement): () => void {
       if (el && attrs) applyProjection(el, attrs);
     }
 
+    // The icon part occurs once per place (input, each option); the loop above
+    // reached only the first, so project onto every one.
+    if (projection.startIcon) {
+      for (const el of root.querySelectorAll<HTMLElement>('[data-part="startIcon"]'))
+        applyProjection(el, projection.startIcon);
+    }
+
     // Filter the options in place and toggle the empty message. Hidden options
     // stay in the DOM so their ids remain stable for aria-activedescendant.
     let visibleCount = 0;
     for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
       const value = item.dataset['value'] ?? '';
-      const label = (item.textContent ?? '').trim();
+      const label = optionLabel(item);
       const shown = matchesQuery(label, value, state.query);
       item.hidden = !shown;
       if (shown) visibleCount += 1;
@@ -454,7 +498,7 @@ export function bindCombobox(root: HTMLElement): () => void {
       if (isDisabledItem(item)) return;
       const value = item.dataset['value'];
       if (value !== undefined) {
-        dispatch('select', config, { value, label: (item.textContent ?? '').trim() });
+        dispatch('select', config, { value, label: optionLabel(item) });
         getPart('input')?.focus();
       }
       return;
@@ -499,7 +543,7 @@ export function bindCombobox(root: HTMLElement): () => void {
       );
       if (!item || isDisabledItem(item)) return;
       event.preventDefault();
-      dispatch('select', config, { value, label: (item.textContent ?? '').trim() });
+      dispatch('select', config, { value, label: optionLabel(item) });
       return;
     }
     if (action === 'close') {
@@ -530,4 +574,39 @@ export function bindCombobox(root: HTMLElement): () => void {
     root.removeEventListener('keydown', onKeydown);
     root.removeEventListener('pointermove', onPointerMove);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` child in the decorative wrapper the behavior
+ * projects aria-hidden onto, before the bind reads the parts. A direct child of
+ * the host goes beside the input; a direct child of an option goes before its
+ * text. The light DOM has no slot assignment, so the slot attribute is only the
+ * author's marker.
+ */
+export function wrapComboboxIcons(root: HTMLElement): void {
+  const className = comboboxClasses({}, combobox.initialState({}));
+  const wrap = (child: Element, cls: string): HTMLElement => {
+    const wrapper = document.createElement('span');
+    wrapper.dataset['part'] = 'startIcon';
+    wrapper.dataset['icon'] = 'inline-start';
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.className = cls;
+    child.removeAttribute('slot');
+    wrapper.appendChild(child);
+    return wrapper;
+  };
+  const hostIcon = root.querySelector(':scope > [slot="start-icon"]');
+  const field = root.querySelector('[data-part="field"]');
+  const input = root.querySelector('[data-part="input"]');
+  if (hostIcon && field && input && !field.querySelector(':scope > [data-part="startIcon"]')) {
+    input.after(wrap(hostIcon, className.startIcon));
+  }
+  for (const item of root.querySelectorAll('[data-part="item"]')) {
+    const child = item.querySelector(':scope > [slot="start-icon"]');
+    if (!child || item.querySelector(':scope > [data-part="startIcon"]')) continue;
+    const wrapper = wrap(child, className.itemStartIcon);
+    const text = item.lastElementChild;
+    if (text && text !== child) item.insertBefore(wrapper, text);
+    else item.appendChild(wrapper);
+  }
 }

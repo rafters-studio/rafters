@@ -30,23 +30,6 @@
  *     </AlertDialogFooter>
  *   </AlertDialogContent>
  * </AlertDialog>
- *
- * // Or with namespace syntax
- * <AlertDialog>
- *   <AlertDialog.Trigger asChild>
- *     <Button variant="destructive">Delete</Button>
- *   </AlertDialog.Trigger>
- *   <AlertDialog.Content>
- *     <AlertDialog.Header>
- *       <AlertDialog.Title>Are you sure?</AlertDialog.Title>
- *       <AlertDialog.Description>This action cannot be undone.</AlertDialog.Description>
- *     </AlertDialog.Header>
- *     <AlertDialog.Footer>
- *       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
- *       <AlertDialog.Action>Delete</AlertDialog.Action>
- *     </AlertDialog.Footer>
- *   </AlertDialog.Content>
- * </AlertDialog>
  * ```
  */
 import * as React from 'react';
@@ -245,9 +228,15 @@ export interface AlertDialogContentProps extends React.HTMLAttributes<HTMLDivEle
   container?: HTMLElement | null;
   /** Consumer veto: called before Escape closes; preventDefault to keep open. */
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function AlertDialogContent({
+  fill,
+  surface,
   forceMount,
   container,
   onEscapeKeyDown,
@@ -311,7 +300,12 @@ export function AlertDialogContent({
         id={ids.content || undefined}
         ref={presenceRef}
         tabIndex={-1}
-        className={classy(classes.content, className)}
+        className={classy(
+          fill || surface
+            ? alertDialogClasses({ ...config, fill, surface }, state).content
+            : classes.content,
+          className,
+        )}
         {...aria.content}
         onKeyDown={handleKeyDown}
         {...props}

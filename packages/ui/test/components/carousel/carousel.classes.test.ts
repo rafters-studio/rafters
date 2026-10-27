@@ -1,13 +1,6 @@
 import { resolve } from 'node:path';
 import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
-import {
-  contrastPlugin,
-  invertPlugin,
-  registryToCompiled,
-  scalePlugin,
-  statePlugin,
-  TokenRegistry,
-} from '@rafters/design-tokens';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
 import { carouselClasses } from '../../../src/components/carousel/carousel.classes';
 
@@ -31,8 +24,8 @@ describe('carousel classes', () => {
   it('orientation only relocates the controls; the chrome is shared', () => {
     const horizontal = carouselClasses({ orientation: 'horizontal' });
     const vertical = carouselClasses({ orientation: 'vertical' });
-    expect(horizontal.previous).toContain('left-2');
-    expect(horizontal.next).toContain('right-2');
+    expect(horizontal.previous).toContain('start-2');
+    expect(horizontal.next).toContain('end-2');
     expect(vertical.previous).toContain('rotate-90');
     expect(horizontal.previous).toContain('disabled:opacity-50');
   });
@@ -86,12 +79,7 @@ const sheet = (): Promise<string> => {
   if (compiled) return compiled;
   compiled = (async () => {
     const system = generateBaseSystem({});
-    const registry = new TokenRegistry(system.allTokens, [
-      scalePlugin,
-      contrastPlugin,
-      statePlugin,
-      invertPlugin,
-    ]);
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
     return registryToCompiled(registry, {
       contentSources: [resolve(import.meta.dirname, '../../../src/components/carousel')],
     });

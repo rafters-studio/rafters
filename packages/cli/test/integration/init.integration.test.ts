@@ -9,6 +9,7 @@
 import { readdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { SCRIPT_FONTS } from '@rafters/design-tokens';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupFixture, createFixture, type FixtureType } from '../fixtures/projects.js';
 import { execCli, fixtureFileExists, readConfig, readFixtureFile } from './helpers.js';
@@ -51,7 +52,7 @@ describe('rafters init - fresh initialization', () => {
       composites: [],
       rules: [],
     });
-  }, 30000);
+  });
 
   it('initializes a Vite project with shadcn', async () => {
     fixturePath = await createFixture('vite-shadcn-v4');
@@ -63,7 +64,7 @@ describe('rafters init - fresh initialization', () => {
     expect(config.framework).toBe('vite');
     expect(config.source).toBe('shadcn');
     expect(config.componentsPath).toBe('src/components/ui');
-  }, 30000);
+  });
 
   it('initializes a Vite project without shadcn', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -74,7 +75,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('vite');
     expect(config.source).toBeUndefined();
-  }, 30000);
+  });
 
   it('initializes a Remix project with shadcn', async () => {
     fixturePath = await createFixture('remix-shadcn-v4');
@@ -85,7 +86,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('remix');
     expect(config.componentsPath).toBe('app/components/ui');
-  }, 30000);
+  });
 
   it('initializes an Astro project with shadcn', async () => {
     fixturePath = await createFixture('astro-shadcn-v4');
@@ -96,7 +97,7 @@ describe('rafters init - fresh initialization', () => {
     const config = await readConfig(fixturePath);
     expect(config.framework).toBe('astro');
     expect(config.componentsPath).toBe('src/components/ui');
-  }, 30000);
+  });
 
   it('rejects Tailwind v3 projects', async () => {
     fixturePath = await createFixture('tailwind-v3-error');
@@ -104,7 +105,7 @@ describe('rafters init - fresh initialization', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('Tailwind v3');
-  }, 30000);
+  });
 
   it('generates token namespace files', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -115,7 +116,7 @@ describe('rafters init - fresh initialization', () => {
 
     expect(files.length).toBeGreaterThan(0);
     expect(files.some((f) => f.endsWith('.rafters.json'))).toBe(true);
-  }, 30000);
+  });
 
   it('generates valid Tailwind CSS output', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -124,7 +125,7 @@ describe('rafters init - fresh initialization', () => {
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
     expect(css).toContain('@import "tailwindcss"');
     expect(css).toContain('--');
-  }, 30000);
+  });
 
   it('generates valid TypeScript output', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -132,7 +133,7 @@ describe('rafters init - fresh initialization', () => {
 
     const ts = await readFixtureFile(fixturePath, '.rafters/output/rafters.ts');
     expect(ts).toContain('export');
-  }, 30000);
+  });
 
   it('updates main CSS file with rafters import for non-shadcn projects', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
@@ -142,14 +143,17 @@ describe('rafters init - fresh initialization', () => {
     expect(css).toContain('.rafters/output/rafters.css');
     // Original tailwindcss import should be replaced
     expect(css).not.toContain('@import "tailwindcss"');
-  }, 30000);
+  });
 
-  it('creates CSS backup when modifying main CSS', async () => {
+  it('moves the original main CSS to .old.css, with no .backup.css (#2798)', async () => {
     fixturePath = await createFixture('vite-no-shadcn');
     await execCli(fixturePath, ['init']);
 
-    expect(fixtureFileExists(fixturePath, 'src/index.backup.css')).toBe(true);
-  }, 30000);
+    expect(await readFixtureFile(fixturePath, 'src/index.old.css')).toBe(
+      '@import "tailwindcss";\n',
+    );
+    expect(fixtureFileExists(fixturePath, 'src/index.backup.css')).toBe(false);
+  });
 
   it('fails on second init without --rebuild flag', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -158,7 +162,53 @@ describe('rafters init - fresh initialization', () => {
     const result = await execCli(fixturePath, ['init']);
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('already exists');
-  }, 30000);
+  });
+
+  it('installs the chosen writing systems and builds font-sans from them (#2742)', async () => {
+    fixturePath = await createFixture('vite-no-shadcn');
+    const result = await execCli(fixturePath, [
+      'init',
+      '--agent',
+      '--scripts',
+      'Latn,Arab,Hebr,Jpan',
+    ]);
+    expect(result.exitCode).toBe(0);
+
+    const packages = [
+      '@fontsource-variable/noto-sans',
+      '@fontsource-variable/noto-sans-arabic',
+      '@fontsource-variable/noto-sans-hebrew',
+      '@fontsource-variable/noto-sans-jp',
+    ];
+    const config = await readConfig(fixturePath);
+    expect(config.fonts).toEqual({
+      path: null,
+      imports: packages,
+      scripts: ['Latn', 'Arab', 'Hebr', 'Jpan'],
+    });
+    const pkg: unknown = JSON.parse(await readFixtureFile(fixturePath, 'package.json'));
+    const dependencies =
+      typeof pkg === 'object' && pkg !== null && 'dependencies' in pkg ? pkg.dependencies : {};
+    expect(Object.keys(dependencies ?? {})).toEqual(expect.arrayContaining(packages));
+
+    // The stack names a family only if the installed package declares it.
+    for (const font of new Set(Object.values(SCRIPT_FONTS))) {
+      if (!packages.includes(font.package)) continue;
+      const packageCss = await readFixtureFile(
+        fixturePath,
+        join('node_modules', font.package, 'index.css'),
+      );
+      const families = new Set(
+        [...packageCss.matchAll(/font-family:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]),
+      );
+      expect(families).toEqual(new Set([font.family]));
+    }
+
+    const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
+    expect(css).toContain(
+      "--rafters-font-sans: 'Noto Sans Variable', 'Noto Sans Arabic Variable', 'Noto Sans Hebrew Variable', 'Noto Sans JP Variable', sans-serif",
+    );
+  });
 });
 
 describe('rafters init --rebuild', () => {
@@ -176,7 +226,7 @@ describe('rafters init --rebuild', () => {
     // Outputs should still exist
     expect(fixtureFileExists(fixturePath, '.rafters/output/rafters.css')).toBe(true);
     expect(fixtureFileExists(fixturePath, '.rafters/output/rafters.ts')).toBe(true);
-  }, 30000);
+  });
 
   it('preserves existing config and installed components', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -192,7 +242,7 @@ describe('rafters init --rebuild', () => {
     const rebuiltConfig = await readConfig(fixturePath);
     expect(rebuiltConfig.framework).toBe(initialConfig.framework);
     expect(rebuiltConfig.source).toBe(initialConfig.source);
-  }, 30000);
+  });
 });
 
 describe('rafters init --reset', () => {
@@ -211,7 +261,7 @@ describe('rafters init --reset', () => {
     // Tokens should exist (regenerated from defaults)
     const resetFiles = readdirSync(tokensDir);
     expect(resetFiles.length).toBeGreaterThan(0);
-  }, 30000);
+  });
 
   it('fails when .rafters does not exist', async () => {
     fixturePath = await createFixture('nextjs-no-shadcn');
@@ -219,7 +269,7 @@ describe('rafters init --reset', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('Nothing to reset');
-  }, 30000);
+  });
 });
 
 describe('rafters init - source CSS sensing', () => {
@@ -260,7 +310,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(byNamespace.typography).toBe(1);
     expect(sensed?.namespacesPresent).toEqual(['color', 'semantic', 'typography', 'radius']);
     expect(sensed?.unclassifiedCount).toBe(1); // some-internal: 42
-  }, 30000);
+  });
 
   it('imports each accepted shadcn semantic via define + set in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -347,17 +397,36 @@ describe('rafters init - source CSS sensing', () => {
       reason: expect.stringContaining('imported from --primary'),
     });
 
-    // (6) Tailwind output resolves end-to-end: `--rafters-primary` points
-    // at the imported family's 500 position, and that position is declared
-    // (not a dangling reference).
+    // (6) Tailwind output resolves end-to-end: `--rafters-primary` points at
+    // primary's role step 500 (#2745), primary's role scale sits on the
+    // imported family, and that position is declared (not a dangling
+    // reference).
     const css = await readFixtureFile(fixturePath, '.rafters/output/rafters.css');
-    expect(css).toContain('--rafters-primary: var(--color-imported-primary-500)');
+    const declared = new Map<string, string>();
+    for (const m of css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+      if (m[1] && m[2] && !declared.has(m[1])) declared.set(m[1], m[2].trim());
+    }
+    // Follow a var() chain to the last custom property it names.
+    const chainEnd = (name: string): string => {
+      let current = name;
+      for (let hops = 0; hops < 20; hops++) {
+        const next = declared.get(current)?.match(/^var\((--[\w-]+)\)$/)?.[1];
+        if (!next) return current;
+        current = next;
+      }
+      return current;
+    };
+    expect(css).toContain('--rafters-primary: var(--rafters-primary-500)');
+    expect(css).toContain('--rafters-primary-500: var(--color-imported-primary-500)');
+    expect(chainEnd('--rafters-primary')).toBe('--color-imported-primary-500');
     expect(css).toContain('--color-imported-primary-500: oklch(0.5 0.2 30)');
 
     // (6) The cascade fired through the imported family: primary-foreground
     // re-derived to use the imported family's most-contrasting position
-    // (50 here, the lightest), not the pre-import neutral default.
-    expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--color-imported-primary-\d+\)/);
+    // (50 here, the lightest), not the pre-import neutral default. It points
+    // at primary's role step, which resolves into the imported family.
+    expect(css).toMatch(/--rafters-primary-foreground:\s*var\(--rafters-primary-\d+\)/);
+    expect(chainEnd('--rafters-primary-foreground')).toMatch(/^--color-imported-primary-\d+$/);
 
     // (7) Direct-set on the `radius` token persisted the user's value
     // verbatim. Source: `--radius: 0.5rem`.
@@ -373,7 +442,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(radius?.userOverride).toMatchObject({
       reason: expect.stringContaining('imported from --radius'),
     });
-  }, 30000);
+  });
 
   it('imports typography declarations via direct registry.set on matching tokens', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -415,7 +484,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(fontSans?.userOverride).toMatchObject({
       reason: expect.stringContaining('imported from --font-sans'),
     });
-  }, 30000);
+  });
 
   it('imports non-shadcn-semantic colors as primitive families without reseating semantics', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -457,9 +526,23 @@ describe('rafters init - source CSS sensing', () => {
     expect(tokensByName.has('imported-brand-republic')).toBe(true);
     expect(tokensByName.has('imported-brand-republic-600')).toBe(true);
 
-    // (2) Seed OKLCH preserved at position 600 for both.
-    expect(tokensByName.get('imported-brand-empire-600')?.value).toBe('oklch(0.4 0.2 240)');
-    expect(tokensByName.get('imported-brand-republic-600')?.value).toBe('oklch(0.5 0.2 200)');
+    // (2) The typed seed is pinned as typed at position 500 for both (#2669),
+    // and the family records its true tier and no seedAdjusted (#2672). Both
+    // typed seeds are outside sRGB, so the derived 600 step, which is where
+    // buildColorValue lands the seed, is gamut-mapped and no longer equals it.
+    for (const [family, typed] of [
+      ['imported-brand-empire', 'oklch(0.4 0.2 240)'],
+      ['imported-brand-republic', 'oklch(0.5 0.2 200)'],
+    ] as const) {
+      expect(tokensByName.get(`${family}-500`)?.value).toBe(typed);
+      expect(tokensByName.get(`${family}-600`)?.value).not.toBe(typed);
+      const value = tokensByName.get(family)?.value as {
+        gamut?: string[];
+        seedAdjusted?: unknown;
+      };
+      expect(value.gamut?.[5]).not.toBe('srgb');
+      expect(value.seedAdjusted).toBeUndefined();
+    }
 
     // (3) No rafters semantic was reseated -- `primary`, `background`, etc.
     // stay at their Phase A defaults. Designer assigns these brand colors
@@ -482,7 +565,7 @@ describe('rafters init - source CSS sensing', () => {
     // TODO: imported non-semantic families should appear in CSS output.
     // Broken since PR #1618 (zinc rename). Tracked as #1619.
     void _css;
-  }, 30000);
+  });
 
   it('imports --spacing-base from source as the system baseSpacingUnit pre-generation', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -523,13 +606,13 @@ describe('rafters init - source CSS sensing', () => {
     const spacing4 = spacing.tokens.find((t) => t.name === 'spacing-4');
     expect(spacing4?.value).toBe('calc(var(--rafters-spacing-base) * 4)');
 
-    // Shadow tokens bake from baseSpacingUnit at generation -- they don't
-    // have an *Override on the default config, so the new base flows
-    // through. shadow-base-unit = 8/16 = 0.5rem.
+    // Shadow geometry follows the detected base (#2648): shadow-base-unit
+    // references the spacing base in CSS, and each part names the rung the
+    // registry picks for the detected base.
     const shadowRaw = await readFixtureFile(fixturePath, '.rafters/tokens/shadow.rafters.json');
     const shadow = JSON.parse(shadowRaw) as { tokens: Array<{ name: string; value: unknown }> };
     const shadowBaseUnit = shadow.tokens.find((t) => t.name === 'shadow-base-unit');
-    expect(shadowBaseUnit?.value).toBe('0.5rem');
+    expect(shadowBaseUnit?.value).toBe('var(--rafters-spacing-base)');
 
     // The other *Override-pinned namespaces (typography font-size,
     // radius, focus, motion duration) stay at their explicit defaults.
@@ -540,7 +623,7 @@ describe('rafters init - source CSS sensing', () => {
     const typoRaw = await readFixtureFile(fixturePath, '.rafters/tokens/typography.rafters.json');
     const typo = JSON.parse(typoRaw) as { tokens: Array<{ name: string; value: unknown }> };
     expect(typo.tokens.find((t) => t.name === 'font-size-base')?.value).toBe('1rem');
-  }, 30000);
+  });
 
   it('imports --radius from source as baseRadiusOverride pre-generation', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -573,7 +656,7 @@ describe('rafters init - source CSS sensing', () => {
     // Per-corner tokens cascade via var() ref to the (now reseated) base.
     const radiusTl = radius.tokens.find((t) => t.name === 'radius-tl');
     expect(radiusTl?.value).toBe('var(--rafters-radius-base)');
-  }, 30000);
+  });
 
   it('imports font-size + focus-ring bases pre-generation; motion is intentionally left alone', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -626,7 +709,7 @@ describe('rafters init - source CSS sensing', () => {
     const motionRaw = await readFixtureFile(fixturePath, '.rafters/tokens/motion.rafters.json');
     const motion = JSON.parse(motionRaw) as { tokens: Array<{ name: string; value: unknown }> };
     expect(motion.tokens.find((t) => t.name === 'motion-duration-base')?.value).toBe('150ms');
-  }, 30000);
+  });
 
   it('skips spacing-base detection when source declares no --spacing-base', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -646,7 +729,7 @@ describe('rafters init - source CSS sensing', () => {
     const spacing = JSON.parse(spacingRaw) as { tokens: Array<{ name: string; value: unknown }> };
     const spacingBase = spacing.tokens.find((t) => t.name === 'spacing-base');
     expect(spacingBase?.value).toBe('0.25rem'); // 4px default
-  }, 30000);
+  });
 
   it('runs the typography font role-walk over detected font families in agent mode', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -702,7 +785,7 @@ describe('rafters init - source CSS sensing', () => {
     expect(byName.get('font-heading')?.userOverride).toMatchObject({
       reason: expect.stringContaining('assigned Inter as font-heading'),
     });
-  }, 30000);
+  });
 
   it('preserves a non-canonical --font-* declaration as its own typography token', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -750,7 +833,7 @@ describe('rafters init - source CSS sensing', () => {
     };
     const aurabesh = tokens.tokens.find((t) => t.name === 'font-aurabesh');
     expect(aurabesh?.value).toBe('"Aurabesh", sans-serif');
-  }, 30000);
+  });
 
   it('skips sensing when source CSS has no :root declarations', async () => {
     fixturePath = await createFixture('nextjs-shadcn-v4');
@@ -765,7 +848,7 @@ describe('rafters init - source CSS sensing', () => {
 
     const sensed = events.find((e) => e.event === 'init:import_sensed');
     expect(sensed).toBeUndefined();
-  }, 30000);
+  });
 });
 
 describe('rafters init - framework detection across all types', () => {
@@ -785,6 +868,6 @@ describe('rafters init - framework detection across all types', () => {
 
       const config = await readConfig(fixturePath);
       expect(config.framework).toBe(expected);
-    }, 30000);
+    });
   }
 });

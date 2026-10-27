@@ -22,7 +22,12 @@ import {
  * and NO outside-pointerdown dismiss. The user must choose Cancel or the
  * action; the layer never closes from an errant click outside it.
  */
-export type AlertDialogConfig = DisclosableConfig;
+export interface AlertDialogConfig extends DisclosableConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
+}
 
 export type AlertDialogState = DisclosableState;
 export type AlertDialogActions = DisclosableActions;

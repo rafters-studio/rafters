@@ -364,6 +364,23 @@ describe('rafters_workspaces (unchanged)', () => {
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toMatch(/rafters add/);
   });
+
+  it('rejects a registryUrl on a loopback, private, or metadata host', async () => {
+    const a = { name: 'a', root: '/repo/sites/a' };
+    const { handler } = fixtureHandler([a], a);
+    for (const registryUrl of [
+      'http://localhost:8787',
+      'http://10.0.0.1',
+      'http://169.254.169.254',
+    ]) {
+      const result = await handler.handleToolCall('rafters_workspaces', {
+        workspace: 'a',
+        registryUrl,
+      });
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toMatch(/registryUrl must not point at/);
+    }
+  });
 });
 
 describe('workspace routing', () => {
@@ -513,6 +530,22 @@ describe('presence is measured from disk, not read from config.installed', () =>
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('config.rafters.json');
     expect(data.error).toContain('componentsPath');
+    await cleanup();
+  });
+
+  it('a removed componentTarget returns the removal error, not a silent fallback', async () => {
+    const { root, cleanup } = await configWorkspace({ componentTarget: 'wc' });
+    const { handler } = fixtureHandler([{ name: 'fixture', root }], { name: 'fixture', root });
+    for (const [tool, args] of [
+      ['rafters_describe', { address: 'button' }],
+      ['rafters_generate', { intent: 'button' }],
+    ] as const) {
+      const result = await handler.handleToolCall(tool, args);
+      const data = JSON.parse(result.content[0].text as string);
+      expect(data.error).toContain('componentTarget "wc"');
+      expect(data.error).toContain('Web Component target (wc) was removed');
+      expect(data.error).toContain('Supported targets: react, astro, vue, svelte');
+    }
     await cleanup();
   });
 

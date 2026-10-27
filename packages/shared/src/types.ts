@@ -70,16 +70,32 @@ export const DTCGTokenBaseSchema = z.object({
 export type DTCGTokenBase = z.infer<typeof DTCGTokenBaseSchema>;
 
 /**
- * W3C DTCG Color Value (OKLCH format)
+ * W3C DTCG Color Value (Design Tokens Color Module 2025.10, section 4.1)
+ * https://www.designtokens.org/TR/2025.10/color/
  */
 export const DTCGColorValueSchema = z.object({
-  colorSpace: z.literal('oklch'),
-  channels: z.tuple([
-    z.number().min(0).max(1), // Lightness
-    z.number().min(0), // Chroma
-    z.number().min(0).max(360), // Hue
+  colorSpace: z.enum([
+    'srgb',
+    'srgb-linear',
+    'hsl',
+    'hwb',
+    'lab',
+    'lch',
+    'oklab',
+    'oklch',
+    'display-p3',
+    'a98-rgb',
+    'prophoto-rgb',
+    'rec2020',
+    'xyz-d65',
+    'xyz-d50',
   ]),
-  alpha: z.number().min(0).max(1).optional().default(1),
+  components: z.array(z.union([z.number(), z.literal('none')])),
+  alpha: z.number().min(0).max(1).optional(),
+  hex: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
 });
 
 export type DTCGColorValue = z.infer<typeof DTCGColorValueSchema>;
@@ -126,26 +142,27 @@ export const DTCGFileSchema = z.record(z.string(), z.union([DTCGTokenBaseSchema,
 export type DTCGFile = z.infer<typeof DTCGFileSchema>;
 
 /**
- * Helper: Convert OKLCH to DTCG Color Value
+ * Helper: Convert OKLCH to DTCG Color Value.
+ * `alpha` is present only when it is below 1 (Color Module 2025.10 defaults it to 1).
  */
 export function oklchToDTCG(oklch: OKLCH): DTCGColorValue {
-  return {
-    colorSpace: 'oklch',
-    channels: [oklch.l, oklch.c, oklch.h],
-    alpha: oklch.alpha ?? 1,
-  };
+  const value: DTCGColorValue = { colorSpace: 'oklch', components: [oklch.l, oklch.c, oklch.h] };
+  if (oklch.alpha !== undefined && oklch.alpha < 1) value.alpha = oklch.alpha;
+  return value;
 }
 
 /**
- * Helper: Convert DTCG Color Value to OKLCH
+ * Helper: Convert an oklch DTCG Color Value to OKLCH. A `none` component reads as 0.
  */
 export function dtcgToOKLCH(dtcg: DTCGColorValue): OKLCH {
-  return {
-    l: dtcg.channels[0],
-    c: dtcg.channels[1],
-    h: dtcg.channels[2],
-    alpha: dtcg.alpha ?? 1,
+  if (dtcg.colorSpace !== 'oklch') {
+    throw new Error(`dtcgToOKLCH: colorSpace "${dtcg.colorSpace}" is not oklch`);
+  }
+  const component = (i: number): number => {
+    const c = dtcg.components[i];
+    return typeof c === 'number' ? c : 0;
   };
+  return { l: component(0), c: component(1), h: component(2), alpha: dtcg.alpha ?? 1 };
 }
 
 /**
@@ -371,6 +388,25 @@ export type PerceptualWeight = z.infer<typeof PerceptualWeightSchema>;
 export const SEMANTIC_STATUS_ROLES = ['destructive', 'success', 'warning', 'info'] as const;
 export type SemanticStatusRole = (typeof SEMANTIC_STATUS_ROLES)[number];
 
+// Family roles: the semantic tokens a designer assigns a palette to. Every
+// other semantic colour belongs to one of these (its owner), and the CSS
+// exporter emits one 50-950 scale per role so a role change moves everything
+// it owns.
+export const SEMANTIC_FAMILY_ROLES = [
+  'primary',
+  'secondary',
+  'tertiary',
+  'accent',
+  'highlight',
+  'neutral',
+  'muted',
+  'success',
+  'warning',
+  'destructive',
+  'info',
+] as const;
+export type SemanticFamilyRole = (typeof SEMANTIC_FAMILY_ROLES)[number];
+
 // Semantic Color Suggestions Schema.
 // 'danger' is a deprecated mirror of 'destructive', kept while apps/api (which
 // asserts .danger) migrates to platform. Inputs with only the legacy key parse
@@ -416,6 +452,24 @@ export const ColorValueSchema = z.object({
 
   // Unique token ID for quick color lookups (e.g., "color-0.500-0.120-240.0")
   tokenId: z.string().optional(),
+
+  // The gamut each scale step sits in, index-aligned with `scale`. Generated
+  // steps are 'srgb' or 'p3'; only an imported seed pinned as typed can be 'out'.
+  gamut: z.array(z.enum(['srgb', 'p3', 'out'])).optional(),
+  // Present when the family was built from a different seed than requested
+  seedAdjusted: z
+    .object({
+      from: OKLCHSchema,
+      to: OKLCHSchema,
+      reason: z.enum(['lightness-bounds', 'gamut']),
+    })
+    .optional(),
+  // The lightness ladder a normalized scale was built on (createNormalizedScale);
+  // 'custom' when the caller supplied the ladder. Absent for buildColorValue.
+  scaleStyle: z.enum(['deep', 'compact', 'custom']).optional(),
+  // The scale position the source colour sits at, e.g. '200'. Absent for
+  // buildColorValue, whose seed always lands on '600'.
+  anchor: z.string().optional(),
 });
 
 export type ColorValue = z.infer<typeof ColorValueSchema>;
@@ -427,6 +481,171 @@ export const ColorReferenceSchema = z.object({
 });
 
 export type ColorReference = z.infer<typeof ColorReferenceSchema>;
+
+// Token reference: names a role or semantic colour token ("card", "primary")
+// and follows that token through the cascade and the mode (FR-RAF-FILL-001).
+export const TokenReferenceSchema = z.object({ token: z.string().min(1) }).strict();
+
+export type TokenReference = z.infer<typeof TokenReferenceSchema>;
+
+// Fills (FR-RAF-FILL-001): a designer-authored recipe of stock Tailwind parts.
+// Every colour is a registry reference, never a literal.
+const FillColourSchema = z.union([ColorReferenceSchema.strict(), TokenReferenceSchema], {
+  error: 'must be a registry reference ({family, position} or {token}), not a literal colour',
+});
+const PercentSchema = z.number().min(0).max(100);
+const FillStopSchema = z
+  .object({
+    color: FillColourSchema,
+    alpha: PercentSchema.optional(),
+    position: PercentSchema.optional(),
+  })
+  .strict();
+const FillPartsSchema = z
+  .object({
+    background: z
+      .object({ color: FillColourSchema, alpha: PercentSchema.optional() })
+      .strict()
+      .optional(),
+    gradient: z
+      .object({
+        type: z.enum(['linear', 'radial', 'conic']),
+        direction: z
+          .enum(['to-t', 'to-tr', 'to-r', 'to-br', 'to-b', 'to-bl', 'to-l', 'to-tl'])
+          .optional(),
+        angle: z.number().optional(),
+        from: FillStopSchema.optional(),
+        via: FillStopSchema.optional(),
+        to: FillStopSchema.optional(),
+        interpolation: z
+          .enum(['srgb', 'hsl', 'oklab', 'oklch', 'longer', 'shorter', 'increasing', 'decreasing'])
+          .optional(),
+      })
+      .strict()
+      .optional(),
+    mask: z
+      .object({
+        type: z.enum(['linear', 'radial', 'conic', 't', 'r', 'b', 'l', 'x', 'y']),
+        from: PercentSchema.optional(),
+        to: PercentSchema.optional(),
+      })
+      .strict()
+      .optional(),
+    backdrop: z
+      .object({
+        blur: z.enum(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']).optional(),
+        brightness: z.number().min(0).optional(),
+        contrast: z.number().min(0).optional(),
+        saturate: z.number().min(0).optional(),
+        grayscale: PercentSchema.optional(),
+        opacity: PercentSchema.optional(),
+      })
+      .strict()
+      .optional(),
+    blend: z
+      .enum([
+        'normal',
+        'multiply',
+        'screen',
+        'overlay',
+        'darken',
+        'lighten',
+        'color-dodge',
+        'color-burn',
+        'hard-light',
+        'soft-light',
+        'difference',
+        'exclusion',
+        'hue',
+        'saturation',
+        'color',
+        'luminosity',
+      ])
+      .optional(),
+    foreground: FillColourSchema.optional(),
+    border: FillColourSchema.optional(),
+  })
+  .strict();
+const FillStateSchema = FillPartsSchema.extend({ dark: FillPartsSchema.optional() }).strict();
+
+export const FillValueSchema = FillPartsSchema.extend({
+  foreground: FillColourSchema,
+  // Clips the background or gradient to the glyphs; foreground stays the fallback.
+  clip: z.enum(['text']).optional(),
+  dark: FillPartsSchema.optional(),
+  hover: FillStateSchema.optional(),
+  active: FillStateSchema.optional(),
+  focus: FillStateSchema.optional(),
+  disabled: FillStateSchema.optional(),
+}).strict();
+
+export type FillValue = z.infer<typeof FillValueSchema>;
+
+// Names a fill cannot take (FR-RAF-FILL-001): Tailwind's static bg-* utilities
+// (45), the legacy ones it still emits (12) and the bg- keywords, each without
+// its `bg-` prefix. Studio keeps the designer-facing list.
+export const FILL_NAME_EXCLUDES: readonly string[] = [
+  'auto',
+  'blend-color',
+  'blend-color-burn',
+  'blend-color-dodge',
+  'blend-darken',
+  'blend-difference',
+  'blend-exclusion',
+  'blend-hard-light',
+  'blend-hue',
+  'blend-lighten',
+  'blend-luminosity',
+  'blend-multiply',
+  'blend-normal',
+  'blend-overlay',
+  'blend-saturation',
+  'blend-screen',
+  'blend-soft-light',
+  'bottom',
+  'bottom-left',
+  'bottom-right',
+  'center',
+  'clip-border',
+  'clip-content',
+  'clip-padding',
+  'clip-text',
+  'contain',
+  'cover',
+  'fixed',
+  'left',
+  'local',
+  'no-repeat',
+  'none',
+  'origin-border',
+  'origin-content',
+  'origin-padding',
+  'repeat',
+  'repeat-round',
+  'repeat-space',
+  'repeat-x',
+  'repeat-y',
+  'right',
+  'scroll',
+  'top',
+  'top-left',
+  'top-right',
+  'left-top',
+  'right-top',
+  'left-bottom',
+  'right-bottom',
+  'gradient-to-t',
+  'gradient-to-tr',
+  'gradient-to-r',
+  'gradient-to-br',
+  'gradient-to-b',
+  'gradient-to-bl',
+  'gradient-to-l',
+  'gradient-to-tl',
+  'inherit',
+  'current',
+  'transparent',
+];
 
 // Progression system labels stamped on tokens to record which math system
 // produced them. Used only by TokenSchema below; the math-utils package
@@ -469,7 +688,7 @@ export type OverrideKind = z.infer<typeof OverrideKindSchema>;
 export const TokenSchema = z.object({
   // Core token data
   name: z.string(),
-  value: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]), // String, ColorValue for families, or ColorReference for semantic
+  value: z.union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema]), // String, ColorValue for families, ColorReference for semantic, FillValue for fills
   category: z.string(),
   namespace: z.string(),
   binding: BindingSchema.optional(), // Plugin binding for cascade-driven values
@@ -502,7 +721,7 @@ export const TokenSchema = z.object({
   userOverride: z
     .object({
       // Value before override (for undo)
-      previousValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]),
+      previousValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema]),
       // Why was this overridden
       reason: z.string(),
       // Additional context (e.g. "Q1 marketing campaign", "accessibility audit")
@@ -518,7 +737,9 @@ export const TokenSchema = z.object({
 
   // Computed value from generation rule (before any override)
   // Stored so agents can see what the system WOULD produce vs what human chose
-  computedValue: z.union([z.string(), ColorValueSchema, ColorReferenceSchema]).optional(),
+  computedValue: z
+    .union([z.string(), ColorValueSchema, ColorReferenceSchema, FillValueSchema])
+    .optional(),
 
   // Dependency tracking for automatic regeneration
   dependsOn: z.array(z.string()).optional(), // Parent token(s) - empty = root token

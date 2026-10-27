@@ -9,12 +9,12 @@ Files (`src/components/toggle-group/`):
 
 ```
 toggle-group.classes.ts   toggle-group.behavior.ts   toggle-group.tsx
-toggle-group.element.ts   toggle-group.astro
+toggle-group.astro
 ```
 
 Tests mirror into `test/components/toggle-group/`: `.behavior.test.ts` (pure),
 `.classes.test.ts` (parity), `.conformance.test.tsx` (React),
-`.element.conformance.test.ts` (WC), `.astro.conformance.test.ts` (Astro).
+`.astro.conformance.test.ts` (Astro).
 
 ## Composition
 
@@ -32,7 +32,7 @@ and activation (Space/Enter/click, fulfilled natively by the item `<button>`s)
 toggles the focused item. This is the WAI-ARIA toolbar pattern, not the radio
 pattern.
 
-`roving-focus` is composed DIRECTLY — the WC/Astro `bindToggleGroup` and the
+`roving-focus` is composed DIRECTLY — the Astro `bindToggleGroup` and the
 React controller each call `createRovingFocus(root, { orientation })`. There is
 no effect vocabulary and no runner: the client composes the primitive against
 real document DOM. The item buttons carry `data-roving-item` so the primitive
@@ -88,8 +88,7 @@ disabled items) rather than in `canDispatch`, which cannot see the item value.
 The root is `role="group"`, which does NOT support `aria-orientation`,
 `aria-disabled`, or `aria-required` (they are outside its allowed-attribute set
 — axe flags them). So the group advertises orientation via `data-orientation`
-and expresses group-disabled by natively disabling its items, matching the
-oracle WC. Items are native `<button type="button">` toggle buttons carrying
+and expresses group-disabled by natively disabling its items. Items are native `<button type="button">` toggle buttons carrying
 `aria-pressed` — valid on a button regardless of mode.
 
 `item` is a `many` part: its projection is the exported `toggleItemAria(value,
@@ -101,6 +100,31 @@ in a projection the conformance harness asserts against.
 The item projection carries the resolved string `aria-pressed: 'false'` in the
 common unpressed case; the DOM binds apply it with `{ validate: false }` so
 aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
+
+## Icons beside a label
+
+Each `item` takes two optional decorative icons around its label, in reading order (the same props as Button): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `ToggleGroup.Item` | `endIcon: ReactNode` on `ToggleGroup.Item` |
+| Astro | `<slot name="start-icon-{value}" />` | `<slot name="end-icon-{value}" />` |
+
+Astro renders its items from the `items` array, so a slot is named for the item it belongs to: the item with `value="bold"` takes `start-icon-bold` and `end-icon-bold`.
+
+```html
+<button data-part="item" class="inline-grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Bold
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional many parts (one pair per item), present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The item is a grid (`inline-grid grid-flow-col items-center gap-2`). The label and the icon wrappers are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- An icon-only item keeps its required accessible name (`aria-label`).
 
 ## Keyboard and effects
 
@@ -130,9 +154,7 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 | `aria-pressed` + `data-state` (on/off) reflection on items | contract |
 | variant (default/outline) + size (default/sm/lg) | contract |
 | arrow keys move focus ONLY, no select-follows-focus | contract — the toolbar pattern (this component's correct behavior, unlike radio-group which improved to arrow-selects) |
-| WC form-association via ElementInternals (`setFormValue`, `valueMissing`, CSV/FormData submission, `name`/`required` validity) | dropped — deferred to the `form-value` primitive, which does not yet exist (planned across the checkbox/switch/select family). `name`/`required` are preserved as an INERT surface (`data-name`, and `required` accepted on config) so the wiring exists when form-value lands. The old React tsx never rendered hidden inputs either; form participation was WC-only |
-| WC `input`/`change`/`rafters-toggle-group-change` events | dropped — same deferral; the selection contract is `onValueChange` (React) and the projected `aria-pressed`/`data-state` (all three) |
-| shadow-DOM `<rafters-toggle-group>` + `<rafters-toggle-group-item>` pair | defect-do-not-port — replaced by a single light-DOM enhancer (`bindToggleGroup`), matching button/radio-group; the host provides the real `role="group"` markup with `<button data-part="item">` children so roving and focus act on real document DOM |
+| form association (`name`/`required` validity) | dropped — deferred to the `form-value` primitive, which does not yet exist (planned across the checkbox/switch/select family). `name`/`required` are preserved as an INERT surface (`data-name`, and `required` accepted on config) so the wiring exists when form-value lands. The old React tsx never rendered hidden inputs either |
 | `createSelectionGroup` primitive for single/multiple state | framework-affordance — expressed instead as reducer state (`{ value, multiple }`), the behavior-layer equivalent, exactly as radio-group expresses its single-select state as reducer state rather than composing the primitive (no behavior-layer component composes `createSelectionGroup`) |
 
 ## Deltas from the oracle
@@ -142,8 +164,6 @@ aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 2. Group-disabled is expressed by natively disabling items plus a `data-disabled`
    marker on the root, rather than `aria-disabled` on the group (invalid on
    `role="group"`).
-3. A single light-DOM enhancer replaces the shadow-DOM element pair; the item
-   buttons are the real focusable/roving targets.
 
 ## WCAG 2.1 AA obligations
 

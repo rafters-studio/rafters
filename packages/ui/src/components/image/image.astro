@@ -41,8 +41,8 @@
  * the SAME DOM-native client the Web Component uses. One score, three
  * decorators, zero drift.
  *
- * Config travels as `data-*` and nothing else (#2001): `size`/`fill` are real
- * platform attributes elsewhere and none of these are valid on a <figure>, so
+ * Config travels as `data-*` and nothing else (#2001): `size` is a real
+ * platform attribute elsewhere and none of these are valid on a <figure>, so
  * the whole config block is `data-*` and readImageConfig reads `dataset`.
  *
  * Zero client-side load tracking: `status` is config (default 'loaded'), so a
@@ -71,6 +71,8 @@ interface Props extends Omit<HTMLAttributes<'figure'>, 'src' | 'alt' | 'class'> 
   alignment?: ImageAlignment;
   radius?: ImageRadius;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   status?: ImageStatus;
   caption?: string;
   errorMessage?: string;
@@ -84,6 +86,7 @@ const {
   alignment = 'center',
   radius = 'lg',
   fill,
+  surface,
   status,
   caption,
   errorMessage,
@@ -92,7 +95,7 @@ const {
   ...attrs
 } = Astro.props as Props & { class?: string };
 
-const config: ImageConfig = { size, alignment, radius, fill, status, errorMessage, loadingLabel };
+const config: ImageConfig = { size, alignment, radius, fill, surface, status, errorMessage, loadingLabel };
 const classes = imageClasses(config, {});
 const resolved = resolveImage(config);
 
@@ -109,7 +112,6 @@ const statusAria = projection.status ?? {};
   data-size={size}
   data-alignment={alignment}
   data-radius={radius}
-  data-fill={fill}
   data-status={status}
   data-error-message={errorMessage}
   data-loading-label={loadingLabel}

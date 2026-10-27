@@ -101,8 +101,10 @@ export interface ImageProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onL
   alignment?: ImageAlignment;
   /** Corner radius token. Default 'lg'. */
   radius?: ImageRadius;
-  /** Fill signature painted behind the image (the frame placeholder). */
+  /** Exactly one `bg-fill-*` token painted behind the image (the frame placeholder). */
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   /** Initial load status. Seeds the state React owns; the img's load/error
    *  events flip it from there. Default 'loaded'. */
   status?: ImageStatus;
@@ -126,6 +128,7 @@ export const Image = React.forwardRef<HTMLElement, ImageProps>(function Image(
     alignment = 'center',
     radius = 'lg',
     fill,
+    surface,
     status: initialStatus = 'loaded',
     caption,
     errorMessage,
@@ -140,7 +143,16 @@ export const Image = React.forwardRef<HTMLElement, ImageProps>(function Image(
 ) {
   const [status, setStatus] = React.useState<ImageStatus>(initialStatus);
 
-  const config: ImageConfig = { size, alignment, radius, fill, status, errorMessage, loadingLabel };
+  const config: ImageConfig = {
+    size,
+    alignment,
+    radius,
+    fill,
+    surface,
+    status,
+    errorMessage,
+    loadingLabel,
+  };
   const classes = imageClasses(config, {});
   const resolved = resolveImage(config);
 

@@ -55,7 +55,6 @@ describe('registry serves behavior-layer components from src/components', () => 
     const paths = button.files.map((f) => f.path);
     expect(paths).toContain('components/ui/button.tsx');
     expect(paths).toContain('components/ui/button.astro');
-    expect(paths).toContain('components/ui/button.element.ts');
   });
 
   it('a served component carries container-query classes (the scanner has something to find)', () => {
@@ -530,7 +529,6 @@ const SERVED_EXTS = [
   '.astro',
   '.vue',
   '.svelte',
-  '.element.ts',
   '.behavior.ts',
   '.classes.ts',
   '.types.ts',
@@ -567,7 +565,7 @@ describe('every component file is installable', () => {
       'components/ui/chart.tsx',
       'components/ui/line-chart.tsx',
       'components/ui/line.tsx',
-      'components/ui/area-chart.element.ts',
+      'components/ui/area-chart.behavior.ts',
       'components/ui/bar-chart.astro',
       'components/ui/x-axis.behavior.ts',
       'components/ui/cartesian-grid.tsx',
@@ -584,7 +582,6 @@ describe('every component file is installable', () => {
       expect(loadComponent(name)?.files.map((f) => f.path)).toEqual([
         `components/ui/${name}.tsx`,
         `components/ui/${name}.astro`,
-        `components/ui/${name}.element.ts`,
         `components/ui/${name}.behavior.ts`,
         `components/ui/${name}.classes.ts`,
         'components/ui/chart.behavior.ts',
@@ -595,7 +592,7 @@ describe('every component file is installable', () => {
     }
   });
 
-  it('serves all 39 chart-family mark and axis files in the chart item', () => {
+  it('serves all 30 chart-family mark and axis files in the chart item', () => {
     const family = [
       'line-chart',
       'line',
@@ -611,7 +608,7 @@ describe('every component file is installable', () => {
       .filter((f) => SERVED_EXTS.some((ext) => f.endsWith(ext)))
       .filter((f) => family.includes(f.slice(0, f.indexOf('.'))))
       .map((f) => `components/ui/${f}`);
-    expect(expected).toHaveLength(39);
+    expect(expected).toHaveLength(30);
     const paths = (loadComponent('chart')?.files ?? []).map((f) => f.path);
     for (const p of expected) expect(paths).toContain(p);
   });
@@ -621,5 +618,91 @@ describe('composites runtime (#2441)', () => {
   it('ships embed.ts with the runtime', () => {
     const paths = loadCompositesRuntime().files.map((f) => f.path);
     expect(paths).toContain('lib/composites/embed.ts');
+  });
+});
+
+describe('select ships a typeahead primitive without innerHTML (#2193)', () => {
+  it('serves typeahead as a select dependency with no innerHTML assignment', () => {
+    expect(loadComponent('select')?.primitives).toContain('typeahead');
+    const typeahead = loadPrimitive('typeahead');
+    const source = typeahead?.files.map((f) => f.content).join('\n') ?? '';
+    expect(source).toContain('export function highlightMatch');
+    expect(source).not.toMatch(/\.innerHTML\s*=/);
+  });
+});
+
+/**
+ * #2022: the dependency graph is declarative data. Every cross-component import
+ * in served source (`../sheet/sheet`, `../grid/grid.classes`, type-only too)
+ * must appear in the importing item's registryDependencies, or `rafters add`
+ * writes a file whose import does not resolve (#2020, the sidebar install).
+ */
+describe('registryDependencies carries the complete cross-component graph (#2022)', () => {
+  const CROSS_COMPONENT =
+    /(?:import|export)\s[^'"]*?from\s+['"]\.\.\/([^./'"][^/'"]*)\/[^'"]+['"]|import\s+['"]\.\.\/([^./'"][^/'"]*)\/[^'"]+['"]/g;
+  const componentDirs = new Set(
+    readdirSync(COMPONENTS).filter((d) => statSync(join(COMPONENTS, d)).isDirectory()),
+  );
+
+  it('every cross-component import in served source is a declared dependency', () => {
+    const missing: Record<string, string[]> = {};
+    for (const name of listComponentNames()) {
+      const item = loadComponent(name);
+      if (!item) continue;
+      for (const file of item.files) {
+        for (const match of file.content.matchAll(CROSS_COMPONENT)) {
+          const owner = match[1] ?? match[2];
+          if (!owner || !componentDirs.has(owner) || owner === name) continue;
+          if (!item.registryDependencies.includes(owner)) {
+            missing[name] = [...new Set([...(missing[name] ?? []), owner])];
+          }
+        }
+      }
+    }
+    expect(missing).toEqual({});
+  });
+
+  it('declares the four edges the #2020 audit found', () => {
+    expect(loadComponent('sidebar')?.registryDependencies).toContain('sheet');
+    expect(loadComponent('container')?.registryDependencies).toContain('grid');
+    expect(loadComponent('field')?.registryDependencies).toContain('label');
+    expect(loadComponent('button-group')?.registryDependencies).toContain('button');
+  });
+
+  it('keeps primitives beside registryDependencies for released CLIs', () => {
+    for (const item of [
+      loadComponent('sidebar'),
+      loadPrimitive('classy'),
+      loadSubstrate('contract'),
+    ]) {
+      expect(item?.primitives).toEqual(item?.registryDependencies);
+    }
+  });
+});
+
+describe('registry type values, per-file type and target (#2022)', () => {
+  it('keeps the old item-level type and puts the registry:* value on each file', () => {
+    const button = loadComponent('button');
+    expect(button?.type).toBe('ui');
+    expect(new Set(button?.files.map((f) => f.type))).toEqual(new Set(['registry:ui']));
+    expect(loadPrimitive('classy')?.files.map((f) => f.type)).toEqual(['registry:lib']);
+    expect(loadSubstrate('contract')?.files.map((f) => f.type)).toEqual(['registry:lib']);
+    expect(loadSubstrate('use-memory')?.files.map((f) => f.type)).toEqual(['registry:hook']);
+    expect(new Set(loadCompositesRuntime().files.map((f) => f.type))).toEqual(
+      new Set(['registry:block']),
+    );
+  });
+
+  it('gives .astro component files an explicit target relative to componentsPath', () => {
+    const files = loadComponent('button')?.files ?? [];
+    expect(files.find((f) => f.path === 'components/ui/button.astro')?.target).toBe('button.astro');
+    expect(files.find((f) => f.path === 'components/ui/button.tsx')?.target).toBeUndefined();
+  });
+
+  it('hoists npm dependencies from files onto the item, versions kept', () => {
+    const item = loadComponent('button');
+    const fromFiles = new Set(item?.files.flatMap((f) => f.dependencies));
+    expect(new Set(item?.dependencies)).toEqual(fromFiles);
+    expect(item?.dependencies.some((d) => /@\d/.test(d))).toBe(true);
   });
 });

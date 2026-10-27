@@ -2,13 +2,12 @@
 
 Status: DRAFT. Static score (imitates Container). No state, no actions, no
 keymap, no effects, no motion block. The composition archetype: the first pure
-static performed across all three frameworks (React, the `<rafters-card>` web
-component, and Astro).
+static performed across both frameworks (React and Astro).
 
 Files (`src/components/card/`):
 
 ```
-card.behavior.ts   card.classes.ts   card.tsx   card.element.ts   card.astro
+card.behavior.ts   card.classes.ts   card.tsx   card.astro
 card-header.astro  card-title.astro  card-action.astro
 card-content.astro card-footer.astro
 ```
@@ -17,10 +16,10 @@ card-content.astro card-footer.astro
 writing a raw `<p class=…>` in an `.astro` file, and the ruling that
 `CardDescription` is a real `p` rules out its suggested remedy. Astro consumers
 use `card.astro`'s `description` slot until the guard is given a card-family
-exemption. `CardDescription` exists normally in React and the web component.
+exemption. `CardDescription` exists normally in React.
 
 Tests mirror into `test/components/card/` (behavior, classes, React
-conformance, WC conformance, Astro conformance, Astro sub-component parity).
+conformance, Astro conformance, Astro sub-component parity).
 
 ## Purpose
 
@@ -42,8 +41,6 @@ state, and runs no effects. There is therefore **nothing to bind**:
   slots through, semantic element chosen by `as`.
 - `card.astro` ships **no** `<script>` -- it is server-rendered markup with
   the shared class strings and named slots; there is nothing to hydrate.
-- `card.element.ts` performs **no** binding -- the web component renders the
-  surface markup with the shared classes and named slots, once.
 
 The score is declared at all only so the conformance harness can assert the
 one real contract (the `root` part renders and projects no ARIA) identically
@@ -119,11 +116,6 @@ never collide -- composing sub-components yields the React tree with no phantom
 empty regions wrapped around it. That is a server-side check, not a
 `slotchange` listener: still no client JavaScript, still no bind.
 
-The web component cannot nest arbitrary children into regions without a
-runtime, so it keeps the fixed named slots and pays the honest cost: an
-unfilled region is empty space. Hiding it would require a `slotchange` listener
--- a bind -- which is precisely what a pure static must not carry.
-
 ## Config, state, actions
 
 ```ts
@@ -131,17 +123,27 @@ type CardElement = 'div' | 'article' | 'section' | 'aside';
 
 interface CardConfig {
   as?: CardElement;
-  fill?: string; // colour-vocabulary signature (#1637)
+  fill?: string;    // exactly one bg-fill-* token
+  surface?: string; // a surface name, e.g. 'popover'
 }
 type CardState = Record<never, never>;
 type CardActions = Record<never, never>;
 ```
 
-`fill`, never a raw background. A resolved fill signature REPLACES the default
-`bg-card` surface pairing (so the two never coexist and there is no reliance
-on compiled source-order to pick a winner); an invalid or empty signature
-keeps the default card surface. The oracle's deprecated `background` enum is
-dropped.
+The base surface is `bg-surface-card`, the generated surface fill for the
+`card` tokens (background, foreground and border). Two props change it, and
+neither adds a second background beside the base:
+
+- `fill` takes exactly one designer-authored `bg-fill-*` token. It replaces
+  the base surface outright. Any other value (`bg-red-500`, two tokens, a bare
+  word) is dropped with a console warning and the base surface stays.
+- `surface` names one of the generated surfaces (`surface="popover"` renders
+  `bg-surface-popover`). It replaces the base surface. An unknown name is
+  ignored and the base stays.
+
+A fill beats a surface, and a surface beats the base
+(`card.classes.ts:77`, `classy.fill` / `classy.surface` in
+`primitives/classy.ts`). The oracle's `background` enum is dropped.
 
 ## No `className`. Design travels through token props.
 
@@ -152,7 +154,7 @@ an oversight.
 
 A component that accepts a class string is a component that invites design to
 be re-decided at every call site. The whole system exists so design travels
-through **token props** -- `fill` over the colour vocabulary, `as` over the
+through **token props** -- `fill` and `surface` over the registry's fills, `as` over the
 semantic element -- which are checkable, cascade with the token layer, and
 cannot express an arbitrary value. A class escape hatch is the hole through
 which every one of those guarantees leaks: an agent asked to adjust a card
@@ -187,7 +189,7 @@ composition, same `data-slot` selectors, same children.
 ### `data-slot` and `data-part` are different contracts
 
 Every node emits shadcn's `data-slot` (`card`, `card-header`, `card-title`,
-`card-description`, `card-action`, `card-content`, `card-footer`) in all three
+`card-description`, `card-action`, `card-content`, `card-footer`) in both
 performances. `data-slot` is the **swap contract**: a consumer's
 `has-data-[slot=card-action]` or `[data-slot=card]` selectors have to keep
 matching after the import swap, and the header's own grid variant depends on
@@ -209,7 +211,7 @@ gate, or execute -- which is precisely why it needs no client.
 | Oracle feature | Disposition |
 | --- | --- |
 | `as` (div/article/section/aside) | contract |
-| `fill` signature (#1637) | contract -- replaces the default surface when it resolves |
+| `fill` (one `bg-fill-*` token) and `surface` (a surface name) | contract -- each replaces the base surface; fill beats surface |
 | Card/CardHeader/CardTitle/CardDescription/CardContent/CardFooter/CardAction surface | contract (shadcn v4 drop-in family) |
 | `background` enum (none/muted/accent/card/primary/secondary) | dropped -- superseded by `fill`; a raw background prop is not the colour channel |
 | `interactive` (hover/focus/motion, tabindex, role=button, activate event) | dropped -- Card is a surface, not a control; motion is none. Whole-card interactivity is a link or a Button inside |
@@ -220,8 +222,8 @@ gate, or execute -- which is precisely why it needs no client.
 
 ## Deltas from the oracle
 
-1. `fill` replaces `background`; a resolved fill swaps the whole surface
-   pairing rather than layering a second `bg-*` over `bg-card`.
+1. `fill` and `surface` replace `background`; either swaps the whole surface
+   rather than layering a second `bg-*` over the base.
 2. `interactive`, `size`, and the editable/block-editor props are dropped --
    Card is a static surface with no state and no motion.
 3. `CardTitle`/`CardDescription` render real heading/paragraph tags -- the
@@ -253,8 +255,7 @@ Two intentional differences, both stated here rather than discovered:
 
    **Scope, precisely:** this holds where the COMPONENT owns the element -- the
    React `CardTitle`/`CardDescription`, and the importable `card-title.astro`.
-   It does NOT describe `card.astro`'s named-slot regions or the web component's
-   `slotRegion` wrappers: those are class-carrying `div`s and the CONSUMER
+   It does NOT describe `card.astro`'s named-slot regions: those are class-carrying `div`s and the CONSUMER
    supplies the element, so a named-slot card is only as accessible as the tag
    passed into it (`<h3 slot="title">`). That is a property of the fixed-slot
    model, not a divergence from it -- a bind-free static cannot rewrite a
@@ -277,16 +278,18 @@ AAA underneath, and that is the whole value over shadcn itself.
   title is a navigable section heading rather than styled text. This is the
   divergence from shadcn's `div` and it is why the divergence is worth having.
   It is guaranteed by the component only where the component owns the element
-  (React, and `card-title.astro`); in `card.astro`'s named slots and in the web
-  component the consumer supplies the tag, so pass a real heading there.
-- 1.4.6 Contrast (Enhanced) (AAA, 7:1): the default `bg-card` /
-  `text-card-foreground` pairing clears it in both themes. Measured on a
+  (React, and `card-title.astro`); in `card.astro`'s named slots the consumer
+  supplies the tag, so pass a real heading there.
+- 1.4.6 Contrast (Enhanced) (AAA, 7:1): the default surface
+  (`bg-surface-card`, which paints the `card` and `card-foreground` tokens)
+  clears it in both themes. Measured on a
   canonical near-zero-chroma neutral family through
   `calculateWCAGContrast`: **light 18.11:1** (`card-foreground` = neutral-950
   on `card` = neutral-50), **dark 8.36:1** (neutral-50 on neutral-700). Dark is
-  the tighter of the two but clears 7:1 with margin. A resolved `fill` over a
-  frozen role word brings its own paired foreground, so the surface stays
-  legible after the swap. Note the ratio is a function of the project's chosen
+  the tighter of the two but clears 7:1 with margin. A `fill` or `surface`
+  carries its own foreground (every fill token must declare one), so the
+  text colour changes with the background; the contrast of a designer's fill
+  is the designer's pairing. Note the ratio is a function of the project's chosen
   neutral family; the token *positions* are what this component fixes.
 - Landmark containment: a card is a surface, not a landmark -- the page around
   it supplies the region. The conformance suites render inside a `<main>` so

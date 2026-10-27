@@ -14,7 +14,7 @@
  * class MyCard extends RaftersElement {
  *   static styles = `
  *     :host { display: block; }
- *     .card { background: var(--color-card); }
+ *     .card { background: var(--card); }
  *   `;
  *
  *   render() {
@@ -62,7 +62,7 @@ export class RaftersElement extends HTMLElement {
    * ```typescript
    * RaftersElement.setTokenCSS(`
    *   :host {
-   *     --color-primary: oklch(0.208 0.042 266);
+   *     --primary: oklch(0.208 0.042 266);
    *     --spacing-4: 1rem;
    *   }
    * `);

@@ -17,7 +17,7 @@
  * @example
  * ```tsx
  * <Toggle aria-label="Toggle bold">
- *   <Bold className="h-4 w-4" />
+ *   <Bold />
  * </Toggle>
  * ```
  */
@@ -69,6 +69,10 @@ export interface ToggleProps extends Omit<
   pressed?: boolean;
   defaultPressed?: boolean;
   onPressedChange?: (pressed: boolean) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>((props, ref) => {
@@ -81,6 +85,8 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>((props, r
     defaultPressed = false,
     onPressedChange,
     onClick,
+    startIcon,
+    endIcon,
     children,
     type,
     ...rest
@@ -151,9 +157,31 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>((props, r
       }}
       {...rest}
     >
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          id={ids.startIcon}
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       <span data-part="label" id={ids.label}>
         {children}
       </span>
+      {endIcon != null && endIcon !== false ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          id={ids.endIcon}
+          className={classes.endIcon}
+          {...aria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
     </button>
   );
 });

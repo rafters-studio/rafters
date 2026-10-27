@@ -9,6 +9,10 @@ export interface TabsClassSet {
   trigger: string;
   /** Each [role="tabpanel"]: focusable, so it carries a focus ring. */
   panel: string;
+  /** The decorative start icon wrapper inside a trigger. */
+  startIcon: string;
+  /** The decorative end icon wrapper inside a trigger. */
+  endIcon: string;
 }
 
 const rootHorizontalClasses = 'flex flex-col gap-2';
@@ -16,19 +20,25 @@ const rootVerticalClasses = 'flex flex-row gap-2';
 
 const listBaseClasses =
   'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground';
-const listHorizontalClasses = 'h-10';
+// The root is a flex column, which stretches its children; `self-start` keeps
+// the horizontal rail at its content width, on the start edge (#2661).
+const listHorizontalClasses = 'h-10 self-start';
 const listVerticalClasses = 'h-auto flex-col';
 
 const triggerBaseClasses = [
-  'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5',
+  // A grid, so the icons and the label are columns in reading order and the
+  // start icon sits on the right on a dir="rtl" page. Inline padding tightens
+  // on the icon's own side only, in logical edges.
+  'inline-grid grid-flow-col items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5',
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2',
   'text-label-medium ts-label-medium ring-offset-background cursor-pointer',
   // motion.jsonl `tabs / trigger / hover` -- color (background, text, border),
   // fast, standard. This is the trigger's ONLY row; the comment that used to sit
   // here called the same declaration "indicator-move", which is a different row
   // and a part this component does not have (see panelClasses below).
   //
-  // `transition-all` narrowed to `transition-colors`: it also transitioned the
-  // active pill's `shadow-sm`, and the matrix assigns tabs no `elevation` row.
+  // The all-properties transition narrowed to `transition-colors`: it also
+  // transitioned the active pill's small shadow, and the matrix assigns tabs no `elevation` row.
   // A moment with no row does not move.
   'transition-colors duration-fast ease-standard',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -71,6 +81,9 @@ const panelClasses = [
 // giving tabs a real travelling indicator is a component change, not a class
 // change.
 
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
+
 /** The view: class strings keyed by config/state. No logic. */
 export function tabsClasses(config: TabsConfig, _state: TabsState): TabsClassSet {
   const vertical = config.orientation === 'vertical';
@@ -79,5 +92,7 @@ export function tabsClasses(config: TabsConfig, _state: TabsState): TabsClassSet
     list: `${listBaseClasses} ${vertical ? listVerticalClasses : listHorizontalClasses}`,
     trigger: `${triggerBaseClasses} ${triggerStateClasses}`,
     panel: panelClasses,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
   };
 }

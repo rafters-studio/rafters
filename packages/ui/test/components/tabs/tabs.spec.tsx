@@ -6,7 +6,9 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import { installIconLayout, ICON_SVG_16, ICON_SVG_20, rectsOf } from './icon-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../src/components/tabs/tabs';
 import {
   tabs,
@@ -297,5 +299,160 @@ describe('tabs [react]', () => {
     );
     // Tab enters the set at the tab whose panel is showing, not at the first.
     expect(tabbable).toEqual(['details']);
+  });
+});
+
+describe('tabs icons [react]', () => {
+  let uninstall: () => void;
+  beforeEach(() => {
+    uninstall = installIconLayout();
+  });
+  afterEach(() => uninstall());
+
+  const svg = (markup: string) => <span dangerouslySetInnerHTML={{ __html: markup }} />;
+
+  function mountIcons(props: { startIcon?: React.ReactNode; endIcon?: React.ReactNode }) {
+    return render(
+      <Tabs defaultValue="a">
+        <TabsList aria-label="Views">
+          <TabsTrigger value="a" {...props}>
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="b">Details</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">A panel</TabsContent>
+        <TabsContent value="b">B panel</TabsContent>
+      </Tabs>,
+    );
+  }
+  const triggerA = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[data-part="trigger"][data-value="a"]') as HTMLElement;
+
+  it('start, end and both render beside the label on one line', () => {
+    for (const [name, props] of [
+      ['start', { startIcon: svg(ICON_SVG_16) }],
+      ['end', { endIcon: svg(ICON_SVG_16) }],
+      ['both', { startIcon: svg(ICON_SVG_16), endIcon: svg(ICON_SVG_16) }],
+    ] as const) {
+      const { container, unmount } = mountIcons(props);
+      const r = rectsOf(triggerA(container));
+      if (name !== 'end') {
+        expect(r.start, name).not.toBeNull();
+        expect(r.start?.right as number).toBeLessThanOrEqual(r.label.left + 0.5);
+        expect(Math.abs((r.start?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      if (name !== 'start') {
+        expect(r.end, name).not.toBeNull();
+        expect(r.end?.left as number).toBeGreaterThanOrEqual(r.label.right - 0.5);
+        expect(Math.abs((r.end?.top as number) - r.label.top)).toBeLessThan(r.label.height);
+      }
+      unmount();
+    }
+  });
+
+  it('on a dir="rtl" page the start icon renders on the right of the label', () => {
+    document.documentElement.dir = 'rtl';
+    const { container } = mountIcons({ startIcon: svg(ICON_SVG_16) });
+    const r = rectsOf(triggerA(container));
+    expect((r.start as DOMRect).left).toBeGreaterThan(r.label.left);
+  });
+
+  it('an icon keeps its own size', () => {
+    const { container } = mountIcons({
+      startIcon: svg(ICON_SVG_16),
+      endIcon: svg(ICON_SVG_20),
+    });
+    const r = rectsOf(triggerA(container));
+    expect(r.start?.width).toBe(16);
+    expect(r.end?.width).toBe(20);
+  });
+
+  it('each wrapper is aria-hidden and absent when no icon is given', () => {
+    const { container } = mountIcons({
+      startIcon: svg(ICON_SVG_16),
+      endIcon: svg(ICON_SVG_16),
+    });
+    for (const [part, icon] of [
+      ['startIcon', 'inline-start'],
+      ['endIcon', 'inline-end'],
+    ] as const) {
+      const wrapper = container.querySelector(`[data-part="${part}"]`);
+      expect(wrapper?.getAttribute('aria-hidden')).toBe('true');
+      expect(wrapper?.getAttribute('data-icon')).toBe(icon);
+    }
+    cleanup();
+    const bare = mountIcons({});
+    expect(bare.container.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(bare.container.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+
+  it('the accessible name is the label alone even when the svg has a title', async () => {
+    mountIcons({
+      startIcon: (
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <title>Mail icon</title>
+        </svg>
+      ),
+    });
+    await expect
+      .element(page.getByRole('tab', { name: 'Overview', exact: true }))
+      .toBeInTheDocument();
+  });
+});
+
+describe('tabs rail width [react]', () => {
+  // No compiled Tailwind sheet loads in the browser project, so this stand-in
+  // gives each structural class its rule, keyed by the class itself: the
+  // geometry follows whatever classes the component paints.
+  let style: HTMLStyleElement;
+  beforeEach(() => {
+    style = document.createElement('style');
+    style.textContent = `
+      .flex { display: flex; }
+      .inline-flex { display: inline-flex; }
+      .flex-col { flex-direction: column; }
+      .flex-row { flex-direction: row; }
+      .self-start { align-self: flex-start; }
+      .p-1 { padding: 4px; }
+      .h-10 { height: 40px; }
+      .h-auto { height: auto; }
+      .px-3 { padding-inline: 12px; }
+      [data-testid="frame"] { width: 416px; }
+    `;
+    document.head.appendChild(style);
+  });
+  afterEach(() => {
+    cleanup();
+    style.remove();
+  });
+
+  function measure(orientation: 'horizontal' | 'vertical') {
+    render(
+      <div data-testid="frame">
+        <TestTabs defaultValue="overview" orientation={orientation} />
+      </div>,
+    );
+    const list = partElement(body(), 'list');
+    if (!list) throw new Error('no tablist rendered');
+    const triggers = partElements(body(), 'trigger').map((t) => t.getBoundingClientRect());
+    return { list: list.getBoundingClientRect(), triggers };
+  }
+
+  it('a horizontal list is as wide as its triggers plus its padding, with no empty rail', () => {
+    const { list, triggers } = measure('horizontal');
+    const sum = triggers.reduce((total, rect) => total + rect.width, 0);
+    expect(list.width).toBeCloseTo(sum + 8, 0);
+    expect(list.width).toBeLessThan(416);
+    const first = triggers[0];
+    const last = triggers[triggers.length - 1];
+    if (!first || !last) throw new Error('no triggers rendered');
+    expect(first.left - list.left).toBeCloseTo(4, 0);
+    expect(list.right - last.right).toBeCloseTo(4, 0);
+  });
+
+  it('a vertical list still fits its widest trigger', () => {
+    const { list, triggers } = measure('vertical');
+    const widest = Math.max(...triggers.map((rect) => rect.width));
+    expect(list.width).toBeCloseTo(widest + 8, 0);
   });
 });

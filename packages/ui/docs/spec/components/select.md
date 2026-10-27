@@ -7,10 +7,10 @@ the overlay effects of dialog (roving, typeahead, outside dismissal).
 Files (`src/components/select/`):
 
 ```
-select.classes.ts    select.behavior.ts    select.tsx    select.element.ts    select.astro
+select.classes.ts    select.behavior.ts    select.tsx    select.astro
 ```
 
-Tests mirror into `test/components/select/` (behavior, classes, React + WC +
+Tests mirror into `test/components/select/` (behavior, classes, React +
 Astro conformance).
 
 ## Composition
@@ -43,6 +43,8 @@ declarative effects), `dismiss-on-outside`, `aria-manager`, `memory`
 
 ```ts
 interface SelectConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled
   defaultValue?: string; // uncontrolled seed
   open?: boolean;        // controlled
@@ -61,6 +63,18 @@ effective value, so intrinsic state never drifts from a controlled consumer.
 `select` is the single action that moves both value and open — it fires
 `onValueChange` and `onOpenChange(false)` and clears the highlight.
 
+### Fill and surface
+
+`SelectContent` takes `fill` and `surface`, which change the surface of the listbox panel
+(`select.classes.ts:200`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
+
 ## Parts and ARIA
 
 | Part | Presence | ARIA |
@@ -70,6 +84,7 @@ effective value, so intrinsic state never drifts from a controlled consumer.
 | content | always, hidden when closed | `role="listbox"`, `aria-labelledby` (the trigger), `data-state` |
 | item (many) | always | `aria-selected`, `data-state` (`checked`/`unchecked`), `data-highlighted` (active only); `role="option"`, `tabindex="-1"`, `data-value`, `data-roving-item`, `aria-disabled` are static markup |
 | value | always | none — the binding writes the selected option's label (or the placeholder) and toggles `data-empty` |
+| startIcon, endIcon (many) | only when an icon is given | `aria-hidden="true"` — on the trigger and on each item; the wrapper carries `data-icon="inline-start"` / `"inline-end"` |
 | hidden-input | when `name` set | none — `type=hidden name value`, mirrored from the value |
 
 Empty-id convention (ratified 2026-07-08): a reference to an empty PartId
@@ -80,6 +95,31 @@ Combobox naming (WCAG 4.1.2): a `role="combobox"` takes its accessible name
 from a label, not its contents (its contents are the current value). The
 consumer supplies the name (`aria-label`, or an associated `<label>`), exactly
 as a native `<select>` requires.
+
+## Icons beside a label
+
+Two optional props place decorative icons beside the value on the trigger and beside the text on each item, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Trigger | Item |
+| --- | --- | --- |
+| React | `<SelectTrigger startIcon endIcon>` (`ReactNode`) | `<SelectItem startIcon endIcon>` (`ReactNode`) |
+| Astro | slots `start-icon`, `end-icon` | slots `item-start-icon-<value>`, `item-end-icon-<value>` (an option is data, so each option's icons are named by its value) |
+
+```html
+<button data-part="trigger" class="grid grid-cols-menu-row ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <div data-part="value">Apple</div>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+  <svg><!-- the chevron, after any end content --></svg>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label alone is the accessible name. The trigger's value and the item's label ignore the wrappers.
+- The listbox content is a grid on the named `grid-cols-menu-row` track list (indicator, icon, label, end). The viewport, each group and each item pass it down as `grid-cols-subgrid col-span-full`, so labels align whichever items carry an icon, and the start icon is on the right on a `dir="rtl"` page. The selected check sits in the indicator column.
+- The trigger is a grid on the same track list: start icon column 2, value column 3 (the `1fr` track), end icon column 4, chevron column 5. An empty track is zero wide, and the trigger carries no column gap (a gap is charged on every empty track), so the trigger's icons and chevron space themselves with logical `me-2` / `ms-2`. Items space icons with the row's `gap-x-2`.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- The file carries no physical direction class (`pl`, `pr`, `left`, `text-left`).
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 
 ## Keyboard and effects
 

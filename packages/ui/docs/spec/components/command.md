@@ -4,16 +4,16 @@ Status: DRAFT. Wave-4 port. Archetype: menu-collection-popup.
 
 A command palette: a search combobox that fuzzy-filters a listbox of options,
 invoked keyboard-first. Ports the old React-only command to the
-behavior layer with three performances (React, Web Component, Astro).
+behavior layer with two performances (React, Astro).
 
 Files (`src/components/command/`):
 
 ```
-command.classes.ts   command.behavior.ts   command.tsx   command.element.ts   command.astro
+command.classes.ts   command.behavior.ts   command.tsx   command.astro
 ```
 
-Tests mirror into `test/components/command/` (behavior, classes, and React / WC
-/ Astro conformance).
+Tests mirror into `test/components/command/` (behavior, classes, and React /
+Astro conformance).
 
 ## Composition
 
@@ -39,6 +39,8 @@ only the pure matcher is a seam.
 
 ```ts
 interface CommandConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled query
   defaultValue?: string; // uncontrolled seed
   label?: string;        // accessible name for the listbox (default 'Suggestions')
@@ -68,6 +70,18 @@ DOM-derived (fuzzy match against the live option list) and the score is pure —
 There is **no open axis**: the palette list is always present. Open/close lives
 only in the `CommandDialog` wrapper.
 
+### Fill and surface
+
+`Command` takes `fill` and `surface`, which change the surface of its root
+(`command.classes.ts:137`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
+
 ## Parts and ARIA
 
 | Part | Presence | ARIA |
@@ -76,6 +90,7 @@ only in the `CommandDialog` wrapper.
 | input | always | `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded="true"`, `aria-controls` (listbox id, only when rendered), `aria-activedescendant` (highlighted option id, set by the bindings) |
 | list | always | `role="listbox"`, `aria-label` (from `label`, default `Suggestions`) |
 | item | many | `role="option"`, `aria-selected` (highlighted), `data-selected`/`data-highlighted`, `hidden` when it does not match the query |
+| startIcon | optional, many | `aria-hidden="true"` (decorative; present only when an icon is given) |
 | empty | present-but-hidden | shown only when the query is non-empty and nothing matches |
 
 The consumer must give the `input` an accessible name (`aria-label` or an
@@ -98,7 +113,7 @@ focusable. On the input:
 - Typing: filters; the highlight resets so no stale option stays active.
 
 Invocation raises a `command-select` CustomEvent (`detail.value`) on the root
-for WC/Astro consumers; React consumers use the item's `onSelect` prop, which
+for Astro consumers; React consumers use the item's `onSelect` prop, which
 fires from the same click path.
 
 ## Oracle dispositions
@@ -113,8 +128,27 @@ fires from the same click path.
 | substring `includes` filter | upgraded to fuzzy matching via the command-palette primitive's `fuzzyMatch` (issue-directed; a deliberate contract change, not a silent swap) |
 | Enter only set `selectedValue`, never fired the item's action | defect-do-not-port — Enter now invokes the highlighted option through the same click path as pointer, so the option's `onSelect` fires |
 | `roving-focus` (issue's "add" list) | dropped — a combobox keeps DOM focus on the input and points at the active option virtually (aria-activedescendant); roving-focus moves DOM focus and item tabindex (and wraps), which would pull focus off the search box and break typing. Three signals converge: the oracle's aria-activedescendant + its explicit "options not individually focusable" note, the issue's `highlighted` state axis (a reducer value, not DOM focus), and shadcn/cmdk parity (aria-activedescendant). The primitive list is INTENT; this is the INTENT-vs-FACT escape hatch the issue names |
-| `CommandDialog` (React-only convenience) | contract, upgraded: the oracle wrapped Command in a backdrop + Escape listener; it now composes the modal trio (focus-trap + preventBodyScroll + outside-dismiss) via `startCommandDialogEffects`, imitating `dialog` per the issue. Provided in React (the surface the oracle shipped); WC/Astro consumers compose the merged `dialog` + `command` |
+| `CommandDialog` (React-only convenience) | contract, upgraded: the oracle wrapped Command in a backdrop + Escape listener; it now composes the modal trio (focus-trap + preventBodyScroll + outside-dismiss) via `startCommandDialogEffects`, imitating `dialog` per the issue. Provided in React (the surface the oracle shipped); Astro consumers compose the merged `dialog` + `command` |
 | slash-trigger / contenteditable activation (command-palette primitive) | framework-affordance not ported — that is the editor palette, a separate surface from the shadcn command list |
+
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of each item: `startIcon`. Command has no end icon: the end of an item is its shortcut.
+
+| Target | Item |
+| --- | --- |
+| React | `<Command.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon-{value}" />` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The list is a grid on `grid-cols-menu-row` (indicator, icon, label, end) and each item and group is `grid-cols-subgrid col-span-full`. The icon is column 2, the label (`data-part="label"`) column 3 and the shortcut column 4, so the icon and label follow reading order and mirror on a `dir="rtl"` page. No physical direction class remains in `command.classes.ts`: the shortcut has no `ml-auto` and the dialog is centered with `inset-x-0 mx-auto` instead of `left-1/2`.
+- An item tightens its start padding only when an icon is present (`has-data-[icon=inline-start]:ps-1.5`).
+- In React, a `Command.Shortcut` child is the end column and every other child is the label.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
 
 ## Motion
 

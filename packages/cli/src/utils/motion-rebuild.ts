@@ -10,6 +10,7 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import {
   generateNamespaces,
   type Plugin,
@@ -115,27 +116,17 @@ type CarriedMotionOverride = {
 };
 
 /**
- * Read the overrides worth carrying out of a stored motion namespace file.
+ * Read the overrides worth carrying out of a stored motion namespace's tokens.
  *
  * Parsing is per token, never per file: the whole premise here is that most of
  * a pre-0.3.0 motion file no longer satisfies TokenSchema, so a token that
  * fails to parse is skipped rather than allowed to abort the read.
  */
-function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotionOverride> {
+function readStoredMotionOverrides(
+  entries: readonly unknown[],
+): Map<string, CarriedMotionOverride> {
   const carried = new Map<string, CarriedMotionOverride>();
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(motionFile, 'utf8'));
-  } catch {
-    // No stored motion namespace, or unreadable JSON: nothing to carry.
-    return carried;
-  }
-
-  const file = z.object({ tokens: z.array(z.unknown()) }).safeParse(raw);
-  if (!file.success) return carried;
-
-  for (const entry of file.data.tokens) {
+  for (const entry of entries) {
     const parsed = StoredMotionTokenSchema.safeParse(entry);
     if (!parsed.success) continue;
     const { name, value, userOverride } = parsed.data;
@@ -147,13 +138,67 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
 }
 
 /**
+ * The one legacy-to-twin rename table (#2746). Before #2746 every duration tier
+ * and easing curve existed twice, as an unlinked pair; the `rafters-*` leaf is
+ * the one kept. Each retired name is spelled out here, once, so a stored file
+ * written before #2746 can still be read. The values share a format (`"150ms"`,
+ * a curve's CSS string), so an override moves across as is.
+ */
+const RETIRED_TO_TWIN: ReadonlyMap<string, string> = new Map([
+  ['motion-duration-instant', 'rafters-duration-instant'],
+  ['motion-duration-micro', 'rafters-duration-micro'],
+  ['motion-duration-fast', 'rafters-duration-fast'],
+  ['motion-duration-moderate', 'rafters-duration-moderate'],
+  ['motion-duration-normal', 'rafters-duration-normal'],
+  ['motion-duration-slow', 'rafters-duration-slow'],
+  ['motion-easing-standard', 'rafters-ease-standard'],
+  ['motion-easing-enter', 'rafters-ease-enter'],
+  ['motion-easing-exit', 'rafters-ease-exit'],
+  ['motion-easing-linear', 'rafters-ease-linear'],
+  ['motion-easing-spring-smooth', 'rafters-ease-spring-smooth'],
+  ['motion-easing-spring-snappy', 'rafters-ease-spring-snappy'],
+]);
+
+/**
+ * Move each override stored on a retired name onto its `rafters-*` twin.
+ *
+ * A stored retired token without an override is not in the map at all, so it is
+ * simply not regenerated. A retired override whose twin carries a DIFFERENT
+ * override is two designer decisions for one value; picking one silently would
+ * discard the other, so it is an error naming both, raised before anything is
+ * written.
+ */
+function renameRetiredOverrides(
+  carried: Map<string, CarriedMotionOverride>,
+): Map<string, CarriedMotionOverride> {
+  const renamed = new Map<string, CarriedMotionOverride>();
+  for (const [name, override] of carried) {
+    if (!RETIRED_TO_TWIN.has(name)) renamed.set(name, override);
+  }
+  for (const [name, override] of carried) {
+    const leaf = RETIRED_TO_TWIN.get(name);
+    if (leaf === undefined) continue;
+    const twin = renamed.get(leaf);
+    if (twin && JSON.stringify(twin.value) !== JSON.stringify(override.value)) {
+      throw new Error(
+        `Stored motion overrides conflict: "${name}" holds ${JSON.stringify(override.value)} and its replacement "${leaf}" holds ${JSON.stringify(twin.value)}. ` +
+          `Keep one: remove the override from either token in .rafters/tokens/motion.rafters.json, then run the command again.`,
+      );
+    }
+    if (!twin) renamed.set(leaf, override);
+  }
+  return renamed;
+}
+
+/**
  * Rewrite `.rafters/tokens/motion.rafters.json` from the motion generator.
  *
  * Motion is system-owned end to end -- cells, easings, durations and the five
  * namespaces all come out of the motion matrix, and nobody hand-authors one.
  * A file written by an older rafters therefore holds tokens the current
  * generator no longer emits: 0.2.3 cells keyed on `durationTier` instead of
- * `duration.kind`, `motion-easing-*` names retired since. Reloading those
+ * `duration.kind`, and the duration and easing names retired in #2746 in favour
+ * of the `rafters-duration-*` and `rafters-ease-*` leaves. Reloading those
  * fails either TokenSchema validation or the Tailwind exporter, which is what
  * made `--rebuild` and post-install regen unusable on every pre-0.3.0
  * project (#2208).
@@ -168,15 +213,21 @@ function readStoredMotionOverrides(motionFile: string): Map<string, CarriedMotio
  * could no longer produce drops BOTH halves: what is left is the regenerated
  * token exactly as the generator emitted it, `userOverride: null`, rather than
  * a token asserting a decision over a shape that no longer exists. The drop is
- * logged, because a discarded designer decision is not a thing to do silently.
+ * logged, because a discarded designer decision is not a thing to do silently,
+ * and so is every override that is carried. An override stored on a retired
+ * duration or easing name is carried onto its `rafters-*` twin first (see
+ * {@link renameRetiredOverrides}), which throws before any write on a conflict.
  *
  * Writing before the registry load is what lets the reload see the regenerated
- * namespace with no further surgery.
+ * namespace with no further surgery. A regenerated token equal to its stored
+ * twin apart from `generatedAt` is kept as stored, and when every token is, the
+ * file is not written at all (#2799).
  *
  * Callers must check {@link hasStoredTokens} first.
  */
 export function regenerateMotionNamespace(tokensDir: string, plugins: readonly Plugin[]): void {
-  const carried = readStoredMotionOverrides(join(tokensDir, 'motion.rafters.json'));
+  const stored = readStoredMotionTokens(join(tokensDir, 'motion.rafters.json'));
+  const carried = renameRetiredOverrides(readStoredMotionOverrides(stored));
 
   const tokens = generateNamespaces(['motion']).allTokens.map((token) => {
     const override = carried.get(token.name);
@@ -189,8 +240,57 @@ export function regenerateMotionNamespace(tokensDir: string, plugins: readonly P
       });
       return token;
     }
+    log({
+      event: 'motion:override-carried',
+      token: token.name,
+      message: `Stored override on "${token.name}" is carried onto the regenerated token.`,
+    });
     return { ...token, ...override };
   });
 
-  saveRegistryToDir(tokensDir, new TokenRegistry(tokens, plugins));
+  const regenerated = new TokenRegistry(tokens, plugins).list();
+  // A token whose content matches its stored twin is kept as stored, so its
+  // `generatedAt` holds; a namespace with nothing changed is not written (#2799).
+  const kept = regenerated.map((token, index) => {
+    const inPlace = stored[index];
+    if (inPlace !== undefined && sameExceptStamp(inPlace, token)) {
+      return { token: inPlace, unchanged: true };
+    }
+    const twin = stored.find((entry) => sameExceptStamp(entry, token));
+    return { token: twin ?? token, unchanged: false };
+  });
+  if (kept.length === stored.length && kept.every((entry) => entry.unchanged)) return;
+
+  saveRegistryToDir(
+    tokensDir,
+    new TokenRegistry(
+      kept.map((entry) => entry.token),
+      plugins,
+    ),
+  );
+}
+
+/**
+ * The stored motion tokens as raw entries. An absent file or unreadable JSON
+ * yields none: nothing to carry and nothing to compare against.
+ */
+function readStoredMotionTokens(motionFile: string): unknown[] {
+  try {
+    const file = z
+      .object({ tokens: z.array(z.unknown()) })
+      .safeParse(JSON.parse(readFileSync(motionFile, 'utf8')));
+    return file.success ? file.data.tokens : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Whether two tokens are the same on disk once their `generatedAt` stamps are set aside. */
+function sameExceptStamp(stored: unknown, token: unknown): boolean {
+  const unstamped = (entry: unknown): unknown => {
+    const plain: unknown = JSON.parse(JSON.stringify(entry));
+    if (typeof plain !== 'object' || plain === null) return plain;
+    return Object.fromEntries(Object.entries(plain).filter(([key]) => key !== 'generatedAt'));
+  };
+  return isDeepStrictEqual(unstamped(stored), unstamped(token));
 }

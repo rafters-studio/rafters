@@ -9,7 +9,7 @@
  *
  * Tailwind class structure: [modifier:]...[modifier:]utility[-value]
  * - Modifiers can contain brackets: data-[state=open]:, aria-[checked]:, min-[320px]:
- * - Utility values with brackets are arbitrary: w-[100px], bg-[#fff], text-[14px]
+ * - Utility values with brackets are arbitrary: a bracketed width, colour or font size
  */
 
 // ============================================================================
@@ -32,7 +32,7 @@ export type TokenMap = (key: string) => string | null;
 export interface ClassyOptions {
   /** Resolve token references to class strings */
   tokenMap?: TokenMap;
-  /** Allow arbitrary values like w-[10px] (default: false) */
+  /** Allow arbitrary (bracketed) values (default: false) */
   allowArbitrary?: boolean;
   /** Custom warning handler */
   warn?: (msg: string) => void;
@@ -50,7 +50,7 @@ export interface ParsedClass {
   original: string;
   /** Modifier chain (e.g., ['hover', 'dark', 'data-[state=open]']) */
   modifiers: string[];
-  /** The utility part (e.g., 'bg-blue-500', 'w-[100px]') */
+  /** The utility part (e.g., 'bg-example', 'utility-[value]') */
   utility: string;
   /** Whether the utility contains an arbitrary value */
   isArbitrary: boolean;
@@ -79,11 +79,11 @@ function isTokenRef(v: unknown): v is TokenRef {
  * Handles bracket content correctly (brackets in modifiers vs arbitrary values).
  *
  * Examples:
- * - "hover:bg-blue-500" → modifiers: ['hover'], utility: 'bg-blue-500', isArbitrary: false
- * - "data-[state=open]:flex" → modifiers: ['data-[state=open]'], utility: 'flex', isArbitrary: false
- * - "w-[100px]" → modifiers: [], utility: 'w-[100px]', isArbitrary: true
- * - "hover:w-[100px]" → modifiers: ['hover'], utility: 'w-[100px]', isArbitrary: true
- * - "supports-[display:grid]:grid" → modifiers: ['supports-[display:grid]'], utility: 'grid', isArbitrary: false
+ * - "hover:bg-example" → modifiers: ['hover'], utility: 'bg-example', isArbitrary: false
+ * - "data-[state=open]:example" → modifiers: ['data-[state=open]'], utility: 'example', isArbitrary: false
+ * - "utility-[value]" → modifiers: [], utility: 'utility-[value]', isArbitrary: true
+ * - "hover:utility-[value]" → modifiers: ['hover'], utility: 'utility-[value]', isArbitrary: true
+ * - "supports-[example]:example" → modifiers: ['supports-[example]'], utility: 'example', isArbitrary: false
  */
 export function parseTailwindClass(className: string): ParsedClass {
   const original = className;
@@ -148,7 +148,7 @@ export function parseTailwindClass(className: string): ParsedClass {
 /**
  * Check if a class contains an arbitrary value in the utility portion.
  * Brackets in modifiers (data-[state=open]:) are NOT arbitrary.
- * Brackets in the utility (w-[100px]) ARE arbitrary.
+ * Brackets in the utility (utility-[value]) ARE arbitrary.
  */
 export function hasArbitraryValue(className: string): boolean {
   return parseTailwindClass(className).isArbitrary;
@@ -175,6 +175,57 @@ function flatten(inputs: ClassInput[], out: unknown[] = []): unknown[] {
   }
   return out;
 }
+
+/**
+ * A fill is exactly one token with the reserved `bg-fill-` prefix. This is a
+ * shape check, never a list of names: the registry owns which fills exist.
+ */
+const FILL_SHAPE = /^bg-fill-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+/**
+ * Every surface's literal class, by surface name (FR-RAF-FILL-004). Each is
+ * the `bg-surface-<name>` fill the exporter writes from the registry, so the
+ * names here are the ones the semantic defaults measure.
+ */
+export const SURFACE_CLASSES: Readonly<Record<string, string>> = {
+  background: 'bg-surface-background',
+  card: 'bg-surface-card',
+  panel: 'bg-surface-panel',
+  popover: 'bg-surface-popover',
+  surface: 'bg-surface-surface',
+  primary: 'bg-surface-primary',
+  'primary-subtle': 'bg-surface-primary-subtle',
+  secondary: 'bg-surface-secondary',
+  'secondary-subtle': 'bg-surface-secondary-subtle',
+  muted: 'bg-surface-muted',
+  accent: 'bg-surface-accent',
+  'accent-subtle': 'bg-surface-accent-subtle',
+  destructive: 'bg-surface-destructive',
+  'destructive-subtle': 'bg-surface-destructive-subtle',
+  success: 'bg-surface-success',
+  'success-subtle': 'bg-surface-success-subtle',
+  warning: 'bg-surface-warning',
+  'warning-subtle': 'bg-surface-warning-subtle',
+  info: 'bg-surface-info',
+  'info-subtle': 'bg-surface-info-subtle',
+  alert: 'bg-surface-alert',
+  'alert-subtle': 'bg-surface-alert-subtle',
+  highlight: 'bg-surface-highlight',
+  input: 'bg-surface-input',
+  selection: 'bg-surface-selection',
+  sidebar: 'bg-surface-sidebar',
+  'sidebar-primary': 'bg-surface-sidebar-primary',
+  'sidebar-accent': 'bg-surface-sidebar-accent',
+  'sidebar-item': 'bg-surface-sidebar-item',
+  nav: 'bg-surface-nav',
+  table: 'bg-surface-table',
+  'table-header': 'bg-surface-table-header',
+  tooltip: 'bg-surface-tooltip',
+  overlay: 'bg-surface-overlay',
+  code: 'bg-surface-code',
+  badge: 'bg-surface-badge',
+  avatar: 'bg-surface-avatar',
+};
 
 // ============================================================================
 // Class Builder
@@ -257,8 +308,35 @@ export function createClassy(options?: ClassyOptions) {
     return out.join(' ');
   }
 
+  /**
+   * Surface precedence for the `fill` prop (FR-RAF-FILL-003): a fill that is
+   * exactly one `bg-fill-*` token wins and replaces `surface` (the variant's or
+   * the base's surface classes) outright; a fill and a surface never join. Any
+   * other non-empty value is dropped with a warning and `surface` stands.
+   */
+  function fill(value: unknown, surface = ''): string {
+    if (value === undefined || value === null || value === '') return surface;
+    if (typeof value === 'string' && FILL_SHAPE.test(value)) return value;
+    warn(`classy: fill '${String(value)}' dropped -- fill takes exactly one bg-fill-* token`);
+    return surface;
+  }
+
+  /**
+   * The `surface` prop (FR-RAF-FILL-004): a surface name picks its literal
+   * `bg-surface-<name>` class, which replaces `base` at the base slot of the
+   * fill, variant, base precedence. An unknown name leaves `base` standing.
+   */
+  function surface(name: unknown, base = ''): string {
+    if (typeof name !== 'string' || !Object.hasOwn(SURFACE_CLASSES, name)) return base;
+    return SURFACE_CLASSES[name] ?? base;
+  }
+
   // Attach utilities to the build function
   const instance = Object.assign(build, {
+    /** Resolve the fill prop against a surface (fill > surface) */
+    fill,
+    /** Resolve the surface prop against a base surface (surface > base) */
+    surface,
     /** Create a token reference */
     token,
     /** Create a new classy instance with different options */

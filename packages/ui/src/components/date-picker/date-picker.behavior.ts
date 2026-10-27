@@ -58,6 +58,10 @@ import {
 export type DatePickerMode = 'single' | 'range';
 
 export interface DatePickerConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Selection cardinality. Default 'single'. */
   mode: DatePickerMode;
   /** Controlled committed value: shadows the intrinsic state when present. */
@@ -88,7 +92,9 @@ export type DatePickerActions = PopoverActions & {
 /** `value` is the trigger's label span -- the part that shows the committed
  *  date or the placeholder. */
 export type DatePickerValuePart = 'value';
-export type DatePickerPart = PopoverPart | DatePickerValuePart;
+/** The decorative icon wrappers, present only when the author gives an icon. */
+export type DatePickerIconPart = 'startIcon' | 'endIcon';
+export type DatePickerPart = PopoverPart | DatePickerValuePart | DatePickerIconPart;
 
 export { isOpen };
 
@@ -252,16 +258,23 @@ const datePickerValue: Slice<
   DatePickerConfig,
   DatePickerValueState,
   Record<never, never>,
-  DatePickerValuePart
+  DatePickerValuePart | DatePickerIconPart
 > = {
   name: 'date-picker-value',
-  parts: { value: {} },
+  // The decorative icon wrappers ride with the trigger's content: each is
+  // present only when the author gives an icon, and each projects
+  // aria-hidden="true" so the trigger's label alone is the accessible name on
+  // every target, with or without JavaScript. The wrapper carries the hiding
+  // because a child the author writes cannot be guaranteed to.
+  parts: { value: {}, startIcon: { optional: true }, endIcon: { optional: true } },
   initialState: (config) => ({
     value: config.value ?? config.defaultValue ?? emptySelection(config.mode),
   }),
   aria: (state, config) => ({
     // Placeholder look keys off data-empty (select's convention).
     value: { 'data-empty': isEmpty(effectiveValue(state, config)) ? '' : undefined },
+    startIcon: { 'aria-hidden': 'true' },
+    endIcon: { 'aria-hidden': 'true' },
   }),
 };
 
@@ -307,7 +320,7 @@ export const datePicker: BehaviorSpec<
 
 /**
  * The part ids every performance renders, derived from one base: trigger,
- * content and value are real; anchor and close are popover parts the picker
+ * content, value and the two icon wrappers are real; anchor and close are popover parts the picker
  * never renders, so they carry the empty-id sentinel.
  */
 export function datePickerIds(base: string): PartIds<DatePickerPart> {
@@ -315,9 +328,32 @@ export function datePickerIds(base: string): PartIds<DatePickerPart> {
     trigger: `${base}-trigger`,
     content: `${base}-content`,
     value: `${base}-value`,
+    startIcon: `${base}-start-icon`,
+    endIcon: `${base}-end-icon`,
     anchor: '',
     close: '',
   };
+}
+
+/**
+ * The Web Component's decorative icon wrapper: the author's `slot="start-icon"`
+ * / `slot="end-icon"` child moved inside a span the behavior projects
+ * aria-hidden onto. The light DOM has no slot assignment, so the slot attribute
+ * is only the author's marker.
+ */
+export function wrapDatePickerIcon(
+  child: Element,
+  part: DatePickerIconPart,
+  className: string,
+): HTMLElement {
+  const wrapper = document.createElement('span');
+  wrapper.dataset['part'] = part;
+  wrapper.dataset['icon'] = part === 'startIcon' ? 'inline-start' : 'inline-end';
+  wrapper.setAttribute('aria-hidden', 'true');
+  wrapper.className = className;
+  child.removeAttribute('slot');
+  wrapper.appendChild(child);
+  return wrapper;
 }
 
 // ==================== Composition function (bind + React share it) ====================

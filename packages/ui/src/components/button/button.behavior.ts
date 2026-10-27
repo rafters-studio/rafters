@@ -1,4 +1,4 @@
-import { compose } from '../../lib/compose';
+import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,
   type AriaAttrs,
@@ -66,42 +66,57 @@ export type ButtonTextSize = (typeof BUTTON_TEXT_SIZES)[number];
 export interface ButtonConfig extends PressableConfig {
   variant: ButtonVariant;
   size: ButtonSize;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
+  fill?: string | undefined;
+  /**
+   * A surface name; its `bg-surface-*` class replaces the variant's surface.
+   * The performances set it only when no variant prop was given.
+   */
+  surface?: string | undefined;
 }
 
 export type ButtonState = PressableState;
 export type ButtonActions = PressableActions;
-export type ButtonPart = PressablePart;
+export type ButtonIconPart = 'startIcon' | 'endIcon';
+export type ButtonPart = PressablePart | ButtonIconPart;
+
+/**
+ * The decorative icon wrappers. Each is present only when the author gives an
+ * icon, and each projects aria-hidden="true" so the label alone is the
+ * accessible name on every target, with or without JavaScript. The wrapper
+ * carries the hiding because a child the author writes cannot be guaranteed to.
+ */
+function buttonIcons(): Slice<
+  ButtonConfig,
+  Record<never, never>,
+  Record<never, never>,
+  ButtonIconPart
+> {
+  return {
+    name: 'button-icons',
+    parts: { startIcon: { optional: true }, endIcon: { optional: true } },
+    initialState: () => ({}),
+    aria: () => ({
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
+    }),
+  };
+}
 
 export const button: BehaviorSpec<ButtonConfig, ButtonState, ButtonActions, ButtonPart> = compose(
   'button',
   pressable<ButtonConfig>(),
+  buttonIcons(),
 );
 
 /**
- * The DOM-native binding of the button score -- the client. The Web Component
- * and the Astro <script> both import THIS; only React (retained-mode) reads the
- * projections declaratively instead. Same shape as bindDialog / bindNavigationMenu:
- * createBehavior is the model, the render composes the sr-announcer primitive
- * directly, aria-manager applies the projection, and the DOM is the part registry.
- *
- * Archetype notes (simple-interactive):
- * - The `root` is a native <button>, so Enter/Space are fulfilled by the
- *   browser as a click (Spec 01 rule 5). The bind wires click -> press ONLY;
- *   there is no keydown branch. A suppressed press (disabled/loading/soft-
- *   disabled, gated by canDispatch) also prevents the click's default so a
- *   form is not submitted and a double activation cannot land.
- * - The loading announcement is edge-triggered: it fires once on the loading
- *   false->true transition, never on a baseline mount (a button whose markup
- *   mounts already-loading projects aria-busy but stays silent). The bind reads
- *   config once from the server/author markup, so loading never transitions
- *   here -- the edge tracking below is the same shape the React controller
- *   uses, and the runtime transition is the retained-mode (React) surface.
+ * Config as the projected markup carries it: what an Astro-rendered root holds.
+ * Variant and size are not projected (they only choose classes, which the server
+ * already rendered), so a markup-only bind reads them as the defaults; a
+ * performance that owns its classes (the Web Component) passes its own config.
  */
-export function bindButton(root: HTMLElement): () => void {
-  // Config is READ from the projected markup (server- or author-minted), never
-  // generated: the same aria attributes the score projects are the inputs the
-  // bind re-derives config from -- one source, no dual attributes to drift.
-  const config: ButtonConfig = {
+export function buttonConfigFromMarkup(root: HTMLElement): ButtonConfig {
+  return {
     variant: 'default',
     size: 'default',
     toggle: root.hasAttribute('aria-pressed'),
@@ -111,31 +126,53 @@ export function bindButton(root: HTMLElement): () => void {
     loading: root.getAttribute('aria-busy') === 'true',
     loadingAnnouncement: root.getAttribute('data-loading-announcement') ?? undefined,
   };
+}
 
+/** What a DOM-native bind hands back: re-project after config changed, or tear down. */
+export interface ButtonBinding {
+  refresh: () => void;
+  teardown: () => void;
+}
+
+/**
+ * The DOM-native binding of the button score -- the client the Web Component and
+ * the Astro <script> both call. createBehavior is the model, the render composes
+ * the sr-announcer primitive directly, aria-manager applies the projection, and
+ * the DOM is the part registry.
+ *
+ * Config is read FRESH on every render through `readConfig` (Spec 00 section 4:
+ * reflected inputs are never stored). Astro passes nothing and gets the markup
+ * reading; the Web Component passes its attributes. `refresh` re-projects after
+ * config changed, which also lets the loading announcement fire on a real
+ * false->true edge.
+ *
+ * Archetype notes (simple-interactive):
+ * - The `root` is a native <button>, so Enter/Space are fulfilled by the
+ *   browser as a click (Spec 01 rule 5). The bind wires click -> press ONLY.
+ *   A suppressed press (disabled/loading/soft-disabled, gated by canDispatch)
+ *   also prevents the click's default so a form is not submitted.
+ * - The loading announcement is edge-triggered: it fires once on a loading
+ *   false->true transition, never on a baseline mount.
+ */
+export function bindButton(
+  root: HTMLElement,
+  readConfig: () => ButtonConfig = () => buttonConfigFromMarkup(root),
+): ButtonBinding {
   const getPart = (part: string): HTMLElement | null =>
     part === 'root' ? root : root.querySelector<HTMLElement>(`[data-part="${part}"]`);
 
-  const { memory, dispatch } = createBehavior(button, config);
+  const { memory, dispatch } = createBehavior(button, readConfig());
 
-  const request = (action: keyof ButtonActions): boolean => dispatch(action, config);
+  const request = (action: keyof ButtonActions): boolean => dispatch(action, readConfig());
 
-  // Edge-triggered loading announcement, composing sr-announcer directly. Seed
-  // the previous-loading tracker to the baseline config so a mount that is
-  // already loading is NOT announced; only a false->true transition fires. The
-  // DOM-native bind reads config once, so this never transitions in practice --
-  // it holds the same contract the React controller drives at runtime.
-  let prevLoading = config.loading ?? false;
-  const announceLoadingEdge = (loading: boolean) => {
+  let prevLoading = readConfig().loading ?? false;
+  const announceLoadingEdge = (config: ButtonConfig) => {
+    const loading = config.loading ?? false;
     if (loading && !prevLoading) {
       announceToScreenReader(config.loadingAnnouncement ?? 'Loading', 'polite');
     }
     prevLoading = loading;
   };
-
-  // ids are READ from the markup; button carries no id-ref aria, but the
-  // projection contract still takes them.
-  const ids = {} as PartIds<ButtonPart>;
-  for (const part of Object.keys(button.parts) as ButtonPart[]) ids[part] = getPart(part)?.id ?? '';
 
   // The projection is already resolved (final strings, undefined = absent), so
   // apply it raw: validate:false skips aria-manager's author-input coercion,
@@ -147,20 +184,21 @@ export function bindButton(root: HTMLElement): () => void {
   };
 
   const render = () => {
-    const state = memory.get();
-    const projection = button.aria(state, config, ids);
+    const config = readConfig();
+    const ids = {} as PartIds<ButtonPart>;
+    for (const part of Object.keys(button.parts) as ButtonPart[]) {
+      ids[part] = getPart(part)?.id ?? '';
+    }
+    const projection = button.aria(memory.get(), config, ids);
     for (const part of Object.keys(projection) as ButtonPart[]) {
       const attrs = projection[part];
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    announceLoadingEdge(config.loading ?? false);
+    announceLoadingEdge(config);
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint (baseline)
 
-  // Native <button> converts Enter/Space to click; the click dispatches press.
-  // A rejected dispatch (the double-submit / soft-disabled / loading gate)
-  // cancels the default so the activation does not escape.
   const onClick = (event: Event) => {
     if (!request('press')) {
       event.preventDefault();
@@ -169,8 +207,11 @@ export function bindButton(root: HTMLElement): () => void {
   };
   root.addEventListener('click', onClick);
 
-  return () => {
-    unsubscribe();
-    root.removeEventListener('click', onClick);
+  return {
+    refresh: render,
+    teardown: () => {
+      unsubscribe();
+      root.removeEventListener('click', onClick);
+    },
   };
 }

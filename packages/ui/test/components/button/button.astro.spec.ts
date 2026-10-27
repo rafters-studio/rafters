@@ -15,11 +15,16 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+async function render(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): Promise<string> {
   const container = await AstroContainer.create();
-  const html = await container.renderToString(Button, {
-    props: { id: 'b', label: 'Go', ...props },
-  });
+  return container.renderToString(Button, { props: { id: 'b', label: 'Go', ...props }, slots });
+}
+
+async function mount(props: Record<string, unknown> = {}): Promise<HTMLElement> {
+  const html = await render(props);
   document.body.innerHTML = html;
   const root = document.body.querySelector('button[data-part="root"]') as HTMLElement;
   bindButton(root); // the <script> does this per instance on the real page
@@ -55,5 +60,36 @@ describe('button [astro]', () => {
     await user.click(root);
     // The press gate rejected the activation; state is unchanged.
     expect(root.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('icons: the server markup already hides each wrapper, before any script runs', async () => {
+    const html = await render(
+      {},
+      { 'start-icon': '<svg><title>Mail</title></svg>', 'end-icon': '<svg></svg>' },
+    );
+    document.body.innerHTML = html; // no bindButton: the SSR render alone
+    const start = document.querySelector('[data-part="startIcon"]');
+    const end = document.querySelector('[data-part="endIcon"]');
+    expect(start?.getAttribute('aria-hidden')).toBe('true');
+    expect(start?.getAttribute('data-icon')).toBe('inline-start');
+    expect(end?.getAttribute('aria-hidden')).toBe('true');
+    expect(end?.getAttribute('data-icon')).toBe('inline-end');
+    const order = [...document.querySelectorAll('[data-part]')].map((el) =>
+      el.getAttribute('data-part'),
+    );
+    expect(order).toEqual(['root', 'startIcon', 'label', 'endIcon']);
+  });
+
+  it('icons: no wrapper when no icon slot is given', async () => {
+    const root = await mount();
+    expect(root.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(root.querySelector('[data-part="endIcon"]')).toBeNull();
+  });
+});
+
+describe('button [astro] surface precedence (FR-RAF-FILL-004)', () => {
+  it('surface replaces the base surface only when no variant is given', async () => {
+    expect(await render({ surface: 'card' })).toContain('bg-surface-card');
+    expect(await render({ surface: 'card', variant: 'default' })).not.toContain('bg-surface-card');
   });
 });

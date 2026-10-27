@@ -121,7 +121,7 @@ describe('duration derives from band and intent', () => {
     expect(deriveDuration('micro', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(100);
   });
 
-  it('elegant sits at the high end -- the measured motion-duration peak', () => {
+  it('elegant sits at the high end -- the measured rafters-duration peak', () => {
     expect(deriveDuration('moderate', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(300);
     expect(deriveDuration('normal', 'elegant', DEFAULT_DURATION_DEFINITIONS)).toBe(400);
   });
@@ -245,39 +245,39 @@ describe('the epic condition: a designer changes intent and motion moves', () =>
     );
     const out: Record<string, string> = {};
     for (const t of result.tokens) {
-      if (t.name.startsWith('motion-duration-')) out[t.name] = t.value as string;
+      if (t.name.startsWith('rafters-duration-')) out[t.name] = t.value as string;
     }
     return out;
   }
 
   it('efficient emits exactly the values that ship today', () => {
     const d = durationsFor('efficient');
-    expect(d['motion-duration-micro']).toBe('100ms');
-    expect(d['motion-duration-fast']).toBe('150ms');
-    expect(d['motion-duration-moderate']).toBe('250ms');
-    expect(d['motion-duration-normal']).toBe('350ms');
-    expect(d['motion-duration-slow']).toBe('500ms');
+    expect(d['rafters-duration-micro']).toBe('100ms');
+    expect(d['rafters-duration-fast']).toBe('150ms');
+    expect(d['rafters-duration-moderate']).toBe('250ms');
+    expect(d['rafters-duration-normal']).toBe('350ms');
+    expect(d['rafters-duration-slow']).toBe('500ms');
   });
 
   it('elegant emits longer communicative durations -- WITHOUT ANY TABLE BEING EDITED', () => {
     const efficient = durationsFor('efficient');
     const elegant = durationsFor('elegant');
 
-    expect(elegant['motion-duration-moderate']).toBe('300ms');
-    expect(elegant['motion-duration-normal']).toBe('400ms');
+    expect(elegant['rafters-duration-moderate']).toBe('300ms');
+    expect(elegant['rafters-duration-normal']).toBe('400ms');
     // `slow` is the one band where the two intents now agree: the restored
     // baseline puts efficient at 500ms, which is also the band ceiling elegant
     // reaches for. They agree because the ceiling is a perceptual fact -- past
     // ~500ms everything reads as sluggish, whatever the character.
-    expect(elegant['motion-duration-slow']).toBe('500ms');
+    expect(elegant['rafters-duration-slow']).toBe('500ms');
 
-    expect(elegant['motion-duration-moderate']).not.toBe(efficient['motion-duration-moderate']);
+    expect(elegant['rafters-duration-moderate']).not.toBe(efficient['rafters-duration-moderate']);
   });
 
   it('the acknowledgment landmarks do not move -- perception is not a matter of taste', () => {
     // micro is the Nielsen threshold and fast matches cursor speed. An intent
     // may not restyle a perceptual constant.
-    expect(durationsFor('elegant')['motion-duration-micro']).toBe('100ms');
-    expect(durationsFor('elegant')['motion-duration-fast']).toBe('150ms');
+    expect(durationsFor('elegant')['rafters-duration-micro']).toBe('100ms');
+    expect(durationsFor('elegant')['rafters-duration-fast']).toBe('150ms');
   });
 });

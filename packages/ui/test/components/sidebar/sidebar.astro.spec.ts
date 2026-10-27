@@ -108,6 +108,14 @@ const dialog = () => document.body.querySelector<HTMLElement>('[data-part="dialo
 beforeEach(() => setViewport(false));
 
 describe('sidebar [astro]', () => {
+  it('contained marks the root so the shared classes bound it to its container (#2657)', async () => {
+    const root = await mount({ contained: true });
+    expect(root.getAttribute('data-contained')).toBe('true');
+    expect(root.className).toBe(sidebarClasses().provider);
+    document.body.innerHTML = '';
+    expect((await mount()).hasAttribute('data-contained')).toBe(false);
+  });
+
   it('SSR default: expanded rail, present and navigable, wired to the panel by real id', async () => {
     await mount();
     expect(panel().getAttribute('data-state')).toBe('expanded');
@@ -404,6 +412,70 @@ describe('sidebar astro sub-components [asChild, render-then-inject]', () => {
     expect(button).not.toBeNull();
     expect(button.tagName).toBe('BUTTON');
     expect(button.textContent).toBe('plain text');
+  });
+});
+
+describe('sidebar astro menu buttons [icons]', () => {
+  const slots = {
+    default: 'Dashboard',
+    'start-icon': '<svg><title>Mail</title></svg>',
+    'end-icon': '<svg></svg>',
+  };
+
+  it.each([
+    [SidebarMenuButton, 'menu-button'],
+    [SidebarMenuSubButton, 'menu-sub-button'],
+  ] as const)(
+    '%s: the server markup already hides each wrapper, before any script runs',
+    async (Component, part) => {
+      const body = await renderOne(Component, {}, slots);
+      const button = body.querySelector(`[data-sidebar="${part}"]`) as HTMLElement;
+      const start = button.querySelector('[data-part="startIcon"]');
+      const end = button.querySelector('[data-part="endIcon"]');
+      expect(start?.getAttribute('aria-hidden')).toBe('true');
+      expect(start?.getAttribute('data-icon')).toBe('inline-start');
+      expect(end?.getAttribute('aria-hidden')).toBe('true');
+      expect(end?.getAttribute('data-icon')).toBe('inline-end');
+      expect(start?.className).toBe(classes.menuButtonStartIcon);
+      expect(end?.className).toBe(classes.menuButtonEndIcon);
+      const order = [...button.querySelectorAll('[data-part]')].map((el) =>
+        el.getAttribute('data-part'),
+      );
+      expect(order).toEqual(['startIcon', 'label', 'endIcon']);
+      expect(button.querySelector('[data-part="label"]')?.textContent).toBe('Dashboard');
+    },
+  );
+
+  it('no wrapper and no label part when no icon slot is given', async () => {
+    const body = await renderOne(SidebarMenuButton, {}, { default: 'Dashboard' });
+    const button = body.querySelector('[data-sidebar="menu-button"]') as HTMLElement;
+    expect(button.querySelector('[data-part]')).toBeNull();
+    expect(button.textContent).toBe('Dashboard');
+  });
+
+  it('only the given side renders', async () => {
+    const body = await renderOne(
+      SidebarMenuButton,
+      {},
+      { default: 'Dashboard', 'end-icon': '<svg></svg>' },
+    );
+    expect(body.querySelector('[data-part="startIcon"]')).toBeNull();
+    expect(body.querySelector('[data-part="endIcon"]')).not.toBeNull();
+  });
+
+  it('asChild places the icons around the child content and keeps the child element', async () => {
+    const body = await renderOne(
+      SidebarMenuButton,
+      { asChild: true },
+      { ...slots, default: '<a href="/dashboard">Dashboard</a>' },
+    );
+    const a = body.querySelector('a') as HTMLElement;
+    expect(a.getAttribute('data-sidebar')).toBe('menu-button');
+    expect(a.getAttribute('href')).toBe('/dashboard');
+    const order = [...a.querySelectorAll('[data-part]')].map((el) => el.getAttribute('data-part'));
+    expect(order).toEqual(['startIcon', 'label', 'endIcon']);
+    expect(a.querySelector('[data-part="startIcon"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(a.querySelector('[data-part="label"]')?.textContent).toBe('Dashboard');
   });
 });
 

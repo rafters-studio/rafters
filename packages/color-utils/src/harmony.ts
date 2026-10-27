@@ -2,7 +2,10 @@
  * Harmony generation for design systems using pure OKLCH hue rotation.
  *
  * Rule: harmonies are PURE HUE ROTATIONS. L and C are never mutated.
- * Only H changes. Every output goes through toNearestGamut() then roundOKLCH().
+ * Only H changes. Every harmony output goes through clampColor(), which
+ * drops chroma into sRGB and rounds inside it. The scale is different:
+ * generateOKLCHScale returns unmapped steps, and buildColorValue maps them
+ * into the family's ceiling with mapScaleToGamut (gamut.ts).
  */
 
 import type { ColorHarmonies, OKLCH } from '@rafters/shared';
@@ -112,6 +115,17 @@ function validateScaleGeneration(baseColor: OKLCH): {
 }
 
 /**
+ * The seed a scale is actually built from: unchanged inside the lightness
+ * bounds, else moved to the suggested lightness (0.7 or 0.4). Exposed so
+ * buildColorValue can record the move instead of making it in silence.
+ */
+export function boundSeedLightness(baseColor: OKLCH): OKLCH {
+  const validation = validateScaleGeneration(baseColor);
+  if (validation.isValid || validation.suggestedLightness === undefined) return baseColor;
+  return { ...baseColor, l: validation.suggestedLightness };
+}
+
+/**
  * Generate lightness progression using mathematical functions.
  * Base color positioned at 600, with 6 lighter steps above + 4 darker + 950.
  * Power curve (t^0.8) for tints creates natural spacing weighted toward white.
@@ -160,14 +174,8 @@ function generateLightnessProgression(baseLightness: number): Record<string, num
  * Chroma reduced only at extreme lightness to avoid perceptual artifacts.
  */
 export function generateOKLCHScale(baseColor: OKLCH): Record<string, OKLCH> {
-  const validation = validateScaleGeneration(baseColor);
-
-  if (!validation.isValid) {
-    const adjustedColor = validation.suggestedLightness
-      ? { ...baseColor, l: validation.suggestedLightness }
-      : baseColor;
-    return generateOKLCHScale(adjustedColor);
-  }
+  const bounded = boundSeedLightness(baseColor);
+  if (bounded !== baseColor) return generateOKLCHScale(bounded);
 
   const lightnessSteps = generateLightnessProgression(baseColor.l);
 

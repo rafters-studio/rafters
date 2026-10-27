@@ -14,6 +14,22 @@ import type { FontWeightDef, TypographyScaleDef } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 import { TYPOGRAPHY_SCALE } from './types.js';
 
+/** Named letter spacings other than widest (the shortcut composite's, below). */
+const NAMED_LETTER_SPACING: Readonly<Record<string, string>> = {
+  tighter: '-0.05em',
+  tight: '-0.025em',
+  normal: '0em',
+  wide: '0.025em',
+  wider: '0.05em',
+};
+
+/** Named line heights; 7 is rafters' spacing-7, what leading-7 compiled to before. */
+const NAMED_LINE_HEIGHT: Readonly<Record<string, { value: string; dependsOn?: string[] }>> = {
+  none: { value: '1' },
+  '7': { value: 'var(--rafters-spacing-7)', dependsOn: ['spacing-7'] },
+  relaxed: { value: '1.625' },
+};
+
 /**
  * Generate typography tokens from provided definitions
  */
@@ -59,7 +75,7 @@ export function generateTypographyTokens(
     semanticMeaning: 'Primary font family for UI text',
     usageContext: ['body-text', 'ui-elements', 'buttons', 'forms'],
     description:
-      'Sans-serif font family. Noto Sans Variable provides excellent language support and all weight variations.',
+      'Sans-serif font family. The Noto stack covers the writing systems chosen at init, with all weight variations.',
     generatedAt: timestamp,
     containerQueryAware: false,
     localeAware: true,
@@ -242,7 +258,6 @@ export function generateTypographyTokens(
       category: 'typography',
       namespace: 'typography',
       semanticMeaning: `Line height for ${scale} text size`,
-      dependsOn: [`font-size-${scale}`],
       description: `Line height ${lineHeight} for ${scale} text. Tighter for large text, looser for small.`,
       generatedAt: timestamp,
       containerQueryAware: false,
@@ -263,6 +278,52 @@ export function generateTypographyTokens(
       userOverride: null,
     });
   }
+
+  // Named tracking and leading: the keys Typography, the article styles and
+  // Tailwind's utilities use, each at the value its utility compiled to before
+  // the registry carried it, so none changes visually (#2825).
+  for (const [key, value] of Object.entries(NAMED_LETTER_SPACING)) {
+    tokens.push({
+      name: `letter-spacing-${key}`,
+      value,
+      category: 'typography',
+      namespace: 'typography',
+      semanticMeaning: `Named letter spacing (${key}), read by tracking-${key}`,
+      description: `Letter spacing ${value} (${key}).`,
+      generatedAt: timestamp,
+      containerQueryAware: false,
+      userOverride: null,
+    });
+  }
+  for (const [key, def] of Object.entries(NAMED_LINE_HEIGHT)) {
+    tokens.push({
+      name: `line-height-${key}`,
+      value: def.value,
+      category: 'typography',
+      namespace: 'typography',
+      semanticMeaning: `Named line height (${key}), read by leading-${key}`,
+      ...(def.dependsOn ? { dependsOn: def.dependsOn } : {}),
+      description: `Line height ${def.value} (${key}).`,
+      generatedAt: timestamp,
+      containerQueryAware: false,
+      userOverride: null,
+    });
+  }
+
+  // Named tracking for the shortcut composite (keyboard-shortcut labels at xs).
+  // It resolves against font-size-xs, the size shortcut sets.
+  tokens.push({
+    name: 'letter-spacing-widest',
+    value: '0.1em',
+    category: 'typography',
+    namespace: 'typography',
+    semanticMeaning: 'Widest named letter spacing, for keyboard shortcut labels',
+    dependsOn: ['font-size-xs'],
+    description: 'Letter spacing 0.1em (widest), used by the shortcut composite.',
+    generatedAt: timestamp,
+    containerQueryAware: false,
+    userOverride: null,
+  });
 
   // Generate font weight tokens
   for (const [name, def] of Object.entries(fontWeights)) {

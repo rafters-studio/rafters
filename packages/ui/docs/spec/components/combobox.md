@@ -7,11 +7,11 @@ Files (`src/components/combobox/`):
 
 ```
 combobox.behavior.ts   combobox.classes.ts
-combobox.tsx           combobox.element.ts   combobox.astro
+combobox.tsx           combobox.astro
 ```
 
 Tests mirror into `test/components/combobox/`: a pure behavior test, a classes
-parity test, and conformance across React, WC, and Astro through the shared
+parity test, and conformance across React and Astro through the shared
 harness.
 
 ## Archetype
@@ -54,6 +54,8 @@ absence here is a fits-this-component call, not a rejected-primitive call.
 
 ```ts
 interface ComboboxConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;        // controlled selected value ('' = none)
   defaultValue?: string; // uncontrolled seed
   open?: boolean;        // controlled open
@@ -85,9 +87,26 @@ projection resolve it directly; the navigation actions take the visible
 (filtered) values the binding supplies and clamp against them purely
 (`nextHighlight`).
 
-The filter predicate is pure and shared by all three performances:
+A value seeded at mount (`defaultValue`, or a controlled `value`) fills the
+input with its option's label, the same text a `select` of that option writes;
+each performance reads the label from its own options. A seed matching no
+option leaves the input empty.
+
+The filter predicate is pure and shared by both performances:
 `matchesQuery(label, value, query)` matches on label OR value, case-insensitively,
 with an empty query matching everything.
+
+### Fill and surface
+
+`ComboboxContent` takes `fill` and `surface`, which change the surface of the listbox panel
+(`combobox.classes.ts:167`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
 
 ## Parts and ARIA
 
@@ -120,6 +139,24 @@ All keys ride the input (focus never leaves it):
 - Printable keys: handled natively by the input, dispatched as `setQuery`, which
   filters and opens.
 
+## Icons beside a label
+
+One optional prop places a decorative icon at the start of the input and at the start of each option: `startIcon`. Combobox has no end icon: the input's end is the toggle, and an option's end column is left to the row.
+
+| Target | Input | Option |
+| --- | --- | --- |
+| React | `<Combobox.Input startIcon={node} />` | `<Combobox.Item startIcon={node} />` |
+| Astro | `<slot name="start-icon" />` | `<slot name="start-icon-{value}" />` |
+
+```html
+<span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+```
+
+- `startIcon` is an optional part, present only when an icon is given. The behavior projects `aria-hidden="true"` on every one, so the markup is hidden from assistive technology before any script runs; the label is the accessible name. The option label read on commit and filter excludes the icon, so an svg `<title>` never enters it.
+- The field, the content and each option are grids on `grid-cols-menu-row` (indicator, icon, label, end). The input spans every column and the icon and toggle sit in columns 2 and 4 of its row; each option is `grid-cols-subgrid col-span-full` with the check in column 1, so the icon and label follow reading order and mirror on a `dir="rtl"` page. No physical direction class remains in `combobox.classes.ts`.
+- The input's inline-start padding tightens only when an icon is present (`has-data-[icon=inline-start]:[&>input]:ps-9`); the end padding for the toggle is `pe-9`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+
 ## Motion
 
 Enter/exit intent: fade + zoom on the listbox, exit shorter than entrance
@@ -151,7 +188,7 @@ and was NOT read; dispositions are taken from `combobox.tsx` and the archetype.
 | option group + separator surface | contract (thin view wrappers) |
 | collision positioning against the input, width-matched | contract (composed collision-detector; select had dropped positioning, combobox keeps it) |
 | outside-pointerdown dismissal sparing the input wrapper | contract (`outside-click`, sparing input + toggle) |
-| portal of the listbox to `document.body` | dropped — the listbox lives in light DOM present-but-hidden (select precedent), so all three performances share one bind; portaling is a framework affordance not needed for behavior |
+| portal of the listbox to `document.body` | dropped — the listbox lives in light DOM present-but-hidden (select precedent), so both performances share one bind; portaling is a framework affordance not needed for behavior |
 | selecting fills the input with the option's label, then closes | reconstructed from the archetype: the exact post-select display lived in the off-limits controller. The standard editable-autocomplete behavior (input shows the committed label, list closes) is the sanctioned reconstruction |
 | React unmounts filtered-out options | defect-avoided — the port HIDES filtered options (`hidden`) instead of unmounting, so option ids stay stable for `aria-activedescendant` |
 

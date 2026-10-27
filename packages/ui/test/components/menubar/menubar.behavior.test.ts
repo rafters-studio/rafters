@@ -22,7 +22,13 @@ const instance = { trigger: 't-file', content: 'c-file' };
 
 describe('menubar parts', () => {
   it('declares the bar root, and trigger/content/item as many-instance parts', () => {
-    expect(Object.keys(menubar.parts).sort()).toEqual(['content', 'item', 'root', 'trigger']);
+    expect(Object.keys(menubar.parts).sort()).toEqual([
+      'content',
+      'item',
+      'root',
+      'startIcon',
+      'trigger',
+    ]);
     expect(menubar.parts.root.role).toBe('menubar');
     expect(menubar.parts.trigger).toEqual({ many: true, role: 'menuitem' });
     expect(menubar.parts.content.many).toBe(true);
@@ -154,7 +160,7 @@ describe('menubar stepMenu (pure)', () => {
 
 describe('menubar aria projection', () => {
   it('root is a horizontal menubar carrying the open data-state', () => {
-    const ids = { root: 'r', trigger: '', content: '', item: '' };
+    const ids = { root: 'r', trigger: '', content: '', item: '', startIcon: '' };
     expect(menubar.aria(menubar.initialState(closed), closed, ids).root).toEqual({
       role: 'menubar',
       'aria-orientation': 'horizontal',
@@ -261,5 +267,17 @@ describe('menubar keymap', () => {
 
   it('keys on the root claim nothing', () => {
     expect(menubar.keymap({ key: 'Escape' }, state, 'root', fileOpen)).toBeNull();
+  });
+});
+
+describe('menubar icon part', () => {
+  it('declares startIcon as an optional part that projects aria-hidden', () => {
+    const ids = { root: 'r', trigger: '', content: '', item: '', startIcon: '' };
+    expect(menubar.parts.startIcon).toEqual({ optional: true, many: true });
+    for (const config of [{}, { value: 'file' }]) {
+      expect(menubar.aria(menubar.initialState(config), config, ids).startIcon).toEqual({
+        'aria-hidden': 'true',
+      });
+    }
   });
 });

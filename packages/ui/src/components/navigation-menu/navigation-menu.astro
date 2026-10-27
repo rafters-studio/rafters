@@ -79,7 +79,7 @@
  * written twice.
  *
  * Hover-intent timing is not config at all any more (#2148): it is the
- * `delay-hover-intent` utility on the panel's reveal rule, and the panel opens
+ * hover-intent delay utility on the panel's reveal rule, and the panel opens
  * on the item's own `:hover` / `:focus-within` with JavaScript turned off.
  */
 import {
@@ -101,11 +101,15 @@ interface Props {
   id: string;
   items: Item[];
   orientation?: 'horizontal' | 'vertical';
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { id, items, orientation = 'horizontal' } = Astro.props;
+const { fill, surface, id, items, orientation = 'horizontal' } = Astro.props;
 
-const config: NavigationMenuConfig = { orientation };
+const config: NavigationMenuConfig = { orientation, fill, surface };
 const state = navigationMenu.initialState(config);
 const classes = navigationMenuClasses(config, state);
 
@@ -114,6 +118,18 @@ for (const part of Object.keys(navigationMenu.parts) as NavigationMenuPart[]) {
   ids[part] = `${id}-${part}`;
 }
 const rootAria = navigationMenu.aria(state, config, ids);
+
+// Decorative icons arrive as named slots, one pair per trigger and per link:
+// `<value>:start-icon` and `<value>:end-icon` for a trigger, and
+// `<value>:<link index>:start-icon` / `:end-icon` for a link. A wrapper renders
+// only when its slot is given, and the score projects aria-hidden onto it, so the
+// server markup already hides it from assistive technology.
+const icons = async (key: string) => {
+  const out: { start: string | null; end: string | null } = { start: null, end: null };
+  if (Astro.slots.has(`${key}:start-icon`)) out.start = await Astro.slots.render(`${key}:start-icon`);
+  if (Astro.slots.has(`${key}:end-icon`)) out.end = await Astro.slots.render(`${key}:end-icon`);
+  return out;
+};
 const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-${value}`;
 ---
 
@@ -125,7 +141,8 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
 >
   <ul data-part="list" id={ids.list} class={classes.list} {...rootAria.list}>
     {
-      items.map((item) => {
+      items.map(async (item) => {
+        const triggerIcons = await icons(item.value);
         const triggerId = instanceId('trigger', item.value);
         const contentId = instanceId('content', item.value);
         return (
@@ -139,7 +156,25 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
               class={classes.trigger}
               {...navInstanceAria('trigger', item.value, state, config, { trigger: triggerId, content: contentId })}
             >
+              {triggerIcons.start !== null && (
+                <span
+                  data-part="startIcon"
+                  data-icon="inline-start"
+                  class={classes.startIcon}
+                  {...rootAria.startIcon}
+                  set:html={triggerIcons.start}
+                />
+              )}
               {item.label}
+              {triggerIcons.end !== null && (
+                <span
+                  data-part="endIcon"
+                  data-icon="inline-end"
+                  class={classes.endIcon}
+                  {...rootAria.endIcon}
+                  set:html={triggerIcons.end}
+                />
+              )}
             </button>
             <div
               id={contentId}
@@ -148,11 +183,32 @@ const instanceId = (part: NavigationMenuPart, value: string) => `${id}-${part}-$
               class={classes.content}
               {...navInstanceAria('content', item.value, state, config, { trigger: triggerId, content: contentId })}
             >
-              {item.links.map((link) => (
-                <a href={link.href} class={classes.link}>
-                  {link.label}
-                </a>
-              ))}
+              {item.links.map(async (link, index) => {
+                const linkIcons = await icons(`${item.value}:${index}`);
+                return (
+                  <a href={link.href} class={classes.link}>
+                    {linkIcons.start !== null && (
+                      <span
+                        data-part="startIcon"
+                        data-icon="inline-start"
+                        class={classes.startIcon}
+                        {...rootAria.startIcon}
+                        set:html={linkIcons.start}
+                      />
+                    )}
+                    {link.label}
+                    {linkIcons.end !== null && (
+                      <span
+                        data-part="endIcon"
+                        data-icon="inline-end"
+                        class={classes.endIcon}
+                        {...rootAria.endIcon}
+                        set:html={linkIcons.end}
+                      />
+                    )}
+                  </a>
+                );
+              })}
             </div>
           </li>
         );

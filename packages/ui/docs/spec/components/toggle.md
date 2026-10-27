@@ -9,26 +9,22 @@ Files (`src/components/toggle/`):
 
 ```
 toggle.classes.ts    toggle.behavior.ts (score + bindToggle)
-toggle.tsx           toggle.element.ts       toggle.astro
+toggle.tsx           toggle.astro
 ```
 
 Tests mirror into `test/components/toggle/`.
 
-## Three-framework performances
+## Two-framework performances
 
 The score composes the `pressable` slice with a one-attribute glue that
 overrides `data-state` to `on`/`off`. `toggle.behavior.ts` also exports
-`bindToggle(root)` -- the DOM-native client the Web Component and the Astro
-`<script>` both perform; only React (retained-mode) reads the projection
-declaratively instead. One binding, three performances, zero drift.
+`bindToggle(root)` -- the DOM-native client the Astro `<script>` performs;
+React (retained-mode) reads the projection declaratively instead. One score,
+two performances, zero drift.
 
 - **React** (`toggle.tsx`): thin controller over `createBehavior` + `useMemory`
   -- no `useBehavior`, no effect runner (toggle has no effects). Reads the aria
   projection declaratively and spreads it onto the `<button>`.
-- **WC** (`toggle.element.ts`): a light-DOM enhancer. The author (or Astro)
-  provides a real inner `<button data-part="root">` so native Enter/Space
-  survive; `connectedCallback` defers the bind one microtask (children may not
-  be parsed yet) and hands the inner root to `bindToggle`.
 - **Astro** (`toggle.astro`): server-renders the `<button>` with the initial
   projection already applied (correct before JS), then a `<script>` hands each
   `button[data-part="root"]` to `bindToggle`.
@@ -75,7 +71,8 @@ type ToggleActions = { press: undefined };
 
 ```
 root   (native button semantics; carries aria-pressed + data-state)
-label  (always present; wraps the toggle's children -- typically an icon)
+label  (always present; wraps the toggle's children)
+startIcon, endIcon  (optional; decorative wrappers, aria-hidden)
 ```
 
 `pressable` also declares an optional `spinner` part; toggle never renders it.
@@ -94,11 +91,34 @@ so the glue projects `on`/`off` from `state.pressed`. A second non-glue
 contributor to `data-state` would trip compose's collision guard; the glue is
 the sanctioned override seam.
 
+## Icons beside a label
+
+Two optional props place decorative icons around the label, in reading order, the same as Button: `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` | `endIcon: ReactNode` |
+| Astro | `<slot name="start-icon" />` | `<slot name="end-icon" />` |
+
+```html
+<button class="inline-grid grid-flow-col items-center gap-2 ..." aria-pressed="false">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  <span data-part="label">Bold</span>
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The root is a grid (`inline-grid grid-flow-col items-center`), so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Icon-only toggles keep their required `aria-label`; the icons here are for a toggle with a text label.
+
 ## Keyboard
 
 `keymap(event, state, 'root')`: `Enter` and `Space` map to `press`. Native
-`<button>` hosts fulfill this natively; the WC inner button is bound by the
-framework file. The harness asserts the behavior on every binding either way.
+`<button>` hosts fulfill this natively. The harness asserts the behavior on
+every binding.
 
 ## Effects
 
@@ -139,8 +159,7 @@ shadcn's tailwind-merge does.
 
 ## Oracle dispositions
 
-The oracle ships a React target (`toggle.tsx`) and a WC target
-(`toggle.element.ts`). Feature dispositions:
+The oracle ships a React target (`toggle.tsx`). Feature dispositions:
 
 | Oracle feature | Disposition | Rationale |
 | -------------- | ----------- | --------- |
@@ -148,8 +167,7 @@ The oracle ships a React target (`toggle.tsx`) and a WC target
 | `pressed` / `defaultPressed` / `onPressedChange` | contract | The controlled/uncontrolled pressed axis, now driven by the `pressable` score. |
 | `aria-pressed` + `data-state` on/off | contract | Preserved; the glue projects on/off, the fill rides `data-[state=on]`. |
 | Enter/Space activation | contract | Native `<button>`; the keymap asserts it on every binding. |
-| `asChild` (React polymorphism) | framework-affordance | A React-only slot affordance; button dropped it on the behavior-layer pattern, and toggle follows -- WC/Astro use slots, not `asChild`. |
-| Form association (WC `ElementInternals`, `setFormValue`, form reset/restore/disabled callbacks) | dropped | The behavior-layer WC is a light-DOM enhancer, not a form-associated shadow element. No ported `.element.ts` carries `ElementInternals` -- even `input`, the most form-natural, is a plain enhancer -- and shadcn Toggle is not form-associated. Where form participation is needed it comes from a native light-DOM control the enhancer wraps (see the old checkbox for the abandoned form-value axis). |
+| `asChild` (React polymorphism) | framework-affordance | A React-only slot affordance; button dropped it on the behavior-layer pattern, and toggle follows -- Astro uses slots, not `asChild`. |
 | `active:scale-[0.98]` | dropped | Arbitrary value against the semantic-classes-only rule; the `state-swap` fill transition covers the press feedback. |
 
 ## WCAG 2.1 AA obligations (minimum bar)
@@ -163,7 +181,7 @@ The oracle ships a React target (`toggle.tsx`) and a WC target
 
 ## Conformance matrix
 
-Bindings: React (toggle.tsx), WC (toggle.element.ts), Astro (toggle.astro --
+Bindings: React (toggle.tsx), Astro (toggle.astro --
 server-rendered; interaction tiers apply where a client runtime exists, static
 tiers always). The shared suite asserts parts + aria projection + axe per
 scenario, and the Enter/Space press flip and the disabled press gate on every

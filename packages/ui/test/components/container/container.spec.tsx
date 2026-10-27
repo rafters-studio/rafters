@@ -1,7 +1,15 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { commands } from 'vitest/browser';
 import { Container } from '../../../src/components/container/container';
+import { containerClasses } from '../../../src/components/container/container.classes';
+
+declare module 'vitest/browser' {
+  interface BrowserCommands {
+    compileCss: (classes: string) => Promise<string>;
+  }
+}
 
 const body = () => document.body;
 
@@ -62,5 +70,63 @@ describe('container [react]', () => {
     const element = body().querySelector('[data-part="root"]') as HTMLElement;
     expect(element.className).toContain('@container');
     expect(element.className).toContain('min-h-screen');
+  });
+});
+
+/**
+ * #2816: article headings read the `foreground` token, not `accent-foreground`.
+ * The test page loads no compiled sheet, so the article's own classes plus
+ * `text-foreground` (standing in for the body's base colour) are compiled
+ * server side and injected; computed colour then reflects the tokens.
+ */
+describe('container [react] -- article headings read foreground (#2816)', () => {
+  let sheet: HTMLStyleElement | undefined;
+
+  beforeAll(async () => {
+    const css = await commands.compileCss(
+      `${containerClasses({ as: 'article' }, {}).root} text-foreground dark`,
+    );
+    sheet = document.createElement('style');
+    sheet.textContent = css;
+    document.head.append(sheet);
+  }, 30000);
+
+  afterAll(() => {
+    sheet?.remove();
+  });
+
+  function colourOf(selector: string): string {
+    const element = body().querySelector(selector);
+    if (!element) throw new Error(`no ${selector} rendered`);
+    return getComputedStyle(element).color;
+  }
+
+  it.each([
+    ['h1', 'light'],
+    ['h2', 'light'],
+    ['h3', 'light'],
+    ['h4', 'light'],
+    ['h1', 'dark'],
+  ] as const)('%s in %s mode is the foreground colour of a bare paragraph', (heading, mode) => {
+    const Heading = heading;
+    render(
+      <div>
+        <div data-testid="light" className="text-foreground" />
+        <div
+          data-testid="foreground"
+          className={mode === 'dark' ? 'dark text-foreground' : 'text-foreground'}
+        >
+          <Container as="article">
+            <Heading>Title</Heading>
+            <p>Prose.</p>
+          </Container>
+        </div>
+      </div>,
+    );
+    const foreground = colourOf('[data-testid="foreground"]');
+    // The dark row must resolve the dark token, not fall through to light.
+    if (mode === 'dark') expect(foreground).not.toBe(colourOf('[data-testid="light"]'));
+    expect(colourOf(heading)).toBe(foreground);
+    expect(colourOf('article p')).toBe(foreground);
   });
 });

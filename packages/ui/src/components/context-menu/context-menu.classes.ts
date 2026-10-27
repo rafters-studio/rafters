@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavior';
 
 /**
@@ -8,8 +9,8 @@ import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavio
  * token (z-depth-dropdown) replaces a raw z-index.
  *
  * THE THIRTEEN SEMANTIC MOTION CLASSES ARE GONE (ruling 2026-08-02). This file
- * used to name two of them -- `motion-dropdown-in` on `content` and
- * `motion-focus` on `itemBase` -- which compiled only because nothing failed on
+ * used to name two of them -- the dropdown-in class on `content` and the
+ * focus class on `itemBase` -- which compiled only because nothing failed on
  * an unknown class. Both are replaced below by what their matrix rows assign.
  */
 export interface ContextMenuClassSet {
@@ -21,6 +22,9 @@ export interface ContextMenuClassSet {
   radioItem: string;
   subTrigger: string;
   subTriggerChevron: string;
+  startIcon: string;
+  itemLabel: string;
+  sub: string;
   itemIndicator: string;
   checkIcon: string;
   radioDot: string;
@@ -32,12 +36,15 @@ export interface ContextMenuClassSet {
 
 const trigger = 'inline-block';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurface = 'bg-popover text-popover-foreground';
+
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // context-menu / content / closed -> open (moderate, enter, extent pop) and
 // open -> closed (fast, exit, extent pop) -- motion.md:173-174, emitted as
 // `context-menu-content-open` / `-close` in DEFAULT_MOTION_CELL_ANIMATIONS.
-// They replace `motion-dropdown-in` plus a hand-rolled `opacity-0 scale-95`
-// reveal: the retired semantic class named no tier the matrix assigns, and the
+// They replace the dropdown-in class plus a hand-rolled zero-opacity, 95%
+// scale reveal: the retired semantic class named no tier the matrix assigns, and the
 // hand-rolled pair is the tailwindcss-animate-shaped form this repo's own
 // popover/dropdown-menu classes already prohibit.
 //
@@ -55,8 +62,8 @@ const trigger = 'inline-block';
 // behavior/view layer, not to this file; the class is correct and starts
 // running the moment that wiring lands.
 const content =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
-  'text-popover-foreground shadow-lg outline-none ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border p-1 ' +
+  'shadow-lg outline-none ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
@@ -118,12 +125,12 @@ const content =
 // projects it straight onto `subContent`, and this is a plain input-source
 // MARK, not a timing decision -- the CSS below still owns every duration,
 // curve, and delay. `data-[state=open]:data-[open-source=pointer]:` scopes
-// `delay-hover-intent` to that mark; click and keyboard opens carry
+// the hover-intent delay to that mark; click and keyboard opens carry
 // `data-open-source="discrete"` instead (never `"pointer"`, so the scoped
 // selector above never matches them) and so resolve through the un-delayed
-// `data-[state=open]:duration-moderate`/`ease-enter` pair a few lines below,
+// `data-[state=open]:duration-moderate` and enter-curve pair a few lines below,
 // with no reveal delay whatsoever (contrast tooltip/hover-card, whose
-// data-state path drops delay-hover-intent for a forced/keyboard open because
+// data-state path drops the hover-intent delay for a forced/keyboard open because
 // their content never moves and that path would otherwise race the live
 // `:hover` rule; here it never does, so there is nothing to race -- the
 // pointer/discrete split exists for the hover-intent filter itself, not to
@@ -151,7 +158,7 @@ const content =
 // suite scans the real component directories rather than a fixture built from
 // the evaluated strings).
 const subContent =
-  'z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
+  'grid grid-cols-menu-row z-depth-dropdown min-w-32 overflow-hidden rounded-md border bg-popover p-1 ' +
   'text-popover-foreground shadow-lg outline-none ' +
   'opacity-0 pointer-events-none extent-pop scale-(--rafters-consumed-extent) ' +
   'transition-[opacity,scale,pointer-events] transition-discrete ' +
@@ -170,7 +177,7 @@ const subContent =
 
 // THE ROW: context-menu / items / highlight move -- color, duration-micro,
 // ease-standard (motion.md:176), marked PROPOSED and unreviewed, transcribed as
-// written. It replaces the retired `motion-focus` semantic class, which named
+// written. It replaces the retired focus semantic class, which named
 // no tier this matrix assigns. A transition, not a keyframe -- the item stays
 // put -- so it is excluded from the cell vocabulary by name (`context-menu |
 // items | highlight move`, EXCLUDED_ROWS.noIntersectingProperty in
@@ -184,51 +191,69 @@ const subContent =
 // offset, which resolves to 0ms at the efficient intent. Zero is the
 // assignment, not a gap -- see dropdown-menu's items class for the full note,
 // including the per-element `transition-delay` coupling with the row above.
+// THE ROW IS A SUBGRID. The content is a grid on the menu-row track list
+// (indicator, icon, label, end) and every item a subgrid row across all four
+// tracks, so labels line up between items whether or not they carry an
+// indicator or an icon, and the row mirrors on a dir="rtl" page with no
+// direction class. Spacing is a margin on the cell that has something after it,
+// not a gap, so an empty track leaves no stray space.
 const itemBase =
-  'relative flex cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
+  'relative grid grid-cols-subgrid col-span-full cursor-default select-none items-center rounded-sm text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
   'data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
 
-const item = `${itemBase} gap-2 px-2 py-1.5`;
+const item = `${itemBase} px-2 py-1.5`;
 
-const checkboxItem = `${itemBase} py-1.5 pl-8 pr-2`;
+const checkboxItem = `${itemBase} px-2 py-1.5`;
 
-const radioItem = `${itemBase} py-1.5 pl-8 pr-2`;
+const radioItem = `${itemBase} px-2 py-1.5`;
 
 // The sub-trigger is a menuitem that also stays highlighted while its submenu is
 // open (data-[state=open]).
-const subTrigger = `${itemBase} gap-2 px-2 py-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground`;
+const subTrigger = `${itemBase} px-2 py-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground`;
 
-const subTriggerChevron = 'ml-auto h-4 w-4';
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const startIcon = 'col-start-2 me-2 inline-grid place-items-center';
 
-const itemIndicator = 'absolute left-2 flex h-3.5 w-3.5 items-center justify-center';
+const itemLabel = 'col-start-3 min-w-0';
+
+// The submenu wrapper in the Astro markup is one more subgrid row; its panel is
+// fixed-position and leaves the flow.
+const sub = 'grid grid-cols-subgrid col-span-full';
+
+const subTriggerChevron = 'col-start-4 ms-4 h-4 w-4 justify-self-end';
+
+const itemIndicator = 'col-start-1 me-2 flex h-3.5 w-3.5 items-center justify-center';
 
 const checkIcon = 'h-4 w-4';
 
 const radioDot = 'h-2 w-2 rounded-full bg-current';
 
-const label = 'px-2 py-1.5 text-label-medium ts-label-medium';
+const label = 'col-span-full px-2 py-1.5 text-label-medium ts-label-medium';
 
-const separator = '-mx-1 my-1 h-px border-0 bg-muted';
+const separator = 'col-span-full -mx-1 my-1 h-px border-0 bg-muted';
 
-const shortcut = 'ml-auto text-shortcut ts-shortcut opacity-60';
+const shortcut = 'col-start-4 ms-4 justify-self-end text-shortcut ts-shortcut opacity-60';
 
-const group = '';
+const group = 'grid grid-cols-subgrid col-span-full';
 
 export function contextMenuClasses(
-  _config: ContextMenuConfig,
+  config: ContextMenuConfig,
   _state: ContextMenuState,
 ): ContextMenuClassSet {
   return {
     trigger,
-    content,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurface))} ${content}`,
     subContent,
     item,
     checkboxItem,
     radioItem,
     subTrigger,
     subTriggerChevron,
+    startIcon,
+    itemLabel,
+    sub,
     itemIndicator,
     checkIcon,
     radioDot,

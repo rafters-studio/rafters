@@ -10,11 +10,11 @@ hover-driven mechanics, a `role="dialog"` preview surface instead of a
 Files (`src/components/hover-card/`):
 
 ```
-hover-card.classes.ts   hover-card.behavior.ts   hover-card.tsx   hover-card.element.ts   hover-card.astro
+hover-card.classes.ts   hover-card.behavior.ts   hover-card.tsx   hover-card.astro
 ```
 
 Tests mirror into `test/components/hover-card/`: behavior (pure), classes parity,
-and conformance across React + WC + Astro through the shared harness.
+and conformance across React + Astro through the shared harness.
 
 ## Composition
 
@@ -51,6 +51,8 @@ every client calls it.
 
 ```ts
 interface HoverCardConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   open?: boolean;                    // controlled
   defaultOpen?: boolean;             // uncontrolled seed
   openDelay?: number;                // hover-open delay, default 700ms
@@ -75,12 +77,24 @@ consumer.
 | open | the card is shown (content present and unhidden, `data-state="open"`) |
 | delayed | the transient scheduling phase: intent has been registered but the `hover-delay` open timer has not yet fired. Owned by the `hover-delay` primitive, not the reducer — it never reaches `data-state` |
 
+### Fill and surface
+
+`HoverCardContent` takes `fill` and `surface`, which change the surface of its panel
+(`hover-card.classes.ts:117`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
+
 ## Parts and ARIA
 
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | trigger | always | `aria-describedby` (only while open, only to a real content id), `data-state`; `aria-expanded`/`aria-controls` suppressed (a card is not a disclosure widget) |
-| content | while open (present-but-hidden in WC/Astro; mounted-on-open in React) | `role="dialog"`, `data-state`, `data-side`/`data-align` stamped by the positioner; accessible name supplied by the consumer (`aria-label`/`aria-labelledby`) |
+| content | while open (present-but-hidden in Astro; mounted-on-open in React) | `role="dialog"`, `data-state`, `data-side`/`data-align` stamped by the positioner; accessible name supplied by the consumer (`aria-label`/`aria-labelledby`) |
 
 Empty-id convention: when the content id is empty (`''`), the trigger projects
 no `aria-describedby`. A dangling reference is an axe violation; absence is
@@ -112,7 +126,7 @@ popover carries); the conformance suite supplies `aria-label`.
 | default trigger renders an anchor `<a>`; `asChild` swaps in the consumer's element | contract (anchor default) + framework affordance (`asChild`, React) |
 | HoverCardPortal / `container` / `forceMount` | contract (shadcn drop-in base + rafters explicit-portal surface). `HoverCardPortal` mirrors `TooltipPortal`; nested content skips its automatic portal |
 | Escape dismiss (`onEscapeKeyDown` via the `escape-keydown` primitive) | contract — but dismissal is the score's `keymap` Escape dispatched directly by each client, not the `escape-keydown` primitive the oracle imported. keymap is the sanctioned direct-dismissal path (dialog + tooltip agree); the primitive import is the divergence |
-| always-mounted content when closed | superseded — content mounts on open (React) / hides off the open axis (WC/Astro); enter-only, exit gated on Presence |
+| always-mounted content when closed | superseded — content mounts on open (React) / hides off the open axis (Astro); enter-only, exit gated on Presence |
 
 ## Deltas from the oracle
 

@@ -4,15 +4,14 @@ One component, defined once, presented by every framework.
 
 ## The pattern: the score
 
-The pattern has a name, ratified 2026-07-02. The behavior file is a **score**:
+The pattern has a name, given 2026-07-02. The behavior file is a **score**:
 it describes, it never executes. State transitions, not state. ARIA
 projections, not DOM mutations. Keyboard mappings, not event listeners. Pure
 functions and data, concrete enough to be unambiguous, abstract enough to be
 interpreted.
 
 Framework files are **performances** of the score. React plays it with hooks
-and JSX. A Web Component plays it with shadow DOM and attributes. Astro plays
-it once, at build time, then puts the instrument down. Same score, different
+and JSX. Astro plays it once, at build time, then puts the instrument down. Same score, different
 instruments; the score does not care which orchestra showed up.
 
 `classes.ts` is **decoration** -- the presentation layer, selecting literal
@@ -43,7 +42,6 @@ target.
 button.behavior.ts    # THE component (the score) — state, actions, aria, keymap, effects
 button.classes.ts     # decoration — literal token-class selection from config + state
 button.tsx            # React performance
-button.element.ts     # Web Component performance
 button.astro          # Astro performance
 ```
 
@@ -56,9 +54,9 @@ Framework files render the declared parts and map DOM events to actions --
 nothing else. There is no shared per-framework adapter: each React controller
 composes the substrate directly -- `createBehavior` owns the memory cell,
 `useMemory` (useSyncExternalStore) subscribes the component to it, and
-`useBehaviorEffects` runs the effects runner. The WC and Astro performances
-import the same `bindX` DOM-native client from the behavior file, so one
-binding drives all three. Any decision in a framework file is a bug.
+`useBehaviorEffects` runs the effects runner. The Astro performance imports
+the `bindX` DOM-native client from the behavior file. Any decision in a
+framework file is a bug.
 
 ## Config vs state
 
@@ -102,3 +100,35 @@ Every component lives in `src/components/<name>/` on the behavior layer. The pre
 - Tailwind CSS v4 and the Rafters token system.
 - No arbitrary/bracket values. Use token keys.
 - `classy` does not resolve Tailwind conflicts.
+
+## Surface, variant and fill
+
+A component's surface is its background, foreground and border colour. Three
+props can set it, and one wins:
+
+1. `fill` -- exactly one `bg-fill-*` token, a fill a designer authored in the
+   registry (`.rafters/tokens/fill.rafters.json`). It replaces the variant's or
+   base's surface outright, including their `hover:` and `active:` colours.
+   Anything else (`bg-red-500`, two classes, an old word such as
+   `background`) is dropped with a console warning and the next surface down
+   stands. `classy.fill` does this, in `src/primitives/classy.ts`.
+2. `variant`, when it is passed. `variant="default"` counts as passed.
+3. `surface` -- a surface name such as `card`, `popover` or `muted`. It renders
+   the generated `bg-surface-<name>` utility in place of the base surface. An
+   unknown name is ignored. `classy.surface` does this.
+4. The component's base surface.
+
+`fill` and `surface` go on the part that is the plane: the root of Alert,
+Badge, Button, Card, Command, Container, Kbd, Skeleton and the Sidebar panel,
+Image's frame, and the content panel of AlertDialog, Dialog, Drawer, Sheet,
+Popover, HoverCard, Select, DropdownMenu, ContextMenu, Menubar, Combobox,
+DatePicker and NavigationMenu. Controls whose colours carry state (Switch,
+Slider, Tabs, Checkbox, Toggle and similar) and Typography take neither;
+Typography's `color` prop is a literal map from a text colour token to its
+class (`color="muted-foreground"`), and a value with no entry renders no
+class.
+
+Card, DialogContent, AlertDialogContent and the Sidebar panel paint their base
+with `bg-surface-card` and `bg-surface-sidebar`, so a project needs its surface
+fills: `rafters init` writes them, and `rafters init --rebuild` adds any a
+project lacks.

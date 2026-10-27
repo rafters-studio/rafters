@@ -18,10 +18,10 @@
  * @example
  * ```tsx
  * // Text skeleton
- * <Skeleton className="h-4 w-48" />
+ * <Skeleton style={{ height: '1rem', width: '12rem' }} />
  *
  * // Avatar skeleton
- * <Skeleton className="h-12 w-12 rounded-full" />
+ * <Skeleton style={{ height: '3rem', width: '3rem', borderRadius: '9999px' }} />
  * ```
  */
 
@@ -41,11 +41,16 @@
 import { skeleton } from './skeleton.behavior';
 import { skeletonClasses } from './skeleton.classes';
 
-interface Props {}
+interface Props {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
+}
 
-const { class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = skeletonClasses({}, {});
+const classes = skeletonClasses({ fill, surface }, {});
 const aria = skeleton.aria({}, {}, { root: '' }).root;
 ---
 

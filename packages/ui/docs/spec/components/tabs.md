@@ -8,12 +8,12 @@ Files (`src/components/tabs/`):
 
 ```
 tabs.classes.ts   tabs.behavior.ts   tabs.tsx
-tabs.element.ts   tabs.astro
+tabs.astro
 ```
 
 Tests mirror into `test/components/tabs/`: `.behavior.test.ts` (pure),
 `.classes.test.ts` (parity), `.conformance.test.tsx` (React),
-`.element.conformance.test.ts` (WC), `.astro.conformance.test.ts` (Astro).
+`.astro.conformance.test.ts` (Astro).
 
 ## Composition
 
@@ -83,10 +83,39 @@ The trigger projection carries the resolved string `aria-selected: 'false'` in
 the common inactive case; the DOM binds apply it with `{ validate: false }` so
 aria-manager does not coerce the string `'false'` truthy (Gotcha #2).
 
-Ids are shared across the three performances through `tabsIds(baseId, value)`
+Ids are shared across both performances through `tabsIds(baseId, value)`
 (`<base>-tab-<value>` / `<base>-panel-<value>`). React seeds `baseId` from
 `useId`, Astro from the author's `id` prop, and the DOM-native bind reads the
 resulting ids back off the markup rather than minting its own.
+
+## Rail width
+
+A horizontal list is content width. It is as wide as its triggers plus its `p-1` padding, and sits at the start edge of the root (the right edge on a `dir="rtl"` page), with no empty rail on either side of the triggers. The root is a flex column, which stretches its children, so the list carries `self-start`. A vertical list is unchanged.
+
+## Icons beside a label
+
+Two optional props place decorative icons around a trigger's label, in reading order (MUI's names): `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `Tabs.Trigger` | `endIcon: ReactNode` on `Tabs.Trigger` |
+| Astro | `<slot name="start-icon-{value}" />` | `<slot name="end-icon-{value}" />` |
+
+Astro renders one trigger per `tabs` item, and a slot name is static per component, so the Astro slot is named for the tab's `value`.
+
+```html
+<button role="tab" data-part="trigger" class="inline-grid grid-flow-col items-center gap-2 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Overview
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+</button>
+```
+
+- `startIcon` and `endIcon` are optional `many` parts, present only on a trigger that is given an icon. The behavior projects `aria-hidden="true"` on each through `instanceAria`, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The trigger is a grid (`inline-grid grid-flow-col items-center gap-2`). The icon wrappers and the label are its columns in reading order, so the start icon is on the right on a `dir="rtl"` page. No physical direction class.
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-2` and `has-data-[icon=inline-end]:pe-2`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- A count is text, not decoration: it stays readable and is not wrapped in `aria-hidden`. Only icons go in `startIcon`/`endIcon`.
 
 ## Keyboard
 
@@ -99,7 +128,7 @@ resulting ids back off the markup rather than minting its own.
   `onNavigate`.
 - Roving binds to the `[role="tablist"]` element, never the root. Panels live
   inside the root, so a root-level keydown listener would move tabs while focus
-  sits in panel content (asserted in the WC conformance suite).
+  sits in panel content.
 - Roving's `currentIndex` is seeded to the active tab's position, so Tab enters
   the set at the tab whose panel is showing rather than always at the first.
   Astro additionally renders that roving tabindex server-side, so keyboard order
@@ -126,11 +155,11 @@ resulting ids back off the markup rather than minting its own.
 | Astro SSR roving tabindex (`tabindex={defaultChecked ? 0 : -1}`) | contract |
 | `createSelectionGroup` primitive for single-select state | framework-affordance — expressed instead as reducer state (`{ value }`), the behavior-layer equivalent, exactly as radio-group and navigation-menu express their selection. The score's projections are asserted against `createBehavior`'s memory, and `createSelectionGroup` owns a separate `createMemory` cell with no seam to inject as the score's store; composing it would create a second, invisible source of truth |
 | React context carrying only `baseId`, with the controller mounted through a callback ref | framework-affordance — replaced by the retained-mode controller (`createBehavior` + `useMemory`), so React reads the projections declaratively instead of letting an imperative controller write attributes React does not know about |
-| Astro multi-file surface (`tabs-list.astro` / `tabs-trigger.astro` / `tabs-content.astro`) with `<slot />` panel bodies | framework-affordance — collapsed into one props-driven `tabs.astro`, matching every merged Astro performance (radio-group, navigation-menu). Astro requires static slot names, so a per-value panel slot is not expressible; rich panel bodies belong to the React and WC performances |
+| Astro multi-file surface (`tabs-list.astro` / `tabs-trigger.astro` / `tabs-content.astro`) with `<slot />` panel bodies | framework-affordance — collapsed into one props-driven `tabs.astro`, matching every merged Astro performance (radio-group, navigation-menu). Astro requires static slot names, so a per-value panel slot is not expressible; rich panel bodies belong to the React performance |
 | Astro config attributes `data-rafters-tabs` / `data-tabs-id` / `data-default-value` | dropped — the bind reads its config from the part markup itself (`[data-part="list"]`'s `aria-orientation`, and the server-rendered `[data-state="active"]` trigger), so there is no parallel config channel to drift |
-| `TabsController.setValue(value)` and the exposed `controller.group` cell | dropped — the imperative escape hatch is replaced by the controlled `value` prop in React; the WC and Astro performances are uncontrolled by design, as with radio-group and toggle-group |
+| `TabsController.setValue(value)` and the exposed `controller.group` cell | dropped — the imperative escape hatch is replaced by the controlled `value` prop in React; the Astro performance is uncontrolled |
 | horizontal-only navigation | improved — `orientation` is a rafters extension over the oracle, projecting `aria-orientation` on the rail and switching roving to the vertical axis. The oracle hardcoded `'horizontal'` |
-| root classes applied in Astro only (`tabsRootClasses`), React root left unstyled | defect-do-not-port — `tabsClasses().root` is now painted by all three performances, so the layout does not depend on which framework rendered it |
+| root classes applied in Astro only (`tabsRootClasses`), React root left unstyled | defect-do-not-port — `tabsClasses().root` is now painted by both performances, so the layout does not depend on which framework rendered it |
 
 ## Deltas from the oracle
 
@@ -145,7 +174,7 @@ resulting ids back off the markup rather than minting its own.
 - 1.3.1 / 4.1.2: `role="tablist"` with `aria-orientation`, per-trigger
   `role="tab"` + `aria-selected` + `aria-controls`, and per-panel
   `role="tabpanel"` + `aria-labelledby`, asserted against real DOM by the
-  harness in all three performances.
+  harness in both performances.
 - 2.1.1 Keyboard: arrows (per orientation) and Home/End move and activate;
   Enter/Space activate the focused tab; disabled triggers are skipped.
 - 2.4.3 Focus Order: roving tabindex keeps exactly one trigger in the tab order,

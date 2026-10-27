@@ -23,7 +23,7 @@
  *     <a href="/user/john">@john</a>
  *   </HoverCard.Trigger>
  *   <HoverCard.Content>
- *     <div className="flex gap-4">
+ *     <div className="flex">
  *       <Avatar src="/john.jpg" />
  *       <div>
  *         <h4>John Doe</h4>
@@ -337,9 +337,15 @@ export interface HoverCardContentProps extends React.HTMLAttributes<HTMLDivEleme
   side?: Side;
   align?: Align;
   sideOffset?: number;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function HoverCardContent({
+  fill,
+  surface,
   side,
   align,
   sideOffset,
@@ -347,7 +353,7 @@ export function HoverCardContent({
   children,
   ...props
 }: HoverCardContentProps) {
-  const { config, effectiveOpen, ids, aria, classes, triggerRef } =
+  const { config, state, effectiveOpen, ids, aria, classes, triggerRef } =
     useHoverCardContext('HoverCardContent');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -386,7 +392,12 @@ export function HoverCardContent({
       id={ids.content}
       ref={contentRef}
       data-state={dataState}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill || surface
+          ? hoverCardClasses({ ...config, fill, surface }, state).content
+          : classes.content,
+        className,
+      )}
       {...aria.content}
       {...props}
     >

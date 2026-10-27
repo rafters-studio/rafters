@@ -1,4 +1,4 @@
-import { resolveFillName } from '@/lib/primitives/fill-resolver';
+import classy from '@/lib/primitives/classy';
 import type { CardConfig, CardState } from '@/components/ui/card.behavior';
 
 export interface CardClassSet {
@@ -7,8 +7,8 @@ export interface CardClassSet {
 
 /**
  * Structure the surface always carries: an elevated, bordered, rounded
- * panel. Colour is kept separate so a resolved `fill` can replace the
- * default `bg-card` surface without leaving a competing `bg-*` behind.
+ * panel. Colour is kept separate so a `fill` can replace the default
+ * `bg-card` surface without leaving a competing `bg-*` behind.
  *
  * NO MOTION, AND THE ROW SAYS WHY IT IS MISSING RATHER THAN THIS FILE FAKING
  * ONE. `card / root / hover (when interactive)` in
@@ -18,16 +18,16 @@ export interface CardClassSet {
  * belong to. `CardConfig` is `as` + `fill`, `CardElement` is
  * `div | article | section | aside` (never `a` or `button`), and no hover
  * elevation exists anywhere in the component: the shadow is the constant
- * `shadow-sm` above. A `transition-shadow duration-fast ease-standard` here
+ * `shadow-sm` above. A shadow transition at the fast tier on the standard curve here
  * would time a property that never changes -- the same dead emission the
  * chart-tooltip cells were excluded for. The disagreement between the row and
  * the component is the finding, reported here and not resolved.
  */
 const cardStructureClasses =
-  'flex flex-col gap-6 rounded-xl border border-card-border py-6 shadow-sm';
+  'flex flex-col gap-6 rounded-xl border py-6 shadow-sm';
 
-/** Default surface token pairing -- card's identity when no fill resolves. */
-const cardSurfaceClasses = 'bg-card text-card-foreground';
+/** Base surface -- card's identity when no fill wins. */
+const cardSurfaceClasses = 'bg-card text-card-foreground border-card-border';
 
 /**
  * Sub-part classes are config-independent literals, so the framework files
@@ -37,10 +37,10 @@ const cardSurfaceClasses = 'bg-card text-card-foreground';
  * gap-6 py-6`) and each part owns only its horizontal inset (`px-6`). That is
  * what lets an arbitrary child dropped straight into a Card -- not wrapped in
  * CardContent -- pick up the same rhythm as the declared parts, which the old
- * per-part `p-6 pt-0` could not do.
+ * per-part padding with the top inset zeroed could not do.
  *
  * `text-title-medium ts-title-medium` / `text-body-small ts-body-small` are OURS, not shadcn's raw
- * `font-semibold` / `text-sm`: the semantic typography role tokens are the
+ * semibold weight and small size: the semantic typography role tokens are the
  * product, and they are invisible to a swap (same element, same slot, same
  * rendered role).
  */
@@ -71,10 +71,8 @@ export const cardFooterClasses = 'flex items-center px-6';
 export const cardActionClasses = 'col-start-2 row-span-2 row-start-1 self-start justify-self-end';
 
 export function cardClasses(config: CardConfig, _state: CardState): CardClassSet {
-  // A resolved fill REPLACES the default surface (bg + paired foreground),
-  // so the two never coexist -- no reliance on compiled source-order to pick
-  // a winner. An invalid/empty signature keeps the default card surface.
-  const fillClasses = config.fill ? resolveFillName(config.fill, 'surface') : '';
-  const surface = fillClasses || cardSurfaceClasses;
-  return { root: `${surface} ${cardStructureClasses}` };
+  // A fill REPLACES the base surface (bg, foreground and border colour), so
+  // the two never coexist -- no reliance on compiled source order to pick a
+  // winner. Anything but one bg-fill-* token is dropped and the base stands.
+  return { root: `${classy.fill(config.fill, cardSurfaceClasses)} ${cardStructureClasses}` };
 }

@@ -41,20 +41,15 @@ all of it tested once.
 framework's own idiom. A keyboard branch, a derived attribute, an
 if-disabled check in a binding is behavior that escaped.
 
-## 3. Component binding / framework adapter — the repetition line
+## 3. Component binding — the repetition line
 
-**Adapters own (one per framework, system-wide):** instance lifecycle,
-subscription, the effects runner, config assembly, id supply, the
-dispatch-and-callback protocol, aria/classes application, patch-in-place
-(WC). Written once; every component inherits them.
+**There are no adapters.** Each framework file performs the behavior in its
+framework's idiom, following its reference performance (`checkbox.tsx`).
 
-**Per-component framework files own:** the framework-idiomatic surface only
-— prop types, asChild, attribute names. A few lines over the adapter.
-
-**Violation test:** two components' framework files sharing any line beyond
-the adapter call. Shared substance moves DOWN into the adapter. (Found
-live: ~70% of the three button bindings was the same wiring re-expressed;
-the spinner SVG path was pasted three times.)
+**Violation test:** two components' framework files sharing logic beyond
+performing their behavior. Shared substance moves DOWN into the behavior or
+a primitive. (Found live: ~70% of the three button bindings was the same
+wiring re-expressed; the spinner SVG path was pasted three times.)
 
 ## 4. Intrinsic state / reflected inputs — the ownership-of-truth line
 
@@ -93,8 +88,12 @@ subdivision steps and the scale floor makes gratuitous depth unrepresentable.
 decoration.
 
 **classes.ts owns:** selection among literal strings. Never construction,
-never arbitrary values, never named colors. Fill, never background (ruled
-2026-07-08: fill is the only color-surface channel in the contract).
+never arbitrary values, never named colors. A consumer changes a surface in
+two ways only: `fill`, which takes exactly one designer-authored `bg-fill-*`
+token, and `surface`, which names one of the generated `bg-surface-*`
+surfaces. There is no background prop. Precedence on every part that takes
+them: fill, then an explicit variant, then surface, then the base
+(`classy.fill` and `classy.surface` in `primitives/classy.ts`).
 
 **Corollary — style the contract:** state-dependent looks key off the
 PROJECTED attributes (disabled:, aria-disabled:, aria-busy:, data-state)

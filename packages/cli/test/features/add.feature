@@ -45,3 +45,30 @@ Feature: rafters add command
     When I run "rafters add nonexistent-component"
     Then the command should fail
     And the error should contain "not found"
+
+  @criterion-1
+  Scenario: add leaves unchanged token files untouched
+    Given a "vite-no-shadcn" project
+    And I have run "rafters init --agent"
+    When I run "rafters add button card dialog combobox --agent"
+    Then the command should succeed
+    And every file in ".rafters/tokens" is byte for byte what init left
+
+  @criterion-2
+  Scenario: add rewrites only what changed
+    Given a "vite-no-shadcn" project
+    And I have run "rafters init --agent"
+    And one motion token in ".rafters/tokens/motion.rafters.json" holds a value the generator does not emit and no userOverride
+    When I run "rafters add button --agent"
+    Then that token holds the generator's value
+    And every other motion token keeps the generatedAt it had before the run
+
+  @criterion-3
+  Scenario: add still migrates a pre-0.3.0 motion file
+    Given a "vite-no-shadcn" project
+    And I have run "rafters init --agent"
+    And ".rafters/tokens/motion.rafters.json" is a motion file written by rafters before 0.3.0
+    When I run "rafters add button --agent"
+    Then the command should succeed
+    And ".rafters/tokens/motion.rafters.json" holds the tokens the current generator emits
+    And each carryable stored override is on its token

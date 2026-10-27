@@ -86,208 +86,236 @@
   --color-silver-true-violet-950: oklch(0.05 0.072 270);
   --color-silver-true-violet: oklch(0.645 0.12 270);
 
-  --spacing-base: 0.25rem;
-  --spacing-0: 0;
-  --spacing-1: var(--spacing-base);
-  --spacing-2: calc(var(--spacing-base) * 2);
-  --spacing-3: calc(var(--spacing-base) * 3);
-  --spacing-4: calc(var(--spacing-base) * 4);
-  --spacing-5: calc(var(--spacing-base) * 5);
-  --spacing-6: calc(var(--spacing-base) * 6);
-  --spacing-7: calc(var(--spacing-base) * 7);
-  --spacing-9: calc(var(--spacing-base) * 9);
-  --spacing-11: calc(var(--spacing-base) * 11);
-  --spacing-13: calc(var(--spacing-base) * 13);
-  --spacing-15: calc(var(--spacing-base) * 15);
-  --spacing-18: calc(var(--spacing-base) * 18);
-  --spacing-22: calc(var(--spacing-base) * 22);
-  --spacing-27: calc(var(--spacing-base) * 27);
-  --spacing-32: calc(var(--spacing-base) * 32);
-  --spacing-38: calc(var(--spacing-base) * 38);
-  --spacing-46: calc(var(--spacing-base) * 46);
-  --spacing-55: calc(var(--spacing-base) * 55);
-  --spacing-66: calc(var(--spacing-base) * 66);
-  --spacing-79: calc(var(--spacing-base) * 79);
-  --spacing-95: calc(var(--spacing-base) * 95);
-
-  --font-sans: 'Noto Sans Variable', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-  --font-serif: Georgia, "Times New Roman", Times, serif;
-  --font-heading: var(--font-sans);
-  --font-body: var(--font-sans);
-  --font-code: var(--font-mono);
-  --font-size-base: 1rem;
-  --font-size-base--line-height: 1.5;
-  --font-size-xs: 0.694rem;
-  --font-size-xs--line-height: 1.5;
-  --line-height-xs: 1.5;
-  --leading-xs: 1.5;
-  --letter-spacing-xs: 0.025em;
-  --font-size-sm: 0.833rem;
-  --font-size-sm--line-height: 1.5;
-  --line-height-sm: 1.5;
-  --leading-sm: 1.5;
-  --letter-spacing-sm: 0.015em;
-  --line-height-base: 1.5;
-  --leading-base: 1.5;
-  --letter-spacing-base: 0;
-  --font-size-lg: 1.2rem;
-  --font-size-lg--line-height: 1.5;
-  --line-height-lg: 1.5;
-  --leading-lg: 1.5;
-  --letter-spacing-lg: -0.01em;
-  --font-size-xl: 1.44rem;
-  --font-size-xl--line-height: 1.4;
-  --line-height-xl: 1.4;
-  --leading-xl: 1.4;
-  --letter-spacing-xl: -0.015em;
-  --font-size-2xl: 1.728rem;
-  --font-size-2xl--line-height: 1.35;
-  --line-height-2xl: 1.35;
-  --leading-2xl: 1.35;
-  --letter-spacing-2xl: -0.02em;
-  --font-size-3xl: 2.074rem;
-  --font-size-3xl--line-height: 1.3;
-  --line-height-3xl: 1.3;
-  --leading-3xl: 1.3;
-  --letter-spacing-3xl: -0.025em;
-  --font-size-4xl: 2.488rem;
-  --font-size-4xl--line-height: 1.25;
-  --line-height-4xl: 1.25;
-  --leading-4xl: 1.25;
-  --letter-spacing-4xl: -0.03em;
-  --font-size-5xl: 2.986rem;
-  --font-size-5xl--line-height: 1.2;
-  --line-height-5xl: 1.2;
-  --leading-5xl: 1.2;
-  --letter-spacing-5xl: -0.035em;
-  --font-size-6xl: 3.583rem;
-  --font-size-6xl--line-height: 1.15;
-  --line-height-6xl: 1.15;
-  --leading-6xl: 1.15;
-  --letter-spacing-6xl: -0.04em;
-  --font-size-7xl: 4.3rem;
-  --font-size-7xl--line-height: 1.1;
-  --line-height-7xl: 1.1;
-  --leading-7xl: 1.1;
-  --letter-spacing-7xl: -0.045em;
-  --font-size-8xl: 5.16rem;
-  --font-size-8xl--line-height: 1.1;
-  --line-height-8xl: 1.1;
-  --leading-8xl: 1.1;
-  --letter-spacing-8xl: -0.05em;
-  --font-size-9xl: 6.192rem;
-  --font-size-9xl--line-height: 1.1;
-  --line-height-9xl: 1.1;
-  --leading-9xl: 1.1;
-  --letter-spacing-9xl: -0.05em;
-  --font-weight-thin: 100;
-  --font-weight-extralight: 200;
-  --font-weight-light: 300;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
-  --font-weight-black: 900;
-
-  --radius-base: calc(var(--spacing-base) * 1.5);
-  --radius-tl: var(--radius-base);
-  --radius-tr: var(--radius-base);
-  --radius-bl: var(--radius-base);
-  --radius-br: var(--radius-base);
-  --radius-none: 0;
-  --radius-sm: calc(var(--radius-base) * 0.833);
-  --radius-sm-tl: calc(var(--radius-tl) * 0.833);
-  --radius-sm-tr: calc(var(--radius-tr) * 0.833);
-  --radius-sm-bl: calc(var(--radius-bl) * 0.833);
-  --radius-sm-br: calc(var(--radius-br) * 0.833);
-  --radius-radius: var(--radius-base);
-  --radius-md: calc(var(--radius-base) * 1.2);
-  --radius-md-tl: calc(var(--radius-tl) * 1.2);
-  --radius-md-tr: calc(var(--radius-tr) * 1.2);
-  --radius-md-bl: calc(var(--radius-bl) * 1.2);
-  --radius-md-br: calc(var(--radius-br) * 1.2);
-  --radius-lg: calc(var(--radius-base) * 1.44);
-  --radius-lg-tl: calc(var(--radius-tl) * 1.44);
-  --radius-lg-tr: calc(var(--radius-tr) * 1.44);
-  --radius-lg-bl: calc(var(--radius-bl) * 1.44);
-  --radius-lg-br: calc(var(--radius-br) * 1.44);
-  --radius-xl: calc(var(--radius-base) * 1.728);
-  --radius-xl-tl: calc(var(--radius-tl) * 1.728);
-  --radius-xl-tr: calc(var(--radius-tr) * 1.728);
-  --radius-xl-bl: calc(var(--radius-bl) * 1.728);
-  --radius-xl-br: calc(var(--radius-br) * 1.728);
-  --radius-2xl: calc(var(--radius-base) * 2.074);
-  --radius-2xl-tl: calc(var(--radius-tl) * 2.074);
-  --radius-2xl-tr: calc(var(--radius-tr) * 2.074);
-  --radius-2xl-bl: calc(var(--radius-bl) * 2.074);
-  --radius-2xl-br: calc(var(--radius-br) * 2.074);
-  --radius-3xl: calc(var(--radius-base) * 2.488);
-  --radius-3xl-tl: calc(var(--radius-tl) * 2.488);
-  --radius-3xl-tr: calc(var(--radius-tr) * 2.488);
-  --radius-3xl-bl: calc(var(--radius-bl) * 2.488);
-  --radius-3xl-br: calc(var(--radius-br) * 2.488);
-  --radius-full: 9999px;
-
-  --shadow-base-unit: 0.25rem;
-  --shadow-none: none;
-  --rafters-shadow-xs-offset-x: 0rem;
-  --rafters-shadow-xs-offset-y: 0.063rem;
-  --rafters-shadow-xs-blur: 0.125rem;
-  --rafters-shadow-xs-spread: 0rem;
-  --rafters-shadow-xs-color: rgb(0 0 0 / 0.05);
-  --shadow-xs: var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color);
-  --rafters-shadow-sm-offset-x: 0rem;
-  --rafters-shadow-sm-offset-y: 0.063rem;
-  --rafters-shadow-sm-blur: 0.25rem;
-  --rafters-shadow-sm-spread: 0rem;
-  --rafters-shadow-sm-color: rgb(0 0 0 / 0.06);
-  --shadow-sm: var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1);
-  --rafters-shadow-offset-x: 0rem;
-  --rafters-shadow-offset-y: 0.125rem;
-  --rafters-shadow-blur: 0.375rem;
-  --rafters-shadow-spread: 0.063rem;
-  --rafters-shadow-color: rgb(0 0 0 / 0.1);
-  --shadow-shadow: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1);
-  --rafters-shadow-md-offset-x: 0rem;
-  --rafters-shadow-md-offset-y: 0.25rem;
-  --rafters-shadow-md-blur: 0.438rem;
-  --rafters-shadow-md-spread: 0.063rem;
-  --rafters-shadow-md-color: rgb(0 0 0 / 0.1);
-  --shadow-md: var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem 0.063rem rgb(0 0 0 / 0.1);
-  --rafters-shadow-lg-offset-x: 0rem;
-  --rafters-shadow-lg-offset-y: 0.438rem;
-  --rafters-shadow-lg-blur: 0.938rem;
-  --rafters-shadow-lg-spread: 0.063rem;
-  --rafters-shadow-lg-color: rgb(0 0 0 / 0.1);
-  --shadow-lg: var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.438rem 0.063rem rgb(0 0 0 / 0.1);
-  --rafters-shadow-xl-offset-x: 0rem;
-  --rafters-shadow-xl-offset-y: 1.125rem;
-  --rafters-shadow-xl-blur: 1.375rem;
-  --rafters-shadow-xl-spread: 0.063rem;
-  --rafters-shadow-xl-color: rgb(0 0 0 / 0.1);
-  --shadow-xl: var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.438rem 0.938rem 0.063rem rgb(0 0 0 / 0.1);
-  --rafters-shadow-2xl-offset-x: 0rem;
-  --rafters-shadow-2xl-offset-y: 1.375rem;
-  --rafters-shadow-2xl-blur: 2.875rem;
-  --rafters-shadow-2xl-spread: 0.063rem;
-  --rafters-shadow-2xl-color: rgb(0 0 0 / 0.25);
-  --shadow-2xl: var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color);
-  --shadow-primary: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent);
-  --shadow-destructive: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent);
-
-  --depth-base: 0;
-  --depth-dropdown: 50;
-  --depth-sticky: 20;
-  --depth-navigation: 25;
-  --depth-fixed: 30;
-  --depth-modal: 40;
-  --depth-popover: 50;
-  --depth-tooltip: 60;
-  --depth-overlay: 35;
-  --depth-below: -1;
-  --depth-max: 9999;
+  --spacing: var(--rafters-spacing-base);
+  --spacing-0: var(--rafters-spacing-0);
+  --spacing-1: var(--rafters-spacing-1);
+  --spacing-2: var(--rafters-spacing-2);
+  --spacing-3: var(--rafters-spacing-3);
+  --spacing-4: var(--rafters-spacing-4);
+  --spacing-5: var(--rafters-spacing-5);
+  --spacing-6: var(--rafters-spacing-6);
+  --spacing-7: var(--rafters-spacing-7);
+  --spacing-9: var(--rafters-spacing-9);
+  --spacing-11: var(--rafters-spacing-11);
+  --spacing-13: var(--rafters-spacing-13);
+  --spacing-15: var(--rafters-spacing-15);
+  --spacing-18: var(--rafters-spacing-18);
+  --spacing-22: var(--rafters-spacing-22);
+  --spacing-27: var(--rafters-spacing-27);
+  --spacing-32: var(--rafters-spacing-32);
+  --spacing-38: var(--rafters-spacing-38);
+  --spacing-46: var(--rafters-spacing-46);
+  --spacing-55: var(--rafters-spacing-55);
+  --spacing-66: var(--rafters-spacing-66);
+  --spacing-79: var(--rafters-spacing-79);
+  --spacing-95: var(--rafters-spacing-95);
+  --radius: var(--rafters-radius);
+  --radius-base: var(--rafters-radius-base);
+  --radius-none: var(--rafters-radius-none);
+  --radius-sm: var(--rafters-radius-sm);
+  --radius-md: var(--rafters-radius-md);
+  --radius-lg: var(--rafters-radius-lg);
+  --radius-xl: var(--rafters-radius-xl);
+  --radius-2xl: var(--rafters-radius-2xl);
+  --radius-3xl: var(--rafters-radius-3xl);
+  --radius-full: var(--rafters-radius-full);
+  --shadow: var(--rafters-shadow);
+  --shadow-none: var(--rafters-shadow-none);
+  --shadow-xs: var(--rafters-shadow-xs);
+  --shadow-sm: var(--rafters-shadow-sm);
+  --shadow-md: var(--rafters-shadow-md);
+  --shadow-lg: var(--rafters-shadow-lg);
+  --shadow-xl: var(--rafters-shadow-xl);
+  --shadow-2xl: var(--rafters-shadow-2xl);
+  --shadow-primary: var(--rafters-shadow-primary);
+  --shadow-destructive: var(--rafters-shadow-destructive);
+  --text-base: var(--rafters-font-size-base);
+  --text-base--line-height: var(--rafters-line-height-base);
+  --text-base--letter-spacing: var(--rafters-letter-spacing-base);
+  --text-xs: var(--rafters-font-size-xs);
+  --text-xs--line-height: var(--rafters-line-height-xs);
+  --text-xs--letter-spacing: var(--rafters-letter-spacing-xs);
+  --text-sm: var(--rafters-font-size-sm);
+  --text-sm--line-height: var(--rafters-line-height-sm);
+  --text-sm--letter-spacing: var(--rafters-letter-spacing-sm);
+  --text-lg: var(--rafters-font-size-lg);
+  --text-lg--line-height: var(--rafters-line-height-lg);
+  --text-lg--letter-spacing: var(--rafters-letter-spacing-lg);
+  --text-xl: var(--rafters-font-size-xl);
+  --text-xl--line-height: var(--rafters-line-height-xl);
+  --text-xl--letter-spacing: var(--rafters-letter-spacing-xl);
+  --text-2xl: var(--rafters-font-size-2xl);
+  --text-2xl--line-height: var(--rafters-line-height-2xl);
+  --text-2xl--letter-spacing: var(--rafters-letter-spacing-2xl);
+  --text-3xl: var(--rafters-font-size-3xl);
+  --text-3xl--line-height: var(--rafters-line-height-3xl);
+  --text-3xl--letter-spacing: var(--rafters-letter-spacing-3xl);
+  --text-4xl: var(--rafters-font-size-4xl);
+  --text-4xl--line-height: var(--rafters-line-height-4xl);
+  --text-4xl--letter-spacing: var(--rafters-letter-spacing-4xl);
+  --text-5xl: var(--rafters-font-size-5xl);
+  --text-5xl--line-height: var(--rafters-line-height-5xl);
+  --text-5xl--letter-spacing: var(--rafters-letter-spacing-5xl);
+  --text-6xl: var(--rafters-font-size-6xl);
+  --text-6xl--line-height: var(--rafters-line-height-6xl);
+  --text-6xl--letter-spacing: var(--rafters-letter-spacing-6xl);
+  --text-7xl: var(--rafters-font-size-7xl);
+  --text-7xl--line-height: var(--rafters-line-height-7xl);
+  --text-7xl--letter-spacing: var(--rafters-letter-spacing-7xl);
+  --text-8xl: var(--rafters-font-size-8xl);
+  --text-8xl--line-height: var(--rafters-line-height-8xl);
+  --text-8xl--letter-spacing: var(--rafters-letter-spacing-8xl);
+  --text-9xl: var(--rafters-font-size-9xl);
+  --text-9xl--line-height: var(--rafters-line-height-9xl);
+  --text-9xl--letter-spacing: var(--rafters-letter-spacing-9xl);
+  --leading-xs: var(--rafters-line-height-xs);
+  --leading-sm: var(--rafters-line-height-sm);
+  --leading-base: var(--rafters-line-height-base);
+  --leading-lg: var(--rafters-line-height-lg);
+  --leading-xl: var(--rafters-line-height-xl);
+  --leading-2xl: var(--rafters-line-height-2xl);
+  --leading-3xl: var(--rafters-line-height-3xl);
+  --leading-4xl: var(--rafters-line-height-4xl);
+  --leading-5xl: var(--rafters-line-height-5xl);
+  --leading-6xl: var(--rafters-line-height-6xl);
+  --leading-7xl: var(--rafters-line-height-7xl);
+  --leading-8xl: var(--rafters-line-height-8xl);
+  --leading-9xl: var(--rafters-line-height-9xl);
+  --tracking-xs: var(--rafters-letter-spacing-xs);
+  --tracking-sm: var(--rafters-letter-spacing-sm);
+  --tracking-base: var(--rafters-letter-spacing-base);
+  --tracking-lg: var(--rafters-letter-spacing-lg);
+  --tracking-xl: var(--rafters-letter-spacing-xl);
+  --tracking-2xl: var(--rafters-letter-spacing-2xl);
+  --tracking-3xl: var(--rafters-letter-spacing-3xl);
+  --tracking-4xl: var(--rafters-letter-spacing-4xl);
+  --tracking-5xl: var(--rafters-letter-spacing-5xl);
+  --tracking-6xl: var(--rafters-letter-spacing-6xl);
+  --tracking-7xl: var(--rafters-letter-spacing-7xl);
+  --tracking-8xl: var(--rafters-letter-spacing-8xl);
+  --tracking-9xl: var(--rafters-letter-spacing-9xl);
+  --font-weight-thin: var(--rafters-font-weight-thin);
+  --font-weight-extralight: var(--rafters-font-weight-extralight);
+  --font-weight-light: var(--rafters-font-weight-light);
+  --font-weight-normal: var(--rafters-font-weight-normal);
+  --font-weight-medium: var(--rafters-font-weight-medium);
+  --font-weight-semibold: var(--rafters-font-weight-semibold);
+  --font-weight-bold: var(--rafters-font-weight-bold);
+  --font-weight-extrabold: var(--rafters-font-weight-extrabold);
+  --font-weight-black: var(--rafters-font-weight-black);
+  --font-sans: var(--rafters-font-sans);
+  --font-mono: var(--rafters-font-mono);
+  --font-serif: var(--rafters-font-serif);
+  --font-heading: var(--rafters-font-heading);
+  --font-body: var(--rafters-font-body);
+  --font-code: var(--rafters-font-code);
+  --text-display-large: var(--rafters-font-size-5xl);
+  --text-display-large--line-height: var(--rafters-line-height-5xl);
+  --text-display-large--letter-spacing: var(--rafters-letter-spacing-5xl);
+  --text-display-large--font-weight: var(--rafters-font-weight-bold);
+  --rafters-ts-display-large: var(--rafters-font-heading);
+  --rafters-ts-display-large-lg: var(--rafters-font-size-6xl);
+  --rafters-ts-display-large-lg-leading: var(--rafters-line-height-6xl);
+  --text-display-medium: var(--rafters-font-size-4xl);
+  --text-display-medium--line-height: var(--rafters-line-height-4xl);
+  --text-display-medium--letter-spacing: var(--rafters-letter-spacing-4xl);
+  --text-display-medium--font-weight: var(--rafters-font-weight-bold);
+  --rafters-ts-display-medium: var(--rafters-font-heading);
+  --rafters-ts-display-medium-lg: var(--rafters-font-size-5xl);
+  --rafters-ts-display-medium-lg-leading: var(--rafters-line-height-5xl);
+  --text-title-large: var(--rafters-font-size-3xl);
+  --text-title-large--line-height: var(--rafters-line-height-3xl);
+  --text-title-large--letter-spacing: var(--rafters-letter-spacing-3xl);
+  --text-title-large--font-weight: var(--rafters-font-weight-semibold);
+  --rafters-ts-title-large: var(--rafters-font-heading);
+  --text-title-medium: var(--rafters-font-size-lg);
+  --text-title-medium--line-height: var(--rafters-line-height-lg);
+  --text-title-medium--letter-spacing: var(--rafters-letter-spacing-lg);
+  --text-title-medium--font-weight: var(--rafters-font-weight-semibold);
+  --rafters-ts-title-medium: var(--rafters-font-heading);
+  --text-title-small: var(--rafters-font-size-base);
+  --text-title-small--line-height: var(--rafters-line-height-base);
+  --text-title-small--letter-spacing: var(--rafters-letter-spacing-base);
+  --text-title-small--font-weight: var(--rafters-font-weight-semibold);
+  --rafters-ts-title-small: var(--rafters-font-heading);
+  --text-body-large: var(--rafters-font-size-xl);
+  --text-body-large--line-height: var(--rafters-line-height-xl);
+  --text-body-large--letter-spacing: var(--rafters-letter-spacing-xl);
+  --text-body-large--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-body-large: var(--rafters-font-body);
+  --text-body-medium: var(--rafters-font-size-base);
+  --text-body-medium--line-height: var(--rafters-line-height-base);
+  --text-body-medium--letter-spacing: var(--rafters-letter-spacing-base);
+  --text-body-medium--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-body-medium: var(--rafters-font-body);
+  --text-body-small: var(--rafters-font-size-sm);
+  --text-body-small--line-height: var(--rafters-line-height-sm);
+  --text-body-small--letter-spacing: var(--rafters-letter-spacing-sm);
+  --text-body-small--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-body-small: var(--rafters-font-body);
+  --text-label-large: var(--rafters-font-size-base);
+  --text-label-large--line-height: var(--rafters-line-height-base);
+  --text-label-large--letter-spacing: var(--rafters-letter-spacing-base);
+  --text-label-large--font-weight: var(--rafters-font-weight-medium);
+  --rafters-ts-label-large: var(--rafters-font-body);
+  --text-label-medium: var(--rafters-font-size-sm);
+  --text-label-medium--line-height: var(--rafters-line-height-sm);
+  --text-label-medium--letter-spacing: var(--rafters-letter-spacing-sm);
+  --text-label-medium--font-weight: var(--rafters-font-weight-medium);
+  --rafters-ts-label-medium: var(--rafters-font-body);
+  --text-label-small: var(--rafters-font-size-xs);
+  --text-label-small--line-height: var(--rafters-line-height-xs);
+  --text-label-small--letter-spacing: var(--rafters-letter-spacing-xs);
+  --text-label-small--font-weight: var(--rafters-font-weight-medium);
+  --rafters-ts-label-small: var(--rafters-font-body);
+  --text-code-large: var(--rafters-font-size-base);
+  --text-code-large--line-height: var(--rafters-line-height-base);
+  --text-code-large--letter-spacing: var(--rafters-letter-spacing-base);
+  --text-code-large--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-code-large: var(--rafters-font-code);
+  --text-code-small: var(--rafters-font-size-sm);
+  --text-code-small--line-height: var(--rafters-line-height-sm);
+  --text-code-small--letter-spacing: var(--rafters-letter-spacing-sm);
+  --text-code-small--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-code-small: var(--rafters-font-code);
+  --text-shortcut: var(--rafters-font-size-xs);
+  --text-shortcut--line-height: var(--rafters-line-height-xs);
+  --text-shortcut--font-weight: var(--rafters-font-weight-normal);
+  --rafters-ts-shortcut: var(--rafters-font-code);
+  --z-index-depth-base: var(--rafters-depth-base);
+  --z-index-depth-dropdown: var(--rafters-depth-dropdown);
+  --z-index-depth-sticky: var(--rafters-depth-sticky);
+  --z-index-depth-navigation: var(--rafters-depth-navigation);
+  --z-index-depth-fixed: var(--rafters-depth-fixed);
+  --z-index-depth-modal: var(--rafters-depth-modal);
+  --z-index-depth-popover: var(--rafters-depth-popover);
+  --z-index-depth-tooltip: var(--rafters-depth-tooltip);
+  --z-index-depth-overlay: var(--rafters-depth-overlay);
+  --z-index-depth-below: var(--rafters-depth-below);
+  --z-index-depth-max: var(--rafters-depth-max);
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --container-3xs: 16rem;
+  --container-2xs: 18rem;
+  --container-xs: 20rem;
+  --container-sm: 24rem;
+  --container-md: 28rem;
+  --container-lg: 32rem;
+  --container-xl: 36rem;
+  --container-2xl: 42rem;
+  --container-3xl: 48rem;
+  --container-4xl: 56rem;
+  --container-5xl: 64rem;
+  --container-6xl: 72rem;
+  --container-7xl: 80rem;
+  --default-ring-width: var(--rafters-focus-ring-width);
+  --ring-width-2: var(--rafters-focus-ring-width);
+  --outline-width-2: var(--rafters-focus-ring-width);
+  --ring-offset-width-2: var(--rafters-focus-offset);
+  --outline-offset-2: var(--rafters-focus-offset);
 
   /* The five motion namespaces -- system leaves, the values live here */
   --rafters-duration-instant: 0ms;
@@ -328,6 +356,8 @@
   --motion-keyframe-slide-out-to-right: from { transform: translateX(0); } to { transform: translateX(100%); };
   --motion-keyframe-scale-in: from { transform: scale(var(--rafters-extent-pop)); opacity: 0; } to { transform: scale(1); opacity: 1; };
   --motion-keyframe-scale-out: from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; };
+  --motion-keyframe-grow-in: from { transform: scaleY(0); } to { transform: scaleY(1); };
+  --motion-keyframe-grow-in-x: from { transform: scaleX(0); } to { transform: scaleX(1); };
   --motion-keyframe-spin: from { transform: rotate(0deg); } to { transform: rotate(360deg); };
   --motion-keyframe-ping: 75%, 100% { transform: scale(1.7); opacity: 0; };
   --motion-keyframe-pulse: 0%, 100% { opacity: 1; } 50% { opacity: 0.48; };
@@ -350,77 +380,49 @@
   --motion-animation-pulse: pulse 2s var(--rafters-ease-standard) infinite;
   --motion-animation-bounce: bounce 1s var(--rafters-ease-standard) infinite;
   --motion-animation-caret-blink: caret-blink 1.25s var(--rafters-ease-enter) infinite;
-  --motion-fade-in: 150ms cubic-bezier(0, 0, 0.2, 1);
-  --motion-fade-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-slide-in: 350ms cubic-bezier(0, 0, 0.2, 1);
-  --motion-slide-out: 150ms cubic-bezier(0.4, 0, 1, 1);
-  --motion-scale-in: 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-fade-in: var(--rafters-duration-fast) var(--rafters-ease-enter);
+  --motion-fade-out: var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --motion-slide-in: var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --motion-slide-out: var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --motion-scale-in: var(--rafters-duration-normal) var(--rafters-ease-spring-snappy);
 
-  --duration-instant: var(--rafters-duration-instant);
-  --duration-micro: var(--rafters-duration-micro);
-  --duration-fast: var(--rafters-duration-fast);
-  --duration-moderate: var(--rafters-duration-moderate);
-  --duration-normal: var(--rafters-duration-normal);
-  --duration-slow: var(--rafters-duration-slow);
+  --transition-duration-instant: var(--rafters-duration-instant);
+  --transition-duration-micro: var(--rafters-duration-micro);
+  --transition-duration-fast: var(--rafters-duration-fast);
+  --transition-duration-moderate: var(--rafters-duration-moderate);
+  --transition-duration-normal: var(--rafters-duration-normal);
+  --transition-duration-slow: var(--rafters-duration-slow);
   --ease-standard: var(--rafters-ease-standard);
   --ease-enter: var(--rafters-ease-enter);
   --ease-exit: var(--rafters-ease-exit);
   --ease-linear: var(--rafters-ease-linear);
   --ease-spring-smooth: var(--rafters-ease-spring-smooth);
   --ease-spring-snappy: var(--rafters-ease-spring-snappy);
+  --transition-delay-hover-intent: var(--rafters-delay-hover-intent);
+  --transition-delay-linger: var(--rafters-delay-linger);
+  --transition-delay-choreo-step: var(--rafters-delay-choreo-step);
+  --transition-delay-stagger-step: var(--rafters-delay-stagger-step);
+  --transition-delay-skip: var(--rafters-delay-skip);
 
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
-  --container-3xs: 16rem;
-  --container-2xs: 18rem;
-  --container-xs: 20rem;
-  --container-sm: 24rem;
-  --container-md: 28rem;
-  --container-lg: 32rem;
-  --container-xl: 36rem;
-  --container-2xl: 42rem;
-  --container-3xl: 48rem;
-  --container-4xl: 56rem;
-  --container-5xl: 64rem;
-  --container-6xl: 72rem;
-  --container-7xl: 80rem;
-  --breakpoint-sm-max: 639px;
-  --breakpoint-md-max: 767px;
-  --breakpoint-lg-max: 1023px;
-  --breakpoint-xl-max: 1279px;
-  --breakpoint-2xl-max: 1535px;
+  /* Motion assignments -- one key per distinct (shape, tier, curve) */
+  --animate-scale-in-normal-enter: scale-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-scale-out-moderate-exit: scale-out var(--rafters-duration-moderate) var(--rafters-ease-exit);
+  --animate-fade-in-normal-enter: fade-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-fade-out-moderate-exit: fade-out var(--rafters-duration-moderate) var(--rafters-ease-exit);
+  --animate-fade-in-normal-spring-smooth: fade-in var(--rafters-duration-normal) var(--rafters-ease-spring-smooth);
+  --animate-scale-in-moderate-enter: scale-in var(--rafters-duration-moderate) var(--rafters-ease-enter);
+  --animate-scale-out-fast-exit: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --animate-fade-in-moderate-enter: fade-in var(--rafters-duration-moderate) var(--rafters-ease-enter);
+  --animate-fade-out-fast-exit: fade-out var(--rafters-duration-fast) var(--rafters-ease-exit);
+  --animate-fade-in-moderate-standard: fade-in var(--rafters-duration-moderate) var(--rafters-ease-standard);
+  --animate-fade-in-fast-standard: fade-in var(--rafters-duration-fast) var(--rafters-ease-standard);
+  --animate-grow-in-normal-enter: grow-in var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-grow-in-x-normal-enter: grow-in-x var(--rafters-duration-normal) var(--rafters-ease-enter);
+  --animate-fade-out-fast-standard: fade-out var(--rafters-duration-fast) var(--rafters-ease-standard);
+  --animate-pulse-shimmer: pulse var(--rafters-period-shimmer) infinite;
+  --animate-spin-spin: spin var(--rafters-period-spin) infinite;
+  --animate-caret-blink-blink: caret-blink var(--rafters-period-blink) infinite;
 
-  --focus-ring-width: calc(var(--spacing-base) / 2);
-  --focus-ring-color: var(--ring);
-  --focus-outline: var(--focus-ring-width) solid var(--ring);
-  --focus-offset: var(--focus-ring-width);
-  --focus-outline-inset: var(--focus-ring-width) solid var(--ring);
-  --focus-offset-inset: calc(var(--focus-ring-width) * -1);
-  --focus-outline-thick: calc(var(--focus-ring-width) * 1.5) solid var(--ring);
-  --focus-offset-thick: var(--focus-ring-width);
-  --focus-outline-subtle: calc(var(--focus-ring-width) * 0.5) solid var(--ring);
-  --focus-offset-subtle: var(--focus-ring-width);
-
-  --animate-fade-in: fade-in var(--rafters-duration-fast) var(--rafters-ease-enter);
-  --animate-fade-out: fade-out var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-in-from-top: slide-in-from-top var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-bottom: slide-in-from-bottom var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-left: slide-in-from-left var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-in-from-right: slide-in-from-right var(--rafters-duration-normal) var(--rafters-ease-enter);
-  --animate-slide-out-to-top: slide-out-to-top var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-bottom: slide-out-to-bottom var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-left: slide-out-to-left var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-slide-out-to-right: slide-out-to-right var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-scale-in: scale-in var(--rafters-duration-normal) var(--rafters-ease-spring-snappy);
-  --animate-scale-out: scale-out var(--rafters-duration-fast) var(--rafters-ease-exit);
-  --animate-spin: spin 1s var(--rafters-ease-linear) infinite;
-  --animate-ping: ping 1s var(--rafters-ease-enter) infinite;
-  --animate-pulse: pulse 2s var(--rafters-ease-standard) infinite;
-  --animate-bounce: bounce 1s var(--rafters-ease-standard) infinite;
-  --animate-caret-blink: caret-blink 1.25s var(--rafters-ease-enter) infinite;
 }
 
 @theme inline {
@@ -631,352 +633,573 @@
   --color-badge-border: var(--badge-border);
   --color-avatar: var(--avatar);
   --color-avatar-foreground: var(--avatar-foreground);
+  --color-primary-50: var(--rafters-primary-50);
+  --color-primary-100: var(--rafters-primary-100);
+  --color-primary-200: var(--rafters-primary-200);
+  --color-primary-300: var(--rafters-primary-300);
+  --color-primary-400: var(--rafters-primary-400);
+  --color-primary-500: var(--rafters-primary-500);
+  --color-primary-600: var(--rafters-primary-600);
+  --color-primary-700: var(--rafters-primary-700);
+  --color-primary-800: var(--rafters-primary-800);
+  --color-primary-900: var(--rafters-primary-900);
+  --color-primary-950: var(--rafters-primary-950);
+  --color-secondary-50: var(--rafters-secondary-50);
+  --color-secondary-100: var(--rafters-secondary-100);
+  --color-secondary-200: var(--rafters-secondary-200);
+  --color-secondary-300: var(--rafters-secondary-300);
+  --color-secondary-400: var(--rafters-secondary-400);
+  --color-secondary-500: var(--rafters-secondary-500);
+  --color-secondary-600: var(--rafters-secondary-600);
+  --color-secondary-700: var(--rafters-secondary-700);
+  --color-secondary-800: var(--rafters-secondary-800);
+  --color-secondary-900: var(--rafters-secondary-900);
+  --color-secondary-950: var(--rafters-secondary-950);
+  --color-accent-50: var(--rafters-accent-50);
+  --color-accent-100: var(--rafters-accent-100);
+  --color-accent-200: var(--rafters-accent-200);
+  --color-accent-300: var(--rafters-accent-300);
+  --color-accent-400: var(--rafters-accent-400);
+  --color-accent-500: var(--rafters-accent-500);
+  --color-accent-600: var(--rafters-accent-600);
+  --color-accent-700: var(--rafters-accent-700);
+  --color-accent-800: var(--rafters-accent-800);
+  --color-accent-900: var(--rafters-accent-900);
+  --color-accent-950: var(--rafters-accent-950);
+  --color-highlight-50: var(--rafters-highlight-50);
+  --color-highlight-100: var(--rafters-highlight-100);
+  --color-highlight-200: var(--rafters-highlight-200);
+  --color-highlight-300: var(--rafters-highlight-300);
+  --color-highlight-400: var(--rafters-highlight-400);
+  --color-highlight-500: var(--rafters-highlight-500);
+  --color-highlight-600: var(--rafters-highlight-600);
+  --color-highlight-700: var(--rafters-highlight-700);
+  --color-highlight-800: var(--rafters-highlight-800);
+  --color-highlight-900: var(--rafters-highlight-900);
+  --color-highlight-950: var(--rafters-highlight-950);
+  --color-neutral-50: var(--rafters-neutral-50);
+  --color-neutral-100: var(--rafters-neutral-100);
+  --color-neutral-200: var(--rafters-neutral-200);
+  --color-neutral-300: var(--rafters-neutral-300);
+  --color-neutral-400: var(--rafters-neutral-400);
+  --color-neutral-500: var(--rafters-neutral-500);
+  --color-neutral-600: var(--rafters-neutral-600);
+  --color-neutral-700: var(--rafters-neutral-700);
+  --color-neutral-800: var(--rafters-neutral-800);
+  --color-neutral-900: var(--rafters-neutral-900);
+  --color-neutral-950: var(--rafters-neutral-950);
+  --color-muted-50: var(--rafters-muted-50);
+  --color-muted-100: var(--rafters-muted-100);
+  --color-muted-200: var(--rafters-muted-200);
+  --color-muted-300: var(--rafters-muted-300);
+  --color-muted-400: var(--rafters-muted-400);
+  --color-muted-500: var(--rafters-muted-500);
+  --color-muted-600: var(--rafters-muted-600);
+  --color-muted-700: var(--rafters-muted-700);
+  --color-muted-800: var(--rafters-muted-800);
+  --color-muted-900: var(--rafters-muted-900);
+  --color-muted-950: var(--rafters-muted-950);
+  --color-success-50: var(--rafters-success-50);
+  --color-success-100: var(--rafters-success-100);
+  --color-success-200: var(--rafters-success-200);
+  --color-success-300: var(--rafters-success-300);
+  --color-success-400: var(--rafters-success-400);
+  --color-success-500: var(--rafters-success-500);
+  --color-success-600: var(--rafters-success-600);
+  --color-success-700: var(--rafters-success-700);
+  --color-success-800: var(--rafters-success-800);
+  --color-success-900: var(--rafters-success-900);
+  --color-success-950: var(--rafters-success-950);
+  --color-warning-50: var(--rafters-warning-50);
+  --color-warning-100: var(--rafters-warning-100);
+  --color-warning-200: var(--rafters-warning-200);
+  --color-warning-300: var(--rafters-warning-300);
+  --color-warning-400: var(--rafters-warning-400);
+  --color-warning-500: var(--rafters-warning-500);
+  --color-warning-600: var(--rafters-warning-600);
+  --color-warning-700: var(--rafters-warning-700);
+  --color-warning-800: var(--rafters-warning-800);
+  --color-warning-900: var(--rafters-warning-900);
+  --color-warning-950: var(--rafters-warning-950);
+  --color-destructive-50: var(--rafters-destructive-50);
+  --color-destructive-100: var(--rafters-destructive-100);
+  --color-destructive-200: var(--rafters-destructive-200);
+  --color-destructive-300: var(--rafters-destructive-300);
+  --color-destructive-400: var(--rafters-destructive-400);
+  --color-destructive-500: var(--rafters-destructive-500);
+  --color-destructive-600: var(--rafters-destructive-600);
+  --color-destructive-700: var(--rafters-destructive-700);
+  --color-destructive-800: var(--rafters-destructive-800);
+  --color-destructive-900: var(--rafters-destructive-900);
+  --color-destructive-950: var(--rafters-destructive-950);
+  --color-info-50: var(--rafters-info-50);
+  --color-info-100: var(--rafters-info-100);
+  --color-info-200: var(--rafters-info-200);
+  --color-info-300: var(--rafters-info-300);
+  --color-info-400: var(--rafters-info-400);
+  --color-info-500: var(--rafters-info-500);
+  --color-info-600: var(--rafters-info-600);
+  --color-info-700: var(--rafters-info-700);
+  --color-info-800: var(--rafters-info-800);
+  --color-info-900: var(--rafters-info-900);
+  --color-info-950: var(--rafters-info-950);
 }
 
 :root, :host {
-  --rafters-neutral: var(--color-zinc-500);
-  --rafters-background: var(--color-zinc-50);
-  --rafters-foreground: var(--color-zinc-950);
-  --rafters-card: var(--color-zinc-50);
-  --rafters-card-foreground: var(--color-zinc-600);
-  --rafters-card-hover: var(--color-zinc-100);
-  --rafters-card-border: var(--color-zinc-200);
-  --rafters-panel: var(--color-zinc-200);
-  --rafters-panel-foreground: var(--color-zinc-700);
-  --rafters-panel-hover: var(--color-zinc-300);
-  --rafters-panel-border: var(--color-zinc-400);
-  --rafters-popover: var(--color-zinc-50);
-  --rafters-popover-foreground: var(--color-zinc-600);
-  --rafters-popover-border: var(--color-zinc-200);
-  --rafters-surface: var(--color-zinc-100);
-  --rafters-surface-foreground: var(--color-zinc-700);
-  --rafters-surface-hover: var(--color-zinc-200);
-  --rafters-surface-active: var(--color-zinc-300);
-  --rafters-surface-border: var(--color-zinc-300);
-  --rafters-primary: var(--color-zinc-900);
-  --rafters-primary-foreground: var(--color-zinc-50);
-  --rafters-primary-hover: var(--color-zinc-950);
-  --rafters-primary-hover-foreground: var(--color-zinc-50);
-  --rafters-primary-active: var(--color-zinc-950);
-  --rafters-primary-active-foreground: var(--color-zinc-50);
-  --rafters-primary-focus: var(--color-zinc-950);
-  --rafters-primary-border: var(--color-zinc-950);
-  --rafters-primary-ring: var(--color-zinc-900);
-  --rafters-primary-subtle: var(--color-zinc-700);
-  --rafters-primary-subtle-foreground: var(--color-zinc-50);
-  --rafters-secondary: var(--color-zinc-100);
-  --rafters-secondary-foreground: var(--color-zinc-700);
-  --rafters-secondary-hover: var(--color-zinc-200);
-  --rafters-secondary-hover-foreground: var(--color-zinc-700);
-  --rafters-secondary-active: var(--color-zinc-300);
-  --rafters-secondary-active-foreground: var(--color-zinc-700);
-  --rafters-secondary-focus: var(--color-zinc-200);
-  --rafters-secondary-border: var(--color-zinc-300);
-  --rafters-secondary-ring: var(--color-zinc-100);
-  --rafters-secondary-subtle: var(--color-zinc-50);
-  --rafters-secondary-subtle-foreground: var(--color-zinc-600);
-  --rafters-muted: var(--color-zinc-100);
-  --rafters-muted-foreground: var(--color-zinc-700);
-  --rafters-muted-hover: var(--color-zinc-200);
-  --rafters-muted-hover-foreground: var(--color-zinc-700);
-  --rafters-muted-active: var(--color-zinc-300);
-  --rafters-muted-border: var(--color-zinc-300);
-  --rafters-accent: var(--color-zinc-100);
-  --rafters-accent-foreground: var(--color-zinc-700);
-  --rafters-accent-hover: var(--color-zinc-200);
-  --rafters-accent-hover-foreground: var(--color-zinc-700);
-  --rafters-accent-active: var(--color-zinc-300);
-  --rafters-accent-active-foreground: var(--color-zinc-700);
-  --rafters-accent-border: var(--color-zinc-300);
-  --rafters-accent-ring: var(--color-zinc-100);
-  --rafters-accent-subtle: var(--color-zinc-50);
-  --rafters-accent-subtle-foreground: var(--color-zinc-600);
-  --rafters-destructive: var(--color-silver-bold-fire-truck-600);
-  --rafters-destructive-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-destructive-hover: var(--color-silver-bold-fire-truck-800);
-  --rafters-destructive-hover-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-destructive-active: var(--color-silver-bold-fire-truck-900);
-  --rafters-destructive-active-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-destructive-focus: var(--color-silver-bold-fire-truck-800);
-  --rafters-destructive-border: var(--color-silver-bold-fire-truck-900);
-  --rafters-destructive-ring: var(--color-silver-bold-fire-truck-700);
-  --rafters-destructive-subtle: var(--color-silver-bold-fire-truck-300);
-  --rafters-destructive-subtle-foreground: var(--color-silver-bold-fire-truck-900);
-  --rafters-success: var(--color-silver-true-citrine-600);
-  --rafters-success-foreground: var(--color-silver-true-citrine-50);
-  --rafters-success-hover: var(--color-silver-true-citrine-800);
-  --rafters-success-hover-foreground: var(--color-silver-true-citrine-50);
-  --rafters-success-active: var(--color-silver-true-citrine-900);
-  --rafters-success-active-foreground: var(--color-silver-true-citrine-50);
-  --rafters-success-focus: var(--color-silver-true-citrine-800);
-  --rafters-success-border: var(--color-silver-true-citrine-900);
-  --rafters-success-ring: var(--color-silver-true-citrine-700);
-  --rafters-success-subtle: var(--color-silver-true-citrine-300);
-  --rafters-success-subtle-foreground: var(--color-silver-true-citrine-900);
-  --rafters-warning: var(--color-silver-true-honey-500);
-  --rafters-warning-foreground: var(--color-silver-true-honey-900);
-  --rafters-warning-hover: var(--color-silver-true-honey-700);
-  --rafters-warning-hover-foreground: var(--color-silver-true-honey-50);
-  --rafters-warning-active: var(--color-silver-true-honey-800);
-  --rafters-warning-active-foreground: var(--color-silver-true-honey-50);
-  --rafters-warning-focus: var(--color-silver-true-honey-700);
-  --rafters-warning-border: var(--color-silver-true-honey-800);
-  --rafters-warning-ring: var(--color-silver-true-honey-400);
-  --rafters-warning-subtle: var(--color-silver-true-honey-200);
-  --rafters-warning-subtle-foreground: var(--color-silver-true-honey-800);
-  --rafters-info: var(--color-silver-true-sky-600);
-  --rafters-info-foreground: var(--color-silver-true-sky-50);
-  --rafters-info-hover: var(--color-silver-true-sky-800);
-  --rafters-info-hover-foreground: var(--color-silver-true-sky-50);
-  --rafters-info-active: var(--color-silver-true-sky-900);
-  --rafters-info-active-foreground: var(--color-silver-true-sky-50);
-  --rafters-info-focus: var(--color-silver-true-sky-800);
-  --rafters-info-border: var(--color-silver-true-sky-900);
-  --rafters-info-ring: var(--color-silver-true-sky-400);
-  --rafters-info-subtle: var(--color-silver-true-sky-200);
-  --rafters-info-subtle-foreground: var(--color-silver-true-sky-800);
+  --rafters-primary-50: var(--rafters-neutral-50);
+  --rafters-primary-100: var(--rafters-neutral-100);
+  --rafters-primary-200: var(--rafters-neutral-200);
+  --rafters-primary-300: var(--rafters-neutral-300);
+  --rafters-primary-400: var(--rafters-neutral-400);
+  --rafters-primary-500: var(--rafters-neutral-500);
+  --rafters-primary-600: var(--rafters-neutral-600);
+  --rafters-primary-700: var(--rafters-neutral-700);
+  --rafters-primary-800: var(--rafters-neutral-800);
+  --rafters-primary-900: var(--rafters-neutral-900);
+  --rafters-primary-950: var(--rafters-neutral-950);
+  --rafters-secondary-50: var(--rafters-neutral-50);
+  --rafters-secondary-100: var(--rafters-neutral-100);
+  --rafters-secondary-200: var(--rafters-neutral-200);
+  --rafters-secondary-300: var(--rafters-neutral-300);
+  --rafters-secondary-400: var(--rafters-neutral-400);
+  --rafters-secondary-500: var(--rafters-neutral-500);
+  --rafters-secondary-600: var(--rafters-neutral-600);
+  --rafters-secondary-700: var(--rafters-neutral-700);
+  --rafters-secondary-800: var(--rafters-neutral-800);
+  --rafters-secondary-900: var(--rafters-neutral-900);
+  --rafters-secondary-950: var(--rafters-neutral-950);
+  --rafters-accent-50: var(--rafters-neutral-50);
+  --rafters-accent-100: var(--rafters-neutral-100);
+  --rafters-accent-200: var(--rafters-neutral-200);
+  --rafters-accent-300: var(--rafters-neutral-300);
+  --rafters-accent-400: var(--rafters-neutral-400);
+  --rafters-accent-500: var(--rafters-neutral-500);
+  --rafters-accent-600: var(--rafters-neutral-600);
+  --rafters-accent-700: var(--rafters-neutral-700);
+  --rafters-accent-800: var(--rafters-neutral-800);
+  --rafters-accent-900: var(--rafters-neutral-900);
+  --rafters-accent-950: var(--rafters-neutral-950);
+  --rafters-highlight-50: var(--color-silver-true-violet-50);
+  --rafters-highlight-100: var(--color-silver-true-violet-100);
+  --rafters-highlight-200: var(--color-silver-true-violet-200);
+  --rafters-highlight-300: var(--color-silver-true-violet-300);
+  --rafters-highlight-400: var(--color-silver-true-violet-400);
+  --rafters-highlight-500: var(--color-silver-true-violet-500);
+  --rafters-highlight-600: var(--color-silver-true-violet-600);
+  --rafters-highlight-700: var(--color-silver-true-violet-700);
+  --rafters-highlight-800: var(--color-silver-true-violet-800);
+  --rafters-highlight-900: var(--color-silver-true-violet-900);
+  --rafters-highlight-950: var(--color-silver-true-violet-950);
+  --rafters-neutral-50: var(--color-zinc-50);
+  --rafters-neutral-100: var(--color-zinc-100);
+  --rafters-neutral-200: var(--color-zinc-200);
+  --rafters-neutral-300: var(--color-zinc-300);
+  --rafters-neutral-400: var(--color-zinc-400);
+  --rafters-neutral-500: var(--color-zinc-500);
+  --rafters-neutral-600: var(--color-zinc-600);
+  --rafters-neutral-700: var(--color-zinc-700);
+  --rafters-neutral-800: var(--color-zinc-800);
+  --rafters-neutral-900: var(--color-zinc-900);
+  --rafters-neutral-950: var(--color-zinc-950);
+  --rafters-muted-50: var(--rafters-neutral-50);
+  --rafters-muted-100: var(--rafters-neutral-100);
+  --rafters-muted-200: var(--rafters-neutral-200);
+  --rafters-muted-300: var(--rafters-neutral-300);
+  --rafters-muted-400: var(--rafters-neutral-400);
+  --rafters-muted-500: var(--rafters-neutral-500);
+  --rafters-muted-600: var(--rafters-neutral-600);
+  --rafters-muted-700: var(--rafters-neutral-700);
+  --rafters-muted-800: var(--rafters-neutral-800);
+  --rafters-muted-900: var(--rafters-neutral-900);
+  --rafters-muted-950: var(--rafters-neutral-950);
+  --rafters-success-50: var(--color-silver-true-citrine-50);
+  --rafters-success-100: var(--color-silver-true-citrine-100);
+  --rafters-success-200: var(--color-silver-true-citrine-200);
+  --rafters-success-300: var(--color-silver-true-citrine-300);
+  --rafters-success-400: var(--color-silver-true-citrine-400);
+  --rafters-success-500: var(--color-silver-true-citrine-500);
+  --rafters-success-600: var(--color-silver-true-citrine-600);
+  --rafters-success-700: var(--color-silver-true-citrine-700);
+  --rafters-success-800: var(--color-silver-true-citrine-800);
+  --rafters-success-900: var(--color-silver-true-citrine-900);
+  --rafters-success-950: var(--color-silver-true-citrine-950);
+  --rafters-warning-50: var(--color-silver-true-honey-50);
+  --rafters-warning-100: var(--color-silver-true-honey-100);
+  --rafters-warning-200: var(--color-silver-true-honey-200);
+  --rafters-warning-300: var(--color-silver-true-honey-300);
+  --rafters-warning-400: var(--color-silver-true-honey-400);
+  --rafters-warning-500: var(--color-silver-true-honey-500);
+  --rafters-warning-600: var(--color-silver-true-honey-600);
+  --rafters-warning-700: var(--color-silver-true-honey-700);
+  --rafters-warning-800: var(--color-silver-true-honey-800);
+  --rafters-warning-900: var(--color-silver-true-honey-900);
+  --rafters-warning-950: var(--color-silver-true-honey-950);
+  --rafters-destructive-50: var(--color-silver-bold-fire-truck-50);
+  --rafters-destructive-100: var(--color-silver-bold-fire-truck-100);
+  --rafters-destructive-200: var(--color-silver-bold-fire-truck-200);
+  --rafters-destructive-300: var(--color-silver-bold-fire-truck-300);
+  --rafters-destructive-400: var(--color-silver-bold-fire-truck-400);
+  --rafters-destructive-500: var(--color-silver-bold-fire-truck-500);
+  --rafters-destructive-600: var(--color-silver-bold-fire-truck-600);
+  --rafters-destructive-700: var(--color-silver-bold-fire-truck-700);
+  --rafters-destructive-800: var(--color-silver-bold-fire-truck-800);
+  --rafters-destructive-900: var(--color-silver-bold-fire-truck-900);
+  --rafters-destructive-950: var(--color-silver-bold-fire-truck-950);
+  --rafters-info-50: var(--color-silver-true-sky-50);
+  --rafters-info-100: var(--color-silver-true-sky-100);
+  --rafters-info-200: var(--color-silver-true-sky-200);
+  --rafters-info-300: var(--color-silver-true-sky-300);
+  --rafters-info-400: var(--color-silver-true-sky-400);
+  --rafters-info-500: var(--color-silver-true-sky-500);
+  --rafters-info-600: var(--color-silver-true-sky-600);
+  --rafters-info-700: var(--color-silver-true-sky-700);
+  --rafters-info-800: var(--color-silver-true-sky-800);
+  --rafters-info-900: var(--color-silver-true-sky-900);
+  --rafters-info-950: var(--color-silver-true-sky-950);
+
+  --rafters-neutral: var(--rafters-neutral-500);
+  --rafters-background: var(--rafters-neutral-50);
+  --rafters-foreground: var(--rafters-neutral-950);
+  --rafters-card: var(--rafters-neutral-50);
+  --rafters-card-foreground: var(--rafters-neutral-600);
+  --rafters-card-hover: var(--rafters-neutral-100);
+  --rafters-card-border: var(--rafters-neutral-200);
+  --rafters-panel: var(--rafters-neutral-200);
+  --rafters-panel-foreground: var(--rafters-neutral-700);
+  --rafters-panel-hover: var(--rafters-neutral-300);
+  --rafters-panel-border: var(--rafters-neutral-400);
+  --rafters-popover: var(--rafters-neutral-50);
+  --rafters-popover-foreground: var(--rafters-neutral-600);
+  --rafters-popover-border: var(--rafters-neutral-200);
+  --rafters-surface: var(--rafters-neutral-100);
+  --rafters-surface-foreground: var(--rafters-neutral-700);
+  --rafters-surface-hover: var(--rafters-neutral-200);
+  --rafters-surface-active: var(--rafters-neutral-300);
+  --rafters-surface-border: var(--rafters-neutral-300);
+  --rafters-primary: var(--rafters-primary-900);
+  --rafters-primary-foreground: var(--rafters-primary-50);
+  --rafters-primary-hover: var(--rafters-primary-950);
+  --rafters-primary-hover-foreground: var(--rafters-primary-50);
+  --rafters-primary-active: var(--rafters-primary-700);
+  --rafters-primary-active-foreground: var(--rafters-primary-50);
+  --rafters-primary-focus: var(--rafters-primary-950);
+  --rafters-primary-border: var(--rafters-primary-700);
+  --rafters-primary-ring: var(--rafters-primary-900);
+  --rafters-primary-subtle: var(--rafters-primary-700);
+  --rafters-primary-subtle-foreground: var(--rafters-primary-50);
+  --rafters-secondary: var(--rafters-secondary-100);
+  --rafters-secondary-foreground: var(--rafters-secondary-700);
+  --rafters-secondary-hover: var(--rafters-secondary-200);
+  --rafters-secondary-hover-foreground: var(--rafters-secondary-700);
+  --rafters-secondary-active: var(--rafters-secondary-300);
+  --rafters-secondary-active-foreground: var(--rafters-secondary-700);
+  --rafters-secondary-focus: var(--rafters-secondary-200);
+  --rafters-secondary-border: var(--rafters-secondary-300);
+  --rafters-secondary-ring: var(--rafters-secondary-100);
+  --rafters-secondary-subtle: var(--rafters-secondary-300);
+  --rafters-secondary-subtle-foreground: var(--rafters-secondary-700);
+  --rafters-muted: var(--rafters-muted-100);
+  --rafters-muted-foreground: var(--rafters-muted-700);
+  --rafters-muted-hover: var(--rafters-muted-200);
+  --rafters-muted-hover-foreground: var(--rafters-muted-700);
+  --rafters-muted-active: var(--rafters-muted-300);
+  --rafters-muted-border: var(--rafters-muted-300);
+  --rafters-accent: var(--rafters-accent-100);
+  --rafters-accent-foreground: var(--rafters-accent-700);
+  --rafters-accent-hover: var(--rafters-accent-200);
+  --rafters-accent-hover-foreground: var(--rafters-accent-700);
+  --rafters-accent-active: var(--rafters-accent-300);
+  --rafters-accent-active-foreground: var(--rafters-accent-700);
+  --rafters-accent-border: var(--rafters-accent-300);
+  --rafters-accent-ring: var(--rafters-accent-100);
+  --rafters-accent-subtle: var(--rafters-accent-300);
+  --rafters-accent-subtle-foreground: var(--rafters-accent-700);
+  --rafters-destructive: var(--rafters-destructive-600);
+  --rafters-destructive-foreground: var(--rafters-destructive-50);
+  --rafters-destructive-hover: var(--rafters-destructive-700);
+  --rafters-destructive-hover-foreground: var(--rafters-destructive-50);
+  --rafters-destructive-active: var(--rafters-destructive-800);
+  --rafters-destructive-active-foreground: var(--rafters-destructive-50);
+  --rafters-destructive-focus: var(--rafters-destructive-700);
+  --rafters-destructive-border: var(--rafters-destructive-800);
+  --rafters-destructive-ring: var(--rafters-destructive-600);
+  --rafters-destructive-subtle: var(--rafters-destructive-400);
+  --rafters-destructive-subtle-foreground: var(--rafters-destructive-950);
+  --rafters-success: var(--rafters-success-600);
+  --rafters-success-foreground: var(--rafters-success-50);
+  --rafters-success-hover: var(--rafters-success-700);
+  --rafters-success-hover-foreground: var(--rafters-success-50);
+  --rafters-success-active: var(--rafters-success-800);
+  --rafters-success-active-foreground: var(--rafters-success-50);
+  --rafters-success-focus: var(--rafters-success-700);
+  --rafters-success-border: var(--rafters-success-800);
+  --rafters-success-ring: var(--rafters-success-500);
+  --rafters-success-subtle: var(--rafters-success-300);
+  --rafters-success-subtle-foreground: var(--rafters-success-900);
+  --rafters-warning: var(--rafters-warning-500);
+  --rafters-warning-foreground: var(--rafters-warning-900);
+  --rafters-warning-hover: var(--rafters-warning-700);
+  --rafters-warning-hover-foreground: var(--rafters-warning-50);
+  --rafters-warning-active: var(--rafters-warning-800);
+  --rafters-warning-active-foreground: var(--rafters-warning-50);
+  --rafters-warning-focus: var(--rafters-warning-700);
+  --rafters-warning-border: var(--rafters-warning-800);
+  --rafters-warning-ring: var(--rafters-warning-500);
+  --rafters-warning-subtle: var(--rafters-warning-300);
+  --rafters-warning-subtle-foreground: var(--rafters-warning-900);
+  --rafters-info: var(--rafters-info-600);
+  --rafters-info-foreground: var(--rafters-info-950);
+  --rafters-info-hover: var(--rafters-info-700);
+  --rafters-info-hover-foreground: var(--rafters-info-50);
+  --rafters-info-active: var(--rafters-info-800);
+  --rafters-info-active-foreground: var(--rafters-info-50);
+  --rafters-info-focus: var(--rafters-info-700);
+  --rafters-info-border: var(--rafters-info-800);
+  --rafters-info-ring: var(--rafters-info-600);
+  --rafters-info-subtle: var(--rafters-info-400);
+  --rafters-info-subtle-foreground: var(--rafters-info-900);
   --rafters-alert: var(--color-silver-bold-fire-truck-600);
   --rafters-alert-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-alert-hover: var(--color-silver-bold-fire-truck-800);
+  --rafters-alert-hover: var(--color-silver-bold-fire-truck-700);
   --rafters-alert-hover-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-alert-active: var(--color-silver-bold-fire-truck-900);
+  --rafters-alert-active: var(--color-silver-bold-fire-truck-800);
   --rafters-alert-active-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-alert-border: var(--color-silver-bold-fire-truck-900);
-  --rafters-alert-ring: var(--color-silver-bold-fire-truck-700);
-  --rafters-alert-subtle: var(--color-silver-bold-fire-truck-300);
-  --rafters-alert-subtle-foreground: var(--color-silver-bold-fire-truck-900);
-  --rafters-highlight: var(--color-silver-true-violet-200);
-  --rafters-highlight-foreground: var(--color-silver-true-violet-800);
-  --rafters-highlight-hover: var(--color-silver-true-violet-300);
-  --rafters-highlight-hover-foreground: var(--color-silver-true-violet-900);
-  --rafters-highlight-active: var(--color-silver-true-violet-400);
-  --rafters-highlight-active-foreground: var(--color-silver-true-violet-900);
-  --rafters-border: var(--color-zinc-200);
-  --rafters-border-hover: var(--color-zinc-300);
-  --rafters-border-focus: var(--color-zinc-300);
-  --rafters-border-active: var(--color-zinc-400);
-  --rafters-input: var(--color-zinc-200);
-  --rafters-input-foreground: var(--color-zinc-700);
-  --rafters-input-hover: var(--color-zinc-300);
-  --rafters-input-focus: var(--color-zinc-300);
-  --rafters-input-disabled: var(--color-zinc-400);
-  --rafters-input-disabled-foreground: var(--color-zinc-950);
-  --rafters-input-placeholder: var(--color-zinc-500);
+  --rafters-alert-border: var(--color-silver-bold-fire-truck-800);
+  --rafters-alert-ring: var(--color-silver-bold-fire-truck-600);
+  --rafters-alert-subtle: var(--color-silver-bold-fire-truck-400);
+  --rafters-alert-subtle-foreground: var(--color-silver-bold-fire-truck-950);
+  --rafters-highlight: var(--rafters-highlight-200);
+  --rafters-highlight-foreground: var(--rafters-highlight-800);
+  --rafters-highlight-hover: var(--rafters-highlight-300);
+  --rafters-highlight-hover-foreground: var(--rafters-highlight-900);
+  --rafters-highlight-active: var(--rafters-highlight-400);
+  --rafters-highlight-active-foreground: var(--rafters-highlight-900);
+  --rafters-border: var(--rafters-neutral-200);
+  --rafters-border-hover: var(--rafters-neutral-300);
+  --rafters-border-focus: var(--rafters-neutral-300);
+  --rafters-border-active: var(--rafters-neutral-400);
+  --rafters-input: var(--rafters-neutral-200);
+  --rafters-input-foreground: var(--rafters-neutral-700);
+  --rafters-input-hover: var(--rafters-neutral-300);
+  --rafters-input-focus: var(--rafters-neutral-300);
+  --rafters-input-disabled: var(--rafters-neutral-500);
+  --rafters-input-disabled-foreground: var(--rafters-neutral-50);
+  --rafters-input-placeholder: var(--rafters-neutral-500);
   --rafters-input-invalid: var(--color-silver-bold-fire-truck-500);
   --rafters-input-invalid-foreground: var(--color-silver-bold-fire-truck-950);
   --rafters-input-valid: var(--color-silver-true-citrine-500);
   --rafters-input-valid-foreground: var(--color-silver-true-citrine-900);
-  --rafters-ring: var(--color-zinc-950);
-  --rafters-ring-offset: var(--color-zinc-50);
-  --rafters-ring-primary: var(--color-zinc-900);
+  --rafters-ring: var(--rafters-neutral-950);
+  --rafters-ring-offset: var(--rafters-neutral-50);
+  --rafters-ring-primary: var(--rafters-neutral-900);
   --rafters-ring-destructive: var(--color-silver-bold-fire-truck-600);
   --rafters-ring-success: var(--color-silver-true-citrine-600);
   --rafters-ring-warning: var(--color-silver-true-honey-600);
   --rafters-ring-info: var(--color-silver-true-sky-600);
   --rafters-link: var(--color-silver-true-sky-700);
-  --rafters-link-hover: var(--color-silver-true-sky-900);
-  --rafters-link-active: var(--color-silver-true-sky-950);
+  --rafters-link-hover: var(--color-silver-true-sky-800);
+  --rafters-link-active: var(--color-silver-true-sky-900);
   --rafters-link-visited: var(--color-silver-true-violet-700);
-  --rafters-link-focus: var(--color-silver-true-sky-900);
+  --rafters-link-focus: var(--color-silver-true-sky-800);
   --rafters-selection: var(--color-silver-true-sky-200);
   --rafters-selection-foreground: var(--color-silver-true-sky-800);
-  --rafters-sidebar: var(--color-zinc-100);
-  --rafters-sidebar-foreground: var(--color-zinc-700);
-  --rafters-sidebar-muted: var(--color-zinc-500);
-  --rafters-sidebar-primary: var(--color-zinc-900);
-  --rafters-sidebar-primary-foreground: var(--color-zinc-50);
-  --rafters-sidebar-primary-hover: var(--color-zinc-950);
-  --rafters-sidebar-primary-active: var(--color-zinc-950);
-  --rafters-sidebar-accent: var(--color-zinc-100);
-  --rafters-sidebar-accent-foreground: var(--color-zinc-700);
-  --rafters-sidebar-accent-hover: var(--color-zinc-200);
-  --rafters-sidebar-accent-active: var(--color-zinc-300);
-  --rafters-sidebar-item: var(--color-zinc-50);
-  --rafters-sidebar-item-foreground: var(--color-zinc-600);
-  --rafters-sidebar-item-hover: var(--color-zinc-100);
-  --rafters-sidebar-item-hover-foreground: var(--color-zinc-700);
-  --rafters-sidebar-item-active: var(--color-zinc-200);
-  --rafters-sidebar-item-active-foreground: var(--color-zinc-700);
-  --rafters-sidebar-item-selected: var(--color-zinc-100);
-  --rafters-sidebar-item-selected-foreground: var(--color-zinc-700);
-  --rafters-sidebar-border: var(--color-zinc-300);
-  --rafters-sidebar-ring: var(--color-zinc-100);
-  --rafters-nav: var(--color-zinc-50);
-  --rafters-nav-foreground: var(--color-zinc-600);
-  --rafters-nav-hover: var(--color-zinc-100);
-  --rafters-nav-hover-foreground: var(--color-zinc-700);
-  --rafters-nav-active: var(--color-zinc-200);
-  --rafters-nav-active-foreground: var(--color-zinc-700);
-  --rafters-nav-selected: var(--color-zinc-900);
-  --rafters-nav-selected-foreground: var(--color-zinc-50);
-  --rafters-nav-disabled: var(--color-zinc-400);
-  --rafters-nav-disabled-foreground: var(--color-zinc-950);
-  --rafters-table: var(--color-zinc-50);
-  --rafters-table-foreground: var(--color-zinc-600);
-  --rafters-table-header: var(--color-zinc-100);
-  --rafters-table-header-foreground: var(--color-zinc-700);
-  --rafters-table-row-hover: var(--color-zinc-50);
-  --rafters-table-row-selected: var(--color-zinc-100);
-  --rafters-table-row-selected-foreground: var(--color-zinc-700);
-  --rafters-table-border: var(--color-zinc-200);
-  --rafters-tooltip: var(--color-zinc-900);
-  --rafters-tooltip-foreground: var(--color-zinc-50);
-  --rafters-overlay: var(--color-zinc-950);
-  --rafters-overlay-foreground: var(--color-zinc-50);
-  --rafters-skeleton: var(--color-zinc-200);
-  --rafters-skeleton-highlight: var(--color-zinc-300);
+  --rafters-sidebar: var(--rafters-neutral-100);
+  --rafters-sidebar-foreground: var(--rafters-neutral-700);
+  --rafters-sidebar-muted: var(--rafters-neutral-500);
+  --rafters-sidebar-primary: var(--rafters-neutral-900);
+  --rafters-sidebar-primary-foreground: var(--rafters-neutral-50);
+  --rafters-sidebar-primary-hover: var(--rafters-neutral-950);
+  --rafters-sidebar-primary-active: var(--rafters-neutral-700);
+  --rafters-sidebar-accent: var(--rafters-neutral-100);
+  --rafters-sidebar-accent-foreground: var(--rafters-neutral-700);
+  --rafters-sidebar-accent-hover: var(--rafters-neutral-200);
+  --rafters-sidebar-accent-active: var(--rafters-neutral-300);
+  --rafters-sidebar-item: var(--rafters-neutral-50);
+  --rafters-sidebar-item-foreground: var(--rafters-neutral-600);
+  --rafters-sidebar-item-hover: var(--rafters-neutral-100);
+  --rafters-sidebar-item-hover-foreground: var(--rafters-neutral-700);
+  --rafters-sidebar-item-active: var(--rafters-neutral-200);
+  --rafters-sidebar-item-active-foreground: var(--rafters-neutral-700);
+  --rafters-sidebar-item-selected: var(--rafters-neutral-100);
+  --rafters-sidebar-item-selected-foreground: var(--rafters-neutral-700);
+  --rafters-sidebar-border: var(--rafters-neutral-300);
+  --rafters-sidebar-ring: var(--rafters-neutral-100);
+  --rafters-nav: var(--rafters-neutral-50);
+  --rafters-nav-foreground: var(--rafters-neutral-600);
+  --rafters-nav-hover: var(--rafters-neutral-100);
+  --rafters-nav-hover-foreground: var(--rafters-neutral-700);
+  --rafters-nav-active: var(--rafters-neutral-200);
+  --rafters-nav-active-foreground: var(--rafters-neutral-700);
+  --rafters-nav-selected: var(--rafters-neutral-900);
+  --rafters-nav-selected-foreground: var(--rafters-neutral-50);
+  --rafters-nav-disabled: var(--rafters-neutral-500);
+  --rafters-nav-disabled-foreground: var(--rafters-neutral-50);
+  --rafters-table: var(--rafters-neutral-50);
+  --rafters-table-foreground: var(--rafters-neutral-600);
+  --rafters-table-header: var(--rafters-neutral-100);
+  --rafters-table-header-foreground: var(--rafters-neutral-700);
+  --rafters-table-row-hover: var(--rafters-neutral-50);
+  --rafters-table-row-selected: var(--rafters-neutral-100);
+  --rafters-table-row-selected-foreground: var(--rafters-neutral-700);
+  --rafters-table-border: var(--rafters-neutral-200);
+  --rafters-tooltip: var(--rafters-neutral-900);
+  --rafters-tooltip-foreground: var(--rafters-neutral-50);
+  --rafters-overlay: var(--rafters-neutral-950);
+  --rafters-overlay-foreground: var(--rafters-neutral-50);
+  --rafters-skeleton: var(--rafters-neutral-200);
+  --rafters-skeleton-highlight: var(--rafters-neutral-300);
   --rafters-chart-1: var(--color-silver-true-glacier-500);
   --rafters-chart-2: var(--color-silver-true-sky-500);
   --rafters-chart-3: var(--color-silver-true-citrine-500);
   --rafters-chart-4: var(--color-silver-true-honey-500);
   --rafters-chart-5: var(--color-silver-true-violet-500);
-  --rafters-scrollbar: var(--color-zinc-300);
-  --rafters-scrollbar-hover: var(--color-zinc-400);
-  --rafters-scrollbar-track: var(--color-zinc-100);
-  --rafters-code: var(--color-zinc-100);
-  --rafters-code-foreground: var(--color-zinc-700);
-  --rafters-code-border: var(--color-zinc-300);
-  --rafters-badge: var(--color-zinc-100);
-  --rafters-badge-foreground: var(--color-zinc-700);
-  --rafters-badge-border: var(--color-zinc-300);
-  --rafters-avatar: var(--color-zinc-200);
-  --rafters-avatar-foreground: var(--color-zinc-700);
+  --rafters-scrollbar: var(--rafters-neutral-300);
+  --rafters-scrollbar-hover: var(--rafters-neutral-400);
+  --rafters-scrollbar-track: var(--rafters-neutral-100);
+  --rafters-code: var(--rafters-neutral-100);
+  --rafters-code-foreground: var(--rafters-neutral-700);
+  --rafters-code-border: var(--rafters-neutral-300);
+  --rafters-badge: var(--rafters-neutral-100);
+  --rafters-badge-foreground: var(--rafters-neutral-700);
+  --rafters-badge-border: var(--rafters-neutral-300);
+  --rafters-avatar: var(--rafters-neutral-200);
+  --rafters-avatar-foreground: var(--rafters-neutral-700);
 
-  --rafters-dark-neutral: var(--color-zinc-400);
-  --rafters-dark-background: var(--color-zinc-950);
-  --rafters-dark-foreground: var(--color-zinc-50);
-  --rafters-dark-card: var(--color-zinc-700);
-  --rafters-dark-card-foreground: var(--color-zinc-50);
-  --rafters-dark-card-hover: var(--color-zinc-600);
-  --rafters-dark-card-border: var(--color-zinc-400);
-  --rafters-dark-panel: var(--color-zinc-800);
-  --rafters-dark-panel-foreground: var(--color-zinc-50);
-  --rafters-dark-panel-hover: var(--color-zinc-700);
-  --rafters-dark-panel-border: var(--color-zinc-600);
-  --rafters-dark-popover: var(--color-zinc-700);
-  --rafters-dark-popover-foreground: var(--color-zinc-50);
-  --rafters-dark-popover-border: var(--color-zinc-400);
-  --rafters-dark-surface: var(--color-zinc-900);
-  --rafters-dark-surface-foreground: var(--color-zinc-50);
-  --rafters-dark-surface-hover: var(--color-zinc-800);
-  --rafters-dark-surface-active: var(--color-zinc-700);
-  --rafters-dark-surface-border: var(--color-zinc-700);
-  --rafters-dark-primary: var(--color-zinc-50);
-  --rafters-dark-primary-foreground: var(--color-zinc-600);
-  --rafters-dark-primary-hover: var(--color-zinc-50);
-  --rafters-dark-primary-hover-foreground: var(--color-zinc-600);
-  --rafters-dark-primary-active: var(--color-zinc-50);
-  --rafters-dark-primary-active-foreground: var(--color-zinc-600);
-  --rafters-dark-primary-focus: var(--color-zinc-50);
-  --rafters-dark-primary-border: var(--color-zinc-50);
-  --rafters-dark-primary-ring: var(--color-zinc-50);
-  --rafters-dark-primary-subtle: var(--color-zinc-200);
-  --rafters-dark-primary-subtle-foreground: var(--color-zinc-700);
-  --rafters-dark-secondary: var(--color-zinc-800);
-  --rafters-dark-secondary-foreground: var(--color-zinc-50);
-  --rafters-dark-secondary-hover: var(--color-zinc-700);
-  --rafters-dark-secondary-hover-foreground: var(--color-zinc-50);
-  --rafters-dark-secondary-active: var(--color-zinc-600);
-  --rafters-dark-secondary-active-foreground: var(--color-zinc-50);
-  --rafters-dark-secondary-focus: var(--color-zinc-700);
-  --rafters-dark-secondary-border: var(--color-zinc-600);
-  --rafters-dark-secondary-ring: var(--color-zinc-800);
-  --rafters-dark-secondary-subtle: var(--color-zinc-950);
-  --rafters-dark-secondary-subtle-foreground: var(--color-zinc-50);
-  --rafters-dark-muted: var(--color-zinc-800);
-  --rafters-dark-muted-foreground: var(--color-zinc-50);
-  --rafters-dark-muted-hover: var(--color-zinc-700);
-  --rafters-dark-muted-hover-foreground: var(--color-zinc-50);
-  --rafters-dark-muted-active: var(--color-zinc-600);
-  --rafters-dark-muted-border: var(--color-zinc-600);
-  --rafters-dark-accent: var(--color-zinc-800);
-  --rafters-dark-accent-foreground: var(--color-zinc-50);
-  --rafters-dark-accent-hover: var(--color-zinc-700);
-  --rafters-dark-accent-hover-foreground: var(--color-zinc-50);
-  --rafters-dark-accent-active: var(--color-zinc-600);
-  --rafters-dark-accent-active-foreground: var(--color-zinc-50);
-  --rafters-dark-accent-border: var(--color-zinc-600);
-  --rafters-dark-accent-ring: var(--color-zinc-800);
-  --rafters-dark-accent-subtle: var(--color-zinc-950);
-  --rafters-dark-accent-subtle-foreground: var(--color-zinc-50);
-  --rafters-dark-destructive: var(--color-silver-bold-fire-truck-500);
-  --rafters-dark-destructive-foreground: var(--color-silver-bold-fire-truck-950);
-  --rafters-dark-destructive-hover: var(--color-silver-bold-fire-truck-300);
-  --rafters-dark-destructive-hover-foreground: var(--color-silver-bold-fire-truck-900);
-  --rafters-dark-destructive-active: var(--color-silver-bold-fire-truck-200);
-  --rafters-dark-destructive-active-foreground: var(--color-silver-bold-fire-truck-800);
-  --rafters-dark-destructive-focus: var(--color-silver-bold-fire-truck-300);
-  --rafters-dark-destructive-border: var(--color-silver-bold-fire-truck-200);
-  --rafters-dark-destructive-ring: var(--color-silver-bold-fire-truck-400);
-  --rafters-dark-destructive-subtle: var(--color-silver-bold-fire-truck-800);
-  --rafters-dark-destructive-subtle-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-dark-success: var(--color-silver-true-citrine-500);
-  --rafters-dark-success-foreground: var(--color-silver-true-citrine-900);
-  --rafters-dark-success-hover: var(--color-silver-true-citrine-300);
-  --rafters-dark-success-hover-foreground: var(--color-silver-true-citrine-900);
-  --rafters-dark-success-active: var(--color-silver-true-citrine-200);
-  --rafters-dark-success-active-foreground: var(--color-silver-true-citrine-800);
-  --rafters-dark-success-focus: var(--color-silver-true-citrine-300);
-  --rafters-dark-success-border: var(--color-silver-true-citrine-200);
-  --rafters-dark-success-ring: var(--color-silver-true-citrine-400);
-  --rafters-dark-success-subtle: var(--color-silver-true-citrine-800);
-  --rafters-dark-success-subtle-foreground: var(--color-silver-true-citrine-50);
-  --rafters-dark-warning: var(--color-silver-true-honey-500);
-  --rafters-dark-warning-foreground: var(--color-silver-true-honey-900);
-  --rafters-dark-warning-hover: var(--color-silver-true-honey-300);
-  --rafters-dark-warning-hover-foreground: var(--color-silver-true-honey-900);
-  --rafters-dark-warning-active: var(--color-silver-true-honey-200);
-  --rafters-dark-warning-active-foreground: var(--color-silver-true-honey-800);
-  --rafters-dark-warning-focus: var(--color-silver-true-honey-300);
-  --rafters-dark-warning-border: var(--color-silver-true-honey-200);
-  --rafters-dark-warning-ring: var(--color-silver-true-honey-400);
-  --rafters-dark-warning-subtle: var(--color-silver-true-honey-800);
-  --rafters-dark-warning-subtle-foreground: var(--color-silver-true-honey-50);
-  --rafters-dark-info: var(--color-silver-true-sky-500);
-  --rafters-dark-info-foreground: var(--color-silver-true-sky-900);
-  --rafters-dark-info-hover: var(--color-silver-true-sky-300);
-  --rafters-dark-info-hover-foreground: var(--color-silver-true-sky-900);
-  --rafters-dark-info-active: var(--color-silver-true-sky-200);
-  --rafters-dark-info-active-foreground: var(--color-silver-true-sky-800);
-  --rafters-dark-info-focus: var(--color-silver-true-sky-300);
-  --rafters-dark-info-border: var(--color-silver-true-sky-200);
-  --rafters-dark-info-ring: var(--color-silver-true-sky-400);
-  --rafters-dark-info-subtle: var(--color-silver-true-sky-900);
-  --rafters-dark-info-subtle-foreground: var(--color-silver-true-sky-50);
+  --rafters-dark-neutral: var(--rafters-neutral-400);
+  --rafters-dark-background: var(--rafters-neutral-950);
+  --rafters-dark-foreground: var(--rafters-neutral-50);
+  --rafters-dark-card: var(--rafters-neutral-700);
+  --rafters-dark-card-foreground: var(--rafters-neutral-50);
+  --rafters-dark-card-hover: var(--rafters-neutral-600);
+  --rafters-dark-card-border: var(--rafters-neutral-500);
+  --rafters-dark-panel: var(--rafters-neutral-800);
+  --rafters-dark-panel-foreground: var(--rafters-neutral-50);
+  --rafters-dark-panel-hover: var(--rafters-neutral-700);
+  --rafters-dark-panel-border: var(--rafters-neutral-600);
+  --rafters-dark-popover: var(--rafters-neutral-700);
+  --rafters-dark-popover-foreground: var(--rafters-neutral-50);
+  --rafters-dark-popover-border: var(--rafters-neutral-500);
+  --rafters-dark-surface: var(--rafters-neutral-900);
+  --rafters-dark-surface-foreground: var(--rafters-neutral-50);
+  --rafters-dark-surface-hover: var(--rafters-neutral-800);
+  --rafters-dark-surface-active: var(--rafters-neutral-700);
+  --rafters-dark-surface-border: var(--rafters-neutral-700);
+  --rafters-dark-primary: var(--rafters-primary-50);
+  --rafters-dark-primary-foreground: var(--rafters-primary-600);
+  --rafters-dark-primary-hover: var(--rafters-primary-100);
+  --rafters-dark-primary-hover-foreground: var(--rafters-primary-700);
+  --rafters-dark-primary-active: var(--rafters-primary-200);
+  --rafters-dark-primary-active-foreground: var(--rafters-primary-700);
+  --rafters-dark-primary-focus: var(--rafters-primary-100);
+  --rafters-dark-primary-border: var(--rafters-primary-200);
+  --rafters-dark-primary-ring: var(--rafters-primary-50);
+  --rafters-dark-primary-subtle: var(--rafters-primary-200);
+  --rafters-dark-primary-subtle-foreground: var(--rafters-primary-700);
+  --rafters-dark-secondary: var(--rafters-secondary-800);
+  --rafters-dark-secondary-foreground: var(--rafters-secondary-50);
+  --rafters-dark-secondary-hover: var(--rafters-secondary-700);
+  --rafters-dark-secondary-hover-foreground: var(--rafters-secondary-50);
+  --rafters-dark-secondary-active: var(--rafters-secondary-600);
+  --rafters-dark-secondary-active-foreground: var(--rafters-secondary-50);
+  --rafters-dark-secondary-focus: var(--rafters-secondary-700);
+  --rafters-dark-secondary-border: var(--rafters-secondary-600);
+  --rafters-dark-secondary-ring: var(--rafters-secondary-800);
+  --rafters-dark-secondary-subtle: var(--rafters-secondary-950);
+  --rafters-dark-secondary-subtle-foreground: var(--rafters-secondary-50);
+  --rafters-dark-muted: var(--rafters-muted-800);
+  --rafters-dark-muted-foreground: var(--rafters-muted-50);
+  --rafters-dark-muted-hover: var(--rafters-muted-700);
+  --rafters-dark-muted-hover-foreground: var(--rafters-muted-50);
+  --rafters-dark-muted-active: var(--rafters-muted-600);
+  --rafters-dark-muted-border: var(--rafters-muted-600);
+  --rafters-dark-accent: var(--rafters-accent-800);
+  --rafters-dark-accent-foreground: var(--rafters-accent-50);
+  --rafters-dark-accent-hover: var(--rafters-accent-700);
+  --rafters-dark-accent-hover-foreground: var(--rafters-accent-50);
+  --rafters-dark-accent-active: var(--rafters-accent-600);
+  --rafters-dark-accent-active-foreground: var(--rafters-accent-50);
+  --rafters-dark-accent-border: var(--rafters-accent-600);
+  --rafters-dark-accent-ring: var(--rafters-accent-800);
+  --rafters-dark-accent-subtle: var(--rafters-accent-950);
+  --rafters-dark-accent-subtle-foreground: var(--rafters-accent-50);
+  --rafters-dark-destructive: var(--rafters-destructive-500);
+  --rafters-dark-destructive-foreground: var(--rafters-destructive-950);
+  --rafters-dark-destructive-hover: var(--rafters-destructive-400);
+  --rafters-dark-destructive-hover-foreground: var(--rafters-destructive-950);
+  --rafters-dark-destructive-active: var(--rafters-destructive-300);
+  --rafters-dark-destructive-active-foreground: var(--rafters-destructive-900);
+  --rafters-dark-destructive-focus: var(--rafters-destructive-400);
+  --rafters-dark-destructive-border: var(--rafters-destructive-300);
+  --rafters-dark-destructive-ring: var(--rafters-destructive-500);
+  --rafters-dark-destructive-subtle: var(--rafters-destructive-700);
+  --rafters-dark-destructive-subtle-foreground: var(--rafters-destructive-50);
+  --rafters-dark-success: var(--rafters-success-500);
+  --rafters-dark-success-foreground: var(--rafters-success-900);
+  --rafters-dark-success-hover: var(--rafters-success-400);
+  --rafters-dark-success-hover-foreground: var(--rafters-success-900);
+  --rafters-dark-success-active: var(--rafters-success-300);
+  --rafters-dark-success-active-foreground: var(--rafters-success-900);
+  --rafters-dark-success-focus: var(--rafters-success-400);
+  --rafters-dark-success-border: var(--rafters-success-300);
+  --rafters-dark-success-ring: var(--rafters-success-500);
+  --rafters-dark-success-subtle: var(--rafters-success-800);
+  --rafters-dark-success-subtle-foreground: var(--rafters-success-50);
+  --rafters-dark-warning: var(--rafters-warning-500);
+  --rafters-dark-warning-foreground: var(--rafters-warning-900);
+  --rafters-dark-warning-hover: var(--rafters-warning-400);
+  --rafters-dark-warning-hover-foreground: var(--rafters-warning-900);
+  --rafters-dark-warning-active: var(--rafters-warning-300);
+  --rafters-dark-warning-active-foreground: var(--rafters-warning-900);
+  --rafters-dark-warning-focus: var(--rafters-warning-400);
+  --rafters-dark-warning-border: var(--rafters-warning-300);
+  --rafters-dark-warning-ring: var(--rafters-warning-500);
+  --rafters-dark-warning-subtle: var(--rafters-warning-800);
+  --rafters-dark-warning-subtle-foreground: var(--rafters-warning-50);
+  --rafters-dark-info: var(--rafters-info-500);
+  --rafters-dark-info-foreground: var(--rafters-info-900);
+  --rafters-dark-info-hover: var(--rafters-info-400);
+  --rafters-dark-info-hover-foreground: var(--rafters-info-900);
+  --rafters-dark-info-active: var(--rafters-info-300);
+  --rafters-dark-info-active-foreground: var(--rafters-info-900);
+  --rafters-dark-info-focus: var(--rafters-info-400);
+  --rafters-dark-info-border: var(--rafters-info-300);
+  --rafters-dark-info-ring: var(--rafters-info-500);
+  --rafters-dark-info-subtle: var(--rafters-info-700);
+  --rafters-dark-info-subtle-foreground: var(--rafters-info-50);
   --rafters-dark-alert: var(--color-silver-bold-fire-truck-500);
   --rafters-dark-alert-foreground: var(--color-silver-bold-fire-truck-950);
-  --rafters-dark-alert-hover: var(--color-silver-bold-fire-truck-300);
-  --rafters-dark-alert-hover-foreground: var(--color-silver-bold-fire-truck-900);
-  --rafters-dark-alert-active: var(--color-silver-bold-fire-truck-200);
-  --rafters-dark-alert-active-foreground: var(--color-silver-bold-fire-truck-800);
-  --rafters-dark-alert-border: var(--color-silver-bold-fire-truck-200);
-  --rafters-dark-alert-ring: var(--color-silver-bold-fire-truck-400);
-  --rafters-dark-alert-subtle: var(--color-silver-bold-fire-truck-800);
+  --rafters-dark-alert-hover: var(--color-silver-bold-fire-truck-400);
+  --rafters-dark-alert-hover-foreground: var(--color-silver-bold-fire-truck-950);
+  --rafters-dark-alert-active: var(--color-silver-bold-fire-truck-300);
+  --rafters-dark-alert-active-foreground: var(--color-silver-bold-fire-truck-900);
+  --rafters-dark-alert-border: var(--color-silver-bold-fire-truck-300);
+  --rafters-dark-alert-ring: var(--color-silver-bold-fire-truck-500);
+  --rafters-dark-alert-subtle: var(--color-silver-bold-fire-truck-700);
   --rafters-dark-alert-subtle-foreground: var(--color-silver-bold-fire-truck-50);
-  --rafters-dark-highlight: var(--color-silver-true-violet-800);
-  --rafters-dark-highlight-foreground: var(--color-silver-true-violet-50);
-  --rafters-dark-highlight-hover: var(--color-silver-true-violet-700);
-  --rafters-dark-highlight-hover-foreground: var(--color-silver-true-violet-50);
-  --rafters-dark-highlight-active: var(--color-silver-true-violet-400);
-  --rafters-dark-highlight-active-foreground: var(--color-silver-true-violet-900);
-  --rafters-dark-border: var(--color-zinc-800);
-  --rafters-dark-border-hover: var(--color-zinc-700);
-  --rafters-dark-border-focus: var(--color-zinc-700);
-  --rafters-dark-border-active: var(--color-zinc-600);
-  --rafters-dark-input: var(--color-zinc-800);
-  --rafters-dark-input-foreground: var(--color-zinc-50);
-  --rafters-dark-input-hover: var(--color-zinc-700);
-  --rafters-dark-input-focus: var(--color-zinc-700);
-  --rafters-dark-input-disabled: var(--color-zinc-400);
-  --rafters-dark-input-disabled-foreground: var(--color-zinc-950);
-  --rafters-dark-input-placeholder: var(--color-zinc-400);
+  --rafters-dark-highlight: var(--rafters-highlight-800);
+  --rafters-dark-highlight-foreground: var(--rafters-highlight-50);
+  --rafters-dark-highlight-hover: var(--rafters-highlight-700);
+  --rafters-dark-highlight-hover-foreground: var(--rafters-highlight-50);
+  --rafters-dark-highlight-active: var(--rafters-highlight-500);
+  --rafters-dark-highlight-active-foreground: var(--rafters-highlight-900);
+  --rafters-dark-border: var(--rafters-neutral-800);
+  --rafters-dark-border-hover: var(--rafters-neutral-700);
+  --rafters-dark-border-focus: var(--rafters-neutral-700);
+  --rafters-dark-border-active: var(--rafters-neutral-600);
+  --rafters-dark-input: var(--rafters-neutral-800);
+  --rafters-dark-input-foreground: var(--rafters-neutral-50);
+  --rafters-dark-input-hover: var(--rafters-neutral-700);
+  --rafters-dark-input-focus: var(--rafters-neutral-700);
+  --rafters-dark-input-disabled: var(--rafters-neutral-500);
+  --rafters-dark-input-disabled-foreground: var(--rafters-neutral-50);
+  --rafters-dark-input-placeholder: var(--rafters-neutral-400);
   --rafters-dark-input-invalid: var(--color-silver-bold-fire-truck-500);
   --rafters-dark-input-invalid-foreground: var(--color-silver-bold-fire-truck-950);
   --rafters-dark-input-valid: var(--color-silver-true-citrine-500);
   --rafters-dark-input-valid-foreground: var(--color-silver-true-citrine-900);
-  --rafters-dark-ring: var(--color-zinc-300);
-  --rafters-dark-ring-offset: var(--color-zinc-950);
-  --rafters-dark-ring-primary: var(--color-zinc-50);
+  --rafters-dark-ring: var(--rafters-neutral-300);
+  --rafters-dark-ring-offset: var(--rafters-neutral-950);
+  --rafters-dark-ring-primary: var(--rafters-neutral-50);
   --rafters-dark-ring-destructive: var(--color-silver-bold-fire-truck-400);
   --rafters-dark-ring-success: var(--color-silver-true-citrine-400);
   --rafters-dark-ring-warning: var(--color-silver-true-honey-400);
@@ -988,67 +1211,67 @@
   --rafters-dark-link-focus: var(--color-silver-true-sky-300);
   --rafters-dark-selection: var(--color-silver-true-sky-800);
   --rafters-dark-selection-foreground: var(--color-silver-true-sky-50);
-  --rafters-dark-sidebar: var(--color-zinc-900);
-  --rafters-dark-sidebar-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-muted: var(--color-zinc-400);
-  --rafters-dark-sidebar-primary: var(--color-zinc-50);
-  --rafters-dark-sidebar-primary-foreground: var(--color-zinc-600);
-  --rafters-dark-sidebar-primary-hover: var(--color-zinc-50);
-  --rafters-dark-sidebar-primary-active: var(--color-zinc-50);
-  --rafters-dark-sidebar-accent: var(--color-zinc-800);
-  --rafters-dark-sidebar-accent-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-accent-hover: var(--color-zinc-700);
-  --rafters-dark-sidebar-accent-active: var(--color-zinc-600);
-  --rafters-dark-sidebar-item: var(--color-zinc-900);
-  --rafters-dark-sidebar-item-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-item-hover: var(--color-zinc-800);
-  --rafters-dark-sidebar-item-hover-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-item-active: var(--color-zinc-700);
-  --rafters-dark-sidebar-item-active-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-item-selected: var(--color-zinc-800);
-  --rafters-dark-sidebar-item-selected-foreground: var(--color-zinc-50);
-  --rafters-dark-sidebar-border: var(--color-zinc-700);
-  --rafters-dark-sidebar-ring: var(--color-zinc-900);
-  --rafters-dark-nav: var(--color-zinc-900);
-  --rafters-dark-nav-foreground: var(--color-zinc-50);
-  --rafters-dark-nav-hover: var(--color-zinc-800);
-  --rafters-dark-nav-hover-foreground: var(--color-zinc-50);
-  --rafters-dark-nav-active: var(--color-zinc-700);
-  --rafters-dark-nav-active-foreground: var(--color-zinc-50);
-  --rafters-dark-nav-selected: var(--color-zinc-50);
-  --rafters-dark-nav-selected-foreground: var(--color-zinc-600);
-  --rafters-dark-nav-disabled: var(--color-zinc-400);
-  --rafters-dark-nav-disabled-foreground: var(--color-zinc-950);
-  --rafters-dark-table: var(--color-zinc-950);
-  --rafters-dark-table-foreground: var(--color-zinc-50);
-  --rafters-dark-table-header: var(--color-zinc-800);
-  --rafters-dark-table-header-foreground: var(--color-zinc-50);
-  --rafters-dark-table-row-hover: var(--color-zinc-900);
-  --rafters-dark-table-row-selected: var(--color-zinc-800);
-  --rafters-dark-table-row-selected-foreground: var(--color-zinc-50);
-  --rafters-dark-table-border: var(--color-zinc-800);
-  --rafters-dark-tooltip: var(--color-zinc-50);
-  --rafters-dark-tooltip-foreground: var(--color-zinc-600);
-  --rafters-dark-overlay: var(--color-zinc-950);
-  --rafters-dark-overlay-foreground: var(--color-zinc-50);
-  --rafters-dark-skeleton: var(--color-zinc-800);
-  --rafters-dark-skeleton-highlight: var(--color-zinc-700);
+  --rafters-dark-sidebar: var(--rafters-neutral-900);
+  --rafters-dark-sidebar-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-muted: var(--rafters-neutral-400);
+  --rafters-dark-sidebar-primary: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-primary-foreground: var(--rafters-neutral-600);
+  --rafters-dark-sidebar-primary-hover: var(--rafters-neutral-100);
+  --rafters-dark-sidebar-primary-active: var(--rafters-neutral-200);
+  --rafters-dark-sidebar-accent: var(--rafters-neutral-800);
+  --rafters-dark-sidebar-accent-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-accent-hover: var(--rafters-neutral-700);
+  --rafters-dark-sidebar-accent-active: var(--rafters-neutral-600);
+  --rafters-dark-sidebar-item: var(--rafters-neutral-900);
+  --rafters-dark-sidebar-item-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-item-hover: var(--rafters-neutral-800);
+  --rafters-dark-sidebar-item-hover-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-item-active: var(--rafters-neutral-700);
+  --rafters-dark-sidebar-item-active-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-item-selected: var(--rafters-neutral-800);
+  --rafters-dark-sidebar-item-selected-foreground: var(--rafters-neutral-50);
+  --rafters-dark-sidebar-border: var(--rafters-neutral-700);
+  --rafters-dark-sidebar-ring: var(--rafters-neutral-900);
+  --rafters-dark-nav: var(--rafters-neutral-900);
+  --rafters-dark-nav-foreground: var(--rafters-neutral-50);
+  --rafters-dark-nav-hover: var(--rafters-neutral-800);
+  --rafters-dark-nav-hover-foreground: var(--rafters-neutral-50);
+  --rafters-dark-nav-active: var(--rafters-neutral-700);
+  --rafters-dark-nav-active-foreground: var(--rafters-neutral-50);
+  --rafters-dark-nav-selected: var(--rafters-neutral-50);
+  --rafters-dark-nav-selected-foreground: var(--rafters-neutral-600);
+  --rafters-dark-nav-disabled: var(--rafters-neutral-500);
+  --rafters-dark-nav-disabled-foreground: var(--rafters-neutral-50);
+  --rafters-dark-table: var(--rafters-neutral-950);
+  --rafters-dark-table-foreground: var(--rafters-neutral-50);
+  --rafters-dark-table-header: var(--rafters-neutral-800);
+  --rafters-dark-table-header-foreground: var(--rafters-neutral-50);
+  --rafters-dark-table-row-hover: var(--rafters-neutral-900);
+  --rafters-dark-table-row-selected: var(--rafters-neutral-800);
+  --rafters-dark-table-row-selected-foreground: var(--rafters-neutral-50);
+  --rafters-dark-table-border: var(--rafters-neutral-800);
+  --rafters-dark-tooltip: var(--rafters-neutral-50);
+  --rafters-dark-tooltip-foreground: var(--rafters-neutral-600);
+  --rafters-dark-overlay: var(--rafters-neutral-950);
+  --rafters-dark-overlay-foreground: var(--rafters-neutral-50);
+  --rafters-dark-skeleton: var(--rafters-neutral-800);
+  --rafters-dark-skeleton-highlight: var(--rafters-neutral-700);
   --rafters-dark-chart-1: var(--color-silver-true-glacier-400);
   --rafters-dark-chart-2: var(--color-silver-true-sky-400);
   --rafters-dark-chart-3: var(--color-silver-true-citrine-400);
   --rafters-dark-chart-4: var(--color-silver-true-honey-400);
   --rafters-dark-chart-5: var(--color-silver-true-violet-400);
-  --rafters-dark-scrollbar: var(--color-zinc-700);
-  --rafters-dark-scrollbar-hover: var(--color-zinc-600);
-  --rafters-dark-scrollbar-track: var(--color-zinc-900);
-  --rafters-dark-code: var(--color-zinc-900);
-  --rafters-dark-code-foreground: var(--color-zinc-50);
-  --rafters-dark-code-border: var(--color-zinc-700);
-  --rafters-dark-badge: var(--color-zinc-800);
-  --rafters-dark-badge-foreground: var(--color-zinc-50);
-  --rafters-dark-badge-border: var(--color-zinc-600);
-  --rafters-dark-avatar: var(--color-zinc-800);
-  --rafters-dark-avatar-foreground: var(--color-zinc-50);
+  --rafters-dark-scrollbar: var(--rafters-neutral-700);
+  --rafters-dark-scrollbar-hover: var(--rafters-neutral-600);
+  --rafters-dark-scrollbar-track: var(--rafters-neutral-900);
+  --rafters-dark-code: var(--rafters-neutral-900);
+  --rafters-dark-code-foreground: var(--rafters-neutral-50);
+  --rafters-dark-code-border: var(--rafters-neutral-700);
+  --rafters-dark-badge: var(--rafters-neutral-800);
+  --rafters-dark-badge-foreground: var(--rafters-neutral-50);
+  --rafters-dark-badge-border: var(--rafters-neutral-600);
+  --rafters-dark-avatar: var(--rafters-neutral-800);
+  --rafters-dark-avatar-foreground: var(--rafters-neutral-50);
 
   --neutral: var(--rafters-neutral);
   --background: var(--rafters-background);
@@ -1257,6 +1480,221 @@
   --badge-border: var(--rafters-badge-border);
   --avatar: var(--rafters-avatar);
   --avatar-foreground: var(--rafters-avatar-foreground);
+
+  --rafters-breakpoint-sm: 640px;
+  --rafters-screen-sm: (min-width: 640px);
+  --rafters-breakpoint-md: 768px;
+  --rafters-screen-md: (min-width: 768px);
+  --rafters-breakpoint-lg: 1024px;
+  --rafters-screen-lg: (min-width: 1024px);
+  --rafters-breakpoint-xl: 1280px;
+  --rafters-screen-xl: (min-width: 1280px);
+  --rafters-breakpoint-2xl: 1536px;
+  --rafters-screen-2xl: (min-width: 1536px);
+  --rafters-container-3xs: 16rem;
+  --rafters-container-2xs: 18rem;
+  --rafters-container-xs: 20rem;
+  --rafters-container-sm: 24rem;
+  --rafters-container-md: 28rem;
+  --rafters-container-lg: 32rem;
+  --rafters-container-xl: 36rem;
+  --rafters-container-2xl: 42rem;
+  --rafters-container-3xl: 48rem;
+  --rafters-container-4xl: 56rem;
+  --rafters-container-5xl: 64rem;
+  --rafters-container-6xl: 72rem;
+  --rafters-container-7xl: 80rem;
+  --rafters-breakpoint-sm-max: 639px;
+  --rafters-breakpoint-md-max: 767px;
+  --rafters-breakpoint-lg-max: 1023px;
+  --rafters-breakpoint-xl-max: 1279px;
+  --rafters-breakpoint-2xl-max: 1535px;
+  --rafters-breakpoint-motion-reduce: (prefers-reduced-motion: reduce);
+  --rafters-breakpoint-dark: (prefers-color-scheme: dark);
+  --rafters-breakpoint-high-contrast: (prefers-contrast: more);
+  --rafters-breakpoint-forced-colors: (forced-colors: active);
+  --rafters-depth-base: 0;
+  --rafters-depth-dropdown: 50;
+  --rafters-depth-sticky: 20;
+  --rafters-depth-navigation: 25;
+  --rafters-depth-fixed: 30;
+  --rafters-depth-modal: 40;
+  --rafters-depth-popover: 50;
+  --rafters-depth-tooltip: 60;
+  --rafters-depth-overlay: 35;
+  --rafters-depth-below: -1;
+  --rafters-depth-max: 9999;
+  --rafters-focus-ring-width: calc(var(--rafters-spacing-base) / 2);
+  --rafters-focus-ring-color: var(--ring);
+  --rafters-focus-outline: var(--rafters-focus-ring-width) solid var(--ring);
+  --rafters-focus-offset: var(--rafters-focus-ring-width);
+  --rafters-focus-outline-inset: var(--rafters-focus-ring-width) solid var(--ring);
+  --rafters-focus-offset-inset: calc(var(--rafters-focus-ring-width) * -1);
+  --rafters-focus-outline-thick: calc(var(--rafters-focus-ring-width) * 1.5) solid var(--ring);
+  --rafters-focus-offset-thick: var(--rafters-focus-ring-width);
+  --rafters-focus-outline-subtle: calc(var(--rafters-focus-ring-width) * 0.5) solid var(--ring);
+  --rafters-focus-offset-subtle: var(--rafters-focus-ring-width);
+  --rafters-radius-base: calc(var(--rafters-spacing-base) * 1.5);
+  --rafters-radius-tl: var(--rafters-radius-base);
+  --rafters-radius-tr: var(--rafters-radius-base);
+  --rafters-radius-bl: var(--rafters-radius-base);
+  --rafters-radius-br: var(--rafters-radius-base);
+  --rafters-radius-none: 0;
+  --rafters-radius-sm: calc(var(--rafters-radius-base) * 0.833);
+  --rafters-radius-sm-tl: calc(var(--rafters-radius-tl) * 0.833);
+  --rafters-radius-sm-tr: calc(var(--rafters-radius-tr) * 0.833);
+  --rafters-radius-sm-bl: calc(var(--rafters-radius-bl) * 0.833);
+  --rafters-radius-sm-br: calc(var(--rafters-radius-br) * 0.833);
+  --rafters-radius: var(--rafters-radius-base);
+  --rafters-radius-md: calc(var(--rafters-radius-base) * 1.2);
+  --rafters-radius-md-tl: calc(var(--rafters-radius-tl) * 1.2);
+  --rafters-radius-md-tr: calc(var(--rafters-radius-tr) * 1.2);
+  --rafters-radius-md-bl: calc(var(--rafters-radius-bl) * 1.2);
+  --rafters-radius-md-br: calc(var(--rafters-radius-br) * 1.2);
+  --rafters-radius-lg: calc(var(--rafters-radius-base) * 1.44);
+  --rafters-radius-lg-tl: calc(var(--rafters-radius-tl) * 1.44);
+  --rafters-radius-lg-tr: calc(var(--rafters-radius-tr) * 1.44);
+  --rafters-radius-lg-bl: calc(var(--rafters-radius-bl) * 1.44);
+  --rafters-radius-lg-br: calc(var(--rafters-radius-br) * 1.44);
+  --rafters-radius-xl: calc(var(--rafters-radius-base) * 1.728);
+  --rafters-radius-xl-tl: calc(var(--rafters-radius-tl) * 1.728);
+  --rafters-radius-xl-tr: calc(var(--rafters-radius-tr) * 1.728);
+  --rafters-radius-xl-bl: calc(var(--rafters-radius-bl) * 1.728);
+  --rafters-radius-xl-br: calc(var(--rafters-radius-br) * 1.728);
+  --rafters-radius-2xl: calc(var(--rafters-radius-base) * 2.074);
+  --rafters-radius-2xl-tl: calc(var(--rafters-radius-tl) * 2.074);
+  --rafters-radius-2xl-tr: calc(var(--rafters-radius-tr) * 2.074);
+  --rafters-radius-2xl-bl: calc(var(--rafters-radius-bl) * 2.074);
+  --rafters-radius-2xl-br: calc(var(--rafters-radius-br) * 2.074);
+  --rafters-radius-3xl: calc(var(--rafters-radius-base) * 2.488);
+  --rafters-radius-3xl-tl: calc(var(--rafters-radius-tl) * 2.488);
+  --rafters-radius-3xl-tr: calc(var(--rafters-radius-tr) * 2.488);
+  --rafters-radius-3xl-bl: calc(var(--rafters-radius-bl) * 2.488);
+  --rafters-radius-3xl-br: calc(var(--rafters-radius-br) * 2.488);
+  --rafters-radius-full: 9999px;
+  --rafters-shadow-base-unit: 0.25rem;
+  --rafters-shadow-none: none;
+  --rafters-shadow-xs-offset-x: 0rem;
+  --rafters-shadow-xs-offset-y: 0.063rem;
+  --rafters-shadow-xs-blur: 0.125rem;
+  --rafters-shadow-xs-spread: 0rem;
+  --rafters-shadow-xs-color: rgb(0 0 0 / 0.05);
+  --rafters-shadow-xs: var(--rafters-shadow-xs-offset-x) var(--rafters-shadow-xs-offset-y) var(--rafters-shadow-xs-blur) var(--rafters-shadow-xs-spread) var(--rafters-shadow-xs-color);
+  --rafters-shadow-sm-offset-x: 0rem;
+  --rafters-shadow-sm-offset-y: 0.063rem;
+  --rafters-shadow-sm-blur: 0.25rem;
+  --rafters-shadow-sm-spread: 0rem;
+  --rafters-shadow-sm-color: rgb(0 0 0 / 0.06);
+  --rafters-shadow-sm: var(--rafters-shadow-sm-offset-x) var(--rafters-shadow-sm-offset-y) var(--rafters-shadow-sm-blur) var(--rafters-shadow-sm-spread) var(--rafters-shadow-sm-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1);
+  --rafters-shadow-offset-x: 0rem;
+  --rafters-shadow-offset-y: 0.125rem;
+  --rafters-shadow-blur: 0.375rem;
+  --rafters-shadow-spread: 0.063rem;
+  --rafters-shadow-color: rgb(0 0 0 / 0.1);
+  --rafters-shadow: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) var(--rafters-shadow-color), 0 0.063rem 0.125rem 0rem rgb(0 0 0 / 0.1);
+  --rafters-shadow-md-offset-x: 0rem;
+  --rafters-shadow-md-offset-y: 0.25rem;
+  --rafters-shadow-md-blur: 0.438rem;
+  --rafters-shadow-md-spread: 0.063rem;
+  --rafters-shadow-md-color: rgb(0 0 0 / 0.1);
+  --rafters-shadow-md: var(--rafters-shadow-md-offset-x) var(--rafters-shadow-md-offset-y) var(--rafters-shadow-md-blur) var(--rafters-shadow-md-spread) var(--rafters-shadow-md-color), 0 0.125rem 0.25rem 0.063rem rgb(0 0 0 / 0.1);
+  --rafters-shadow-lg-offset-x: 0rem;
+  --rafters-shadow-lg-offset-y: 0.438rem;
+  --rafters-shadow-lg-blur: 0.938rem;
+  --rafters-shadow-lg-spread: 0.063rem;
+  --rafters-shadow-lg-color: rgb(0 0 0 / 0.1);
+  --rafters-shadow-lg: var(--rafters-shadow-lg-offset-x) var(--rafters-shadow-lg-offset-y) var(--rafters-shadow-lg-blur) var(--rafters-shadow-lg-spread) var(--rafters-shadow-lg-color), 0 0.25rem 0.438rem 0.063rem rgb(0 0 0 / 0.1);
+  --rafters-shadow-xl-offset-x: 0rem;
+  --rafters-shadow-xl-offset-y: 1.125rem;
+  --rafters-shadow-xl-blur: 1.375rem;
+  --rafters-shadow-xl-spread: 0.063rem;
+  --rafters-shadow-xl-color: rgb(0 0 0 / 0.1);
+  --rafters-shadow-xl: var(--rafters-shadow-xl-offset-x) var(--rafters-shadow-xl-offset-y) var(--rafters-shadow-xl-blur) var(--rafters-shadow-xl-spread) var(--rafters-shadow-xl-color), 0 0.438rem 0.938rem 0.063rem rgb(0 0 0 / 0.1);
+  --rafters-shadow-2xl-offset-x: 0rem;
+  --rafters-shadow-2xl-offset-y: 1.375rem;
+  --rafters-shadow-2xl-blur: 2.875rem;
+  --rafters-shadow-2xl-spread: 0.063rem;
+  --rafters-shadow-2xl-color: rgb(0 0 0 / 0.25);
+  --rafters-shadow-2xl: var(--rafters-shadow-2xl-offset-x) var(--rafters-shadow-2xl-offset-y) var(--rafters-shadow-2xl-blur) var(--rafters-shadow-2xl-spread) var(--rafters-shadow-2xl-color);
+  --rafters-shadow-primary: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--primary) 12%, transparent);
+  --rafters-shadow-destructive: var(--rafters-shadow-offset-x) var(--rafters-shadow-offset-y) var(--rafters-shadow-blur) var(--rafters-shadow-spread) color-mix(in oklch, var(--destructive) 12%, transparent);
+  --rafters-spacing-base: 0.25rem;
+  --rafters-spacing-0: 0;
+  --rafters-spacing-1: var(--rafters-spacing-base);
+  --rafters-spacing-2: calc(var(--rafters-spacing-base) * 2);
+  --rafters-spacing-3: calc(var(--rafters-spacing-base) * 3);
+  --rafters-spacing-4: calc(var(--rafters-spacing-base) * 4);
+  --rafters-spacing-5: calc(var(--rafters-spacing-base) * 5);
+  --rafters-spacing-6: calc(var(--rafters-spacing-base) * 6);
+  --rafters-spacing-7: calc(var(--rafters-spacing-base) * 7);
+  --rafters-spacing-9: calc(var(--rafters-spacing-base) * 9);
+  --rafters-spacing-11: calc(var(--rafters-spacing-base) * 11);
+  --rafters-spacing-13: calc(var(--rafters-spacing-base) * 13);
+  --rafters-spacing-15: calc(var(--rafters-spacing-base) * 15);
+  --rafters-spacing-18: calc(var(--rafters-spacing-base) * 18);
+  --rafters-spacing-22: calc(var(--rafters-spacing-base) * 22);
+  --rafters-spacing-27: calc(var(--rafters-spacing-base) * 27);
+  --rafters-spacing-32: calc(var(--rafters-spacing-base) * 32);
+  --rafters-spacing-38: calc(var(--rafters-spacing-base) * 38);
+  --rafters-spacing-46: calc(var(--rafters-spacing-base) * 46);
+  --rafters-spacing-55: calc(var(--rafters-spacing-base) * 55);
+  --rafters-spacing-66: calc(var(--rafters-spacing-base) * 66);
+  --rafters-spacing-79: calc(var(--rafters-spacing-base) * 79);
+  --rafters-spacing-95: calc(var(--rafters-spacing-base) * 95);
+  --rafters-font-sans: 'Noto Sans Variable', sans-serif;
+  --rafters-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --rafters-font-serif: Georgia, "Times New Roman", Times, serif;
+  --rafters-font-heading: var(--font-sans);
+  --rafters-font-body: var(--font-sans);
+  --rafters-font-code: var(--font-mono);
+  --rafters-font-size-base: 1rem;
+  --rafters-font-size-xs: 0.694rem;
+  --rafters-line-height-xs: 1.5;
+  --rafters-letter-spacing-xs: 0.025em;
+  --rafters-font-size-sm: 0.833rem;
+  --rafters-line-height-sm: 1.5;
+  --rafters-letter-spacing-sm: 0.015em;
+  --rafters-line-height-base: 1.5;
+  --rafters-letter-spacing-base: 0;
+  --rafters-font-size-lg: 1.2rem;
+  --rafters-line-height-lg: 1.5;
+  --rafters-letter-spacing-lg: -0.01em;
+  --rafters-font-size-xl: 1.44rem;
+  --rafters-line-height-xl: 1.4;
+  --rafters-letter-spacing-xl: -0.015em;
+  --rafters-font-size-2xl: 1.728rem;
+  --rafters-line-height-2xl: 1.35;
+  --rafters-letter-spacing-2xl: -0.02em;
+  --rafters-font-size-3xl: 2.074rem;
+  --rafters-line-height-3xl: 1.3;
+  --rafters-letter-spacing-3xl: -0.025em;
+  --rafters-font-size-4xl: 2.488rem;
+  --rafters-line-height-4xl: 1.25;
+  --rafters-letter-spacing-4xl: -0.03em;
+  --rafters-font-size-5xl: 2.986rem;
+  --rafters-line-height-5xl: 1.2;
+  --rafters-letter-spacing-5xl: -0.035em;
+  --rafters-font-size-6xl: 3.583rem;
+  --rafters-line-height-6xl: 1.15;
+  --rafters-letter-spacing-6xl: -0.04em;
+  --rafters-font-size-7xl: 4.3rem;
+  --rafters-line-height-7xl: 1.1;
+  --rafters-letter-spacing-7xl: -0.045em;
+  --rafters-font-size-8xl: 5.16rem;
+  --rafters-line-height-8xl: 1.1;
+  --rafters-letter-spacing-8xl: -0.05em;
+  --rafters-font-size-9xl: 6.192rem;
+  --rafters-line-height-9xl: 1.1;
+  --rafters-letter-spacing-9xl: -0.05em;
+  --rafters-font-weight-thin: 100;
+  --rafters-font-weight-extralight: 200;
+  --rafters-font-weight-light: 300;
+  --rafters-font-weight-normal: 400;
+  --rafters-font-weight-medium: 500;
+  --rafters-font-weight-semibold: 600;
+  --rafters-font-weight-bold: 700;
+  --rafters-font-weight-extrabold: 800;
+  --rafters-font-weight-black: 900;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -1520,6 +1958,14 @@
   from { transform: scale(1); opacity: 1; } to { transform: scale(var(--rafters-extent-pop)); opacity: 0; }
 }
 
+@keyframes grow-in {
+  from { transform: scaleY(0); } to { transform: scaleY(1); }
+}
+
+@keyframes grow-in-x {
+  from { transform: scaleX(0); } to { transform: scaleX(1); }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); } to { transform: rotate(360deg); }
 }
@@ -1540,95 +1986,21 @@
   0%, 70%, 100% { opacity: 1; } 20%, 50% { opacity: 0; }
 }
 
-@theme inline {
-  --text-display-large: var(--font-size-5xl);
-  --text-display-large--line-height: var(--font-size-5xl--line-height);
-  --text-display-large--letter-spacing: var(--letter-spacing-5xl);
-  --text-display-large--font-weight: var(--font-weight-bold);
-  --rafters-ts-display-large: var(--font-heading);
-  --rafters-ts-display-large-lg: var(--font-size-6xl);
-  --rafters-ts-display-large-lg-leading: var(--font-size-6xl--line-height);
-
-  --text-display-medium: var(--font-size-4xl);
-  --text-display-medium--line-height: var(--font-size-4xl--line-height);
-  --text-display-medium--letter-spacing: var(--letter-spacing-4xl);
-  --text-display-medium--font-weight: var(--font-weight-bold);
-  --rafters-ts-display-medium: var(--font-heading);
-  --rafters-ts-display-medium-lg: var(--font-size-5xl);
-  --rafters-ts-display-medium-lg-leading: var(--font-size-5xl--line-height);
-
-  --text-title-large: var(--font-size-3xl);
-  --text-title-large--line-height: var(--font-size-3xl--line-height);
-  --text-title-large--letter-spacing: var(--letter-spacing-3xl);
-  --text-title-large--font-weight: var(--font-weight-semibold);
-  --rafters-ts-title-large: var(--font-heading);
-
-  --text-title-medium: var(--font-size-lg);
-  --text-title-medium--line-height: var(--font-size-lg--line-height);
-  --text-title-medium--letter-spacing: var(--letter-spacing-lg);
-  --text-title-medium--font-weight: var(--font-weight-semibold);
-  --rafters-ts-title-medium: var(--font-heading);
-
-  --text-title-small: var(--font-size-base);
-  --text-title-small--line-height: var(--font-size-base--line-height);
-  --text-title-small--letter-spacing: var(--letter-spacing-base);
-  --text-title-small--font-weight: var(--font-weight-semibold);
-  --rafters-ts-title-small: var(--font-heading);
-
-  --text-body-large: var(--font-size-xl);
-  --text-body-large--line-height: var(--font-size-xl--line-height);
-  --text-body-large--letter-spacing: var(--letter-spacing-xl);
-  --text-body-large--font-weight: var(--font-weight-normal);
-  --rafters-ts-body-large: var(--font-body);
-
-  --text-body-medium: var(--font-size-base);
-  --text-body-medium--line-height: var(--font-size-base--line-height);
-  --text-body-medium--letter-spacing: var(--letter-spacing-base);
-  --text-body-medium--font-weight: var(--font-weight-normal);
-  --rafters-ts-body-medium: var(--font-body);
-
-  --text-body-small: var(--font-size-sm);
-  --text-body-small--line-height: var(--font-size-sm--line-height);
-  --text-body-small--letter-spacing: var(--letter-spacing-sm);
-  --text-body-small--font-weight: var(--font-weight-normal);
-  --rafters-ts-body-small: var(--font-body);
-
-  --text-label-large: var(--font-size-base);
-  --text-label-large--line-height: var(--font-size-base--line-height);
-  --text-label-large--letter-spacing: var(--letter-spacing-base);
-  --text-label-large--font-weight: var(--font-weight-medium);
-  --rafters-ts-label-large: var(--font-body);
-
-  --text-label-medium: var(--font-size-sm);
-  --text-label-medium--line-height: var(--font-size-sm--line-height);
-  --text-label-medium--letter-spacing: var(--letter-spacing-sm);
-  --text-label-medium--font-weight: var(--font-weight-medium);
-  --rafters-ts-label-medium: var(--font-body);
-
-  --text-label-small: var(--font-size-xs);
-  --text-label-small--line-height: var(--font-size-xs--line-height);
-  --text-label-small--letter-spacing: var(--letter-spacing-xs);
-  --text-label-small--font-weight: var(--font-weight-medium);
-  --rafters-ts-label-small: var(--font-body);
-
-  --text-code-large: var(--font-size-base);
-  --text-code-large--line-height: var(--font-size-base--line-height);
-  --text-code-large--letter-spacing: var(--letter-spacing-base);
-  --text-code-large--font-weight: var(--font-weight-normal);
-  --rafters-ts-code-large: var(--font-code);
-
-  --text-code-small: var(--font-size-sm);
-  --text-code-small--line-height: var(--font-size-sm--line-height);
-  --text-code-small--letter-spacing: var(--letter-spacing-sm);
-  --text-code-small--font-weight: var(--font-weight-normal);
-  --rafters-ts-code-small: var(--font-code);
-
-  --text-shortcut: var(--font-size-xs);
-  --text-shortcut--line-height: var(--font-size-xs--line-height);
-  --text-shortcut--letter-spacing: 0.1em;
-  --text-shortcut--font-weight: var(--font-weight-normal);
-  --rafters-ts-shortcut: var(--font-code);
-
+/* Reduced motion is law: every duration and delay is zero, loops are not. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rafters-duration-instant: 0ms;
+    --rafters-duration-micro: 0ms;
+    --rafters-duration-fast: 0ms;
+    --rafters-duration-moderate: 0ms;
+    --rafters-duration-normal: 0ms;
+    --rafters-duration-slow: 0ms;
+    --rafters-delay-hover-intent: 0ms;
+    --rafters-delay-linger: 0ms;
+    --rafters-delay-choreo-step: 0ms;
+    --rafters-delay-stagger-step: 0ms;
+    --rafters-delay-skip: 0ms;
+  }
 }
 
 @utility ts-* {
@@ -1644,126 +2016,7 @@
   }
 }
 
-/* Depth (z-index) utilities -- words over numbers */
-@utility z-depth-base {
-  z-index: var(--depth-base);
-}
-@utility z-depth-dropdown {
-  z-index: var(--depth-dropdown);
-}
-@utility z-depth-sticky {
-  z-index: var(--depth-sticky);
-}
-@utility z-depth-navigation {
-  z-index: var(--depth-navigation);
-}
-@utility z-depth-fixed {
-  z-index: var(--depth-fixed);
-}
-@utility z-depth-modal {
-  z-index: var(--depth-modal);
-}
-@utility z-depth-popover {
-  z-index: var(--depth-popover);
-}
-@utility z-depth-tooltip {
-  z-index: var(--depth-tooltip);
-}
-@utility z-depth-overlay {
-  z-index: var(--depth-overlay);
-}
-@utility z-depth-below {
-  z-index: var(--depth-below);
-}
-@utility z-depth-max {
-  z-index: var(--depth-max);
-}
-
-/* The five motion namespaces -- one utility per member */
-@utility duration-instant {
-  transition-duration: var(--rafters-duration-instant);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-micro {
-  transition-duration: var(--rafters-duration-micro);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-fast {
-  transition-duration: var(--rafters-duration-fast);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-moderate {
-  transition-duration: var(--rafters-duration-moderate);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-normal {
-  transition-duration: var(--rafters-duration-normal);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility duration-slow {
-  transition-duration: var(--rafters-duration-slow);
-  @media (prefers-reduced-motion: reduce) {
-    transition-duration: 0ms;
-  }
-}
-@utility ease-standard {
-  transition-timing-function: var(--rafters-ease-standard);
-}
-@utility ease-enter {
-  transition-timing-function: var(--rafters-ease-enter);
-}
-@utility ease-exit {
-  transition-timing-function: var(--rafters-ease-exit);
-}
-@utility ease-linear {
-  transition-timing-function: var(--rafters-ease-linear);
-}
-@utility ease-spring-smooth {
-  transition-timing-function: var(--rafters-ease-spring-smooth);
-}
-@utility ease-spring-snappy {
-  transition-timing-function: var(--rafters-ease-spring-snappy);
-}
-@utility delay-hover-intent {
-  transition-delay: var(--rafters-delay-hover-intent);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-linger {
-  transition-delay: var(--rafters-delay-linger);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-choreo-step {
-  transition-delay: var(--rafters-delay-choreo-step);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-stagger-step {
-  transition-delay: var(--rafters-delay-stagger-step);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
-@utility delay-skip {
-  transition-delay: var(--rafters-delay-skip);
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0ms;
-  }
-}
+/* Motion namespaces Tailwind has no theme key for */
 @utility extent-pop {
   --rafters-consumed-extent: var(--rafters-extent-pop);
 }
@@ -1789,34 +2042,34 @@
 /* Semantic motion utilities -- transition longhand per token */
 @utility motion-hover {
   transition-property: color, background-color, border-color;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--rafters-duration-fast);
+  transition-timing-function: var(--rafters-ease-standard);
 }
 @utility motion-focus {
   transition-property: box-shadow, outline-color;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-linear);
+  transition-duration: var(--rafters-duration-micro);
+  transition-timing-function: var(--rafters-ease-linear);
 }
 @utility motion-press {
   transition-property: transform, color, background-color;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-spring-snappy);
+  transition-duration: var(--rafters-duration-micro);
+  transition-timing-function: var(--rafters-ease-spring-snappy);
   @media (prefers-reduced-motion: reduce) {
     transition-property: color, background-color;
   }
 }
 @utility motion-toggle {
   transition-property: color, background-color, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-standard);
   @media (prefers-reduced-motion: reduce) {
     transition-property: color, background-color;
   }
 }
 @utility motion-dropdown-in {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 100ms;
@@ -1824,8 +2077,8 @@
 }
 @utility motion-dropdown-out {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-fast);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 100ms;
@@ -1833,8 +2086,8 @@
 }
 @utility motion-modal-in {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 150ms;
@@ -1842,8 +2095,8 @@
 }
 @utility motion-modal-out {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 150ms;
@@ -1851,8 +2104,8 @@
 }
 @utility motion-sheet-in {
   transition-property: transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 250ms;
@@ -1860,8 +2113,8 @@
 }
 @utility motion-sheet-out {
   transition-property: transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 250ms;
@@ -1869,78 +2122,42 @@
 }
 @utility motion-expand {
   transition-property: grid-template-rows, opacity;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-enter);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-enter);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
   }
 }
 @utility motion-collapse {
   transition-property: grid-template-rows, opacity;
-  transition-duration: var(--duration-moderate);
-  transition-timing-function: var(--ease-exit);
+  transition-duration: var(--rafters-duration-moderate);
+  transition-timing-function: var(--rafters-ease-exit);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
   }
 }
 @utility motion-page {
   transition-property: opacity, transform;
-  transition-duration: var(--duration-normal);
-  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--rafters-duration-normal);
+  transition-timing-function: var(--rafters-ease-spring-smooth);
   @media (prefers-reduced-motion: reduce) {
     transition-property: opacity;
     transition-duration: 200ms;
   }
 }
 
-/* Motion cells -- one utility per animated (component, part, transition) */
-@utility animate-dialog-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-normal);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+/* Grid track lists -- named, because classy skips arbitrary track lists */
+@utility grid-cols-menu-row {
+  grid-template-columns: auto auto 1fr auto; /* indicator, icon, label, end */
 }
-@utility animate-dialog-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-start {
+  grid-template-columns: auto 1fr; /* start icon, field */
 }
-@utility animate-popover-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-end {
+  grid-template-columns: 1fr auto; /* field, end icon */
 }
-@utility animate-popover-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-fast);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
-}
-@utility animate-dropdown-menu-content-open {
-  animation-name: scale-in;
-  animation-duration: var(--rafters-duration-moderate);
-  animation-timing-function: var(--rafters-ease-enter);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
-}
-@utility animate-dropdown-menu-content-close {
-  animation-name: scale-out;
-  animation-duration: var(--rafters-duration-fast);
-  animation-timing-function: var(--rafters-ease-exit);
-  @media (prefers-reduced-motion: reduce) {
-    animation-duration: 0s;
-  }
+@utility grid-cols-affix-both {
+  grid-template-columns: auto 1fr auto; /* start icon, field, end icon */
 }
 
 @layer base {

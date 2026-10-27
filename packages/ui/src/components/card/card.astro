@@ -98,13 +98,15 @@ import type { CardElement } from './card.behavior';
 interface Props {
   as?: CardElement;
   fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { as: Tag = 'div', fill, class: _discardedClass, ...attrs } = Astro.props as Props & {
+const { as: Tag = 'div', fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & {
   class?: string;
 };
 
-const classes: CardClassSet = cardClasses({ fill }, {});
+const classes: CardClassSet = cardClasses({ fill, surface }, {});
 
 const hasTitle = Astro.slots.has('title');
 const hasDescription = Astro.slots.has('description');
@@ -112,7 +114,7 @@ const hasAction = Astro.slots.has('action');
 const hasHeader = Astro.slots.has('header') || hasTitle || hasDescription || hasAction;
 ---
 
-<Tag data-part="root" data-slot="card" data-fill={fill || undefined} class={classes.root} {...attrs}>
+<Tag data-part="root" data-slot="card" class={classes.root} {...attrs}>
   {
     hasHeader && (
       <div data-slot="card-header" class={cardHeaderClasses}>

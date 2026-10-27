@@ -1,4 +1,9 @@
-import { POSITION_TO_INDEX, SCALE_POSITIONS } from '@rafters/color-utils';
+import {
+  getGamutTier,
+  POSITION_TO_INDEX,
+  rebakeAccessibility,
+  SCALE_POSITIONS,
+} from '@rafters/color-utils';
 import type { OKLCH } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
 import { importColorFamily } from '../../src/importers/color.js';
@@ -54,6 +59,68 @@ describe('importColorFamily', () => {
     expect(at500?.l).toBeCloseTo(SEED.l, 5);
     expect(at500?.c).toBeCloseTo(SEED.c, 5);
     expect(at500?.h).toBeCloseTo(SEED.h, 5);
+  });
+
+  it('re-derives accessibility from the pinned scale when the seed sits off the natural step', () => {
+    const seed: OKLCH = { l: 0.62, c: 0.14, h: 250, alpha: 1 };
+    const family = importColorFamily('empire', '400', seed)[0];
+    if (!family || typeof family.value === 'string' || 'family' in family.value) {
+      throw new Error('expected ColorValue family token');
+    }
+    const imported = family.value;
+    expect(imported.scale[4]).toEqual(seed);
+    expect(imported.accessibility).toEqual(rebakeAccessibility(imported).accessibility);
+  });
+
+  it('pins a P3 or out-of-gamut seed as typed, records its true tier, and no seedAdjusted (#2672)', () => {
+    const cases: { seed: OKLCH; tier: 'srgb' | 'p3' | 'out' }[] = [
+      { seed: SEED, tier: getGamutTier(SEED) },
+      { seed: { l: 0.55, c: 0.12, h: 210, alpha: 1 }, tier: 'p3' },
+      { seed: { l: 0.7, c: 0.35, h: 150, alpha: 1 }, tier: 'out' },
+    ];
+    for (const { seed, tier } of cases) {
+      expect(getGamutTier(seed)).toBe(tier);
+      const family = importColorFamily('empire', '400', seed)[0];
+      if (!family || typeof family.value === 'string' || 'family' in family.value) {
+        throw new Error('expected ColorValue family token');
+      }
+      const imported = family.value;
+      expect(imported.scale[4]).toEqual(seed);
+      expect(imported.gamut?.[4]).toBe(tier);
+      for (const [i, step] of imported.scale.entries()) {
+        expect(imported.gamut?.[i]).toBe(getGamutTier(step));
+      }
+      expect(imported.seedAdjusted).toBeUndefined();
+    }
+  });
+
+  it('keeps a complete scale as given, measured per step, with intelligence from its 500 (#2813)', () => {
+    const scale: OKLCH[] = SCALE_POSITIONS.map((_, i) => ({
+      l: 0.97 - i * 0.08,
+      c: 0.02 + i * 0.01,
+      h: 140,
+      alpha: 1,
+    }));
+    const [family, ...steps] = importColorFamily('moss', scale);
+    if (!family || typeof family.value === 'string' || 'family' in family.value) {
+      throw new Error('expected ColorValue family token');
+    }
+    const imported = family.value;
+    expect(imported.name).toBe('moss');
+    expect(imported.scale).toEqual(scale);
+    expect(imported.gamut).toEqual(scale.map((step) => getGamutTier(step)));
+    expect(imported.accessibility).toEqual(rebakeAccessibility(imported).accessibility);
+    const fromSeed = importColorFamily('moss', '500', scale[5] ?? SEED)[0]?.value;
+    if (typeof fromSeed !== 'object' || 'family' in fromSeed)
+      throw new Error('expected ColorValue');
+    expect(imported.harmonies).toEqual(fromSeed.harmonies);
+    expect(imported.analysis).toEqual(fromSeed.analysis);
+    expect(imported.seedAdjusted).toBeUndefined();
+    expect(steps.map((t) => t.name)).toEqual(SCALE_POSITIONS.map((p) => `moss-${p}`));
+  });
+
+  it('throws on a scale without 11 steps', () => {
+    expect(() => importColorFamily('moss', [SEED, SEED])).toThrow(/11 steps, got 2/);
   });
 
   it('throws on an unknown seed position', () => {

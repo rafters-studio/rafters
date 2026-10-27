@@ -5,7 +5,7 @@
  * the framework files import them directly (no context/provider needed for a
  * flat static) -- ported from the oracle's settled composition.
  * `text-label-medium ts-label-medium` / `bg-primary` / `text-foreground` /
- * `text-muted-foreground` are the semantic role tokens; `transition-colors` is
+ * the muted foreground are the semantic role tokens; `transition-colors` is
  * the sole motion intent (link hover colour), recorded in the matrix as
  * `motion.current`.
  */
@@ -41,7 +41,7 @@ export const paginationLinkBaseClasses =
 export const paginationLinkSizeClasses: Record<string, string> = {
   default: 'h-10 min-w-10 px-4 py-2',
   sm: 'h-9 min-w-9 px-3',
-  lg: 'h-11 min-w-11 px-8',
+  lg: 'h-11 min-w-11 px-4',
   icon: 'h-10 w-10',
 };
 
@@ -53,8 +53,8 @@ export const paginationLinkInactiveClasses =
 
 export const paginationDisabledClasses = 'pointer-events-none opacity-50';
 
-export const paginationPreviousClasses = 'gap-1 pl-2.5';
+export const paginationPreviousClasses = 'gap-1 ps-2.5';
 
-export const paginationNextClasses = 'gap-1 pr-2.5';
+export const paginationNextClasses = 'gap-1 pe-2.5';
 
 export const paginationEllipsisClasses = 'flex h-9 w-9 items-center justify-center';

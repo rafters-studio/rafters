@@ -66,9 +66,9 @@ describe('analyzeCss', () => {
 
   it('does not extract custom-property names outside the two prefixes', () => {
     // --motion-*, --shadow, --radix-*: external systems. Not our concern.
-    const css = `${CANONICAL_CSS} .x { animation: var(--motion-duration-fast) ease; }`;
+    const css = `${CANONICAL_CSS} .x { animation: var(--motion-fade-in) ease; }`;
     const report = analyzeCss(css);
-    expect(report.referenced.has('--motion-duration-fast')).toBe(false);
+    expect(report.referenced.has('--motion-fade-in')).toBe(false);
     expect(report.danglingRefs).toEqual([]);
   });
 });

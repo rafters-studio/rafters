@@ -24,7 +24,12 @@ import type { Align, Side } from '../../primitives/types';
  * cover the page -- it is a light-dismiss overlay positioned against its
  * trigger (or a distinct anchor).
  */
-export type PopoverConfig = DisclosableConfig;
+export interface PopoverConfig extends DisclosableConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
+}
 
 export type PopoverState = DisclosableState;
 export type PopoverActions = DisclosableActions;

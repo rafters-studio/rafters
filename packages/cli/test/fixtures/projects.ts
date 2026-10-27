@@ -19,7 +19,6 @@ export type FixtureType =
   | 'remix-shadcn-v4'
   | 'react-router-shadcn-v4'
   | 'astro-shadcn-v4'
-  | 'wc-no-shadcn'
   | 'vanilla-no-shadcn'
   | 'empty-project'
   | 'tailwind-v3-error';
@@ -47,6 +46,13 @@ interface ShadcnComponentsJson {
     utils: string;
   };
 }
+
+/** Build-script decisions for the fixtures' dependencies (pnpm 11 `allowBuilds`). */
+const PNPM_BUILD_POLICY = `allowBuilds:
+  esbuild: false
+  sharp: false
+  workerd: false
+`;
 
 interface FixtureTemplate {
   packageJson: PackageJson;
@@ -241,23 +247,6 @@ const TEMPLATES: Record<FixtureType, FixtureTemplate> = {
     },
   },
 
-  'wc-no-shadcn': {
-    packageJson: {
-      name: 'test-wc',
-      version: '0.1.0',
-      dependencies: {
-        lit: '^3.0.0',
-      },
-      devDependencies: {
-        tailwindcss: '^4.0.0',
-        typescript: '^5.9.0',
-      },
-    },
-    files: {
-      'src/index.css': '@import "tailwindcss";\n',
-    },
-  },
-
   'vanilla-no-shadcn': {
     packageJson: {
       name: 'test-vanilla',
@@ -324,6 +313,12 @@ export async function createFixture(type: FixtureType): Promise<string> {
 
   // Write package.json
   await writeFile(join(fixturePath, 'package.json'), JSON.stringify(template.packageJson, null, 2));
+
+  // A real pnpm 11 project records its build-script decisions; without them
+  // `pnpm add` exits non-zero on ERR_PNPM_IGNORED_BUILDS, and `rafters init`
+  // installs its fonts with `pnpm add` (#2742). No `packages:` key, so the
+  // fixture is not a workspace root.
+  await writeFile(join(fixturePath, 'pnpm-workspace.yaml'), PNPM_BUILD_POLICY);
 
   // Write components.json if shadcn is configured
   if (template.componentsJson) {
@@ -402,9 +397,6 @@ export function getExpectedDetection(type: FixtureType): {
       };
     case 'astro-shadcn-v4':
       return { framework: 'astro', hasShadcn: true, tailwindVersion: '4.0.0', isTailwindV3: false };
-    // `wc` detects from `lit` (or `@lit/*`) without React.
-    case 'wc-no-shadcn':
-      return { framework: 'wc', hasShadcn: false, tailwindVersion: '4.0.0', isTailwindV3: false };
     // `vanilla` has no package.json signature; it stays a `--framework` / prompt pick.
     case 'vanilla-no-shadcn':
       return {
@@ -431,7 +423,6 @@ export const ALL_FIXTURE_TYPES: FixtureType[] = [
   'remix-shadcn-v4',
   'react-router-shadcn-v4',
   'astro-shadcn-v4',
-  'wc-no-shadcn',
   'vanilla-no-shadcn',
   'empty-project',
   'tailwind-v3-error',
@@ -452,6 +443,5 @@ export const INSTALL_FRESH_FIXTURES: FixtureType[] = [
   'remix-shadcn-v4',
   'react-router-shadcn-v4',
   'astro-shadcn-v4',
-  'wc-no-shadcn',
   'vanilla-no-shadcn',
 ];

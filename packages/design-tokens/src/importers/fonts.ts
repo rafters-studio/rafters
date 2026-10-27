@@ -153,19 +153,38 @@ export function detectFonts(css: string): readonly DetectedFont[] {
 }
 
 /**
+ * Every Google Fonts `@import` URL in source CSS, in source order, each once.
+ * These are the web font imports a project already loads; init records them
+ * in `fonts.imports` next to the writing-system packages (#2742).
+ */
+export function detectFontImports(css: string): string[] {
+  return [...new Set(googleFontImportUrls(css))];
+}
+
+/**
+ * Google Fonts `@import url(...)` URLs in the source. The URL may contain `;`
+ * (Google Fonts axis suffixes like `wght@400;700`), so quote boundaries -- not
+ * character classes -- delimit it.
+ */
+function googleFontImportUrls(css: string): string[] {
+  const IMPORT = /@import\s+(?:url\(\s*)?["']([^"']+)["']/g;
+  const out: string[] = [];
+  for (const match of css.matchAll(IMPORT)) {
+    const url = match[1];
+    if (url === undefined || !url.startsWith('https://fonts.googleapis.com/')) continue;
+    out.push(url);
+  }
+  return out;
+}
+
+/**
  * Parse `family=` parameters out of every Google Fonts `@import url(...)` in
  * the source. Handles v1 (`css?family=...`) and v2 (`css2?family=...&family=...`)
  * URL shapes; `+` decodes to space; the `:wght@...` axis suffix is stripped.
  */
 function extractGoogleFontFamilies(css: string): string[] {
   const out: string[] = [];
-  // Match @import url(...) with the URL captured between matching quotes.
-  // The URL may contain `;` (Google Fonts axis suffixes like `wght@400;700`),
-  // so quote boundaries -- not character classes -- delimit it.
-  const IMPORT = /@import\s+(?:url\(\s*)?["']([^"']+)["']/g;
-  for (const match of css.matchAll(IMPORT)) {
-    const url = match[1];
-    if (url === undefined || !url.startsWith('https://fonts.googleapis.com/')) continue;
+  for (const url of googleFontImportUrls(css)) {
     const queryStart = url.indexOf('?');
     if (queryStart === -1) continue;
     const query = url.slice(queryStart + 1);

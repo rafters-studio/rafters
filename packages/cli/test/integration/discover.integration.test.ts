@@ -27,7 +27,7 @@ describe('discoverProjectRoot', () => {
 
     const result = discoverProjectRoot(fixturePath);
     expect(result).toBe(fixturePath);
-  }, 30000);
+  });
 
   it('finds project root from a nested subdirectory', async () => {
     fixturePath = await createInitializedFixture();
@@ -37,7 +37,7 @@ describe('discoverProjectRoot', () => {
 
     const result = discoverProjectRoot(nestedDir);
     expect(result).toBe(fixturePath);
-  }, 30000);
+  });
 
   it('finds project root from a deeply nested path', async () => {
     fixturePath = await createInitializedFixture();
@@ -47,7 +47,7 @@ describe('discoverProjectRoot', () => {
 
     const result = discoverProjectRoot(deepDir);
     expect(result).toBe(fixturePath);
-  }, 30000);
+  });
 
   it('returns null when no project root exists', async () => {
     // Use a fixture without .rafters (not initialized)

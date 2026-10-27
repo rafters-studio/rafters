@@ -20,14 +20,14 @@
  * ```tsx
  * // Page structure
  * <H1>Page Title</H1>
- * <P size="xl" color="muted">This is an introduction to the page content.</P>
+ * <P size="xl" color="muted-foreground">This is an introduction to the page content.</P>
  *
  * <H2>Section Title</H2>
  * <P>Body paragraph with standard styling.</P>
  *
  * <H3>Subsection</H3>
  * <P>More content here.</P>
- * <P size="sm" color="muted">Last updated: Jan 2025</P>
+ * <P size="sm" color="muted-foreground">Last updated: Jan 2025</P>
  *
  * // Code example
  * <P>Use the <Code>useState</Code> hook for local state.</P>
@@ -76,8 +76,8 @@ function splitTokenProps(props: TypographyComponentProps): {
   tokens: TypographyTokenProps;
   rest: Omit<TypographyComponentProps, keyof TypographyTokenProps>;
 } {
-  const { size, weight, color, line, tracking, family, align, transform, ...rest } = props;
-  return { tokens: { size, weight, color, line, tracking, family, align, transform }, rest };
+  const { size, weight, color, line, tracking, family, align, transform, fill, ...rest } = props;
+  return { tokens: { size, weight, color, line, tracking, family, align, transform, fill }, rest };
 }
 
 /**

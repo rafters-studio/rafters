@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { PopoverConfig, PopoverState } from './popover.behavior';
 
 export interface PopoverClassSet {
@@ -9,6 +10,9 @@ export interface PopoverClassSet {
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
 // and the config, and NO class -- a behavior root never styles itself; layout
 // belongs to the consumer's Container/Grid (operator ruling, 2026-08-02).
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // The panel sits on the popover depth token and fills with the popover surface
 // tokens. Enter/exit is PRESENCE (#1996): the node arrives with its keyframe
@@ -26,16 +30,16 @@ export interface PopoverClassSet {
 // and it depended on a plugin this repo does not ship. Slide-on-enter goes with
 // it: it is not part of the presence contract and no acceptance asks for it.
 //
-// NO motion-reduce:animate-none. The generated utility zeroes animation-duration
-// under prefers-reduced-motion instead (mechanism B). That preserves the
-// keyframe's end state, which animate-none never reaches -- it removes the
+// NO reduced-motion animation escape. The generated utility zeroes
+// animation-duration under prefers-reduced-motion instead (mechanism B). That
+// preserves the keyframe's end state, which `animation: none` never reaches -- it removes the
 // animation rather than completing it instantly -- AND it still fires
-// animationend, which is what presence releases the unmount on; animate-none
-// fires nothing, so every reduced-motion close would fall through to the
+// animationend, which is what presence releases the unmount on; an animation
+// reset fires nothing, so every reduced-motion close would fall through to the
 // backstop timer. The two mechanisms never compose either: `animation: none`
 // resets the shorthand and discards the zeroed duration wherever it wins.
 const contentClasses =
-  'z-depth-popover w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg outline-none ' +
+  'z-depth-popover w-72 rounded-md border p-4 shadow-lg outline-none ' +
   'data-[state=open]:animate-scale-in-moderate-enter data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
@@ -53,12 +57,12 @@ const contentClasses =
 // THE COLOR HALF OF THE ROW HAS NO MOMENT ON THIS CONTROL, reported rather than
 // faked: the hover changes opacity alone (opacity-70 -> opacity-100) and no
 // background, text or border colour moves, so there is nothing for a
-// `transition-colors` to drive. Inventing a hover colour to fill the row would
+// colour transition to drive. Inventing a hover colour to fill the row would
 // be a design decision this issue does not carry. dialog, sheet and drawer carry
 // the identical row on the identical control and have the identical gap.
 //
 // NO component-level reduced-motion escape, and the pre-existing
-// `motion-reduce:transition-none` is REMOVED rather than kept. The generated
+// reduced-motion transition escape is REMOVED rather than kept. The generated
 // `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (the exporter's REDUCED_MOTION_ZEROED set,
 // packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
@@ -66,17 +70,17 @@ const contentClasses =
 // tooltip.classes.ts states the rule. The escape was redundant, not harmful,
 // which is exactly why it survived this long.
 const closeClasses =
-  'absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
-  '@md:right-4 @md:top-4 @md:h-8 @md:w-8 ' +
+  'absolute end-2 top-2 inline-flex h-11 w-11 items-center justify-center ' +
+  '@md:end-4 @md:top-4 @md:h-8 @md:w-8 ' +
   'rounded-sm opacity-70 ring-offset-background cursor-pointer ' +
   'transition-opacity duration-fast ease-standard hover:opacity-100 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
-export function popoverClasses(_config: PopoverConfig, _state: PopoverState): PopoverClassSet {
+export function popoverClasses(config: PopoverConfig, _state: PopoverState): PopoverClassSet {
   return {
-    content: contentClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     close: closeClasses,
     closeIcon: closeIconClasses,
   };

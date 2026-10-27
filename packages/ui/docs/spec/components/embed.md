@@ -3,16 +3,16 @@
 Status: DRAFT. A STATIC score, modelled on Container and Card: no state, no
 actions, no keymap, no effects, and an empty structural ARIA projection. The
 one piece of real behaviour is the URL security resolver, which lives in the
-score (a decision, never duplicated across performances); the three
+score (a decision, never duplicated across performances); both
 performances are pure decoration application over its descriptor.
 
 Files (`src/components/embed/`):
 
 ```
-embed.behavior.ts    embed.classes.ts    embed.tsx    embed.element.ts    embed.astro
+embed.behavior.ts    embed.classes.ts    embed.tsx    embed.astro
 ```
 
-Tests mirror into `test/components/embed/` (behavior, classes, and React + WC +
+Tests mirror into `test/components/embed/` (behavior, classes, and React +
 Astro conformance).
 
 ## Purpose
@@ -76,7 +76,7 @@ a message and, for a disallowed/unresolvable URL, a recovery link
   `www.youtube-nocookie.com/embed/{id}`.
 - **Twitch parent guard.** Twitch embed URLs carry `parent={hostname}`.
 - **Iframe attributes, preserved verbatim** (score constants, one source of
-  truth across the three performances):
+  truth across both performances):
   - `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"`
   - `referrerPolicy="strict-origin-when-cross-origin"`
 
@@ -108,13 +108,13 @@ match. The API is Rafters' own, carried forward from the oracle's iframe path.
 | `url` / `provider` / `aspectRatio` / `title` | contract |
 | URL allowlist + provider detection + youtube→nocookie + twitch parent guard | contract — moved verbatim into `embed.behavior.ts` (no separate `embed-utils.ts`; the pure logic is the score's) |
 | iframe `allow` / `referrerPolicy` / `allowFullScreen` / `loading="lazy"` | contract — preserved verbatim as score constants |
-| fallback message + recovery link | contract — the tokenized WC fallback (`text-label-small`), not the `.tsx`'s SVG + raw `text-sm` version |
-| Twitter widget flow (`TwitterEmbed`, `platform.twitter.com/widgets.js`, `window.twttr`) | dropped — a runtime third-party widget, not an iframe; Twitter URLs resolve to the fallback exactly as the oracle WC did. `detectEmbedProvider` still recognises Twitter (validation), it simply maps to fallback |
+| fallback message + recovery link | contract — the oracle's tokenized fallback (`text-label-small`), not the `.tsx`'s SVG + raw `text-sm` version |
+| Twitter widget flow (`TwitterEmbed`, `platform.twitter.com/widgets.js`, `window.twttr`) | dropped — a runtime third-party widget, not an iframe; Twitter URLs resolve to the fallback exactly as the oracle did. `detectEmbedProvider` still recognises Twitter (validation), it simply maps to fallback |
 | `editable` / URL input `<form>` / `onChange` | dropped — block-editor / studio-layer concern, same disposition as Container's `editable`/`showDropZone` |
 | drag/drop file upload, alignment toolbar | dropped — studio-layer concern |
 | `ProviderBadge` (provider colour chip) | dropped — an editor affordance tied to `editable` |
-| React `SVG` fallback icon + raw `text-sm` chrome | dropped — the WC's tokenized fallback is the floor; the SVG was decorative |
-| `.tsx` fallback message as `<p>`, WC/React via `createElement` | framework-affordance — React and the WC render a raw `<p>` via `createElement` (the Typography-pending disposition Card/Alert record); Astro renders a `<div>` (no `createElement` escape) with the same message class |
+| React `SVG` fallback icon + raw `text-sm` chrome | dropped — the tokenized fallback is the floor; the SVG was decorative |
+| `.tsx` fallback message as `<p>`, React via `createElement` | framework-affordance — React renders a raw `<p>` via `createElement` (the Typography-pending disposition Card/Alert record); Astro renders a `<div>` (no `createElement` escape) with the same message class |
 
 ## WCAG 2.1 AA obligations
 

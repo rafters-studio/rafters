@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { SelectConfig, SelectState } from './select.behavior';
 
 export interface SelectClassSet {
@@ -14,14 +15,20 @@ export interface SelectClassSet {
   separator: string;
   scrollButton: string;
   scrollIcon: string;
+  /** Decorative icon wrapper on an item. */
+  startIcon: string;
+  endIcon: string;
+  /** Decorative icon wrapper on the trigger. */
+  triggerStartIcon: string;
+  triggerEndIcon: string;
 }
 
 // Touch floor at h-11, scaling down via the container query (repo CQ
 // convention) rather than the viewport. Fill, not background.
 //
-// THE ROW: select / trigger / hover -- color, duration-fast, ease-standard
+// THE ROW: select / trigger / hover -- color, fast, standard
 // (motion.md:250). It governs the `hover:border-input-hover` change below, which
-// until now was not transitioned at all: the class carried `transition-shadow`
+// until now was not transitioned at all: the class carried a shadow transition
 // only, so the border snapped. A transition, not a keyframe (`select | trigger |
 // hover`, EXCLUDED_ROWS.noIntersectingProperty in
 // packages/design-tokens/test/motion-cells.test.ts).
@@ -44,15 +51,26 @@ export interface SelectClassSet {
 // box-shadow from the list entirely and killed the ring's transition outright.
 //
 // NO component-level reduced-motion escape here or on the chevron below. The
-// pre-existing `motion-reduce:transition-none` on both is REMOVED: the
+// pre-existing reduced-motion transition escape on both is REMOVED: the
 // generated `duration-*` and `delay-*` utilities zero themselves under
 // prefers-reduced-motion (REDUCED_MOTION_ZEROED,
 // packages/design-tokens/src/exporters/tailwind.ts), so reduced motion is the
 // token sheet's responsibility and never a component-level media query
 // (tooltip.classes.ts states the rule).
+//
+// THE TRIGGER IS A GRID (#2459, #2462) on the named menu-row track list
+// (indicator, icon, label, end). Its cells sit by explicit column, in reading
+// order, so the start icon swaps sides on a `dir="rtl"` page with no direction
+// class: start icon col 2, value col 3 (the 1fr track), end icon col 4, the
+// chevron col 5 after any end content. A track with nothing in it is 0 wide, and
+// the trigger carries no column gap, because a gap would still be charged on
+// each empty track: the icon wrappers and the chevron space themselves with a
+// logical margin instead. Padding tightens on an icon's own side with shadcn's
+// `data-icon` convention.
 const triggerClasses =
-  'group flex h-11 @md:h-9 w-full items-center justify-between gap-2 rounded-md ' +
+  'group grid grid-cols-menu-row h-11 @md:h-9 w-full items-center rounded-md ' +
   'border border-input bg-background px-3 py-2 text-body-small ts-body-small shadow-sm ring-offset-background ' +
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'transition-[box-shadow,color,background-color,border-color] duration-fast ease-standard ' +
   'hover:border-input-hover ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
@@ -61,7 +79,8 @@ const triggerClasses =
 
 // The selected label / placeholder. Placeholder look keys off data-empty,
 // toggled by the binding when nothing is selected.
-const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-muted-foreground';
+const valueClasses =
+  'col-start-3 pointer-events-none truncate text-start data-[empty]:text-muted-foreground';
 
 // THE ROW: select / chevron / open <-> closed -- rotate, duration-moderate,
 // ease-standard, extent structural (motion.md:191). The 180deg is mechanics, not
@@ -71,8 +90,11 @@ const valueClasses = 'pointer-events-none truncate text-left data-[empty]:text-m
 // from the cell vocabulary by name (`select | chevron | open <-> closed`,
 // EXCLUDED_ROWS.noIntersectingProperty).
 const chevronClasses =
-  'size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard ' +
+  'col-start-5 ms-2 size-4 shrink-0 opacity-50 transition-transform duration-moderate ease-standard ' +
   'group-data-[state=open]:rotate-180';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // THE CELL IS THE SPEC. These two utilities are the generated consumption of
 // select / content / closed -> open (moderate, enter, extent pop) and
@@ -84,7 +106,7 @@ const chevronClasses =
 // animated at all. popover.classes.test.ts pins their absence for the same
 // reason.
 //
-// NO motion-reduce:animate-none -- the generated utility zeroes
+// NO reduced-motion animation escape -- the generated utility zeroes
 // animation-duration under the media query, keeping the keyframe's end state.
 //
 // ONE KNOWN LIMIT, reported not papered over: the exit keyframe cannot run
@@ -94,14 +116,19 @@ const chevronClasses =
 // display:none starts its animation exactly as a mounting one does, which is why
 // no @starting-style appears here. dropdown-menu shows the fix (usePresence
 // gating `hidden`, dropdown-menu.tsx:288-290); it is a view-layer change.
+//
+// THE CONTENT IS THE MENU GRID (#2459, #2462): `grid-cols-menu-row` is the one
+// track list (indicator, icon, label, end), and the viewport, each group and each
+// item pass it down as `grid-cols-subgrid col-span-full`, so every label aligns
+// whichever items carry an icon.
 const contentClasses =
-  'z-depth-dropdown max-h-96 min-w-32 overflow-hidden rounded-md border bg-popover ' +
-  'text-popover-foreground shadow-md ' +
+  'z-depth-dropdown grid grid-cols-menu-row max-h-96 min-w-32 overflow-hidden rounded-md border ' +
+  'shadow-md ' +
   'data-[state=open]:animate-scale-in-moderate-enter ' +
   'data-[state=closed]:animate-scale-out-fast-exit ' +
   'data-[state=closed]:pointer-events-none';
 
-const viewportClasses = 'p-1';
+const viewportClasses = 'col-span-full grid grid-cols-subgrid p-1';
 
 // THE ROW: select / items / highlight move -- color, duration-micro,
 // ease-standard (motion.md:189), PROPOSED and unreviewed, transcribed as
@@ -121,7 +148,8 @@ const viewportClasses = 'p-1';
 // assignment, not a gap -- see dropdown-menu's items class for the full note,
 // including the per-element `transition-delay` coupling with the row above.
 const itemClasses =
-  'group/item relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 ' +
+  'group/item relative col-span-full grid grid-cols-subgrid items-center gap-x-2 rounded-sm py-1.5 ps-2 pe-2 ' +
+  'has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 ' +
   'text-body-small ts-body-small outline-none ' +
   'transition-colors duration-micro ease-standard delay-stagger-step ' +
   'focus:bg-accent focus:text-accent-foreground ' +
@@ -138,28 +166,38 @@ const itemClasses =
 // as the near-instant swap the movement vocabulary describes, and at zero it is
 // an instant one -- a legitimate personality.
 const itemIndicatorClasses =
-  'absolute left-2 flex h-3.5 w-3.5 items-center justify-center ' +
+  'col-start-1 flex h-3.5 w-3.5 items-center justify-center ' +
   'opacity-0 transition-opacity duration-micro ease-standard ' +
   'group-data-[state=checked]/item:opacity-100';
 
-const itemTextClasses = 'truncate';
+const itemTextClasses = 'col-start-3 truncate';
 
-const groupClasses = 'p-1';
+const groupClasses = 'col-span-full grid grid-cols-subgrid p-1';
 
-const labelClasses = 'py-1.5 pl-8 pr-2 text-label-medium ts-label-medium text-muted-foreground';
+const labelClasses =
+  'col-span-full py-1.5 ps-8 pe-2 text-label-medium ts-label-medium text-muted-foreground';
 
-const separatorClasses = '-mx-1 my-1 h-px bg-muted';
+const separatorClasses = 'col-span-full -mx-1 my-1 h-px bg-muted';
 
-const scrollButtonClasses = 'flex cursor-default items-center justify-center py-1';
+const scrollButtonClasses = 'col-span-full flex cursor-default items-center justify-center py-1';
 
 const scrollIconClasses = 'size-4';
 
-export function selectClasses(_config: SelectConfig, _state: SelectState): SelectClassSet {
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+// On an item the icon sits in its own track (2 start, 4 end) and the row gap
+// spaces it; on the trigger a logical margin spaces it (see triggerClasses).
+const iconClasses = 'inline-grid place-items-center';
+const itemStartIconClasses = `col-start-2 ${iconClasses}`;
+const itemEndIconClasses = `col-start-4 ${iconClasses}`;
+const triggerStartIconClasses = `col-start-2 me-2 ${iconClasses}`;
+const triggerEndIconClasses = `col-start-4 ms-2 ${iconClasses}`;
+
+export function selectClasses(config: SelectConfig, _state: SelectState): SelectClassSet {
   return {
     trigger: triggerClasses,
     value: valueClasses,
     chevron: chevronClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     viewport: viewportClasses,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,
@@ -169,5 +207,9 @@ export function selectClasses(_config: SelectConfig, _state: SelectState): Selec
     separator: separatorClasses,
     scrollButton: scrollButtonClasses,
     scrollIcon: scrollIconClasses,
+    startIcon: itemStartIconClasses,
+    endIcon: itemEndIconClasses,
+    triggerStartIcon: triggerStartIconClasses,
+    triggerEndIcon: triggerEndIconClasses,
   };
 }

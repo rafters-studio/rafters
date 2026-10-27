@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import {
   panelSideClasses,
   panelVariantClasses,
@@ -7,6 +8,7 @@ import {
   sidebarMenuSubButtonClasses,
   sidebarPanelClasses,
 } from '../../../src/components/sidebar/sidebar.classes';
+import { componentSheet, escapeCandidate } from '../../motion/component-sheet';
 
 const classes = sidebarClasses();
 
@@ -14,7 +16,7 @@ describe('sidebar shell classes', () => {
   it('the mobile overlay surface paints the sidebar fill over the Sheet frame', () => {
     // Sheet owns the modal positioning; this class only carries the sidebar
     // chrome, so it must not re-declare fixed/inset positioning.
-    expect(classes.mobilePanel).toContain('bg-sidebar');
+    expect(classes.mobilePanel.split(' ')).toContain('bg-surface-sidebar');
     expect(classes.mobilePanel).toContain('flex');
     expect(classes.mobilePanel).not.toContain('fixed');
   });
@@ -168,4 +170,126 @@ describe('sidebar motion vocabulary', () => {
       }
     }
   });
+});
+
+const physical = /(^|\s)(p[lr]|m[lr]|left|right|text-left|text-right|border-[lr])(-|\s|$)/;
+
+describe('sidebar menu buttons: icons and logical edges', () => {
+  it('menu buttons are grid rows whose columns follow reading order', () => {
+    for (const set of [
+      sidebarMenuButtonClasses('default', 'default'),
+      sidebarMenuSubButtonClasses('md'),
+    ]) {
+      const tokens = set.split(' ');
+      for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-2']) {
+        expect(tokens).toContain(literal);
+      }
+      expect(tokens).not.toContain('flex');
+      expect(set).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(set).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+      expect(set).not.toMatch(physical);
+    }
+    expect(sidebarMenuButtonClasses()).toContain('text-start');
+  });
+
+  it('the icon wrappers only place and hide, never size; the end icon hides on the icon rail', () => {
+    expect(classes.menuButtonStartIcon).toBe('inline-grid place-items-center');
+    expect(classes.menuButtonEndIcon).toBe(
+      'inline-grid place-items-center group-data-[collapsible=icon]:hidden',
+    );
+    expect(classes.menuButtonLabel).toBe('group-data-[collapsible=icon]:sr-only');
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const set of [
+      sidebarMenuButtonClasses('default', 'default'),
+      sidebarMenuSubButtonClasses('md'),
+    ]) {
+      const kept = classy(set).split(' ');
+      const added = set
+        .split(' ')
+        .filter((c) => c.includes('has-data-') || c === 'inline-grid' || c === 'grid-flow-col');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) expect(kept, `classy dropped ${literal}`).toContain(literal);
+    }
+    for (const set of [
+      classes.menuButtonStartIcon,
+      classes.menuButtonEndIcon,
+      classes.menuButtonLabel,
+    ]) {
+      expect(classy(set)).toBe(set);
+    }
+  });
+});
+
+describe('sidebar has no physical direction class but the side classes', () => {
+  it('every other class is logical', () => {
+    // The rail's two group-data-[side=...] classes are physical on purpose, like
+    // the panel side classes: they follow the screen edge the panel is pinned to.
+    const sideScoped = /group-data-\[side=[a-z]+\]:\S+/g;
+    const sets = [
+      ...Object.values(classes).map((set) => set.replace(sideScoped, '')),
+      sidebarPanelClasses('left', 'sidebar').replace(panelSideClasses.left, ''),
+      sidebarPanelClasses('right', 'floating')
+        .replace(panelSideClasses.right, '')
+        .replace(panelVariantClasses.floating, ''),
+    ];
+    for (const set of sets) expect(set).not.toMatch(physical);
+  });
+
+  it('the side classes stay physical: the panel is pinned to a screen edge', () => {
+    expect(panelSideClasses.left).toContain('left-0');
+    expect(panelSideClasses.right).toContain('right-0');
+  });
+
+  it('the action and badge sit at the end edge, the sub-menu indents from the start', () => {
+    expect(classes.groupAction).toContain('end-3');
+    expect(classes.menuAction).toContain('end-1');
+    expect(classes.menuBadge).toContain('end-1');
+    expect(classes.menuSub).toContain('ms-3.5');
+    expect(classes.menuSub).toContain('ps-2.5');
+    expect(classes.menuSub).toContain('border-s');
+  });
+});
+
+describe('sidebar height: the viewport rail by default, the container under contained (#2657)', () => {
+  const containedCandidates = (set: string): string[] =>
+    set.split(/\s+/).filter((c) => c.includes('[contained=true]'));
+  const panels = (['sidebar', 'floating', 'inset'] as const).map((variant) =>
+    sidebarPanelClasses('left', variant),
+  );
+
+  it('keeps the viewport-height rail unless the provider is contained', () => {
+    expect(classes.provider).toContain('min-h-svh');
+    expect(classes.inset).toContain('min-h-svh');
+    expect(panels[0]).toContain('md:h-svh');
+    expect(panelVariantClasses.floating).toContain('md:h-[calc(100svh-theme(spacing.4))]');
+    expect(panelVariantClasses.inset).toContain('md:h-[calc(100svh-theme(spacing.4))]');
+  });
+
+  it('under contained the provider fills its container and the panel and inset follow it', () => {
+    expect(containedCandidates(classes.provider)).toEqual([
+      'data-[contained=true]:h-full',
+      'data-[contained=true]:min-h-0',
+    ]);
+    expect(containedCandidates(classes.inset)).toEqual([
+      'group-data-[contained=true]/sidebar-wrapper:min-h-0',
+    ]);
+    for (const panel of panels) {
+      expect(containedCandidates(panel)).toEqual([
+        'md:group-data-[contained=true]/sidebar-wrapper:h-auto',
+      ]);
+    }
+    // No svh survives in a contained candidate.
+    for (const set of [classes.provider, classes.inset, ...panels]) {
+      for (const c of containedCandidates(set)) expect(c).not.toContain('svh');
+    }
+  });
+
+  it('every contained candidate compiles to a real rule', async () => {
+    const css = await componentSheet('sidebar');
+    const candidates = [classes.provider, classes.inset, ...panels].flatMap(containedCandidates);
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+  }, 120_000);
 });

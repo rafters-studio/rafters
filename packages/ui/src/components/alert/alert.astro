@@ -21,7 +21,7 @@
  * ```tsx
  * // Error alert
  * <Alert variant="destructive">
- *   <AlertCircle className="h-4 w-4" />
+ *   <AlertCircle />
  *   <AlertTitle>Error</AlertTitle>
  *   <AlertDescription>
  *     Your session has expired. Please log in again.
@@ -30,7 +30,7 @@
  *
  * // Success alert
  * <Alert variant="success">
- *   <CheckCircle className="h-4 w-4" />
+ *   <CheckCircle />
  *   <AlertTitle>Success</AlertTitle>
  *   <AlertDescription>
  *     Your changes have been saved.
@@ -39,7 +39,7 @@
  *
  * // Informational alert
  * <Alert variant="info">
- *   <Info className="h-4 w-4" />
+ *   <Info />
  *   <AlertTitle>Note</AlertTitle>
  *   <AlertDescription>
  *     This feature is in beta.
@@ -72,7 +72,7 @@
  * needs to be a direct child of the root, which is exactly what an unwrapped
  * default slot gives it in server-rendered markup. The one part of that
  * selector set the fixed-region layout does not reach is the
- * `[&>svg+div]:-translate-y-0.5` nudge: the default slot trails the regions
+ * half-step upward nudge on a div that follows the SVG: the default slot trails the regions
  * (card/empty ordering), so no div follows the SVG. That is a half-pixel
  * optical alignment, not a contract -- absolute positioning and the `:has(svg)`
  * padding, which are what actually place the icon, both hold.
@@ -103,11 +103,15 @@ import {
 
 interface Props {
   variant?: AlertVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-const { variant, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { variant, fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const config: AlertConfig = { variant };
+const config: AlertConfig = { variant, fill, surface };
 const classes: AlertClassSet = alertClasses(config, {});
 
 // Annotation is documentation, not load-bearing -- inference reaches AriaAttrs

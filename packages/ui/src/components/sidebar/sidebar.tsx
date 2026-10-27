@@ -55,6 +55,7 @@ import { mergeProps } from '../../primitives/slot';
 import { Sheet, SheetContent } from '../sheet/sheet';
 import {
   sidebar,
+  sidebarIconAria,
   toggleIntent,
   type SidebarActions,
   type SidebarConfig,
@@ -113,6 +114,9 @@ export interface SidebarProviderProps extends React.HTMLAttributes<HTMLDivElemen
   side?: SidebarSide;
   variant?: SidebarVariant;
   collapsible?: SidebarConfig['collapsible'];
+  /** Bound the provider, panel and inset to the provider's container instead
+   *  of the viewport. Default `false`: the viewport-height rail. */
+  contained?: boolean;
 }
 
 export function SidebarProvider({
@@ -122,6 +126,7 @@ export function SidebarProvider({
   side = 'left',
   variant = 'sidebar',
   collapsible = 'offcanvas',
+  contained = false,
   className,
   children,
   ...props
@@ -198,6 +203,7 @@ export function SidebarProvider({
         data-part="root"
         data-side={side}
         data-variant={variant}
+        data-contained={contained ? 'true' : undefined}
         className={classy(sidebarClasses().provider, className)}
         {...props}
       >
@@ -210,10 +216,23 @@ export function SidebarProvider({
 export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   side?: SidebarSide;
   variant?: SidebarVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
-export function Sidebar({ side, variant, className, children, onKeyDown, ...props }: SidebarProps) {
-  const { state, config, aria, ids, request, isMobile, classes } = useSidebar();
+export function Sidebar({
+  side,
+  variant,
+  fill,
+  surface,
+  className,
+  children,
+  onKeyDown,
+  ...props
+}: SidebarProps) {
+  const { state, config, aria, ids, request, isMobile } = useSidebar();
   const resolvedSide = side ?? config.side ?? 'left';
   const resolvedVariant = variant ?? config.variant ?? 'sidebar';
 
@@ -233,7 +252,11 @@ export function Sidebar({ side, variant, className, children, onKeyDown, ...prop
           aria-label="Sidebar"
           data-sidebar="sidebar"
           showCloseButton={false}
-          className={classy(classes.mobilePanel, className)}
+          {...(fill !== undefined && { fill })}
+          // The sheet paints the sidebar surface itself: a plain colour class
+          // beats a surface utility, so the sheet's own base must not stand.
+          surface={surface ?? 'sidebar'}
+          className={classy(sidebarClasses(fill, surface).mobilePanel, className)}
           {...props}
         >
           {children}
@@ -259,7 +282,10 @@ export function Sidebar({ side, variant, className, children, onKeyDown, ...prop
       id={ids.panel}
       data-side={resolvedSide}
       data-variant={resolvedVariant}
-      className={classy(sidebarPanelClasses(resolvedSide, resolvedVariant), className)}
+      className={classy(
+        sidebarPanelClasses(resolvedSide, resolvedVariant, fill, surface),
+        className,
+      )}
       onKeyDown={handleKeyDown}
       {...aria.panel}
       {...props}
@@ -455,17 +481,70 @@ export function SidebarMenuItem({ className, ...props }: SidebarMenuItemProps) {
   return <li data-sidebar="menu-item" className={classy(classes.menuItem, className)} {...props} />;
 }
 
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+/**
+ * The decorative icons of a menu button or sub button, in reading order around
+ * the label. Each wrapper is present only when its icon is given and carries the
+ * behavior's `aria-hidden`. With an icon the label is its own part, so the
+ * collapsed rail can hide it visually while it stays the accessible name.
+ */
+function withIcons(
+  content: React.ReactNode,
+  startIcon: React.ReactNode,
+  endIcon: React.ReactNode,
+): React.ReactNode {
+  if (!hasIcon(startIcon) && !hasIcon(endIcon)) return content;
+  const classes = sidebarClasses();
+  const aria = sidebarIconAria();
+  return (
+    <>
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.menuButtonStartIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span data-part="label" className={classes.menuButtonLabel}>
+        {content}
+      </span>
+      {hasIcon(endIcon) ? (
+        <span
+          data-part="endIcon"
+          data-icon="inline-end"
+          className={classes.menuButtonEndIcon}
+          {...aria.endIcon}
+        >
+          {endIcon}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
 export interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   isActive?: boolean;
   variant?: 'default' | 'outline';
   size?: 'default' | 'sm' | 'lg';
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 export function SidebarMenuButton({
   asChild,
   isActive = false,
   variant = 'default',
   size = 'default',
+  startIcon,
+  endIcon,
   className,
   children,
   ...props
@@ -479,11 +558,17 @@ export function SidebarMenuButton({
   };
   if (asChild && React.isValidElement(children)) {
     const childProps = children.props as Record<string, unknown>;
-    return React.cloneElement(children, mergeProps(buttonProps, childProps) as React.Attributes);
+    const merged = mergeProps(buttonProps, childProps) as React.Attributes;
+    if (!hasIcon(startIcon) && !hasIcon(endIcon)) return React.cloneElement(children, merged);
+    return React.cloneElement(
+      children,
+      merged,
+      withIcons(childProps['children'] as React.ReactNode, startIcon, endIcon),
+    );
   }
   return (
     <button type="button" {...buttonProps}>
-      {children}
+      {withIcons(children, startIcon, endIcon)}
     </button>
   );
 }
@@ -576,11 +661,17 @@ export interface SidebarMenuSubButtonProps extends React.AnchorHTMLAttributes<HT
   asChild?: boolean;
   isActive?: boolean;
   size?: 'sm' | 'md';
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 export function SidebarMenuSubButton({
   asChild,
   isActive = false,
   size = 'md',
+  startIcon,
+  endIcon,
   className,
   children,
   ...props
@@ -594,9 +685,15 @@ export function SidebarMenuSubButton({
   };
   if (asChild && React.isValidElement(children)) {
     const childProps = children.props as Record<string, unknown>;
-    return React.cloneElement(children, mergeProps(buttonProps, childProps) as React.Attributes);
+    const merged = mergeProps(buttonProps, childProps) as React.Attributes;
+    if (!hasIcon(startIcon) && !hasIcon(endIcon)) return React.cloneElement(children, merged);
+    return React.cloneElement(
+      children,
+      merged,
+      withIcons(childProps['children'] as React.ReactNode, startIcon, endIcon),
+    );
   }
-  return <a {...buttonProps}>{children}</a>;
+  return <a {...buttonProps}>{withIcons(children, startIcon, endIcon)}</a>;
 }
 
 export type SidebarSeparatorProps = React.HTMLAttributes<HTMLDivElement>;

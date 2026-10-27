@@ -34,25 +34,6 @@
  *   </DrawerContent>
  * </Drawer>
  *
- * // Or with namespace syntax
- * <Drawer>
- *   <Drawer.Trigger asChild>
- *     <Button>Open Drawer</Button>
- *   </Drawer.Trigger>
- *   <Drawer.Content>
- *     <Drawer.Header>
- *       <Drawer.Title>Actions</Drawer.Title>
- *       <Drawer.Description>Select an action</Drawer.Description>
- *     </Drawer.Header>
- *     <div>Drawer content here</div>
- *     <Drawer.Footer>
- *       <Drawer.Close asChild>
- *         <Button variant="outline">Cancel</Button>
- *       </Drawer.Close>
- *     </Drawer.Footer>
- *   </Drawer.Content>
- * </Drawer>
- *
  * // Hide close button if needed
  * <DrawerContent showCloseButton={false}>...</DrawerContent>
  * ```
@@ -351,9 +332,15 @@ export interface DrawerContentProps extends React.HTMLAttributes<HTMLDivElement>
   onPointerDownOutside?: (event: Event) => void;
   /** Consumer veto: called alongside onPointerDownOutside (oracle surface). */
   onInteractOutside?: (event: Event) => void;
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function DrawerContent({
+  fill,
+  surface,
   showCloseButton,
   forceMount,
   container,
@@ -402,7 +389,12 @@ export function DrawerContent({
       // Closed, the panel stays rendered so its slide can play; inert keeps it
       // out of focus and the accessibility tree.
       inert={!effectiveOpen}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill || surface
+          ? drawerClasses({ ...config, fill, surface }, state).content
+          : classes.content,
+        className,
+      )}
       {...aria.content}
       onKeyDown={handleKeyDown}
       {...props}

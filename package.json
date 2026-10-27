@@ -12,7 +12,7 @@
     "test:e2e:browser": "playwright test",
     "test:a11y": "pnpm -r test:a11y",
     "test:quick": "pnpm test:unit && pnpm test:a11y",
-    "test:all": "pnpm preflight && pnpm -r test:integration && pnpm test:e2e && pnpm test:e2e:browser",
+    "test:all": "pnpm preflight && pnpm -r --if-present test:bdd && pnpm -r test:integration && pnpm test:e2e && pnpm test:e2e:browser",
     "test:watch": "pnpm -r test:unit --watch",
     "typecheck": "pnpm -r typecheck",
     "lint": "oxlint",

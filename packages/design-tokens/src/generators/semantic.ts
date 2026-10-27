@@ -6,8 +6,8 @@
  * encodes the same derivation as a runtime hook for the cascade.
  *
  *   primary             dependsOn=[family]                binding: scale@family@N
- *   primary-foreground  dependsOn=[primary]               binding: contrast@primary,AAA
- *   primary-ring        dependsOn=[family]                binding: scale@family@N   (sibling of primary)
+ *   primary-foreground  dependsOn=[primary]               binding: contrast@primary,AAA,fallback=neutral
+ *   primary-ring        dependsOn=[primary]               binding: state@primary,ring,surface=background
  *   primary-hover       dependsOn=[primary]               binding: state@primary,hover
  *   primary-active      dependsOn=[primary]               binding: state@primary,active
  *   primary-focus       dependsOn=[primary]               binding: state@primary,focus
@@ -19,29 +19,45 @@
  * recomputes via contrast against yellow's accessibility ladder; primary-hover
  * itself anchors because the override is recorded as userOverride.
  *
+ * Each {name}--dark token derives from its light token: top-of-tree roles via
+ * mirror (light position mirrored, plus the designed elevation offset),
+ * foregrounds and states via the --dark parent.
+ *
  * dependsOn[1] is the {name}--dark token. The Tailwind exporter resolves it
  * to get the current dark ColorReference (cascade-derived, not static).
  */
 
-import { POSITION_TO_INDEX, STATE_USES, type StateUse } from '@rafters/color-utils';
+import {
+  POSITION_TO_INDEX,
+  SCALE_POSITIONS,
+  STATE_USES,
+  type StateUse,
+} from '@rafters/color-utils';
 import type { Binding, ColorReference, Token } from '@rafters/shared';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS, type SemanticColorMapping } from './defaults.js';
 import type { GeneratorResult, ResolvedSystemConfig } from './types.js';
 
+const SCALE_LAST_INDEX = SCALE_POSITIONS.length - 1;
 const FOREGROUND_SUFFIXES = ['-foreground', '-text', '-contrast'] as const;
 const STATE_SUFFIXES = STATE_USES.map((s) => `-${s}` as const);
+/** The role a foreground falls back to when its own family has no AA pair. */
+const FALLBACK_FAMILY = 'neutral';
 
 type Derivation =
   | { kind: 'scale'; family: string; scalePosition: number }
   | { kind: 'state'; from: string; stateType: StateUse }
   | { kind: 'contrast'; against: string; level: 'AAA' };
 
-function toColorRef(mapping: SemanticColorMapping): ColorReference {
-  return { family: mapping.light.family, position: mapping.light.position };
-}
+/**
+ * The value a contrast- or state-derived token carries until
+ * generateBaseSystem replaces it with the step its selection rule picks.
+ * It is never emitted.
+ */
+const DERIVED_PLACEHOLDER: ColorReference = { family: FALLBACK_FAMILY, position: '500' };
 
-function toDarkColorRef(mapping: SemanticColorMapping): ColorReference {
-  return { family: mapping.dark.family, position: mapping.dark.position };
+/** A light semantic token's description, written from its value. */
+export function semanticDescription(meaning: string, value: ColorReference): string {
+  return `${meaning}. Light: ${value.family}-${value.position}.`;
 }
 
 /**
@@ -55,7 +71,7 @@ function toDarkColorRef(mapping: SemanticColorMapping): ColorReference {
  */
 function deriveDerivation(
   name: string,
-  lightRef: ColorReference,
+  lightRef: ColorReference | undefined,
   knownTokens: ReadonlySet<string>,
 ): Derivation {
   // Foreground branch first so `-hover-foreground` resolves to contrast
@@ -84,6 +100,9 @@ function deriveDerivation(
 
   // No matching parent -- this is a top-of-tree token. Bind to the family
   // scale at the designer-chosen position.
+  if (!lightRef) {
+    throw new Error(`semantic generator: top-of-tree token "${name}" has no light step`);
+  }
   const scalePosition = POSITION_TO_INDEX[lightRef.position];
   if (scalePosition === undefined) {
     throw new Error(
@@ -103,14 +122,25 @@ function derivationToBinding(derivation: Derivation): Binding {
     case 'state':
       return {
         plugin: 'state',
-        input: { from: derivation.from, stateType: derivation.stateType },
+        input: stateInput(derivation.from, derivation.stateType),
       };
     case 'contrast':
       return {
         plugin: 'contrast',
-        input: { against: derivation.against, level: derivation.level },
+        input: { against: derivation.against, level: derivation.level, fallback: FALLBACK_FAMILY },
       };
   }
+}
+
+/**
+ * A state binding's input. A ring is measured, by default, against the page
+ * background of its mode; a designer points it at any other surface by
+ * rebinding it with a different `surface`.
+ */
+function stateInput(from: string, stateType: StateUse): Record<string, string> {
+  if (stateType !== 'ring') return { from, stateType };
+  const surface = from.endsWith('--dark') ? 'background--dark' : 'background';
+  return { from, stateType, surface };
 }
 
 function derivationParent(derivation: Derivation, suffix = ''): string {
@@ -127,55 +157,74 @@ function derivationParent(derivation: Derivation, suffix = ''): string {
 function deriveDarkBinding(
   derivation: Derivation,
   parentName: string,
+  lightRef: ColorReference,
   darkRef: ColorReference,
 ): Binding {
   switch (derivation.kind) {
     case 'scale': {
-      // Top-of-tree roles use the mapping's DESIGNED dark pair (elevation is
-      // a design decision, #1638) -- bound via scale so family reassignment
-      // still cascades (resolveFamily follows the role's ColorReference).
-      // Mode-invariant roles (overlay) pin simply by declaring dark == light.
-      // Derived tokens (foregrounds, states) keep computed derivation.
-      const scalePosition = POSITION_TO_INDEX[darkRef.position];
-      if (scalePosition === undefined) {
+      // Top-of-tree roles derive dark FROM their light token: mirror the
+      // light position, then shift by the designed elevation offset (#1638).
+      // The offset is fixed at generation from the mapping's designed pair,
+      // so defaults land exactly on the designed dark, and moving the light
+      // token moves its dark counterpart. Mode-invariant roles (overlay)
+      // carry the offset that maps light back onto itself.
+      const lightIndex = POSITION_TO_INDEX[lightRef.position];
+      const darkIndex = POSITION_TO_INDEX[darkRef.position];
+      if (lightIndex === undefined || darkIndex === undefined) {
         throw new Error(
-          `semantic generator: invalid designed dark position "${darkRef.position}" for ${parentName}`,
+          `semantic generator: invalid designed position "${lightRef.position}"/"${darkRef.position}" for ${parentName}`,
         );
       }
       return {
-        plugin: 'scale',
-        input: { familyName: darkRef.family, scalePosition },
+        plugin: 'mirror',
+        input: { fromToken: parentName, offset: darkIndex - (SCALE_LAST_INDEX - lightIndex) },
       };
     }
     case 'state':
       return {
         plugin: 'state',
-        input: { from: `${derivation.from}--dark`, stateType: derivation.stateType },
+        input: stateInput(`${derivation.from}--dark`, derivation.stateType),
       };
     case 'contrast':
       return {
         plugin: 'contrast',
-        input: { against: `${derivation.against}--dark`, level: derivation.level },
+        input: {
+          against: `${derivation.against}--dark`,
+          level: derivation.level,
+          fallback: FALLBACK_FAMILY,
+        },
       };
   }
 }
 
-export function generateSemanticTokens(_config: ResolvedSystemConfig): GeneratorResult {
+export function generateSemanticTokens(
+  _config: ResolvedSystemConfig,
+  mappings: Record<string, SemanticColorMapping> = DEFAULT_SEMANTIC_COLOR_MAPPINGS,
+): GeneratorResult {
   const tokens: Token[] = [];
   const timestamp = new Date().toISOString();
-  const knownTokens = new Set(Object.keys(DEFAULT_SEMANTIC_COLOR_MAPPINGS));
+  const knownTokens = new Set(Object.keys(mappings));
 
-  for (const [name, mapping] of Object.entries(DEFAULT_SEMANTIC_COLOR_MAPPINGS)) {
-    const lightRef = toColorRef(mapping);
-    const darkRef = toDarkColorRef(mapping);
-
-    const derivation = deriveDerivation(name, lightRef, knownTokens);
+  for (const [name, mapping] of Object.entries(mappings)) {
+    const derivation = deriveDerivation(name, mapping.light, knownTokens);
     const binding = derivationToBinding(derivation);
     const parent = derivationParent(derivation);
 
+    let lightRef = DERIVED_PLACEHOLDER;
+    let darkRef = DERIVED_PLACEHOLDER;
+    if (derivation.kind === 'scale') {
+      if (!mapping.light || !mapping.dark) {
+        throw new Error(
+          `semantic generator: top-of-tree token "${name}" has no light or dark step`,
+        );
+      }
+      lightRef = mapping.light;
+      darkRef = mapping.dark;
+    }
+    const darkBinding = deriveDarkBinding(derivation, name, lightRef, darkRef);
+
     const darkName = `${name}--dark`;
-    const darkBinding = deriveDarkBinding(derivation, name, darkRef);
-    const darkParent = derivationParent(derivation, '--dark');
+    const darkParent = derivation.kind === 'scale' ? name : derivationParent(derivation, '--dark');
 
     const dependsOn: string[] = [parent, darkName];
 
@@ -190,7 +239,12 @@ export function generateSemanticTokens(_config: ResolvedSystemConfig): Generator
       trustLevel: mapping.trustLevel,
       consequence: mapping.consequence,
       dependsOn,
-      description: `${mapping.meaning}. Light: ${lightRef.family}-${lightRef.position}.`,
+      // A derived token's description gains its step once generateBaseSystem
+      // has settled its value.
+      description:
+        derivation.kind === 'scale'
+          ? semanticDescription(mapping.meaning, lightRef)
+          : `${mapping.meaning}.`,
       generatedAt: timestamp,
       containerQueryAware: true,
       userOverride: null,

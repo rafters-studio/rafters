@@ -25,7 +25,8 @@
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
-import type { BadgeSize, BadgeVariant } from './badge.behavior';
+import type { PartIds } from '../../lib/contract';
+import { badge, type BadgePart, type BadgeSize, type BadgeVariant } from './badge.behavior';
 import { badgeClasses } from './badge.classes';
 
 export { badgeVariants } from './badge.classes';
@@ -50,12 +51,27 @@ export { badgeVariants } from './badge.classes';
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Visual variant. Oracle's full vocabulary (contract, boundary 9). */
   variant?: BadgeVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: BadgeSize;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+  /** Decorative icon after the label (before it on a right-to-left page). Hidden from assistive technology. */
+  endIcon?: React.ReactNode;
 }
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ variant = 'default', size = 'default', className, ...props }, ref) => {
-    const classes = badgeClasses({ variant, size }, {});
+  (
+    { variant, size = 'default', fill, surface, className, startIcon, endIcon, children, ...props },
+    ref,
+  ) => {
+    const classes = badgeClasses({ variant, size, fill, surface }, {});
+    const uid = React.useId();
+    const ids = {} as PartIds<BadgePart>;
+    for (const part of Object.keys(badge.parts) as BadgePart[]) ids[part] = `${uid}-${part}`;
+    const aria = badge.aria({}, { variant, size }, ids);
 
     return (
       <span
@@ -64,7 +80,31 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
         data-slot="badge"
         className={classy(classes.root, className)}
         {...props}
-      />
+      >
+        {startIcon != null && startIcon !== false ? (
+          <span
+            data-part="startIcon"
+            data-icon="inline-start"
+            id={ids.startIcon}
+            className={classes.startIcon}
+            {...aria.startIcon}
+          >
+            {startIcon}
+          </span>
+        ) : null}
+        {children}
+        {endIcon != null && endIcon !== false ? (
+          <span
+            data-part="endIcon"
+            data-icon="inline-end"
+            id={ids.endIcon}
+            className={classes.endIcon}
+            {...aria.endIcon}
+          >
+            {endIcon}
+          </span>
+        ) : null}
+      </span>
     );
   },
 );

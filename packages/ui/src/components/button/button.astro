@@ -56,6 +56,10 @@ import type { PartIds } from '../../lib/contract';
 interface Props {
   id: string;
   variant?: ButtonVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the variant's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
   toggle?: boolean;
@@ -70,7 +74,9 @@ interface Props {
 
 const {
   id,
-  variant = 'default',
+  variant: variantProp,
+  fill,
+  surface,
   size = 'default',
   type = 'button',
   toggle = false,
@@ -82,9 +88,13 @@ const {
   label,
   'aria-label': ariaLabel,
 } = Astro.props;
+const variant = variantProp ?? 'default';
 
 const config: ButtonConfig = {
   variant,
+  fill,
+  // An explicit variant, `default` included, beats surface (FR-RAF-FILL-004).
+  surface: variantProp === undefined ? surface : undefined,
   size,
   toggle,
   defaultPressed,
@@ -130,9 +140,35 @@ const aria = button.aria(state, config, ids);
       </svg>
     )
   }
+  {
+    Astro.slots.has('start-icon') && (
+      <span
+        data-part="startIcon"
+        data-icon="inline-start"
+        id={ids.startIcon}
+        class={classes.startIcon}
+        {...aria.startIcon}
+      >
+        <slot name="start-icon" />
+      </span>
+    )
+  }
   <span data-part="label" id={ids.label}>
     {label}<slot />
   </span>
+  {
+    Astro.slots.has('end-icon') && (
+      <span
+        data-part="endIcon"
+        data-icon="inline-end"
+        id={ids.endIcon}
+        class={classes.endIcon}
+        {...aria.endIcon}
+      >
+        <slot name="end-icon" />
+      </span>
+    )
+  }
 </button>
 
 <script>

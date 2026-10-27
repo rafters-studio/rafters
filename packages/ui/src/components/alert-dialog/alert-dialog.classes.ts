@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { AlertDialogConfig, AlertDialogState } from './alert-dialog.behavior';
 
 export interface AlertDialogClassSet {
@@ -33,6 +34,9 @@ const overlayClasses =
 
 const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-center p-4';
 
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-surface-card';
+
 // data-[state=closed]:pointer-events-none -- the ratified motion ruling's taste
 // residue: while a closing surface is held present through its exit window
 // (usePresence defers the unmount), it must not swallow clicks.
@@ -43,20 +47,21 @@ const containerClasses = 'fixed inset-0 z-depth-modal flex items-center justify-
 // Enter/exit is PRESENCE (#1996): the node MOUNTS with its keyframe attached
 // and runs it, and usePresence holds the unmount until the exit keyframe ends.
 //
-// NO extent-pop CLASS. The extent rides with the SHAPE -- the scale-in and
+// NO POP EXTENT CLASS. The extent rides with the SHAPE -- the scale-in and
 // scale-out keyframes read the pop extent themselves -- so naming it here would
 // be a second writer for one knob.
 //
-// NO motion-reduce:animate-none. Reduced motion is handled on the duration
-// leaf, which the generated animation reads through it. animate-none here would
+// NO reduced-motion animation escape. Reduced motion is handled on the
+// duration leaf, which the generated animation reads through it. An animation
+// reset here would
 // reset the shorthand, discard the zeroed duration with it, and strand the
 // element short of the keyframe's end state.
 const contentClasses =
-  'relative grid w-full max-w-lg gap-4 rounded-lg border border-card-border bg-card p-6 text-card-foreground shadow-lg ' +
+  'relative grid w-full max-w-lg gap-4 rounded-lg border p-6 shadow-lg ' +
   'data-[state=open]:animate-scale-in-normal-enter data-[state=closed]:animate-scale-out-moderate-exit ' +
   'data-[state=closed]:pointer-events-none';
 
-const headerClasses = 'flex flex-col space-y-2 text-center @md:text-left';
+const headerClasses = 'flex flex-col space-y-2 text-center @md:text-start';
 
 const footerClasses = 'flex flex-col-reverse @md:flex-row @md:justify-end @md:space-x-2';
 
@@ -84,13 +89,13 @@ const cancelClasses =
   'disabled:pointer-events-none disabled:opacity-50 @md:mt-0';
 
 export function alertDialogClasses(
-  _config: AlertDialogConfig,
+  config: AlertDialogConfig,
   _state: AlertDialogState,
 ): AlertDialogClassSet {
   return {
     overlay: overlayClasses,
     container: containerClasses,
-    content: contentClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     header: headerClasses,
     footer: footerClasses,
     title: titleClasses,

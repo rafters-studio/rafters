@@ -60,7 +60,7 @@ If the project doesn't want the shared composite at all, removing it from the ar
 
 Four path fields share this shape:
 
-- `componentsPath` -- UI components (`<rafters-button>`, `<rafters-card>`)
+- `componentsPath` -- UI components (Button, Card)
 - `primitivesPath` -- composition primitives (block-handler, color-picker)
 - `compositesPath` -- composite manifests (login-form, hero-banner)
 - `rulesPath` -- validation rules (required, email, password)

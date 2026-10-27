@@ -3,13 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  contrastPlugin,
   generateBaseSystem,
-  invertPlugin,
   registryToCompiled,
-  scalePlugin,
-  statePlugin,
   TokenRegistry,
+  REGISTRY_PLUGINS,
 } from '@rafters/design-tokens';
 import {
   skeletonBaseClasses,
@@ -82,12 +79,7 @@ describe('skeleton classes', () => {
         join(fixtureDir, 'probe.classes.ts'),
         `export const x = '${skeletonBaseClasses} motion-modal-in';\n`,
       );
-      const registry = new TokenRegistry(generateBaseSystem({}).allTokens, [
-        scalePlugin,
-        contrastPlugin,
-        statePlugin,
-        invertPlugin,
-      ]);
+      const registry = new TokenRegistry(generateBaseSystem({}).allTokens, REGISTRY_PLUGINS);
       css = await registryToCompiled(registry, { contentSources: [fixtureDir] });
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });

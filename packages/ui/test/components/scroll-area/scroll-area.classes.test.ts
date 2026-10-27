@@ -41,7 +41,7 @@ describe('scroll-area classes', () => {
     const vertical = scrollBarClasses('vertical');
     expect(vertical.bar).toContain(scrollBarBaseClasses);
     expect(vertical.bar).toContain('w-2.5');
-    expect(vertical.bar).toContain('border-l');
+    expect(vertical.bar).toContain('border-s');
     expect(vertical.thumb).toBe(scrollBarThumbClasses);
 
     const horizontal = scrollBarClasses('horizontal');

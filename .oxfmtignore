@@ -1,6 +1,8 @@
 # The whole .rafters/ directory is tool-managed: config.rafters.json is rewritten
 # by `rafters add`, tokens/ by Studio, output/ by the exporters. None is authored.
 apps/demo/.rafters/
+# A project's .rafters as `rafters init` wrote it at 9295c300 (#2825), kept byte for byte.
+packages/cli/test/fixtures/init-9295c300/
 plugin/bin/
 
 # Installed component surface -- written by `rafters add`, not authored here.

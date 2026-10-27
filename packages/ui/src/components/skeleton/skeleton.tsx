@@ -17,10 +17,10 @@
  * @example
  * ```tsx
  * // Text skeleton
- * <Skeleton className="h-4 w-48" />
+ * <Skeleton style={{ height: '1rem', width: '12rem' }} />
  *
  * // Avatar skeleton
- * <Skeleton className="h-12 w-12 rounded-full" />
+ * <Skeleton style={{ height: '3rem', width: '3rem', borderRadius: '9999px' }} />
  * ```
  */
 import * as React from 'react';
@@ -28,11 +28,16 @@ import classy from '../../primitives/classy';
 import { skeleton, type SkeletonConfig } from './skeleton.behavior';
 import { skeletonClasses } from './skeleton.classes';
 
-export type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
+export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
+}
 
 export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, ...props }, ref) => {
-    const config: SkeletonConfig = {};
+  ({ fill, surface, className, ...props }, ref) => {
+    const config: SkeletonConfig = { fill, surface };
     const classes = skeletonClasses(config, {});
 
     // A static score: aria-hidden is a constant, no state, no ids, no effects.

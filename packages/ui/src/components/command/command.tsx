@@ -88,9 +88,15 @@ export interface CommandProps extends Omit<React.HTMLAttributes<HTMLDivElement>,
   onValueChange?: (value: string) => void;
   /** Accessible name for the listbox popup. */
   label?: string | undefined;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 export function Command({
+  fill,
+  surface,
   children,
   value,
   defaultValue = '',
@@ -99,7 +105,7 @@ export function Command({
   className,
   ...props
 }: CommandProps) {
-  const config: CommandConfig = { value, defaultValue, label };
+  const config: CommandConfig = { value, defaultValue, label, fill, surface };
 
   const { memory, dispatch } = React.useMemo(() => createBehavior(command, config), []);
   const state = useMemory(memory);
@@ -374,21 +380,38 @@ export interface CommandItemProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   value?: string;
   disabled?: boolean;
   onSelect?: (value: string) => void;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function CommandItem({
   value: itemValue,
   disabled = false,
   onSelect,
+  startIcon,
   className,
   children,
   onClick,
   onPointerMove,
   ...props
 }: CommandItemProps) {
-  const { state, config, request, itemId, classes } = useCommandContext('CommandItem');
+  const {
+    state,
+    config,
+    request,
+    itemId,
+    classes,
+    aria: contextAria,
+  } = useCommandContext('CommandItem');
   const computedValue = itemValue ?? (typeof children === 'string' ? children : '');
   const aria = commandItemAria(computedValue, state, config);
+  // The row's columns are icon, label, shortcut: a CommandShortcut child is the
+  // end column, everything else is the label.
+  const parts = React.Children.toArray(children);
+  const isShortcut = (child: React.ReactNode) =>
+    React.isValidElement(child) && child.type === CommandShortcut;
+  const label = parts.filter((child) => !isShortcut(child));
+  const shortcuts = parts.filter(isShortcut);
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     onClick?.(event);
@@ -418,7 +441,20 @@ export function CommandItem({
       {...aria}
       {...props}
     >
-      {children}
+      {startIcon != null && startIcon !== false ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...contextAria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
+      <span data-part="label" className={classes.label}>
+        {label}
+      </span>
+      {shortcuts}
     </div>
   );
 }

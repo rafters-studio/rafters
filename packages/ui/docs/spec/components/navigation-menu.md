@@ -18,8 +18,8 @@ Files (`src/components/navigation-menu/`):
 navigation-menu.classes.ts    navigation-menu.behavior.ts    navigation-menu.tsx
 ```
 
-Tests mirror into `test/components/navigation-menu/`. WC and Astro
-performances not yet written (same debt as button and dialog).
+Tests mirror into `test/components/navigation-menu/`. The Astro
+performance is not yet written (same debt as button and dialog).
 
 ## What the score owns vs what effects own
 
@@ -35,6 +35,8 @@ reducers, one keymap, one effects function.
 
 ```ts
 interface NavigationMenuConfig {
+  fill?: string;    // exactly one bg-fill-* token (see Fill and surface)
+  surface?: string; // a surface name
   value?: string;          // controlled ('' = none)
   defaultValue?: string;
   orientation?: 'horizontal' | 'vertical'; // default horizontal
@@ -58,6 +60,18 @@ accepted dispatch actually moved the effective value — read intrinsic state
 after the reducer, compare with effective before. No duplicated reducer
 logic in the binding.
 
+### Fill and surface
+
+`NavigationMenuContent` takes `fill` and `surface`, which change the surface of its panel
+(`navigation-menu.classes.ts:218`):
+
+- The base surface is `bg-popover text-popover-foreground`.
+- `fill` takes exactly one `bg-fill-*` token and replaces the base. Any other
+  value is dropped with a console warning and the base stands.
+- `surface` names a generated surface (`surface="card"` renders
+  `bg-surface-card`) and replaces the base. An unknown name is ignored.
+- Precedence: fill, then surface, then the base.
+
 ## Parts
 
 | Part | Multiplicity | Notes |
@@ -66,6 +80,8 @@ logic in the binding.
 | list | one | `<ul>`, roving-focus region |
 | trigger | many | native button; data-value, data-roving-item; per-instance aria via `navTriggerAria` |
 | content | many | ALWAYS in the DOM, `hidden` when closed — navigation links must be crawlable and SSR-stable |
+
+| startIcon, endIcon | many, optional | decorative wrappers, one pair per trigger and per link; `aria-hidden="true"` |
 
 Item/Link/chevron are presentation (no behavior state). Viewport and
 Indicator: deferred, needs ruling (decorative chrome; no consumers exist).
@@ -78,6 +94,42 @@ projections for `many` parts.
 
 **Second amendment (applied):** `keymap` now takes `config` — ArrowDown
 opens only when the roving axis is horizontal, which is a config fact.
+
+## Icons beside a label
+
+Two optional props place decorative icons around the label of each trigger and each link, in reading order, the same as Button: `startIcon` and `endIcon`.
+
+| Target | Start icon | End icon |
+| --- | --- | --- |
+| React | `startIcon: ReactNode` on `NavigationMenuTrigger` and `NavigationMenuLink` | `endIcon: ReactNode` |
+| Astro | slot `<value>:start-icon` for a trigger, `<value>:<link index>:start-icon` for a link | `:end-icon` in place of `:start-icon` |
+
+The Astro component is data-driven (`items`), so its slot names carry the item value, and the link index for a link, to say which row the icon belongs to.
+
+```html
+<button data-part="trigger" class="inline-grid grid-flow-col items-center gap-1 ...">
+  <span data-part="startIcon" data-icon="inline-start" aria-hidden="true">...</span>
+  Products
+  <span data-part="endIcon" data-icon="inline-end" aria-hidden="true">...</span>
+  <svg aria-hidden="true">...</svg> <!-- the chevron, last -->
+</button>
+```
+
+- `startIcon` and `endIcon` are optional parts, present only when an icon is given. The behavior projects `aria-hidden="true"` on each, so the markup is hidden from assistive technology before any script runs; the label is the accessible name.
+- The trigger is `inline-grid grid-flow-col` and the link is `grid grid-flow-col`, so the start icon is on the right on a `dir="rtl"` page. The gap replaces the chevron's `ml-1`, and the viewport, indicator and panel anchor with `start-0`. The file has no physical direction class.
+- A link without an icon keeps its stacked layout (`block space-y-1`), so a title over a description still stacks. A link that holds an icon wrapper becomes a grid row (`has-data-[icon]:grid has-data-[icon]:grid-flow-col`, with `space-y-0`).
+- Inline padding tightens on the icon's side only, with `has-data-[icon=inline-start]:ps-*` and `has-data-[icon=inline-end]:pe-*`.
+- Rafters does not size icons. The wrapper (`inline-grid place-items-center`) only places and hides.
+- Icons that carry meaning on their own need an accessible name, not `aria-hidden`; they do not belong in these props.
+
+## Top-level link
+
+A `NavigationMenuLink` that sits directly in a `NavigationMenuItem` in the bar matches the trigger beside it with no prop and no `className`, because the two are peer items in one bar and a props-only consumer has no other way to make them match (#2659).
+
+- The link class carries the trigger's type role, height and alignment scoped to a link directly in the item: `[li>&]:text-label-medium [li>&]:ts-label-medium [li>&]:h-11 @md:[li>&]:h-10 [li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:px-4 [li>&]:py-2`. Its font-size, font-weight, line-height and height equal the trigger's.
+- A link inside a `NavigationMenuContent` panel is not a direct child of the item, so it keeps its own type and the stacked title-over-description layout.
+- The selector is in the classes, so React and Astro read the same rule.
+- `navigationMenuTriggerStyle()` stays as the shadcn export; a top-level link no longer needs it.
 
 ## Keyboard
 
@@ -121,7 +173,7 @@ restarts the executor with fresh timers.
 | inline `visibility/height/overflow` hide-state on content | defect-do-not-port — controller-era SSR workaround; `hidden` from the projection does the job |
 | `aria-hidden` alongside `hidden` on content | simplified — `hidden` suffices |
 | Viewport / Indicator components, `forceMount` | contract (ruled 2026-07-03: shadcn surface is the floor). Declared as optional parts; chrome state projected by the score (viewport data-state open/closed, indicator visible/hidden, aria-hidden). Oracle's inline visibility/height hide-state not ported; `hidden` while closed under forceMount |
-| `navigationMenuTriggerStyle()` | contract (shadcn export; thin view over the trigger classes) |
+| `navigationMenuTriggerStyle()` | contract (shadcn export; thin view over the trigger classes). A top-level link matches the trigger without it (see Top-level link) |
 | typeahead | never existed in the oracle; menubar-pattern concern, not disclosure nav — not ported |
 
 ## Deltas that need Sean's eye

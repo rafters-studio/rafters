@@ -61,11 +61,13 @@ export function log(event: Record<string, unknown>): void {
       context.spinner?.succeed(`Saved ${event.namespaceCount} namespaces`);
       break;
 
-    case 'init:css_updated':
-      console.log(`  Updated: ${event.cssPath}`);
+    case 'init:css_replaced':
+    case 'init:css_created':
+      console.log(`  ${event.message}`);
       break;
 
-    case 'init:css_not_found':
+    case 'init:framework_note':
+    case 'add:framework_note':
       console.log(`\n  Note: ${event.message}`);
       break;
 
@@ -301,6 +303,25 @@ export function log(event: Record<string, unknown>): void {
 
     case 'add:error':
       context.spinner?.fail(event.message as string);
+      break;
+
+    // Remove events
+    case 'remove:start':
+      context.spinner = ora(`Removing ${event.component}...`).start();
+      break;
+
+    case 'remove:removed': {
+      context.spinner?.succeed(`Removed ${event.component}`);
+      context.spinner = null;
+      const files = event.files as string[];
+      for (const file of files) {
+        console.log(`    ${file}`);
+      }
+      break;
+    }
+
+    case 'remove:complete':
+      console.log('');
       break;
 
     // Import events

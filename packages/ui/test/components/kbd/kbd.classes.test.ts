@@ -10,7 +10,8 @@ describe('kbd classes', () => {
     const classes = root({});
     expect(classes).toContain('inline-flex');
     expect(classes).toContain('rounded');
-    expect(classes).toContain('border border-border');
+    expect(classes).toContain('border');
+    expect(classes).toContain('border-border');
     expect(classes).toContain('bg-muted');
     expect(classes).toContain('ts-code-small');
     expect(classes).toContain('text-muted-foreground');

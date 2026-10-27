@@ -1,4 +1,8 @@
+import { resolve } from 'node:path';
+import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { badgeClasses, badgeVariants } from '../../../src/components/badge/badge.classes';
 import type { BadgeSize, BadgeVariant } from '../../../src/components/badge/badge.behavior';
 
@@ -56,9 +60,9 @@ describe('badge classes', () => {
     expect(root('default', 'lg')).toContain('ts-label-medium');
   });
 
-  it('base shape is a pill: inline-flex, centered, fully rounded', () => {
+  it('base shape is a pill: inline-grid, centered, fully rounded', () => {
     const classes = root();
-    expect(classes).toContain('inline-flex');
+    expect(classes).toContain('inline-grid');
     expect(classes).toContain('items-center');
     expect(classes).toContain('justify-center');
     expect(classes).toContain('rounded-full');
@@ -114,4 +118,78 @@ describe('badge sizes to its content', () => {
     expect(badgeVariants()).toContain('w-fit');
     expect(badgeVariants({ variant: 'outline', size: 'lg' })).toContain('w-fit');
   });
+});
+
+describe('badge icons', () => {
+  it('the root is a grid whose columns follow reading order, with no physical direction', () => {
+    const classes = root();
+    const tokens = classes.split(' ');
+    for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-1']) {
+      expect(tokens).toContain(literal);
+    }
+    expect(tokens).not.toContain('inline-flex');
+    expect(classes).not.toMatch(/(^|\s)(p[lr]|m[lr]|left|right|float)-/);
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    const { startIcon, endIcon } = badgeClasses({}, {});
+    expect(startIcon).toBe('inline-grid place-items-center');
+    expect(endIcon).toBe('inline-grid place-items-center');
+  });
+
+  it('padding tightens per side with logical classes on every size', () => {
+    for (const size of SIZES) {
+      const classes = root('default', size);
+      expect(classes).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(classes).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+    }
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const size of SIZES) {
+      const set = badgeClasses({ size }, {});
+      const kept = classy(set.root).split(' ');
+      const added = set.root
+        .split(' ')
+        .filter((c) => c.includes('has-data-') || c === 'inline-grid' || c === 'grid-flow-col');
+      expect(added.length).toBeGreaterThan(2);
+      for (const literal of added) {
+        expect(kept, `classy dropped ${literal}`).toContain(literal);
+      }
+      expect(classy(set.startIcon)).toBe(set.startIcon);
+      expect(classy(set.endIcon)).toBe(set.endIcon);
+    }
+  });
+});
+
+/**
+ * Tailwind drops a malformed candidate SILENTLY -- no warning, no rule. This
+ * points the real Tailwind CLI at the real component directory and checks the
+ * emitted sheet, the same way the button classes test does.
+ */
+const escapeCandidate = (candidate: string): string =>
+  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
+
+describe('badge icon candidates compile', () => {
+  it('every icon candidate became a real rule, on logical edges', async () => {
+    const system = generateBaseSystem({});
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+    const css = await registryToCompiled(registry, {
+      contentSources: [resolve(import.meta.dirname, '../../../src/components/badge')],
+    });
+    const candidates = [
+      ...SIZES.flatMap((size) => badgeClasses({ size }, {}).root.split(' ')),
+      ...badgeClasses({}, {}).startIcon.split(' '),
+    ].filter(
+      (c) =>
+        c.includes('data-[icon') ||
+        c === 'inline-grid' ||
+        c === 'grid-flow-col' ||
+        c === 'place-items-center',
+    );
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+    expect(css).toMatch(/padding-inline-start/);
+    expect(css).toMatch(/padding-inline-end/);
+  }, 120_000);
 });

@@ -2,11 +2,11 @@
 
 Corners tell you who made this. Apple rounds everything. Audi sharpens everything. Your brand's corners are your brand's personality at the pixel level.
 
-## Four Corners, One Decision
+## One Base
 
-Every component has four corner radii. They all default to `radius-base`. Override one corner and every component in the system gets the override.
+Every radius in the system derives from `radius-base`, which itself derives from `spacing-base` (1.5 times it by default). Change it and every `rounded-*` utility moves, because each one reads its token through `var(--rafters-radius-*)`. Bare `rounded` is the registry's `radius` token. No component files are touched.
 
-A Star Wars game sets `radius-br: 0` and every card, button, and input gets a sharp bottom-right cutout. The angular aesthetic propagates from one token change. No component files touched.
+The registry also holds per-corner tokens (`radius-tl`, `radius-lg-br` and the rest), written to `:root` as `--rafters-radius-*`. No Tailwind utility reads them: `rounded-tl-lg` sets one corner from `radius-lg`, like every other corner utility. Overriding `radius-br` alone changes nothing a component renders today.
 
 <!-- VENEER: Four interactive corner controls on a card. Drag any corner from 0 to full. The card updates in real time. Below the card, show a button, input, and badge all responding to the same corner values. One change, system-wide effect. -->
 

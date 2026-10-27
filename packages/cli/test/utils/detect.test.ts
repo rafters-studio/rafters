@@ -2,7 +2,13 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { detectProject, findCssPath, isTailwindV3 } from '../../src/utils/detect.js';
+import {
+  detectProject,
+  findCssPath,
+  frameworkToTarget,
+  isTailwindV3,
+  SELECTABLE_FRAMEWORKS,
+} from '../../src/utils/detect.js';
 
 describe('detectProject', () => {
   const testDir = join(tmpdir(), 'rafters-test-detect-project');
@@ -58,23 +64,55 @@ describe('detectProject', () => {
       expect((await detectProject(testDir)).framework).toBe('astro');
     });
 
-    it('detects wc from lit without React', async () => {
+    it('detects Preact in a Vite + Preact project, ahead of vite', async () => {
+      await writeFile(
+        join(testDir, 'package.json'),
+        JSON.stringify({ dependencies: { preact: '^11' }, devDependencies: { vite: '^7' } }),
+      );
+      expect((await detectProject(testDir)).framework).toBe('preact');
+      expect(frameworkToTarget('preact')).toBe('react');
+    });
+
+    it('detects Preact without vite', async () => {
+      await writeFile(
+        join(testDir, 'package.json'),
+        JSON.stringify({ dependencies: { preact: '^11' } }),
+      );
+      expect((await detectProject(testDir)).framework).toBe('preact');
+    });
+
+    it('does not report Preact when react is also a dependency', async () => {
+      await writeFile(
+        join(testDir, 'package.json'),
+        JSON.stringify({ dependencies: { preact: '^11', react: '^19', vite: '^7' } }),
+      );
+      expect((await detectProject(testDir)).framework).toBe('vite');
+    });
+
+    it('lists preact as a selectable framework', () => {
+      expect(SELECTABLE_FRAMEWORKS).toContain('preact');
+    });
+
+    it('falls through to unknown for lit without React', async () => {
       await writeFile(
         join(testDir, 'package.json'),
         JSON.stringify({ dependencies: { lit: '^3.0.0' } }),
       );
-      expect((await detectProject(testDir)).framework).toBe('wc');
+      expect((await detectProject(testDir)).framework).toBe('unknown');
     });
 
-    it('detects wc from @lit/* scoped packages without React', async () => {
+    it('falls through to vite for lit without React in a vite project', async () => {
       await writeFile(
         join(testDir, 'package.json'),
-        JSON.stringify({ dependencies: { '@lit/reactive-element': '^2.0.0' } }),
+        JSON.stringify({
+          dependencies: { '@lit/reactive-element': '^2.0.0' },
+          devDependencies: { vite: '^6.0.0' },
+        }),
       );
-      expect((await detectProject(testDir)).framework).toBe('wc');
+      expect((await detectProject(testDir)).framework).toBe('vite');
     });
 
-    it('prefers React over wc when lit + react are both present', async () => {
+    it('detects vite when lit + react are both present', async () => {
       await writeFile(
         join(testDir, 'package.json'),
         JSON.stringify({
@@ -90,8 +128,7 @@ describe('detectProject', () => {
         join(testDir, 'package.json'),
         JSON.stringify({ dependencies: { lit: '^3.0.0', react: '^19.0.0' } }),
       );
-      // Confirms the wc gate is `!react`, not "no vite". With react present
-      // and no other framework signal, neither branch matches -- expect unknown.
+      // lit is not a framework signal, and react alone is not one either.
       expect((await detectProject(testDir)).framework).toBe('unknown');
     });
 
@@ -363,11 +400,11 @@ describe('findCssPath', () => {
   });
 
   it('returns the first existing path in framework order', async () => {
-    // wc cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css']
+    // vanilla cssLocations: ['src/index.css', 'src/main.css', 'src/styles.css', 'styles/global.css']
     await mkdir(join(testDir, 'src'), { recursive: true });
     await writeFile(join(testDir, 'src/main.css'), '');
     await writeFile(join(testDir, 'src/styles.css'), '');
-    expect(findCssPath(testDir, 'wc')).toBe('src/main.css');
+    expect(findCssPath(testDir, 'vanilla')).toBe('src/main.css');
   });
 
   it('returns null when no candidate exists', async () => {

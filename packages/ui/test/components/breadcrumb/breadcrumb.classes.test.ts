@@ -1,6 +1,11 @@
+import { resolve } from 'node:path';
+import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import {
   breadcrumbEllipsisClasses,
+  breadcrumbIconClasses,
   breadcrumbItemClasses,
   breadcrumbLinkClasses,
   breadcrumbListClasses,
@@ -41,7 +46,7 @@ describe('breadcrumb classes', () => {
   });
 
   it('the current page reads with the foreground token, not muted', () => {
-    expect(breadcrumbPageClasses).toBe('text-foreground');
+    expect(breadcrumbPageClasses.split(' ')).toContain('text-foreground');
   });
 
   it('the separator sizes its icon; the ellipsis centres its glyph', () => {
@@ -61,4 +66,64 @@ describe('breadcrumb classes', () => {
       expect(cls).not.toMatch(/\[[a-z0-9.#]+\]/);
     }
   });
+});
+
+describe('breadcrumb icon classes', () => {
+  it('the link and the page are grids whose columns follow reading order', () => {
+    for (const cls of [breadcrumbLinkClasses, breadcrumbPageClasses]) {
+      const tokens = cls.split(' ');
+      for (const literal of ['inline-grid', 'grid-flow-col', 'items-center', 'gap-1.5']) {
+        expect(tokens).toContain(literal);
+      }
+      expect(cls).not.toMatch(/(^|\s)(p[lr]|m[lr]|left|right|float)-/);
+    }
+  });
+
+  it('padding tightens per side with logical classes', () => {
+    for (const cls of [breadcrumbLinkClasses, breadcrumbPageClasses]) {
+      expect(cls).toContain('has-data-[icon=inline-start]:ps-0');
+      expect(cls).toContain('has-data-[icon=inline-end]:pe-0');
+    }
+  });
+
+  it('the icon wrapper only places and hides, never sizes', () => {
+    expect(breadcrumbIconClasses).toBe('inline-grid place-items-center');
+  });
+
+  it('classy keeps every new literal', () => {
+    for (const cls of [breadcrumbLinkClasses, breadcrumbPageClasses, breadcrumbIconClasses]) {
+      const kept = classy(cls).split(' ');
+      for (const literal of cls.split(' ')) {
+        expect(kept, `classy dropped ${literal}`).toContain(literal);
+      }
+    }
+  });
+});
+
+const escapeCandidate = (candidate: string): string =>
+  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
+
+describe('breadcrumb icon candidates compile', () => {
+  it('every icon candidate became a real rule, on logical edges', async () => {
+    const system = generateBaseSystem({});
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+    const css = await registryToCompiled(registry, {
+      contentSources: [resolve(import.meta.dirname, '../../../src/components/breadcrumb')],
+    });
+    const candidates = [
+      ...breadcrumbLinkClasses.split(' '),
+      ...breadcrumbPageClasses.split(' '),
+      ...breadcrumbIconClasses.split(' '),
+    ].filter(
+      (c) =>
+        c.includes('data-[icon') ||
+        c === 'inline-grid' ||
+        c === 'grid-flow-col' ||
+        c === 'place-items-center',
+    );
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+    expect(css).toMatch(/padding-inline-start/);
+    expect(css).toMatch(/padding-inline-end/);
+  }, 120_000);
 });

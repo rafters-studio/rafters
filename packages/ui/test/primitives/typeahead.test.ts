@@ -613,6 +613,23 @@ describe('highlightMatch', () => {
     cleanup();
   });
 
+  it('inserts element text as text, never as markup (#2193)', () => {
+    element.textContent = '<b>x</b>';
+
+    const cleanup = highlightMatch(element, 'x');
+
+    expect(element.querySelector('b')).toBeNull();
+    const marks = element.querySelectorAll('mark');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.textContent).toBe('x');
+    expect(element.textContent).toBe('<b>x</b>');
+
+    cleanup();
+
+    expect(element.textContent).toBe('<b>x</b>');
+    expect(element.querySelector('mark')).toBeNull();
+  });
+
   it('returns no-op in SSR environment', () => {
     const originalWindow = globalThis.window;
     // @ts-expect-error Testing SSR

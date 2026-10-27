@@ -117,7 +117,7 @@ const rootAria = toggleGroup.aria(state, config, ids);
   {...rootAria.root}
 >
   {
-    items.map((item) => (
+    items.map(async (item) => (
       <button
         type="button"
         data-part="item"
@@ -127,7 +127,27 @@ const rootAria = toggleGroup.aria(state, config, ids);
         class={classes.item}
         {...toggleItemAria(item.value, state, config)}
       >
+        {Astro.slots.has(`start-icon-${item.value}`) && (
+          <span
+            data-part="startIcon"
+            data-icon="inline-start"
+            class={classes.startIcon}
+            {...rootAria.startIcon}
+          >
+            <Fragment set:html={await Astro.slots.render(`start-icon-${item.value}`)} />
+          </span>
+        )}
         {item.label}
+        {Astro.slots.has(`end-icon-${item.value}`) && (
+          <span
+            data-part="endIcon"
+            data-icon="inline-end"
+            class={classes.endIcon}
+            {...rootAria.endIcon}
+          >
+            <Fragment set:html={await Astro.slots.render(`end-icon-${item.value}`)} />
+          </span>
+        )}
       </button>
     ))
   }

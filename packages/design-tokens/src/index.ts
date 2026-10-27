@@ -23,7 +23,18 @@ export {
 export { classifyDeclarations } from './importers/classify.js';
 export { importColorFamily } from './importers/color.js';
 export { colorsFromClassification } from './importers/colors.js';
-export { type DetectedFont, type FontSource, detectFonts } from './importers/fonts.js';
+export {
+  type ResolvedCustomProperty,
+  resolveCustomProperties,
+  resolvePaletteStep,
+} from './importers/custom-properties.js';
+export { detectFamilySeeds } from './importers/family-seeds.js';
+export {
+  type DetectedFont,
+  detectFontImports,
+  detectFonts,
+  type FontSource,
+} from './importers/fonts.js';
 export { senseShadcnCss } from './importers/sense.js';
 export { extractShadcnRoot } from './importers/shadcn.js';
 export {
@@ -63,12 +74,21 @@ export {
   calcPlugin,
   contrastPlugin,
   invertPlugin,
+  mirrorPlugin,
+  REGISTRY_PLUGINS,
   scalePlugin,
+  shadowRungPlugin,
   statePlugin,
 } from './plugins/index.js';
 export {
+  LiteralColourError,
+  MissingReasonError,
   type RegistryFilter,
   TokenParseError,
   TokenRegistry,
+  NameTakenError,
+  TokenInUseError,
+  TokenNameError,
+  UndeletableTokenError,
   UnknownTokenError,
 } from './registry.js';

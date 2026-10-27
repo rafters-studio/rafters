@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { AlertConfig, AlertState, AlertVariant } from './alert.behavior';
 
 export interface AlertClassSet {
@@ -32,7 +33,7 @@ export interface AlertClassSet {
  */
 const baseClasses =
   'relative w-full rounded-lg border p-4 animate-fade-in-normal-enter ' +
-  '[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&:has(svg)]:pl-11 [&>svg+div]:-translate-y-0.5';
+  'grid grid-cols-menu-row [&>svg]:col-start-2 [&>svg]:row-start-1 [&>svg]:row-span-2 [&>svg]:me-3 [&>svg+div]:-translate-y-0.5';
 
 /**
  * Subtle background paired with its OWN subtle-foreground token, never the
@@ -56,17 +57,23 @@ const variantClasses: Record<AlertVariant, string> = {
 
 /** Sub-parts are config-independent, so the framework file imports these
  *  literals directly (no context/provider needed for a flat static). */
-export const alertTitleClasses = 'mb-1 text-title-small ts-title-small leading-none';
+export const alertTitleClasses = 'col-start-3 mb-1 text-title-small ts-title-small leading-none';
 
-export const alertDescriptionClasses = 'text-body-small ts-body-small [&_p]:leading-relaxed';
+export const alertDescriptionClasses =
+  'col-start-3 text-body-small ts-body-small [&_p]:leading-relaxed';
 
-export const alertActionClasses = 'ml-auto shrink-0';
+export const alertActionClasses = 'col-start-4 row-start-1 row-span-2 ms-3 shrink-0';
 
 export function alertClasses(config: AlertConfig, _state: AlertState): AlertClassSet {
-  const variant = config.variant ?? 'default';
+  // Fill, then an explicit variant, then surface, then base (the default
+  // variant): an absent variant does not beat surface (FR-RAF-FILL-004).
+  const surface =
+    config.variant === undefined
+      ? classy.surface(config.surface, variantClasses.default)
+      : variantClasses[config.variant];
   // The class set carries only declared parts (Spec 01: Partial<Record<Part,
   // string>>); the sub-component literals above are the direct imports.
   return {
-    root: `${baseClasses} ${variantClasses[variant]}`,
+    root: `${baseClasses} ${classy.fill(config.fill, surface)}`,
   };
 }

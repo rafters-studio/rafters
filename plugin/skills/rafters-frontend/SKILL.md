@@ -1,7 +1,7 @@
 ---
 name: rafters-frontend
 description: Use when building or changing UI in a Rafters project. Rafters resembles Tailwind and shadcn but inverts them -- the designer's judgment is encoded in the components, so you compose patterns instead of authoring visual values. Supersedes generic frontend-design guidance inside a Rafters project.
-version: 0.4.3
+version: 0.5.4
 user-invocable: true
 ---
 
@@ -132,6 +132,42 @@ Container owns max-width, padding, and gap. Grid owns columns and column gap.
 | row | horizontal group |
 | stack | vertical sequence |
 
+## Surfaces and fills
+
+A component's surface is its background, text and border colour. Three props
+can set it, and you never write the colour classes yourself.
+
+- **`variant`** -- the component's own vocabulary (`destructive`, `outline`,
+  ...). Pick it by the situation and the recorded intent.
+- **`surface="<name>"`** -- a named surface, such as `surface="muted"` or
+  `surface="popover"`. It works like a variant: it swaps the base surface for
+  the `bg-surface-<name>` the system generates from that surface's own tokens,
+  so it follows the theme and dark mode. The names are the `surface-<name>`
+  entries in `.rafters/tokens/fill.rafters.json` (37 in a fresh project:
+  `background`, `card`, `panel`, `popover`, `muted`, `accent`, `primary`,
+  `destructive-subtle` and the rest). A name that is not a surface is ignored
+  and the base stays.
+- **`fill="bg-fill-<name>"`** -- exactly one fill token, written as its
+  `bg-fill-*` utility. Fills are recipes the designer authors in
+  `.rafters/tokens/fill.rafters.json` (every entry not named `surface-*`).
+  Use one that exists; never create, edit or invent a fill. Anything else --
+  `bg-red-500`, two classes, a bare word like `fill="background"` or
+  `fill="muted/50"` -- is dropped with a console warning and the component
+  paints its variant or base surface instead.
+
+Precedence, highest first: `fill`, then an explicit `variant`
+(`variant="default"` counts), then `surface`, then the component's base. A
+fill replaces the whole surface, including the variant's hover and active
+colours; structure, focus rings and state colours stay.
+
+Only the parts that are a plane take `fill` and `surface`: the root of Alert,
+Badge, Button, Card, Command, Container, Kbd, Skeleton and the Sidebar panel,
+Image's frame, and the content panel of Dialog, AlertDialog, Drawer, Sheet,
+Popover, HoverCard, Select, DropdownMenu, ContextMenu, Menubar, Combobox,
+DatePicker and NavigationMenu. Controls whose colour shows state (Switch,
+Slider, Tabs, Checkbox, RadioGroup, Toggle) take neither. Typography takes `color`,
+which names a text colour token (`color="muted-foreground"`), not a surface.
+
 ## Never -- and it is all one rule
 
 Every row is a write the hook rejects, and every row is the same move: reaching
@@ -141,7 +177,7 @@ past a pattern to a raw value.
 |---|---|---|
 | `flex`, `grid`, `gap-*`, `items-*`, `justify-*` | `Container` / `Grid` | the spatial system |
 | `p-*`, `m-*`, `px-*`, `mt-*` | `Container` | the spacing rhythm |
-| `bg-primary`, `text-destructive`, `border-success` | composite block variant, or component `variant` | what that color *means* here |
+| `bg-primary`, `text-destructive`, `border-success` | composite block variant, or the component's `variant`, `surface` or `fill` | what that color *means* here |
 | `text-sm`, `text-4xl`, `font-bold` | native HTML in `<Container as="article">` | the type scale |
 | `rounded-*`, `shadow-*`, `w-*`, `h-*`, `max-w-*` | component-owned; leave them | the radius and depth decisions |
 | `w-[300px]`, `text-[14px]`, `bg-[#hex]` | tokens | everything -- these are outside the system |

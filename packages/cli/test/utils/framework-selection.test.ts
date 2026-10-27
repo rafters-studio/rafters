@@ -14,7 +14,7 @@ describe('SELECTABLE_FRAMEWORKS', () => {
       'remix',
       'react-router',
       'astro',
-      'wc',
+      'preact',
       'vanilla',
     ]);
     expect(SELECTABLE_FRAMEWORKS).not.toContain('unknown');
@@ -48,10 +48,6 @@ describe('frameworkToTarget', () => {
     expect(frameworkToTarget('astro')).toBe('astro');
   });
 
-  it('maps wc to wc', () => {
-    expect(frameworkToTarget('wc')).toBe('wc');
-  });
-
   it('maps vanilla and unknown to react (shadcn drop-in default)', () => {
     expect(frameworkToTarget('vanilla')).toBe('react');
     expect(frameworkToTarget('unknown')).toBe('react');
@@ -64,6 +60,5 @@ describe('targetToExtension', () => {
     expect(targetToExtension('astro')).toBe('.astro');
     expect(targetToExtension('vue')).toBe('.vue');
     expect(targetToExtension('svelte')).toBe('.svelte');
-    expect(targetToExtension('wc')).toBe('.element.ts');
   });
 });

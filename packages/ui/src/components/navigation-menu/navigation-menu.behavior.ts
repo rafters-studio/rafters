@@ -9,6 +9,7 @@ import {
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { createRovingFocus } from '../../primitives/roving-focus';
+import { navigationMenuClasses } from './navigation-menu.classes';
 
 /**
  * Navigation menu: a bar of triggers, each disclosing a content panel, one
@@ -20,6 +21,10 @@ import { createRovingFocus } from '../../primitives/roving-focus';
  * which item is open.
  */
 export interface NavigationMenuConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled open item ('' = none). */
   value?: string | undefined;
   /** Uncontrolled seed. */
@@ -47,7 +52,15 @@ export type NavigationMenuActions = {
   close: undefined;
 };
 
-export type NavigationMenuPart = 'root' | 'list' | 'trigger' | 'content' | 'viewport' | 'indicator';
+export type NavigationMenuIconPart = 'startIcon' | 'endIcon';
+export type NavigationMenuPart =
+  | 'root'
+  | 'list'
+  | 'trigger'
+  | 'content'
+  | 'viewport'
+  | 'indicator'
+  | NavigationMenuIconPart;
 
 /** The effective open item: controlled value shadows intrinsic state. */
 export function activeItem(
@@ -79,6 +92,10 @@ const navigation: Slice<
     // Decorative chrome (shadcn surface); present while open.
     viewport: { optional: true },
     indicator: { optional: true },
+    // Decorative icon wrappers beside a trigger's or a link's label. One pair per
+    // trigger and per link, each present only when the author gives an icon.
+    startIcon: { many: true, optional: true },
+    endIcon: { many: true, optional: true },
   },
   initialState: (config) => {
     const seed = config.value ?? config.defaultValue ?? '';
@@ -116,6 +133,10 @@ const navigation: Slice<
         'data-state': open ? 'visible' : 'hidden',
         'aria-hidden': 'true',
       },
+      // The wrapper carries the hiding because a child the author writes cannot be
+      // guaranteed to: the label alone is the accessible name, with no script run.
+      startIcon: { 'aria-hidden': 'true' },
+      endIcon: { 'aria-hidden': 'true' },
     };
   },
   keymap: (event, _state, part, config) => {
@@ -256,7 +277,7 @@ function canStillReveal(panel: HTMLElement, focusTarget: Node | null): boolean {
  * The condition is the whole point. Clearing a dismissal unconditionally when
  * the pointer left the bar re-revealed the panel the user had just dismissed:
  * a click-to-close or an Escape leaves focus on the trigger (Escape returns it
- * there deliberately), so `group-focus-within/navigation-item:opacity-100` was
+ * there deliberately), so the item group's focus-within full-opacity rule was
  * still matching, and deleting `data-dismissed` brought the panel back at
  * opacity 1 and hit-testable against `data-state="closed"` and
  * `aria-expanded="false"` -- a WCAG 1.4.13 dismissibility failure the `hidden`
@@ -456,8 +477,13 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     const projection = navigationMenu.aria(state, config, ids);
     for (const part of Object.keys(projection) as NavigationMenuPart[]) {
       const attrs = projection[part];
-      const el = getPart(part);
-      if (el && attrs) applyProjection(el, attrs);
+      if (!attrs) continue;
+      // A `many` part (the icon wrappers) has one element per trigger and link.
+      const els =
+        part === 'root'
+          ? [root]
+          : Array.from(root.querySelectorAll<HTMLElement>(`[data-part="${part}"]`));
+      for (const el of els) applyProjection(el, attrs);
     }
     projectInstances(state);
   };
@@ -544,4 +570,35 @@ export function bindNavigationMenu(root: HTMLElement): () => void {
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);
   };
+}
+
+/**
+ * Wrap each `slot="start-icon"` / `slot="end-icon"` child of a trigger or link
+ * in the decorative wrapper the behavior projects aria-hidden onto, in place,
+ * before the bind reads the parts. The light DOM has no slot assignment, so the
+ * slot attribute is only the author's marker. The start wrapper goes first in
+ * its trigger or link and the end wrapper last, so the label sits between.
+ */
+export function wrapNavigationMenuIcons(root: HTMLElement): void {
+  const config: NavigationMenuConfig = {};
+  const classes = navigationMenuClasses(config, navigationMenu.initialState(config));
+  const kinds = [
+    { slot: 'start-icon', part: 'startIcon', icon: 'inline-start', className: classes.startIcon },
+    { slot: 'end-icon', part: 'endIcon', icon: 'inline-end', className: classes.endIcon },
+  ] as const;
+  for (const kind of kinds) {
+    for (const child of root.querySelectorAll<HTMLElement>(`[slot="${kind.slot}"]`)) {
+      const row = child.parentElement;
+      if (!row || row === root) continue;
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = kind.part;
+      wrapper.dataset['icon'] = kind.icon;
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = kind.className;
+      child.removeAttribute('slot');
+      wrapper.appendChild(child);
+      if (kind.slot === 'start-icon') row.insertBefore(wrapper, row.firstChild);
+      else row.appendChild(wrapper);
+    }
+  }
 }

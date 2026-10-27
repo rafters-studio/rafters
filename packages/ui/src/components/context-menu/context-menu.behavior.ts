@@ -10,6 +10,7 @@ import { computePosition } from '../../primitives/collision-detector';
 import { onPointerDownOutside } from '../../primitives/outside-click';
 import { createRovingFocus } from '../../primitives/roving-focus';
 import { createTypeahead } from '../../primitives/typeahead';
+import { contextMenuClasses } from './context-menu.classes';
 
 /**
  * Context menu: the right-click popup. Same menu machinery as a dropdown --
@@ -23,6 +24,10 @@ import { createTypeahead } from '../../primitives/typeahead';
  * navigation-menu keeps focus movement out of the score.
  */
 export interface ContextMenuConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled open value. Passed fresh, never stored. */
   open?: boolean | undefined;
   /** Uncontrolled seed. */
@@ -48,7 +53,7 @@ export type ContextMenuActions = {
   close: undefined;
 };
 
-export type ContextMenuPart = 'trigger' | 'content';
+export type ContextMenuPart = 'trigger' | 'content' | 'startIcon';
 
 /** Items the roving-focus and typeahead primitives navigate. Disabled items
  *  carry data-disabled and are skipped (the primitives filter them too). */
@@ -79,6 +84,10 @@ const contextMenuSlice: Slice<
     // light DOM so roving-focus/typeahead read it, hidden so a closed menu is
     // out of the accessibility tree.
     content: { role: 'menu', optional: true },
+    // The decorative icon beside an item's label. Present only when the author
+    // gives an icon; it occurs once per item, so the binding projects
+    // aria-hidden onto every one it finds.
+    startIcon: { optional: true, many: true },
   },
   initialState: (config) => ({
     open: config.open ?? config.defaultOpen ?? false,
@@ -104,6 +113,9 @@ const contextMenuSlice: Slice<
         'data-state': open ? 'open' : 'closed',
         hidden: open ? undefined : true,
       },
+      // The icon is decorative: hidden from assistive technology in the markup
+      // itself, so the label alone is the accessible name with no script run.
+      startIcon: { 'aria-hidden': 'true' },
     };
   },
   // WAI-ARIA menu: Escape dismisses. The idempotence gate makes it a no-op when
@@ -143,7 +155,7 @@ export interface ContextSubMenuState {
    * or the ArrowRight/Enter/Space keyboard open. `undefined` when the panel
    * has never gone through an in-score `open` dispatch (initial/controlled
    * `open: true`). `context-menu.classes.ts` reads this back as
-   * `data-open-source` to decide whether `delay-hover-intent` applies --
+   * `data-open-source` to decide whether the hover-intent delay applies --
    * a genuine hover still gets the intent filter, a click or keyboard open
    * (declared intent) does not. Optional so existing `{ open: boolean }`
    * state literals stay valid.
@@ -200,7 +212,7 @@ const contextSubMenuSlice: Slice<
         // a hidden node cannot transition, so it can never fade or scale in.
         //
         // Which input opened the panel, read back by context-menu.classes.ts
-        // as `data-[open-source=pointer]` to scope `delay-hover-intent` to a
+        // as `data-[open-source=pointer]` to scope the hover-intent delay to a
         // genuine hover -- undefined (removed) while closed, or on a
         // controlled/never-dispatched open, so a forced open carries no delay
         // either (the tooltip/hover-card #2148 doctrine: a consumer forcing
@@ -248,6 +260,54 @@ export const contextSubMenu: BehaviorSpec<
 function applyProjection(el: HTMLElement, attrs: AriaAttrs): void {
   for (const [name, value] of Object.entries(attrs)) {
     updateAriaAttribute(el, name as never, value as never, { validate: false });
+  }
+}
+
+/** Project aria-hidden onto every decorative icon wrapper under `scope`: the
+ *  icon part occurs once per item, so the part loop reaches only the first. */
+function projectIcons(scope: ParentNode, attrs: AriaAttrs | undefined): void {
+  if (!attrs) return;
+  for (const el of scope.querySelectorAll<HTMLElement>('[data-part="startIcon"]'))
+    applyProjection(el, attrs);
+}
+
+/**
+ * Wrap the author's markup in the parts the row grid places. Each
+ * `slot="start-icon"` child of an item becomes a decorative wrapper the
+ * behavior projects aria-hidden onto, and the item's loose label nodes become
+ * the label part, so every row is indicator, icon, label, end in reading order.
+ * The light DOM has no slot assignment, so the slot attribute is only the
+ * author's marker. Idempotent: an item that already has a label is left alone.
+ */
+export function wrapContextMenuItems(root: HTMLElement): void {
+  const classes = contextMenuClasses({}, contextMenu.initialState({}));
+  for (const item of root.querySelectorAll<HTMLElement>('[role^="menuitem"]')) {
+    if (item.querySelector(':scope > [data-part="label"]')) continue;
+    const icon = item.querySelector(':scope > [slot="start-icon"]');
+    let wrapper: HTMLElement | null = null;
+    if (icon) {
+      wrapper = document.createElement('span');
+      wrapper.dataset['part'] = 'startIcon';
+      wrapper.dataset['icon'] = 'inline-start';
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = classes.startIcon;
+      icon.removeAttribute('slot');
+      wrapper.appendChild(icon);
+    }
+    const label = document.createElement('span');
+    label.dataset['part'] = 'label';
+    label.className = classes.itemLabel;
+    const isEnd = (node: ChildNode): boolean =>
+      node instanceof Element && (node.matches('kbd, svg') || node.hasAttribute('aria-hidden'));
+    for (const node of Array.from(item.childNodes)) {
+      if (node === icon || isEnd(node)) continue;
+      label.appendChild(node);
+    }
+    const first = item.firstChild;
+    const indicator = first instanceof Element && first.hasAttribute('aria-hidden') ? first : null;
+    const before = indicator ? indicator.nextSibling : item.firstChild;
+    if (wrapper) item.insertBefore(wrapper, before);
+    item.insertBefore(label, before);
   }
 }
 
@@ -389,7 +449,7 @@ export function directSubMenus(container: HTMLElement): HTMLElement[] {
 
 /**
  * Bind ONE submenu (recursing into nested submenus). The sub-content is moved to
- * document.body on bind so it escapes the parent's `overflow-hidden` AND leaves
+ * document.body on bind so it escapes the parent's overflow clipping AND leaves
  * the parent's roving/keyboard scope (nested menuitems would otherwise pollute
  * the parent's item list). Opens on ArrowRight/Enter/Space/click or hover-intent,
  * closes on ArrowLeft/Escape/hover-leave; selecting an item calls `onSelect` to
@@ -447,6 +507,14 @@ export function bindContextSubMenu(
     const projection = contextSubMenu.aria(state, config, ids);
     applyProjection(subTrigger, projection.subTrigger ?? {});
     applyProjection(subContent, projection.subContent ?? {});
+    // The icons in a submenu are the parent menu's startIcon part.
+    const icon = contextMenu.aria(
+      contextMenu.initialState({}),
+      {},
+      {} as PartIds<ContextMenuPart>,
+    ).startIcon;
+    projectIcons(subEl, icon);
+    projectIcons(subContent, icon);
     if (open) {
       positionSubContent(subTrigger, subContent, config);
       if (!stopEffects) stopEffects = startContextSubMenuEffects(subContent, config.loop ?? true);
@@ -462,7 +530,7 @@ export function bindContextSubMenu(
 
   // Hover open/close is a direct, undelayed state update (#2152): the visual
   // reveal's hover-intent delay is a CSS `transition-delay` on the sub-content
-  // rule (context-menu.classes.ts, consuming `--rafters-delay-hover-intent`),
+  // rule (context-menu.classes.ts, consuming the hover-intent delay token),
   // not a JS timer. `data-state` and aria-expanded flip the instant the pointer
   // crosses the boundary; the stylesheet decides when that becomes visible --
   // and it only decides to delay it for a genuine pointerenter ('pointer'
@@ -626,8 +694,9 @@ export function bindContextMenu(root: HTMLElement): () => void {
     for (const part of Object.keys(projection) as ContextMenuPart[]) {
       const attrs = projection[part];
       const el = getPart(part);
-      if (el && attrs) applyProjection(el, attrs);
+      if (el && attrs && part !== 'startIcon') applyProjection(el, attrs);
     }
+    projectIcons(root, projection.startIcon);
     if (content) {
       if (open) {
         positionContextMenuContent(content, { x: state.x, y: state.y }, config);

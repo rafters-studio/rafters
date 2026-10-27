@@ -43,6 +43,7 @@ import {
   comboboxItemAria,
   isOpen,
   matchesQuery,
+  optionLabel,
   positionCombobox,
   selectedValue,
   visibleOptionValues,
@@ -98,6 +99,24 @@ function CheckIcon() {
   );
 }
 
+/** An option's display label: its text, or its value when the children are not text. */
+function itemLabel(children: React.ReactNode, itemValue: string): string {
+  return typeof children === 'string' ? children : itemValue;
+}
+
+/** The label of the Combobox.Item carrying `value`, found anywhere in `children`. */
+function seededLabel(children: React.ReactNode, value: string): string | undefined {
+  if (value === '') return undefined;
+  for (const child of React.Children.toArray(children)) {
+    if (!React.isValidElement<{ value?: unknown; children?: React.ReactNode }>(child)) continue;
+    if (child.type === ComboboxItem && child.props.value === value)
+      return itemLabel(child.props.children, value);
+    const nested = seededLabel(child.props.children, value);
+    if (nested !== undefined) return nested;
+  }
+  return undefined;
+}
+
 export interface ComboboxProps {
   children: React.ReactNode;
   value?: string;
@@ -121,7 +140,14 @@ export function Combobox({
 }: ComboboxProps) {
   const config: ComboboxConfig = { value, defaultValue, open, defaultOpen, disabled };
 
-  const { memory, dispatch } = React.useMemo(() => createBehavior(combobox, config), []);
+  const { memory, dispatch } = React.useMemo(() => {
+    const behavior = createBehavior(combobox, config);
+    // A seeded value shows its option's label in the input on first render, the
+    // text a select of that option writes. No matching option: input stays empty.
+    const label = seededLabel(children, selectedValue(behavior.memory.get(), config));
+    if (label !== undefined) behavior.memory.patch({ query: label });
+    return behavior;
+  }, []);
   const state = useMemory(memory);
   const effectiveOpen = isOpen(state, config);
   const effectiveValue = selectedValue(state, config);
@@ -215,7 +241,7 @@ export function Combobox({
       );
       if (!item || item.getAttribute('aria-disabled') === 'true') return;
       event.preventDefault();
-      request('select', { value, label: (item.textContent ?? '').trim() });
+      request('select', { value, label: optionLabel(item) });
       return;
     }
     if (action === 'close') {
@@ -260,9 +286,16 @@ export function Combobox({
 export interface ComboboxInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'value' | 'onChange'
-> {}
+> {
+  /** Decorative icon at the start of the input (the right on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
+}
 
-export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
+function hasIcon(icon: React.ReactNode): boolean {
+  return icon != null && icon !== false;
+}
+
+export function ComboboxInput({ className, startIcon, ...props }: ComboboxInputProps) {
   const { ids, aria, request, query, effectiveOpen, getPart, disabled, classes } =
     useComboboxContext('Combobox.Input');
 
@@ -292,6 +325,16 @@ export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
         {...aria.input}
         {...props}
       />
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.startIcon}
+          {...aria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       <button
         type="button"
         data-part="trigger"
@@ -318,16 +361,33 @@ export function ComboboxInput({ className, ...props }: ComboboxInputProps) {
   );
 }
 
-export interface ComboboxContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+export interface ComboboxContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Exactly one `bg-fill-*` token; it replaces the content panel's surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
+}
 
-export function ComboboxContent({ className, children, ...props }: ComboboxContentProps) {
-  const { ids, aria, effectiveOpen, classes } = useComboboxContext('Combobox.Content');
+export function ComboboxContent({
+  fill,
+  surface,
+  className,
+  children,
+  ...props
+}: ComboboxContentProps) {
+  const { ids, aria, effectiveOpen, classes, config, state } =
+    useComboboxContext('Combobox.Content');
   return (
     <div
       data-part="content"
       id={ids.content}
       hidden={effectiveOpen ? undefined : true}
-      className={classy(classes.content, className)}
+      className={classy(
+        fill || surface
+          ? comboboxClasses({ ...config, fill, surface }, state).content
+          : classes.content,
+        className,
+      )}
       {...aria.content}
       {...props}
     >
@@ -384,20 +444,31 @@ export function ComboboxGroup({ heading, className, children, ...props }: Combob
 export interface ComboboxItemProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
   disabled?: boolean;
+  /** Decorative icon before the label (after it on a right-to-left page). Hidden from assistive technology. */
+  startIcon?: React.ReactNode;
 }
 
 export function ComboboxItem({
   value: itemValue,
   disabled = false,
+  startIcon,
   className,
   children,
   onClick,
   onPointerMove,
   ...props
 }: ComboboxItemProps) {
-  const { state, config, ids, request, getPart, query, classes } =
-    useComboboxContext('Combobox.Item');
-  const label = typeof children === 'string' ? children : itemValue;
+  const {
+    state,
+    config,
+    ids,
+    request,
+    getPart,
+    query,
+    classes,
+    aria: contextAria,
+  } = useComboboxContext('Combobox.Item');
+  const label = itemLabel(children, itemValue);
   const aria = comboboxItemAria(itemValue, state, config);
   const isSelected = selectedValue(state, config) === itemValue;
   // Filter in place (hidden, not unmounted) so the option id stays stable for
@@ -441,6 +512,16 @@ export function ComboboxItem({
       {...props}
     >
       {indicator}
+      {hasIcon(startIcon) ? (
+        <span
+          data-part="startIcon"
+          data-icon="inline-start"
+          className={classes.itemStartIcon}
+          {...contextAria.startIcon}
+        >
+          {startIcon}
+        </span>
+      ) : null}
       {text}
     </div>
   );

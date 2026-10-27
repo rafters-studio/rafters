@@ -5,8 +5,8 @@
  * via `Number(...).toString()`) to `oklchToCSS`.
  *
  * The default-system fixture below happens to reach this exporter already
- * rounded to <=3 decimals (roundOKLCH via generateOKLCHScale, or the
- * hardcoded DEFAULT_NEUTRAL_SCALE), so it alone would not catch a
+ * rounded to <=3 decimals (roundOKLCH inside color-utils' buildColorValue),
+ * so it alone would not catch a
  * regression in full-precision or alpha-carrying input -- see the
  * `imported-primary` case, which does. The exporter pre-rounds each
  * channel with `toFixed(3)` and forces `alpha: 1` before calling
@@ -15,10 +15,10 @@
  * drop, for every OKLCH this exporter can receive -- not just already-
  * rounded ones.
  *
- * `zinc` is anchored to the hardcoded `DEFAULT_NEUTRAL_SCALE`; the
- * `silver-true-glacier` assertion additionally exercises a non-zero
- * chroma and tracks `DEFAULT_COLOR_PALETTE_BASES` -- retuning that
- * palette's hue/chroma is expected to move this literal too.
+ * Both literals track `DEFAULT_COLOR_SEEDS`: `zinc` is its 500 step
+ * (seeded at 600, L 0.442); the `silver-true-glacier` assertion
+ * additionally exercises a non-zero chroma -- retuning either seed is
+ * expected to move these literals too.
  */
 import { hexToOKLCH } from '@rafters/color-utils';
 import { describe, expect, it } from 'vitest';
@@ -30,8 +30,8 @@ describe('tokensToTailwind oklch formatting', () => {
   it('produces byte-identical oklch() strings after the oklchToCSS migration', () => {
     const system = generateBaseSystem({});
     const css = tokensToTailwind(system.allTokens, { includeImport: false }, []);
-    expect(css).toContain('--color-zinc: oklch(0.552 0 0);');
-    expect(css).toContain('--color-silver-true-glacier: oklch(0.645 0.12 180);');
+    expect(css).toContain('--color-zinc: oklch(0.563 0 0);');
+    expect(css).toContain('--color-silver-true-glacier: oklch(0.645 0.099 180);');
   });
 
   it('rounds a full-precision, alpha-carrying imported seed exactly as the old formatNumber did (no alpha channel)', () => {

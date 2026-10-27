@@ -46,7 +46,7 @@ catalog:
   lefthook: ^1.10.0
   lit: ^3.3.1
   msw: ^2.11.6
-  playwright-bdd: ^8.4.2
+  playwright-bdd: ^9.2.1
   react: ^19.2.0
   react-dom: ^19.2.0
   stoker: ^2.0.1

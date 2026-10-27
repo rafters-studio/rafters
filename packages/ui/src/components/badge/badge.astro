@@ -52,23 +52,56 @@
  */
 import type { HTMLAttributes } from 'astro/types';
 import classy from '../../primitives/classy';
-import type { BadgeSize, BadgeVariant } from './badge.behavior';
+import type { PartIds } from '../../lib/contract';
+import { badge, type BadgePart, type BadgeSize, type BadgeVariant } from './badge.behavior';
 import { badgeClasses } from './badge.classes';
 
 interface Props extends Omit<HTMLAttributes<'span'>, 'class'> {
   /** Visual variant. The oracle's full vocabulary (contract, boundary 9). */
   variant?: BadgeVariant;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
   size?: BadgeSize;
 }
 
-const { variant, size, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
+const { variant, size, fill, surface, class: _discardedClass, ...attrs } = Astro.props as Props & { class?: string };
 
-const classes = badgeClasses({ variant, size }, {});
+const classes = badgeClasses({ variant, size, fill, surface }, {});
 const rootClass = classy(classes.root);
+const uid = attrs.id ?? 'badge';
+const ids = {} as PartIds<BadgePart>;
+for (const part of Object.keys(badge.parts) as BadgePart[]) ids[part] = `${uid}-${part}`;
+const aria = badge.aria({}, { variant, size }, ids);
 ---
 
 <span
   data-part="root"
   data-slot="badge"
   class={rootClass}
-  {...attrs}><slot /></span>
+  {...attrs}>{
+  Astro.slots.has('start-icon') && (
+    <span
+      data-part="startIcon"
+      data-icon="inline-start"
+      id={ids.startIcon}
+      class={classes.startIcon}
+      {...aria.startIcon}
+    >
+      <slot name="start-icon" />
+    </span>
+  )
+}<slot />{
+  Astro.slots.has('end-icon') && (
+    <span
+      data-part="endIcon"
+      data-icon="inline-end"
+      id={ids.endIcon}
+      class={classes.endIcon}
+      {...aria.endIcon}
+    >
+      <slot name="end-icon" />
+    </span>
+  )
+}</span>

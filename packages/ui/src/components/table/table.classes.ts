@@ -6,9 +6,9 @@
  * them directly (no context/provider needed for a flat static).
  *
  * All colour and typography come through semantic role tokens
- * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, `bg-muted`,
+ * (`text-body-small ts-body-small`, `text-label-medium ts-label-medium`, `text-muted-foreground`, the muted background,
  * `border-b`/`border-t`) -- no raw colour or arbitrary values. The one delta
- * from the oracle is motion: its literal `duration-150` is replaced by the
+ * from the oracle is motion: its literal 150ms duration is replaced by the
  * generics the matrix assigns, `duration-fast ease-standard` (see the row
  * on `tableRowClasses`). Leaving the timing off entirely, as this file did
  * before, took Tailwind's stock default rather than the token -- which is the
@@ -41,7 +41,7 @@ export const tableFooterClasses =
  * `delay-*` utilities zero themselves under `prefers-reduced-motion` (the
  * exporter's `REDUCED_MOTION_ZEROED` set), so reduced motion is the token
  * sheet's responsibility and never a component-level media query. The
- * `motion-reduce:transition-none` this drops was redundant with that law.
+ * reduced-motion transition escape this drops was redundant with that law.
  *
  * TWO ROWS, ONE TRANSITION. `table / row / hover` (provenance `baseline`) and
  * `table / row / selected <-> unselected` (provenance `proposed`) both assign
@@ -56,16 +56,16 @@ export const tableRowClasses =
   'border-b transition-colors duration-fast ease-standard hover:bg-muted/50 data-[state=selected]:bg-muted';
 
 /**
- * `<th>`: header cell -- fixed height, left-aligned, muted label typography.
+ * `<th>`: header cell -- fixed height, start-aligned, muted label typography.
  * The `[&:has([role=checkbox])]` and `[&>[role=checkbox]]` selectors align a
  * selection checkbox flush in the cell (shadcn v4 surface).
  */
 export const tableHeadClasses =
-  'h-10 px-2 text-left align-middle text-label-medium ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
+  'h-10 px-2 text-start align-middle text-label-medium ts-label-medium text-muted-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<td>`: data cell -- padded, middle-aligned, with the same checkbox flush. */
 export const tableCellClasses =
-  'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5';
+  'p-2 align-middle [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-0.5';
 
 /** `<caption>`: muted small text, anchored to the bottom by the root. */
 export const tableCaptionClasses = 'text-body-small ts-body-small text-muted-foreground';

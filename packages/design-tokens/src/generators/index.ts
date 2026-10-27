@@ -9,15 +9,16 @@
  * registry or exporters lives in the CLI's init flow, not here.
  */
 
-import type { Token } from '@rafters/shared';
+import { ColorReferenceSchema, type ColorValue, type Token } from '@rafters/shared';
+import { REGISTRY_PLUGINS } from '../plugins/index.js';
+import { TokenRegistry } from '../registry.js';
 import { generateBreakpointTokens } from './breakpoint.js';
-import { buildColorScaleFromBase, generateColorTokens } from './color.js';
+import { buildFamily, generateColorTokens } from './color.js';
 import {
   DEFAULT_ANIMATION_DEFINITIONS,
-  type ColorPaletteBase,
-  type ColorScaleInput,
+  type ColorSeedEntry,
   DEFAULT_BREAKPOINTS,
-  DEFAULT_COLOR_SCALES,
+  DEFAULT_COLOR_SEEDS,
   DEFAULT_CONTAINER_BREAKPOINTS,
   DEFAULT_DELAY_NAMESPACE,
   DEFAULT_DEPTH_DEFINITIONS,
@@ -32,7 +33,6 @@ import {
   DEFAULT_MOTION_SEMANTIC_MAPPINGS,
   DEFAULT_PERIOD_NAMESPACE,
   DEFAULT_RADIUS_DEFINITIONS,
-  DEFAULT_SEMANTIC_COLOR_BASES,
   DEFAULT_SHADOW_BOUNDS,
   DEFAULT_SHADOW_DEFINITIONS,
   DEFAULT_SPACING_BOUNDS,
@@ -42,16 +42,17 @@ import { generateDepthTokens } from './depth.js';
 import { generateFocusTokens } from './focus.js';
 import { generateMotionTokens } from './motion.js';
 import { generateRadiusTokens } from './radius.js';
-import { generateSemanticTokens } from './semantic.js';
+import { generateSemanticTokens, semanticDescription } from './semantic.js';
 import { generateShadowTokens } from './shadow.js';
 import { generateSpacingTokens } from './spacing.js';
+import { generateSurfaceTokens } from './surface.js';
 import type { BaseSystemConfig, ResolvedSystemConfig } from './types.js';
 import { DEFAULT_SYSTEM_CONFIG, resolveConfig } from './types.js';
 import { generateTypographyTokens } from './typography.js';
 import { generateTypographyCompositeTokens } from './typography-composite.js';
 
 export { generateBreakpointTokens } from './breakpoint.js';
-export { buildColorScaleFromBase, generateColorTokens } from './color.js';
+export { buildFamily, generateColorTokens } from './color.js';
 export * from './defaults.js';
 export { generateDepthTokens } from './depth.js';
 export { generateFocusTokens } from './focus.js';
@@ -73,6 +74,13 @@ export {
 } from './motion-constraints.js';
 export { generateRadiusTokens } from './radius.js';
 export { generateSemanticTokens } from './semantic.js';
+export {
+  DEFAULT_SCRIPTS,
+  fontImportsFor,
+  fontStackFor,
+  SCRIPT_FONTS,
+  type ScriptFont,
+} from './scripts.js';
 export { generateShadowTokens } from './shadow.js';
 export { generateSpacingTokens } from './spacing.js';
 export * from './types.js';
@@ -84,16 +92,25 @@ interface GeneratorDef {
   generate: (config: ResolvedSystemConfig) => { namespace: string; tokens: Token[] };
 }
 
-function buildAllColorScales(customBases?: Record<string, ColorPaletteBase>): ColorScaleInput[] {
-  const bases = customBases ?? DEFAULT_SEMANTIC_COLOR_BASES;
-  const semanticScales = Object.entries(bases).map(([name, base]) =>
-    buildColorScaleFromBase(name, base),
-  );
-
-  return [...DEFAULT_COLOR_SCALES, ...semanticScales];
+/**
+ * Build every colour family from its seed. Custom seeds replace the default
+ * palette families; the default neutral (zinc) stays unless a custom seed
+ * of the same name replaces it.
+ */
+function buildAllColorScales(
+  customSeeds?: Record<string, ColorSeedEntry>,
+): Record<string, ColorValue> {
+  const seeds = customSeeds
+    ? { ...(DEFAULT_COLOR_SEEDS.zinc && { zinc: DEFAULT_COLOR_SEEDS.zinc }), ...customSeeds }
+    : DEFAULT_COLOR_SEEDS;
+  const families: Record<string, ColorValue> = {};
+  for (const [name, entry] of Object.entries(seeds)) {
+    families[name] = buildFamily(name, entry);
+  }
+  return families;
 }
 
-function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase>): GeneratorDef[] {
+function createGeneratorDefs(colorPaletteBases?: Record<string, ColorSeedEntry>): GeneratorDef[] {
   return [
     {
       name: 'color',
@@ -152,6 +169,7 @@ function createGeneratorDefs(colorPaletteBases?: Record<string, ColorPaletteBase
       name: 'focus',
       generate: (config) => generateFocusTokens(config, DEFAULT_FOCUS_CONFIGS),
     },
+    { name: 'surface', generate: () => generateSurfaceTokens() },
   ];
 }
 
@@ -164,6 +182,25 @@ export interface GenerateAllResult {
     tokenCount: number;
     namespaces: string[];
   };
+}
+
+/**
+ * Replace every bound semantic token's value with the one the registry
+ * computes from its binding, so loading the generated tokens changes no
+ * semantic value. A derived token's description is written from that value.
+ */
+function settleSemanticValues(tokens: readonly Token[]): Token[] {
+  const registry = new TokenRegistry(tokens, REGISTRY_PLUGINS);
+  return tokens.map((token) => {
+    if (token.namespace !== 'semantic' || !token.binding) return token;
+    const value = registry.get(token.name)?.value;
+    if (value === undefined) return token;
+    const ref = ColorReferenceSchema.safeParse(value);
+    if (!ref.success || token.name.endsWith('--dark') || !token.semanticMeaning) {
+      return { ...token, value };
+    }
+    return { ...token, value, description: semanticDescription(token.semanticMeaning, ref.data) };
+  });
 }
 
 export function generateBaseSystem(config: Partial<BaseSystemConfig> = {}): GenerateAllResult {
@@ -184,9 +221,15 @@ export function generateBaseSystem(config: Partial<BaseSystemConfig> = {}): Gene
     allTokens.push(...result.tokens);
   }
 
+  const settled = settleSemanticValues(allTokens);
+  byNamespace.set(
+    'semantic',
+    settled.filter((token) => token.namespace === 'semantic'),
+  );
+
   return {
     byNamespace,
-    allTokens,
+    allTokens: settled,
     metadata: {
       generatedAt: new Date().toISOString(),
       config: resolvedConfig,

@@ -60,6 +60,10 @@ interface Props {
   label?: string;
   placeholder?: string;
   emptyText?: string;
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string;
 }
 
 const {
@@ -68,9 +72,11 @@ const {
   label = 'Suggestions',
   placeholder = 'Type a command...',
   emptyText = 'No results found.',
+  fill,
+  surface,
 } = Astro.props;
 
-const config: CommandConfig = { label };
+const config: CommandConfig = { label, fill, surface };
 const state = command.initialState(config);
 const classes = commandClasses(config, state);
 
@@ -119,7 +125,7 @@ const sanitize = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '-'
       {emptyText}
     </div>
     {
-      items.map((item) => {
+      items.map(async (item) => {
         const itemAria = commandItemAria(item.value, state, config);
         return (
           <div
@@ -132,7 +138,19 @@ const sanitize = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '-'
             class={classes.item}
             {...itemAria}
           >
-            <span>{item.label}</span>
+            {Astro.slots.has(`start-icon-${item.value}`) && (
+              <span
+                data-part="startIcon"
+                data-icon="inline-start"
+                class={classes.startIcon}
+                {...aria.startIcon}
+              >
+                <Fragment set:html={await Astro.slots.render(`start-icon-${item.value}`)} />
+              </span>
+            )}
+            <span data-part="label" class={classes.label}>
+              {item.label}
+            </span>
             {item.shortcut && (
               <kbd data-part="shortcut" class={classes.shortcut}>
                 {item.shortcut}

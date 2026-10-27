@@ -9,6 +9,7 @@ import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { fuzzyMatch } from '../../primitives/command-palette';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { onPointerDownOutside } from '../../primitives/outside-click';
+import { commandClasses } from './command.classes';
 
 /**
  * Command: a filtered command palette. A search combobox narrows a listbox of
@@ -37,6 +38,10 @@ import { onPointerDownOutside } from '../../primitives/outside-click';
  * fuzzy matching, the behaviour the issue calls for.
  */
 export interface CommandConfig {
+  /** Exactly one `bg-fill-*` token; it replaces the surface. */
+  fill?: string | undefined;
+  /** A surface name; its `bg-surface-*` class replaces the base surface. */
+  surface?: string | undefined;
   /** Controlled search query. */
   value?: string | undefined;
   /** Uncontrolled seed. */
@@ -70,7 +75,7 @@ export type CommandActions = {
   select: string;
 };
 
-export type CommandPart = 'root' | 'input' | 'list' | 'item' | 'empty';
+export type CommandPart = 'root' | 'input' | 'list' | 'item' | 'empty' | 'startIcon';
 
 /** The effective query: controlled config shadows intrinsic state. */
 export function queryValue(state: CommandState, config: CommandConfig): string {
@@ -120,6 +125,10 @@ const commandSlice: Slice<CommandConfig, CommandState, CommandActions, CommandPa
     // from the live match count, which the score cannot know (it has no item
     // set), so it carries no aria projection.
     empty: { optional: true },
+    // The decorative icon at the start of an item. Present only when the author
+    // gives an icon; it occurs once per item, so the binding projects aria-hidden
+    // onto every one it finds.
+    startIcon: { optional: true, many: true },
   },
   initialState: (config) => ({
     query: config.value ?? config.defaultValue ?? '',
@@ -165,6 +174,9 @@ const commandSlice: Slice<CommandConfig, CommandState, CommandActions, CommandPa
       role: 'listbox',
       'aria-label': config.label ?? 'Suggestions',
     },
+    // The icon is decorative: hidden from assistive technology in the markup
+    // itself, so the label alone is the accessible name with no script run.
+    startIcon: { 'aria-hidden': 'true' },
   }),
   keymap: (event, _state, part) => {
     if (part !== 'input') return null;
@@ -317,6 +329,13 @@ export function bindCommand(root: HTMLElement): () => void {
       if (el && attrs) applyProjection(el, attrs);
     }
 
+    // The icon part occurs once per item; the loop above reached only the
+    // first, so project onto every one.
+    if (projection.startIcon) {
+      for (const el of root.querySelectorAll<HTMLElement>('[data-part="startIcon"]'))
+        applyProjection(el, projection.startIcon);
+    }
+
     // Per-option projection: hide non-matches, mark the active one.
     let visibleCount = 0;
     for (const el of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
@@ -409,4 +428,38 @@ export function bindCommand(root: HTMLElement): () => void {
     root.removeEventListener('pointermove', onPointerMove);
     root.removeEventListener('keydown', onKeydown);
   };
+}
+
+/**
+ * Lay each item's children out as the row's columns, before the bind reads the
+ * parts: a `slot="start-icon"` child goes into the decorative wrapper the
+ * behavior projects aria-hidden onto, the loose label nodes into a label
+ * wrapper, and the shortcut stays last. The light DOM has no slot assignment,
+ * so the slot attribute is only the author's marker.
+ */
+export function wrapCommandIcons(root: HTMLElement): void {
+  const classes = commandClasses({}, command.initialState({}));
+  for (const item of root.querySelectorAll<HTMLElement>('[data-part="item"]')) {
+    if (item.querySelector(':scope > [data-part="label"]')) continue;
+    const icon = item.querySelector(':scope > [slot="start-icon"]');
+    const shortcut = item.querySelector(':scope > [data-part="shortcut"]');
+    const label = document.createElement('span');
+    label.dataset['part'] = 'label';
+    label.className = classes.label;
+    label.append(...[...item.childNodes].filter((node) => node !== icon && node !== shortcut));
+    const parts: Node[] = [];
+    if (icon) {
+      const wrapper = document.createElement('span');
+      wrapper.dataset['part'] = 'startIcon';
+      wrapper.dataset['icon'] = 'inline-start';
+      wrapper.setAttribute('aria-hidden', 'true');
+      wrapper.className = classes.startIcon;
+      icon.removeAttribute('slot');
+      wrapper.appendChild(icon);
+      parts.push(wrapper);
+    }
+    parts.push(label);
+    if (shortcut) parts.push(shortcut);
+    item.replaceChildren(...parts);
+  }
 }

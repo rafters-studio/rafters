@@ -1,3 +1,4 @@
+import classy from '../../primitives/classy';
 import type { NavigationMenuConfig, NavigationMenuState } from './navigation-menu.behavior';
 
 export interface NavigationMenuClassSet {
@@ -6,6 +7,8 @@ export interface NavigationMenuClassSet {
   item: string;
   trigger: string;
   triggerChevron: string;
+  startIcon: string;
+  endIcon: string;
   content: string;
   link: string;
   viewportWrapper: string;
@@ -28,7 +31,7 @@ const itemClasses = 'relative group/navigation-item';
 
 // motion.jsonl `navigation-menu / trigger / hover` -- color (background, text,
 // border), fast, standard. Composed generics on a transition. Replaces
-// `motion-hover`, one of the 13 semantic motion tokens deleted by ruling
+// the hover motion class, one of the 13 semantic motion tokens deleted by ruling
 // (2026-08-02) that kept compiling by accident.
 //
 // NO ROW for the trigger's open state. `data-[state=open]:bg-accent-subtle` is a
@@ -38,8 +41,9 @@ const itemClasses = 'relative group/navigation-item';
 // #2293: if the open-state tint should have its own timing, motion.jsonl needs
 // the row.
 const triggerClasses =
-  'group inline-flex h-11 @md:h-10 w-max items-center justify-center rounded-md ' +
+  'group inline-grid grid-flow-col h-11 @md:h-10 w-max items-center justify-center gap-1 rounded-md ' +
   'bg-background px-4 py-2 text-label-medium ts-label-medium cursor-pointer ' +
+  'has-data-[icon=inline-start]:ps-3 has-data-[icon=inline-end]:pe-3 ' +
   'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
@@ -47,13 +51,16 @@ const triggerClasses =
   'data-[state=open]:bg-accent-subtle';
 
 // NO ROW. The matrix gives accordion and select a `chevron / open <-> closed`
-// rotate row; navigation-menu has none, so the flip is instant. `motion-toggle`
+// rotate row; navigation-menu has none, so the flip is instant. The toggle motion class
 // used to sit here, borrowing the panel's item-change tier on the reasoning that
 // "the chevron turns with the panel it announces" -- which is deriving an
 // assignment nobody made, on top of a retired token. A moment with no row does
 // not move (docs/MOTION.md:150). Reported on #2293: if the chevron should turn,
 // motion.jsonl needs the row.
-const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
+const triggerChevronClasses = 'h-3 w-3 group-data-[state=open]:rotate-180';
+
+/** The content panel's base surface; a fill replaces it (FR-RAF-FILL-003). */
+const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 
 // MOTION IS CSS AND TOKENS ONLY (#2148). The hover-intent delay that used to be
 // a JavaScript timer reading the `hover-intent` delay token through the DOM is
@@ -67,7 +74,7 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
 //
 // PARTIAL: both rows name the movement `fade + zoom`, and only the FADE runs
 // here. The zoom half would need a scale on a reveal that has to work with
-// JavaScript disabled, and the rows' `extent-pop` is carried by the scale-in /
+// JavaScript disabled, and the rows' pop extent is carried by the scale-in /
 // scale-out KEYFRAMES rather than named by a class -- so on a transition path
 // there is nothing to attach it to, and nothing here should name it. The
 // generator still emits `navigation-menu-panel-open`/`-close` as scale cells;
@@ -118,7 +125,7 @@ const triggerChevronClasses = 'ml-1 h-3 w-3 group-data-[state=open]:rotate-180';
 // responsibility (the exporter's REDUCED_MOTION_ZEROED set), never a
 // component-level media query.
 const contentClasses =
-  'absolute left-0 top-full w-max rounded-md border bg-popover p-2 text-popover-foreground shadow-lg ' +
+  'absolute start-0 top-full w-max rounded-md border p-2 shadow-lg ' +
   'opacity-0 pointer-events-none transition-[opacity,pointer-events] transition-discrete ' +
   'duration-fast ease-exit ' +
   'group-hover/navigation-item:opacity-100 group-hover/navigation-item:pointer-events-auto ' +
@@ -141,8 +148,18 @@ const contentClasses =
 // hover is the same movement, properties, tier and curve the `trigger / hover`
 // row assigns -- so it carries that row rather than a value invented for it. The
 // matrix has no separate `link` row; reported on #2293.
+//
+// A link that sits directly in a bar item (`li > a`) is the trigger's peer, so
+// it takes the trigger's type role, height and alignment with no prop and no
+// className (#2659). A panel link sits inside the content `div`, never directly
+// in the `li`, so it keeps the stacked title-over-description layout.
 const linkClasses =
   'block select-none space-y-1 rounded-md p-3 no-underline outline-none ' +
+  '[li>&]:inline-grid [li>&]:grid-flow-col [li>&]:items-center [li>&]:h-11 @md:[li>&]:h-10 ' +
+  '[li>&]:px-4 [li>&]:py-2 [li>&]:text-label-medium [li>&]:ts-label-medium ' +
+  'has-data-[icon]:grid has-data-[icon]:grid-flow-col has-data-[icon]:items-center ' +
+  'has-data-[icon]:justify-start has-data-[icon]:gap-2 has-data-[icon]:space-y-0 ' +
+  'has-data-[icon=inline-start]:ps-2 has-data-[icon=inline-end]:pe-2 ' +
   'transition-colors duration-fast ease-standard ' +
   'hover:bg-accent hover:text-accent-foreground ' +
   'active:bg-muted active:text-foreground ' +
@@ -150,7 +167,10 @@ const linkClasses =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ' +
   'data-[active]:bg-accent-subtle';
 
-const viewportWrapperClasses = 'absolute left-0 top-full';
+// The wrapper only places and hides: the brand brings its icons, sizing included.
+const iconClasses = 'inline-grid place-items-center';
+
+const viewportWrapperClasses = 'absolute start-0 top-full';
 
 // NO DISTINCT MOMENT for motion.jsonl `navigation-menu / panel / open -> open
 // (item change)` (crossfade + size morph, moderate*, standard*, extent
@@ -175,7 +195,7 @@ const viewportClasses =
 
 // NO ROW. The indicator is a marker that mounts while some panel is open and
 // unmounts when none is (navigation-menu.tsx:437-452); nothing computes a
-// position for it, so there is no travel to time. It carried `motion-toggle`
+// position for it, so there is no travel to time. It carried the toggle motion class
 // (retired) on the claim that it consumed the item-change row -- see the
 // viewport note above for why that row has no moment here. Reported on #2293.
 const indicatorClasses =
@@ -184,7 +204,7 @@ const indicatorClasses =
 const indicatorArrowClasses = 'top-full h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md';
 
 export function navigationMenuClasses(
-  _config: NavigationMenuConfig,
+  config: NavigationMenuConfig,
   _state: NavigationMenuState,
 ): NavigationMenuClassSet {
   return {
@@ -193,7 +213,9 @@ export function navigationMenuClasses(
     item: itemClasses,
     trigger: triggerClasses,
     triggerChevron: triggerChevronClasses,
-    content: contentClasses,
+    startIcon: iconClasses,
+    endIcon: iconClasses,
+    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     link: linkClasses,
     viewportWrapper: viewportWrapperClasses,
     viewport: viewportClasses,

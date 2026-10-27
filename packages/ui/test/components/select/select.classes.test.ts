@@ -1,4 +1,8 @@
+import { resolve } from 'node:path';
+import { generateBaseSystem } from '@rafters/design-tokens/generators/index';
+import { registryToCompiled, TokenRegistry, REGISTRY_PLUGINS } from '@rafters/design-tokens';
 import { describe, expect, it } from 'vitest';
+import classy from '../../../src/primitives/classy';
 import { select } from '../../../src/components/select/select.behavior';
 import { selectClasses } from '../../../src/components/select/select.classes';
 
@@ -106,4 +110,105 @@ describe('select classes', () => {
       expect(value).not.toContain('motion-reduce');
     }
   });
+});
+
+const PHYSICAL =
+  /(^|[\s:])-?(pl|pr|ml|mr|left|right|text-left|text-right|rounded-l|rounded-r|border-l|border-r)-/;
+
+describe('select icons and grid layout', () => {
+  it('has no physical direction class anywhere', () => {
+    for (const [key, value] of Object.entries(classes)) {
+      expect(value, key).not.toMatch(PHYSICAL);
+    }
+  });
+
+  it('the content is the menu-row grid and each row passes it down as a subgrid', () => {
+    expect(classes.content.split(' ')).toContain('grid-cols-menu-row');
+    for (const row of [classes.viewport, classes.group, classes.item]) {
+      expect(row.split(' ')).toEqual(
+        expect.arrayContaining(['col-span-full', 'grid-cols-subgrid']),
+      );
+    }
+    expect(classes.item.split(' ')).toContain('grid');
+  });
+
+  it('the trigger is a grid; cells sit by column in reading order', () => {
+    const tokens = classes.trigger.split(' ');
+    expect(tokens).toContain('grid');
+    expect(tokens).toContain('grid-cols-menu-row');
+    expect(tokens).not.toContain('flex');
+    expect(classes.triggerStartIcon).toContain('col-start-2');
+    expect(classes.value).toContain('col-start-3');
+    expect(classes.triggerEndIcon).toContain('col-start-4');
+    expect(classes.chevron).toContain('col-start-5');
+  });
+
+  it('the wrappers only place and hide, never size', () => {
+    for (const wrapper of [
+      classes.startIcon,
+      classes.endIcon,
+      classes.triggerStartIcon,
+      classes.triggerEndIcon,
+    ]) {
+      expect(wrapper.split(' ')).toEqual(
+        expect.arrayContaining(['inline-grid', 'place-items-center']),
+      );
+      expect(wrapper).not.toMatch(/(^|\s)(size|w|h)-/);
+    }
+  });
+
+  it('padding tightens on the icon side only, in logical classes', () => {
+    for (const row of [classes.trigger, classes.item]) {
+      expect(row).toMatch(/has-data-\[icon=inline-start\]:ps-/);
+      expect(row).toMatch(/has-data-\[icon=inline-end\]:pe-/);
+    }
+  });
+
+  it('classy keeps every new literal', () => {
+    const added = (value: string) =>
+      value
+        .split(' ')
+        .filter(
+          (c) =>
+            c.includes('has-data-') ||
+            c.startsWith('col-') ||
+            c.startsWith('grid') ||
+            c === 'inline-grid' ||
+            c === 'place-items-center' ||
+            c === 'grid',
+        );
+    for (const [key, value] of Object.entries(classes)) {
+      const kept = classy(value).split(' ');
+      for (const literal of added(value)) {
+        expect(kept, `${key}: classy dropped ${literal}`).toContain(literal);
+      }
+    }
+  });
+});
+
+const escapeCandidate = (candidate: string): string =>
+  `.${candidate.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`)}`;
+
+describe('select grid and icon candidates compile', () => {
+  it('every layout candidate became a real rule, on logical edges', async () => {
+    const system = generateBaseSystem({});
+    const registry = new TokenRegistry(system.allTokens, REGISTRY_PLUGINS);
+    const css = await registryToCompiled(registry, {
+      contentSources: [resolve(import.meta.dirname, '../../../src/components/select')],
+    });
+    const candidates = Object.values(classes)
+      .flatMap((value) => value.split(' '))
+      .filter(
+        (c) =>
+          c.includes('data-[icon') ||
+          c.includes('grid') ||
+          c.startsWith('col-') ||
+          c === 'place-items-center' ||
+          /^(ps|pe|ms|me)-/.test(c),
+      );
+    const missing = [...new Set(candidates)].filter((c) => !css.includes(escapeCandidate(c)));
+    expect(missing, 'candidates Tailwind silently emitted nothing for').toEqual([]);
+    expect(css).toMatch(/padding-inline-start/);
+    expect(css).toMatch(/padding-inline-end/);
+  }, 120_000);
 });

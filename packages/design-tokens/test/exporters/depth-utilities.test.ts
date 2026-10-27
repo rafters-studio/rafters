@@ -1,10 +1,10 @@
 /**
- * Depth words emit as real utilities (#1638 S3, the Tailwind namespace rule).
+ * Depth words reach Tailwind's stock z utility (#2825).
  *
  * Components speak z-depth-modal / z-depth-overlay because agents need words,
- * not numbers, to say where something sits. Tailwind v4 does not theme
- * z-index, so the exporter must emit @utility rules or every one of those
- * classes is a silent no-op (which is exactly what shipped before this test).
+ * not numbers, to say where something sits. Tailwind v4's z utility reads the
+ * --z-index-* theme namespace, so each depth token is a --z-index-depth-<name>
+ * key carrying var(--rafters-depth-<name>); no hand-written @utility exists.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -35,33 +35,23 @@ function buildDepthRegistry(): TokenRegistry {
 describe('depth z-index utilities', () => {
   const css = registryToTailwind(buildDepthRegistry());
 
-  it('emits one @utility z-<name> per depth token', () => {
+  it('emits one --z-index-depth-<name> theme key per depth token', () => {
     for (const name of DEPTH_NAMES) {
-      expect(css).toContain(`@utility z-${name} {`);
-      expect(css).toContain(`z-index: var(--${name});`);
+      expect(css).toContain(`--z-index-${name}: var(--rafters-${name});`);
     }
   });
 
-  it('emits the custom property the utility references', () => {
+  it('emits the --rafters-* property the key references', () => {
     for (const name of DEPTH_NAMES) {
-      expect(css).toContain(`--${name}:`);
+      expect(css).toContain(`--rafters-${name}:`);
     }
   });
 
-  it('the component vocabulary resolves -- the six class files stop being no-ops', () => {
-    // The exact words found in packages/ui component classes tonight.
-    for (const word of [
-      'z-depth-overlay',
-      'z-depth-modal',
-      'z-depth-dropdown',
-      'z-depth-popover',
-      'z-depth-navigation',
-    ]) {
-      expect(css).toContain(`@utility ${word} {`);
-    }
+  it('writes no @utility z-depth rule', () => {
+    expect(css).not.toContain('@utility z-depth');
   });
 
-  it('reference tokens (JSON values) do not emit dangling utilities', () => {
+  it('reference tokens (JSON values) do not emit dangling theme keys', () => {
     const registry = buildDepthRegistry();
     registry.define({
       name: 'depth-scale',
@@ -71,9 +61,8 @@ describe('depth z-index utilities', () => {
       userOverride: null,
     });
     const out = registryToTailwind(registry);
-    // tokenValueToCSS skips JSON values, so --depth-scale never exists in
-    // :root; the utility must not be emitted pointing at nothing.
-    expect(out).not.toContain('@utility z-depth-scale');
+    // depth-scale is JSON, not an integer: it gets no theme key pointing at nothing.
+    expect(out).not.toContain('--z-index-depth-scale');
   });
 });
 

@@ -23,7 +23,8 @@
  * stripped -- the output is flat rule blocks only.
  *
  * Stripped rules:
- * - All utility class rules (`.bg-primary`, `.text-foreground`, etc.).
+ * - All utility class rules (single-class selectors such as a background or
+ *   text colour utility).
  * - `@theme`, `@theme inline`, `@utility`, `@custom-variant`, `@keyframes`,
  *   `@layer` wrappers, `@import`, `@apply`, `@property`, `@supports`.
  * - Every non-custom-property declaration.

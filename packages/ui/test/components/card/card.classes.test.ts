@@ -16,10 +16,10 @@ function root(config: Parameters<typeof cardClasses>[0]): string {
 describe('card classes', () => {
   it('defaults to the card surface token pairing plus the structural panel', () => {
     const classes = root({});
-    expect(classes).toContain('bg-card');
-    expect(classes).toContain('text-card-foreground');
+    // The card surface fill carries bg, foreground and border (FR-RAF-FILL-004).
+    expect(classes.split(' ')).toContain('bg-surface-card');
     expect(classes).toContain('rounded-xl');
-    expect(classes).toContain('border border-card-border');
+    expect(classes.split(' ')).toContain('border');
     expect(classes).toContain('shadow-sm');
   });
 
@@ -36,28 +36,23 @@ describe('card classes', () => {
     expect(classes.split(' ')).not.toContain('p-6');
   });
 
-  it('a resolved fill REPLACES the default surface -- no competing bg-card', () => {
-    const filled = root({ fill: 'primary' });
-    expect(filled).toContain('bg-primary');
-    expect(filled).toContain('text-primary-foreground');
-    expect(filled).not.toContain('bg-card');
+  it('a bg-fill- fill REPLACES the base surface -- no competing bg-card', () => {
+    const filled = root({ fill: 'bg-fill-glass' }).split(' ');
+    expect(filled).toContain('bg-fill-glass');
+    expect(filled).not.toContain('bg-surface-card');
     // structure survives the surface swap
     expect(filled).toContain('rounded-xl');
-    expect(filled).toContain('border border-card-border');
+    expect(filled).toContain('border');
   });
 
-  it('a slash-alpha fill resolves through the color vocabulary', () => {
-    expect(root({ fill: 'muted/50' })).toContain('bg-muted/50');
-  });
-
-  it('an invalid fill signature keeps the default card surface', () => {
-    const bad = root({ fill: 'not a signature' });
-    expect(bad).toContain('bg-card');
-    expect(bad).toContain('text-card-foreground');
+  it('a retired v2 fill value keeps the base card surface', () => {
+    const bad = root({ fill: 'muted/50' }).split(' ');
+    expect(bad).toContain('bg-surface-card');
+    expect(bad).not.toContain('bg-muted/50');
   });
 
   it('never emits a raw arbitrary value', () => {
-    expect(root({ fill: 'primary' })).not.toMatch(/\[[a-z0-9.#]+\]/);
+    expect(root({ fill: 'bg-fill-glass' })).not.toMatch(/\[[a-z0-9.#]+\]/);
   });
 
   it('sub-part classes are config-independent literals', () => {
