@@ -17,9 +17,8 @@ export interface DatePickerClassSet {
 }
 
 // The DOM-native root is a binding host, not a box: it carries data-part="root"
-// and the config, and NO class. Current choice (2026-08-02): a behavior root
-// never styles itself, because layout belongs to the consumer's Container/Grid;
-// revisable.
+// and the config, and NO class. A behavior root never styles itself, because
+// layout belongs to the consumer's Container/Grid.
 
 // The trigger is a form control that opens a popup and shows a value: select's
 // trigger vocabulary (touch floor h-11 scaling down via the container query,

@@ -62,9 +62,9 @@ rows plus the gap, and the tiles in a row are one height. `Grid.Item` carries
 `grid` for this: its auto track stretches to the item's area and its child
 stretches to the track. Placement is unchanged.
 
-Current choice (2026-10-19): the item makes its content fill, not Card,
-because the outcome is about a grid item's content rather than only Cards,
-and it reaches every child placed in a grid; revisable.
+The item makes its content fill, not Card, because the outcome is about a grid
+item's content rather than only Cards, and it reaches every child placed in a
+grid.
 
 ## Oracle dispositions (boundary 9)
 

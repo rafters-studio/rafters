@@ -3,8 +3,8 @@
  * from its fill, then its variant, then its base; the fill is exactly one
  * bg-fill-* token; fill v2 is gone.
  *
- * The measured list is the plane parts (current choice, 2026-10-22,
- * revisable): the root for a plane component, the content panel for an
+ * The measured list is the plane parts: the root for a plane component, the
+ * content panel for an
  * overlay. Controls whose colours carry state (Switch, Slider, Tabs, Checkbox,
  * Toggle and similar) take no fill. Each entry renders through the classes
  * projection that the React and Astro performances of that part both read.
