@@ -17,7 +17,7 @@
 
 ### Chores
 
-- chore(cli): **The CLI builds with `vp pack` and takes its tool versions from `@rafters/toolchain` (#2885).** tsup is gone: `dist/index.js` and the plugin bundle `plugin/bin/rafters-mcp.bundle.mjs` are built by Rolldown, and `rafters/registry/types` gets its `.d.ts` from `tsgo` on TypeScript 7. The plugin bundle drops from 1,339,888 to 597,730 bytes and no longer carries JSDoc. The published `vite` dependency, which `rafters studio` uses for its dev server, is the toolchain's `npm:@voidzero-dev/vite-plus-core@1.0.0` in place of upstream `vite@^8.1.1`.
+- chore(cli): **The CLI builds with `vp pack` and takes its tool versions from `@rafters/toolchain` (#2885).** tsup is gone: `dist/index.js` and the plugin bundle `plugin/bin/rafters-mcp.bundle.mjs` are built by Rolldown, and `rafters/registry/types` gets its `.d.ts` from `tsgo` on TypeScript 7. The plugin bundle drops from 1,232,428 to 597,730 bytes and no longer carries JSDoc. The published `vite` dependency, which `rafters studio` uses for its dev server, is the toolchain's `npm:@voidzero-dev/vite-plus-core@1.0.0` in place of upstream `vite@^8.1.1`.
 
 ## 0.5.4
 
