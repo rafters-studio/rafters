@@ -20,7 +20,8 @@ export default defineConfig([
     entry: ['src/registry/types.ts'],
     format: ['esm'],
     target: 'node22',
-    dts: true,
+    // tsup injects baseUrl into its dts compile (no rafters tsconfig sets it); TypeScript 6 rejects it.
+    dts: { compilerOptions: { ignoreDeprecations: '6.0' } },
     bundle: true,
     external: ['zod'],
     outDir: 'dist/registry',

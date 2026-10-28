@@ -50,10 +50,10 @@ catalog:
   react: ^19.2.0
   react-dom: ^19.2.0
   stoker: ^2.0.1
-  # rafters stays on TypeScript 5.9 over the toolchain's 7, which ships no compiler API:
-  # tsup's .d.ts step in packages/cli fails, and apps/registry's own code imports
-  # typescript's API (astro check itself runs on the TypeScript 6 the toolchain gives it).
-  typescript: 5.9.3
+  # rafters takes TypeScript 6, not the toolchain's 7, for two failures measured on 7:
+  # tsup's .d.ts step in packages/cli fails, and apps/registry imports the TypeScript
+  # compiler API, which 7 does not ship.
+  typescript: ^6.0.3
   # The toolchain's vite is vite-plus-core, which is out of scope (#2885); rafters keeps upstream vite.
   vite: ^8.1.1
   vitest: ^5.0.0
