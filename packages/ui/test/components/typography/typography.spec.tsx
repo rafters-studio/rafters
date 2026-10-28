@@ -1,12 +1,16 @@
 import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { commands } from 'vitest/browser';
+import { Card } from '../../../src/components/card/card';
+import { cardClasses } from '../../../src/components/card/card.classes';
 import * as Named from '../../../src/components/typography/typography';
 import {
   Blockquote,
   Code,
   CodeBlock,
   H1,
+  H2,
   H5,
   Li,
   Small,
@@ -40,6 +44,12 @@ const NAMED: Array<[keyof typeof Named, TypographyVariant]> = [
   ['Li', 'li'],
   ['List', 'ul'],
 ];
+
+declare module 'vitest/browser' {
+  interface BrowserCommands {
+    compileCss: (classes: string) => Promise<string>;
+  }
+}
 
 const body = () => document.body;
 
@@ -171,5 +181,107 @@ describe('typography [react]', () => {
     const p = body().querySelector('p') as HTMLElement;
     expect(p.className).toContain('leading-7');
     expect(p.className).toContain('max-w-prose');
+  });
+});
+
+/** The variants that paint no background, so inherit their colour (#2888). */
+const INHERITING: readonly TypographyVariant[] = [
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'p',
+  'lead',
+  'large',
+  'small',
+  'blockquote',
+  'ul',
+  'ol',
+  'li',
+  'abbr',
+];
+
+/**
+ * #2888: text inherits its surface's foreground. The test page loads no
+ * compiled sheet, so the classes the Card surfaces and the h2 and p emit are
+ * compiled server side (test/browser/compile-css.command.ts) and injected.
+ */
+describe('typography [react] -- inherits the surface foreground (#2888)', () => {
+  let sheet: HTMLStyleElement | undefined;
+
+  beforeAll(async () => {
+    const classes = [
+      cardClasses({}, {}).root,
+      cardClasses({ surface: 'primary' }, {}).root,
+      ...INHERITING.map((variant) => resolveTypography(variant)),
+    ].join(' ');
+    sheet = document.createElement('style');
+    sheet.textContent = await commands.compileCss(classes);
+    document.head.append(sheet);
+  }, 30000);
+
+  afterAll(() => {
+    sheet?.remove();
+  });
+
+  it.each([
+    ['a Card', undefined],
+    ['a surface="primary" Card', 'primary'],
+  ])('an h2 and a p inside %s compute the surface foreground', (_, surface) => {
+    render(
+      <Card surface={surface} data-testid="surface">
+        <H2>Heading</H2>
+        <P>Body</P>
+      </Card>,
+    );
+    const root = body().querySelector('[data-testid="surface"]') as HTMLElement;
+    const foreground = getComputedStyle(root).color;
+    expect(getComputedStyle(root).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    for (const tag of ['h2', 'p']) {
+      const el = root.querySelector(tag) as HTMLElement;
+      expect(getComputedStyle(el).color, tag).toBe(foreground);
+    }
+  });
+
+  const SURFACES = [
+    ['a Card', undefined],
+    ['a surface="primary" Card', 'primary'],
+  ] as const;
+
+  it.each(SURFACES)('every inheriting variant inside %s computes its foreground', (_, surface) => {
+    for (const [name, variant] of NAMED) {
+      if (!INHERITING.includes(variant)) continue;
+      const Component = Named[name] as React.ComponentType<Named.TypographyComponentProps>;
+      const { container } = render(
+        <Card surface={surface} data-testid="surface">
+          <Component data-testid={name}>x</Component>
+        </Card>,
+      );
+      const card = container.querySelector('[data-testid="surface"]') as HTMLElement;
+      const el = container.querySelector(`[data-testid="${name}"]`) as HTMLElement;
+      expect.soft(getComputedStyle(el).color, name).toBe(getComputedStyle(card).color);
+      cleanup();
+    }
+  });
+
+  it.each(SURFACES)('bare native copy inside %s computes its foreground', (_, surface) => {
+    render(
+      <Card surface={surface} data-testid="surface">
+        <h2>Heading</h2>
+        <p>Body</p>
+        <ul>
+          <li>one</li>
+        </ul>
+        <ol>
+          <li>two</li>
+        </ol>
+        <blockquote>Quoted</blockquote>
+      </Card>,
+    );
+    const card = body().querySelector('[data-testid="surface"]') as HTMLElement;
+    const foreground = getComputedStyle(card).color;
+    for (const el of card.querySelectorAll('h2, p, ul, ol, li, blockquote')) {
+      expect(getComputedStyle(el).color, el.tagName).toBe(foreground);
+    }
   });
 });
