@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import { parseSync } from 'vite/rolldown/utils';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cleanupFixture, createFixture } from '../fixtures/projects.js';
 import { execCli, readConfig } from './helpers.js';
@@ -131,17 +131,13 @@ describe('a consumer compiles no utility from rafters comments (#2800)', () => {
       expect(shipped.has('.bg-blue-500')).toBe(false);
       expect(shipped.has('.hover\\:bg-blue-500')).toBe(false);
 
-      const printer = ts.createPrinter({ removeComments: true });
       for (const file of sourceFiles(join(fixturePath, 'src'))) {
-        const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-        const source = ts.createSourceFile(
-          file,
-          readFileSync(file, 'utf-8'),
-          ts.ScriptTarget.Latest,
-          true,
-          kind,
-        );
-        writeFileSync(file, printer.printFile(source));
+        const text = readFileSync(file, 'utf-8');
+        // A space keeps the tokens either side of a comment apart.
+        const bare = parseSync(file, text)
+          .comments.toReversed()
+          .reduce((out, c) => `${out.slice(0, c.start)} ${out.slice(c.end)}`, text);
+        writeFileSync(file, bare);
       }
       const stripped = compiledSelectors(fixturePath, entry, join(outDir, 'stripped.css'));
 

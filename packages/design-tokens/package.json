@@ -29,6 +29,7 @@
     "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   }
 }

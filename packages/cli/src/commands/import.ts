@@ -141,10 +141,13 @@ export function planCssImport(
   const schema = z.partialRecord(z.enum(targets), z.string().regex(PROPERTY));
   const parsed = schema.safeParse(roleMap);
   if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) =>
-      i.code === 'invalid_key'
-        ? `${i.path.join('.')}: unknown target (expected one of ${targets.join(', ')}, or color:<name> to add a colour family)`
-        : `${i.path.join('.')}: ${i.message}`,
+    const issues = parsed.error.issues.flatMap((i) =>
+      i.code === 'unrecognized_keys'
+        ? i.keys.map(
+            (key) =>
+              `${key}: unknown target (expected one of ${targets.join(', ')}, or color:<name> to add a colour family)`,
+          )
+        : [`${i.path.join('.')}: ${i.message}`],
     );
     throw new CssImportError(`--map: ${issues.join('; ')}`);
   }

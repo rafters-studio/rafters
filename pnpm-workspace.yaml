@@ -20,8 +20,8 @@ patchedDependencies:
   vitest@5.0.0: patches/vitest@5.0.0.patch
 
 # Shared versions come from @rafters/toolchain (configDependencies below, applied by
-# .pnpmfile.mjs). An entry here wins over the toolchain's, so this block holds only what
-# rafters keeps for itself plus packages the toolchain does not manage.
+# .pnpmfile.mjs). An entry here wins over the toolchain's, so this block holds only
+# packages the toolchain does not manage.
 catalog:
   '@rafters/toolchain': ^0.1.4
   '@axe-core/playwright': ^4.11.0
@@ -50,12 +50,6 @@ catalog:
   react: ^19.2.0
   react-dom: ^19.2.0
   stoker: ^2.0.1
-  # rafters takes TypeScript 6, not the toolchain's 7, for two failures measured on 7:
-  # tsup's .d.ts step in packages/cli fails, and apps/registry imports the TypeScript
-  # compiler API, which 7 does not ship.
-  typescript: ^6.0.3
-  # The toolchain's vite is vite-plus-core, which is out of scope (#2885); rafters keeps upstream vite.
-  vite: ^8.1.1
   vitest: ^5.0.0
   vitest-axe: ^1.0.0-pre.3
   vitest-browser-react: ^2.3.0
