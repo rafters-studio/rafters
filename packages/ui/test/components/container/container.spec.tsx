@@ -2,8 +2,12 @@ import * as React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
+import { Card } from '../../../src/components/card/card';
+import { cardClasses } from '../../../src/components/card/card.classes';
 import { Container } from '../../../src/components/container/container';
 import { containerClasses } from '../../../src/components/container/container.classes';
+import type { TypographyVariant } from '../../../src/components/typography/typography.behavior';
+import { resolveTypography } from '../../../src/components/typography/typography.classes';
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
@@ -128,5 +132,127 @@ describe('container [react] -- article headings read foreground (#2816)', () => 
     if (mode === 'dark') expect(foreground).not.toBe(colourOf('[data-testid="light"]'));
     expect(colourOf(heading)).toBe(foreground);
     expect(colourOf('article p')).toBe(foreground);
+  });
+});
+
+/**
+ * #2889: article prose and Typography are one type system. The article's
+ * classes, the Card surfaces and every compared Typography variant are
+ * compiled server side and injected, as above.
+ */
+describe('container [react] -- article prose is Typography type (#2889)', () => {
+  let sheet: HTMLStyleElement | undefined;
+
+  /** Each element the article styles, and the Typography variant it matches. */
+  const PAIRS: ReadonlyArray<readonly [string, TypographyVariant]> = [
+    ['h1', 'h1'],
+    ['h2', 'h2'],
+    ['h3', 'h3'],
+    ['h4', 'h4'],
+    ['p', 'p'],
+    ['ul', 'ul'],
+    ['ol', 'ol'],
+    ['li', 'li'],
+    ['blockquote', 'blockquote'],
+    ['code', 'code'],
+    ['pre', 'codeblock'],
+  ];
+
+  /** Type, not layout: flow spacing stays the article's own (#2889). */
+  const TYPE = [
+    'font-size',
+    'font-weight',
+    'letter-spacing',
+    'line-height',
+    'font-family',
+    'color',
+  ] as const;
+
+  beforeAll(async () => {
+    const classes = [
+      containerClasses({ as: 'article' }, {}).root,
+      cardClasses({}, {}).root,
+      cardClasses({ surface: 'primary' }, {}).root,
+      'text-foreground',
+      ...PAIRS.map(([, variant]) => resolveTypography(variant)),
+    ].join(' ');
+    sheet = document.createElement('style');
+    sheet.textContent = await commands.compileCss(classes);
+    document.head.append(sheet);
+  }, 30000);
+
+  afterAll(() => {
+    sheet?.remove();
+  });
+
+  it('each article element computes the type of its Typography variant', () => {
+    render(
+      <div style={{ width: '960px' }}>
+        <Container as="article" size="full" data-testid="article">
+          <h1>a</h1>
+          <h2>a</h2>
+          <h3>a</h3>
+          <h4>a</h4>
+          <p>a</p>
+          <ul>
+            <li>a</li>
+          </ul>
+          <ol>
+            <li>a</li>
+          </ol>
+          <blockquote>a</blockquote>
+          <code>a</code>
+          <pre>a</pre>
+        </Container>
+        <div className="@container w-full" data-testid="typography">
+          {PAIRS.map(([tag, variant]) =>
+            React.createElement(tag, { key: tag, className: resolveTypography(variant) }, 'a'),
+          )}
+        </div>
+      </div>,
+    );
+    const article = body().querySelector('[data-testid="article"]') as HTMLElement;
+    const typography = body().querySelector('[data-testid="typography"]') as HTMLElement;
+    for (const [tag] of PAIRS) {
+      const prose = getComputedStyle(article.querySelector(tag) as HTMLElement);
+      const typed = getComputedStyle(typography.querySelector(tag) as HTMLElement);
+      for (const property of TYPE) {
+        expect
+          .soft(prose.getPropertyValue(property), `${tag} ${property}`)
+          .toBe(typed.getPropertyValue(property));
+      }
+    }
+  });
+
+  it.each([
+    ['a Card', undefined],
+    ['a surface="primary" Card', 'primary'],
+  ])('bare prose in an article inside %s computes the surface foreground', (_, surface) => {
+    render(
+      <div>
+        <span data-testid="paired" className="text-foreground" />
+        <Card surface={surface} data-testid="surface">
+          <Container as="article">
+            <h2>Heading</h2>
+            <p>Body</p>
+            <ul>
+              <li>one</li>
+            </ul>
+            <blockquote>Quoted</blockquote>
+            <code>x</code>
+          </Container>
+        </Card>
+      </div>,
+    );
+    const root = body().querySelector('[data-testid="surface"]') as HTMLElement;
+    const foreground = getComputedStyle(root).color;
+    expect(getComputedStyle(root).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    for (const el of root.querySelectorAll('h2, p, ul, li, blockquote')) {
+      expect.soft(getComputedStyle(el).color, el.tagName).toBe(foreground);
+    }
+    // code paints bg-muted, so it computes the foreground paired with it.
+    const paired = body().querySelector('[data-testid="paired"]') as HTMLElement;
+    const code = root.querySelector('code') as HTMLElement;
+    expect(getComputedStyle(code).color, 'CODE').toBe(getComputedStyle(paired).color);
   });
 });

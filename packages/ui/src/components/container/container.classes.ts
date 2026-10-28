@@ -105,27 +105,43 @@ const depthClasses: Record<ContainerDepth, string> = {
   max: 'z-depth-max',
 };
 
+/*
+ * The article's type: Typography's variants behind descendant selectors, so
+ * bare native prose and Typography are one type system (#2889). Written out
+ * whole for Tailwind's scanner (#2825); a unit test fails when it drifts.
+ */
+// BEGIN GENERATED article type: pnpm -C packages/ui generate:article-type
+const articleType = [
+  '[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:@lg:text-5xl',
+  '[&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-tight',
+  '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:tracking-tight',
+  '[&_h4]:text-xl [&_h4]:font-semibold [&_h4]:tracking-tight',
+  '[&_p]:leading-7',
+  '[&_li]:leading-7',
+  '[&_code]:bg-muted [&_code]:text-sm [&_code]:font-mono [&_code]:text-foreground',
+  '[&_pre]:bg-muted [&_pre]:text-sm [&_pre]:font-mono [&_pre]:text-foreground',
+].join(' ');
+// END GENERATED article type
+
 /**
- * Article typography flow. Ported verbatim from the oracle: raw sizes,
- * NOT the typography role utilities -- repointing these at the display,
- * title, and body role tokens is a DESIGNER pass, flagged in the spec,
- * not an agent decision.
+ * Article flow: the layout around the type -- spacing between prose blocks,
+ * list markers, borders, link colour. Type comes from `articleType` alone.
  */
 const articleTypography = [
-  '[&_p]:leading-relaxed',
+  articleType,
   '[&_p]:mb-4',
   '[&_p:last-child]:mb-0',
-  '[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:mb-4 [&_h1]:mt-0 [&_h1]:text-foreground',
-  '[&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:first:mt-0 [&_h2]:text-foreground',
-  '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-foreground',
-  '[&_h4]:text-xl [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-4 [&_h4]:text-foreground',
+  '[&_h1]:mb-4 [&_h1]:mt-0',
+  '[&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:first:mt-0',
+  '[&_h3]:mb-2 [&_h3]:mt-6',
+  '[&_h4]:mb-2 [&_h4]:mt-4',
   '[&_ul]:list-disc [&_ul]:ps-6 [&_ul]:mb-4',
   '[&_ol]:list-decimal [&_ol]:ps-6 [&_ol]:mb-4',
   '[&_li]:mb-1',
   '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-primary/80',
   '[&_blockquote]:border-s-4 [&_blockquote]:border-muted [&_blockquote]:ps-4 [&_blockquote]:italic [&_blockquote]:my-4',
-  '[&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono',
-  '[&_pre]:bg-muted [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4',
+  '[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded',
+  '[&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4',
   '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
   '[&_hr]:border-border [&_hr]:my-8',
   '[&_img]:rounded-lg [&_img]:my-4',

@@ -70,11 +70,11 @@ describe('container [astro]', () => {
   });
 
   it.each(['h1', 'h2', 'h3', 'h4'])(
-    'article %s reads the foreground token, not accent-foreground (#2816)',
+    'article %s sets no colour and inherits, never accent-foreground (#2816, #2889)',
     async (heading) => {
       const body = await render({ as: 'article' }, `<${heading}>Title</${heading}><p>Prose.</p>`);
       const classes = (partElement(body, 'root') as HTMLElement).className.split(' ');
-      expect(classes).toContain(`[&_${heading}]:text-foreground`);
+      expect(classes).not.toContain(`[&_${heading}]:text-foreground`);
       expect(classes).not.toContain(`[&_${heading}]:text-accent-foreground`);
     },
   );
