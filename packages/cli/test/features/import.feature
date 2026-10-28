@@ -83,7 +83,7 @@ Feature: rafters import -- a colour family assigned to no role (#2813)
     And the stylesheet "brand.css"
     When I run "rafters import --agent --css-import brand.css --map color:nasty-orange=--sky"
     Then the command should succeed
-    And rafters.json has the group path "nasty > orange" with members 50 through 950, each of $type "color"
+    And light.tokens.json has the group path "nasty > orange" with members 50 through 950, each of $type "color"
 
   @criterion-7
   Scenario: rafters import adds a colour to an initialised project

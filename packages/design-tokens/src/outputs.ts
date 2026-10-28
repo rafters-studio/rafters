@@ -4,7 +4,7 @@
  *
  * Every trigger (CLI init, CLI add/update, studio token mutation, the file
  * watch) funnels through {@link regenerateOutputs}. There is exactly one
- * function that writes `rafters.css` / `rafters.ts` / `rafters.json` /
+ * function that writes `rafters.css` / `rafters.ts` / `dtcg/*.tokens.json` /
  * `rafters.standalone.css` / `rafters.documentation.css`, prunes any of those
  * files left behind by a now-disabled export, and fires the HMR
  * notification, so the emitted set
@@ -15,10 +15,10 @@
  */
 
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, unlink } from 'node:fs/promises';
+import { mkdir, rmdir, unlink } from 'node:fs/promises';
 import { writeFileAtomic } from './atomic-write.js';
 import { isAbsolute, join, resolve } from 'node:path';
-import { toDTCG } from './exporters/dtcg.js';
+import { type DTCGExport, toDTCG } from './exporters/dtcg.js';
 import {
   registryToCompiled,
   registryToDocumentation,
@@ -60,9 +60,14 @@ export interface RegenerateOutputsInput {
   projectRoot?: string;
 }
 
+/** What the DTCG export reports: tokens that are not Figma variables, and colours mapped into sRGB. */
+type DTCGReport = Pick<DTCGExport, 'unrepresented' | 'gamutMapped'>;
+
 export interface RegenerateOutputsHooks {
   /** Fired once after all outputs are written (e.g. studio HMR signal). */
   notify?: () => void;
+  /** Fired with the DTCG export's report when the dtcg export is written, for the CLI to print. */
+  dtcgReport?: (report: DTCGReport) => void;
 }
 
 /**
@@ -74,7 +79,10 @@ export interface RegenerateOutputsHooks {
 const KNOWN_OUTPUT_FILENAMES = [
   'rafters.css',
   'rafters.ts',
+  // No export writes rafters.json, so a copy on disk is always stale.
   'rafters.json',
+  'dtcg/light.tokens.json',
+  'dtcg/dark.tokens.json',
   'rafters.standalone.css',
   'rafters.documentation.css',
 ] as const;
@@ -168,9 +176,17 @@ export async function regenerateOutputs(
   }
 
   if (exports.dtcg) {
-    const dtcg = toDTCG([...registry.list()]);
-    await writeFileAtomic(join(outputDir, 'rafters.json'), JSON.stringify(dtcg, null, 2));
-    written.push('rafters.json');
+    const { light, dark, unrepresented, gamutMapped } = toDTCG([...registry.list()]);
+    await mkdir(join(outputDir, 'dtcg'), { recursive: true });
+    const files: Array<[string, unknown]> = [
+      ['dtcg/light.tokens.json', light],
+      ['dtcg/dark.tokens.json', dark],
+    ];
+    for (const [filename, content] of files) {
+      await writeFileAtomic(join(outputDir, filename), JSON.stringify(content, null, 2));
+      written.push(filename);
+    }
+    hooks.dtcgReport?.({ unrepresented, gamutMapped });
   }
 
   if (exports.compiled) {
@@ -198,6 +214,13 @@ export async function regenerateOutputs(
       await unlink(filePath);
     } catch {
       // Best-effort cleanup -- see comment above.
+    }
+  }
+  if (!exports.dtcg) {
+    try {
+      await rmdir(join(outputDir, 'dtcg'));
+    } catch {
+      // Absent, or holds files rafters did not write: leave it.
     }
   }
 

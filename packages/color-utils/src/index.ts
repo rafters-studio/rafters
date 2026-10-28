@@ -37,6 +37,7 @@ export {
   hexToOKLCH,
   type OklchToCSSOptions,
   oklchToCSS,
+  oklchToSRGB,
   roundOKLCH,
   tryParseColor,
 } from './conversion.js';

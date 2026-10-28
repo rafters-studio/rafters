@@ -112,6 +112,19 @@ export function log(event: Record<string, unknown>): void {
       context.spinner = ora('Generating outputs...').start();
       break;
 
+    case 'init:dtcg_report': {
+      const unrepresented = event.unrepresented as Array<{ name: string; reason: string }>;
+      const gamutMapped = event.gamutMapped as string[];
+      console.log(
+        `\n  DTCG: ${unrepresented.length} tokens are not Figma variables; each is whole in $extensions.rafters.unrepresented:`,
+      );
+      for (const { name, reason } of unrepresented) console.log(`    ${name}: ${reason}`);
+      if (gamutMapped.length > 0) {
+        console.log(`  DTCG: colours mapped into sRGB: ${gamutMapped.join(', ')}`);
+      }
+      break;
+    }
+
     case 'init:compiling_css':
       if (context.spinner) {
         context.spinner.text = 'Compiling CSS with Tailwind...';

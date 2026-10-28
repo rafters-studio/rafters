@@ -513,14 +513,14 @@ Then('the output has no rule for {string}', async ({}, className: string) => {
 // Thens: DTCG
 
 Then(
-  'rafters.json has the group path {string} with members 50 through 950, each of $type {string}',
+  'light.tokens.json has the group path {string} with members 50 through 950, each of $type {string}',
   async ({}, path: string, type: string) => {
     let node: unknown = JSON.parse(
-      await readIn(context.fixturePath, '.rafters/output/rafters.json'),
+      await readIn(context.fixturePath, '.rafters/output/dtcg/light.tokens.json'),
     );
     for (const segment of path.split(' > ')) {
       if (typeof node !== 'object' || node === null || !(segment in node)) {
-        throw new Error(`rafters.json has no group at ${path}`);
+        throw new Error(`light.tokens.json has no group at ${path}`);
       }
       node = (node as Record<string, unknown>)[segment];
     }

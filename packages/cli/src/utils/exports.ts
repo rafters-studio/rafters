@@ -37,7 +37,7 @@ export const EXPORT_CHOICES: ExportChoice[] = [
     checked: true,
   },
   {
-    name: 'DTCG JSON (Figma Tokens, Style Dictionary)',
+    name: 'DTCG JSON (Figma variables, one file per mode)',
     value: 'dtcg',
     checked: false,
   },

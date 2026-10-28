@@ -39,7 +39,8 @@ const ALL_OFF: OutputExports = {
 const KNOWN_FILES = [
   'rafters.css',
   'rafters.ts',
-  'rafters.json',
+  'dtcg/light.tokens.json',
+  'dtcg/dark.tokens.json',
   'rafters.standalone.css',
   'rafters.documentation.css',
 ];
@@ -79,7 +80,7 @@ describe('regenerateOutputs (#1944)', () => {
   });
 
   it('removes a disabled export artifact left over from a prior regen', async () => {
-    // First regen with everything on -- all five files land on disk.
+    // First regen with everything on -- every known file lands on disk.
     await regenerateOutputs(baseRegistry(), { outputDir, exports: ALL_ON });
     for (const filename of KNOWN_FILES) {
       expect(existsSync(join(outputDir, filename))).toBe(true);
@@ -100,9 +101,19 @@ describe('regenerateOutputs (#1944)', () => {
     expect(written.sort()).toEqual(['rafters.css', 'rafters.ts']);
     expect(existsSync(join(outputDir, 'rafters.css'))).toBe(true);
     expect(existsSync(join(outputDir, 'rafters.ts'))).toBe(true);
-    expect(existsSync(join(outputDir, 'rafters.json'))).toBe(false);
+    expect(existsSync(join(outputDir, 'dtcg'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.standalone.css'))).toBe(false);
     expect(existsSync(join(outputDir, 'rafters.documentation.css'))).toBe(false);
+  });
+
+  it('sweeps rafters.json, which no export writes', async () => {
+    writeFileSync(join(outputDir, 'rafters.json'), '{}');
+    const written = await regenerateOutputs(baseRegistry(), {
+      outputDir,
+      exports: { ...ALL_OFF, dtcg: true },
+    });
+    expect(written).not.toContain('rafters.json');
+    expect(existsSync(join(outputDir, 'rafters.json'))).toBe(false);
   });
 
   it('never touches a file outside the known output filename set', async () => {

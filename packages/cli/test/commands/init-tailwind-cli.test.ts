@@ -183,6 +183,7 @@ describe('@tailwindcss/cli on demand (#2843)', () => {
       expect(regenerateOutputs).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ projectRoot: cwd }),
+        expect.anything(),
       );
     } finally {
       rmSync(cwd, { recursive: true, force: true });
