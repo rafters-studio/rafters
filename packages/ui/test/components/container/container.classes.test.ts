@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CONTAINER_CLASSES, withArticleType } from '../../../scripts/generate-article-type';
 import { containerClasses } from '../../../src/components/container/container.classes';
+import { COLOR } from '../../../src/components/typography/typography.classes';
 
 function root(config: Parameters<typeof containerClasses>[0]): string {
   return containerClasses(config, {}).root;
@@ -58,12 +61,19 @@ describe('container classes', () => {
     expect(root({ as: 'section' })).not.toContain('max-w-prose');
   });
 
-  it('article headings name foreground, never accent-foreground (#2816)', () => {
-    const article = root({ as: 'article' });
+  it('article headings set no colour and inherit, never accent-foreground (#2816, #2889)', () => {
+    const classes = root({ as: 'article' }).split(' ');
     for (const heading of ['h1', 'h2', 'h3', 'h4']) {
-      expect(article.split(' ')).toContain(`[&_${heading}]:text-foreground`);
+      for (const colour of Object.values(COLOR)) {
+        expect(classes).not.toContain(`[&_${heading}]:${colour}`);
+      }
     }
-    expect(article).not.toContain('accent-foreground');
+    expect(classes.join(' ')).not.toContain('accent-foreground');
+  });
+
+  it('the article type block is what Typography VARIANTS generate (#2889)', () => {
+    const source = readFileSync(CONTAINER_CLASSES, 'utf-8');
+    expect(withArticleType(source)).toBe(source);
   });
 
   it('a bg-fill- fill lands on the root; a retired v2 value paints nothing', () => {
@@ -86,7 +96,7 @@ describe('article measure yields to size', () => {
       expect(article).toContain(`max-w-${size}`);
       expect(article).toContain('mx-auto');
       expect(article).not.toContain('max-w-prose');
-      expect(article).toContain('[&_p]:leading-relaxed');
+      expect(article).toContain('[&_p]:leading-7');
     },
   );
 

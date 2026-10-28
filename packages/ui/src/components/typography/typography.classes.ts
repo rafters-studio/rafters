@@ -268,6 +268,20 @@ export function resolveTypography(
 }
 
 /**
+ * A variant's type and nothing else: its size, weight, line, tracking, family
+ * and colour, its container-query defaults, and the background its colour is
+ * paired with. No layout. The article's descendant selectors are generated
+ * from these (#2889), so prose type is defined once, here.
+ */
+export function typeClasses(variant: TypographyVariant): string[] {
+  const defaults = VARIANTS[variant];
+  return [defaults.surface ?? '', emitProps(defaults), ...Object.values(defaults.cq ?? {})]
+    .join(' ')
+    .split(' ')
+    .filter(Boolean);
+}
+
+/**
  * Emit token-prop classes without any variant defaults. Exposed for tests that
  * exercise the prop-to-utility emit path in isolation.
  */

@@ -7,6 +7,7 @@
   },
   "include": [
     "src/**/*",
+    "scripts/**/*",
     "../color-utils/src/**/*.d.ts",
     "test/components/dialog.test.tsx",
     "test/a11y/**/*",

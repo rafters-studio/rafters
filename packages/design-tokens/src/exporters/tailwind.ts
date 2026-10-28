@@ -1213,14 +1213,15 @@ const ARTICLE_ELEMENT_STYLES: Array<[string, string]> = [
   ['p', 'text-body-medium ts-body-medium leading-relaxed mb-4'],
   ['p:last-child', 'mb-0'],
 
-  // Headings -- compositions carry size/weight/tracking/leading/family
-  ['h1', 'text-display-medium ts-display-medium mb-4 mt-0 text-accent-foreground'],
-  ['h2', 'text-title-large ts-title-large mb-3 mt-8 text-accent-foreground'],
+  // Headings -- compositions carry size/weight/tracking/leading/family; no
+  // colour, so a heading inherits its surface's foreground (#2889)
+  ['h1', 'text-display-medium ts-display-medium mb-4 mt-0'],
+  ['h2', 'text-title-large ts-title-large mb-3 mt-8'],
   ['h2:first-child', 'mt-0'],
-  ['h3', 'text-title-medium ts-title-medium mb-2 mt-6 text-accent-foreground'],
-  ['h4', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
-  ['h5', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
-  ['h6', 'text-title-small ts-title-small mb-2 mt-4 text-accent-foreground'],
+  ['h3', 'text-title-medium ts-title-medium mb-2 mt-6'],
+  ['h4', 'text-title-small ts-title-small mb-2 mt-4'],
+  ['h5', 'text-title-small ts-title-small mb-2 mt-4'],
+  ['h6', 'text-title-small ts-title-small mb-2 mt-4'],
 
   // Lists -- structural only (type metrics cascade from parent)
   ['ul', 'list-disc pl-6 mb-4'],

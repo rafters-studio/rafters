@@ -14,6 +14,7 @@
   },
   "scripts": {
     "matrix:motion": "tsx test/matrix/render-motion-matrix.ts",
+    "generate:article-type": "tsx scripts/generate-article-type.ts",
     "test": "vitest",
     "test:unit": "vitest run",
     "test:spec": "vitest run --project browser --project astro",
