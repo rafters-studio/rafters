@@ -79,11 +79,10 @@ export interface RegenerateOutputsHooks {
 const KNOWN_OUTPUT_FILENAMES = [
   'rafters.css',
   'rafters.ts',
-  // The single-file DTCG output before #2891; never written now, so always swept.
+  // No export writes rafters.json, so a copy on disk is always stale.
   'rafters.json',
   'dtcg/light.tokens.json',
   'dtcg/dark.tokens.json',
-  'dtcg/report.json',
   'rafters.standalone.css',
   'rafters.documentation.css',
 ] as const;
@@ -182,7 +181,6 @@ export async function regenerateOutputs(
     const files: Array<[string, unknown]> = [
       ['dtcg/light.tokens.json', light],
       ['dtcg/dark.tokens.json', dark],
-      ['dtcg/report.json', { unrepresented, gamutMapped }],
     ];
     for (const [filename, content] of files) {
       await writeFileAtomic(join(outputDir, filename), JSON.stringify(content, null, 2));

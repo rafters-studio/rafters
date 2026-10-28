@@ -23,7 +23,8 @@
  * - `$type` follows from the value, never from the name. CSS the spec can
  *   express (calc over tokens, em letter spacing, rgb(), shadow lists, the
  *   JSON payloads of typography, focus and motion semantics) is resolved to
- *   spec values; the original CSS stays at `$extensions.rafters.css`.
+ *   spec values; the token itself, original value included, rides in
+ *   `$extensions.rafters.token`.
  * - A value no DTCG type or Figma variable carries is not a token: it is
  *   listed, whole, in the root record `$extensions.rafters.unrepresented`.
  *   Nothing is dropped.

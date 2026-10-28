@@ -41,7 +41,6 @@ const KNOWN_FILES = [
   'rafters.ts',
   'dtcg/light.tokens.json',
   'dtcg/dark.tokens.json',
-  'dtcg/report.json',
   'rafters.standalone.css',
   'rafters.documentation.css',
 ];
@@ -107,7 +106,7 @@ describe('regenerateOutputs (#1944)', () => {
     expect(existsSync(join(outputDir, 'rafters.documentation.css'))).toBe(false);
   });
 
-  it('sweeps the single-file DTCG output an earlier version wrote', async () => {
+  it('sweeps rafters.json, which no export writes', async () => {
     writeFileSync(join(outputDir, 'rafters.json'), '{}');
     const written = await regenerateOutputs(baseRegistry(), {
       outputDir,

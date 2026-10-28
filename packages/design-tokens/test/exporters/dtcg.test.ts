@@ -5,6 +5,7 @@
  * every source token rides whole in `$extensions.rafters` or the root
  * `$extensions.rafters.unrepresented` record.
  */
+import { hexToOKLCH } from '@rafters/color-utils';
 import type { Token } from '@rafters/shared';
 import { DTCGColorValueSchema } from '@rafters/shared';
 import { describe, expect, it } from 'vitest';
@@ -180,6 +181,11 @@ describe('toDTCG writes the subset Figma imports', () => {
     expect(figmaShape('color', step.$value)).toBe(true);
     expect(nodeAt(step, '$extensions.rafters.value.colorSpace')).toBe('oklch');
     expect(vivid.gamutMapped).toContain('vivid-600');
+    // Mapped into sRGB with lightness and hue kept and chroma reduced.
+    const mapped = hexToOKLCH(String(nodeAt(step, '$value.hex')));
+    expect(mapped.l).toBeCloseTo(0.65, 1);
+    expect(Math.abs(mapped.h - 145)).toBeLessThan(3);
+    expect(mapped.c).toBeLessThan(0.3);
   });
 
   it('writes px dimensions, s durations, one family name and numeric weights', () => {
