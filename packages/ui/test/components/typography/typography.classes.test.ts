@@ -12,7 +12,6 @@ describe('resolveTypography variant defaults', () => {
     expect(h1).toContain('text-4xl');
     expect(h1).toContain('font-bold');
     expect(h1).toContain('tracking-tight');
-    expect(h1).toContain('text-foreground');
     expect(h1).toContain('scroll-m-20');
     expect(h1).toContain('@lg:text-5xl');
   });
@@ -66,6 +65,50 @@ describe('color resolves through a literal map', () => {
   it('an unmapped value, a retired v2 signature included, emits no colour class', () => {
     for (const value of ['muted', 'muted/50', 'primary-to-accent', 'accent']) {
       expect(tokenPropsToClasses({ color: value })).toBe('');
+    }
+  });
+});
+
+describe('text colour inherits unless the variant paints a background (#2888)', () => {
+  const textColour = (classes: string) =>
+    classes.split(' ').filter((c) => Object.values(COLOR).includes(c));
+
+  it('a variant with no background sets no text colour', () => {
+    const inheriting = [
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'p',
+      'lead',
+      'large',
+      'small',
+      'blockquote',
+      'ul',
+      'ol',
+      'li',
+      'abbr',
+    ] as const;
+    for (const variant of inheriting) {
+      expect(textColour(resolveTypography(variant)), variant).toEqual([]);
+    }
+  });
+
+  it('a variant that paints a background keeps its paired foreground', () => {
+    expect(textColour(resolveTypography('code'))).toEqual(['text-foreground']);
+    expect(textColour(resolveTypography('codeblock'))).toEqual(['text-foreground']);
+    expect(textColour(resolveTypography('mark'))).toEqual(['text-accent-foreground']);
+  });
+
+  it('muted keeps muted-foreground', () => {
+    expect(textColour(resolveTypography('muted'))).toEqual(['text-muted-foreground']);
+  });
+
+  it('the color prop sets the colour on every variant', () => {
+    for (const variant of Object.keys(typographyClasses) as (keyof typeof typographyClasses)[]) {
+      expect(textColour(resolveTypography(variant, { color: 'primary' })), variant).toEqual([
+        'text-primary',
+      ]);
     }
   });
 });

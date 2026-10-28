@@ -30,12 +30,17 @@ interface VariantDefaults extends Omit<TypographyTokenProps, 'fill'> {
   cq?: Partial<Record<CqDimension, string>>;
 }
 
+/*
+ * A variant sets a text colour only when it paints its own background (code,
+ * codeblock, mark) or the colour is what it means (muted); every other variant
+ * inherits, so text on a Card or a filled surface takes that surface's
+ * foreground (#2888).
+ */
 const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
   h1: {
     size: '4xl',
     weight: 'bold',
     tracking: 'tight',
-    color: 'foreground',
     layout: 'scroll-m-20',
     cq: { size: '@lg:text-5xl' },
   },
@@ -43,27 +48,24 @@ const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
     size: '3xl',
     weight: 'semibold',
     tracking: 'tight',
-    color: 'foreground',
     layout: 'scroll-m-20',
   },
   h3: {
     size: '2xl',
     weight: 'semibold',
     tracking: 'tight',
-    color: 'foreground',
     layout: 'scroll-m-20',
   },
   h4: {
     size: 'xl',
     weight: 'semibold',
     tracking: 'tight',
-    color: 'foreground',
     layout: 'scroll-m-20',
   },
-  p: { line: '7', color: 'foreground' },
-  lead: { size: 'xl', color: 'muted-foreground' },
-  large: { size: 'lg', weight: 'semibold', color: 'foreground' },
-  small: { size: 'sm', weight: 'medium', line: 'none', color: 'foreground' },
+  p: { line: '7' },
+  lead: { size: 'xl' },
+  large: { size: 'lg', weight: 'semibold' },
+  small: { size: 'sm', weight: 'medium', line: 'none' },
   muted: { size: 'sm', color: 'muted-foreground' },
   code: {
     size: 'sm',
@@ -79,11 +81,11 @@ const VARIANTS: Record<TypographyVariant, VariantDefaults> = {
     surface: 'bg-muted',
     layout: 'relative rounded-lg p-4 overflow-x-auto [&_code]:bg-transparent [&_code]:p-0',
   },
-  blockquote: { color: 'foreground', layout: 'mt-6 border-s-2 border-border ps-6 italic' },
+  blockquote: { layout: 'mt-6 border-s-2 border-border ps-6 italic' },
   mark: { color: 'accent-foreground', surface: 'bg-accent', layout: 'px-1 rounded' },
   abbr: { layout: 'cursor-help underline decoration-dotted underline-offset-4' },
-  ul: { color: 'foreground', layout: 'my-6 ms-6 list-disc [&>li]:mt-2' },
-  ol: { color: 'foreground', layout: 'my-6 ms-6 list-decimal [&>li]:mt-2' },
+  ul: { layout: 'my-6 ms-6 list-disc [&>li]:mt-2' },
+  ol: { layout: 'my-6 ms-6 list-decimal [&>li]:mt-2' },
   li: { line: '7' },
 };
 
