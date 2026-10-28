@@ -555,15 +555,22 @@ export async function generateOutputs(
     log({ event: 'init:compiling_css' });
   }
 
-  return regenerateOutputs(registry, {
-    outputDir: paths.output,
-    exports,
-    contentSources,
-    darkMode,
-    includeImport: source !== 'shadcn',
-    fontImports,
-    projectRoot: cwd,
-  });
+  return regenerateOutputs(
+    registry,
+    {
+      outputDir: paths.output,
+      exports,
+      contentSources,
+      darkMode,
+      includeImport: source !== 'shadcn',
+      fontImports,
+      projectRoot: cwd,
+    },
+    {
+      dtcgReport: ({ unrepresented, gamutMapped }) =>
+        log({ event: 'init:dtcg_report', unrepresented, gamutMapped }),
+    },
+  );
 }
 
 async function regenerateFromExisting(

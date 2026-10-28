@@ -651,17 +651,20 @@ Then(
 Then('each export carries every fill with its full recipe and its colour references', async () => {
   const ts = await readFile(join(context.fixturePath, OUTPUT_DIR, 'rafters.ts'), 'utf8');
   const dtcg = JSON.parse(
-    await readFile(join(context.fixturePath, OUTPUT_DIR, 'rafters.json'), 'utf8'),
-  ) as { $extensions: { rafters: { unrepresented: Record<string, { value: unknown }> } } };
+    await readFile(join(context.fixturePath, OUTPUT_DIR, 'dtcg', 'light.tokens.json'), 'utf8'),
+  ) as {
+    $extensions: { rafters: { unrepresented: Record<string, { token: { value: unknown } }> } };
+  };
   for (const [bare, recipe] of Object.entries(local.fills)) {
     const name = `fill-${bare}`;
     const line = ts.split('\n').find((l) => l.startsWith(`    '${name}': `));
     expect(line, `rafters.ts ${name}`).toBeDefined();
     const json = (line ?? '').slice(`    '${name}': `.length).replace(/,$/, '');
     expect(JSON.parse(json), `rafters.ts ${name}`).toEqual(recipe);
-    expect(dtcg.$extensions.rafters.unrepresented[name]?.value, `rafters.json ${name}`).toEqual(
-      recipe,
-    );
+    expect(
+      dtcg.$extensions.rafters.unrepresented[name]?.token.value,
+      `light.tokens.json ${name}`,
+    ).toEqual(recipe);
   }
 });
 

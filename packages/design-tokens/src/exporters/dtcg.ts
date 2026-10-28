@@ -1,8 +1,21 @@
 /**
  * DTCG Exporter
  *
- * Converts Rafters Token[] to a file that conforms to the Design Tokens
- * Format Module 2025.10 and its Color Module.
+ * Converts Rafters Token[] to one file per mode (light, dark) that conforms
+ * to the Design Tokens Format Module 2025.10 and its Color Module, in the
+ * subset Figma's Variables panel imports (one file per mode).
+ *
+ * - Each `$value` takes the form Figma reads: sRGB colours (mapped into sRGB
+ *   with toGamutCeiling), `px` dimensions (rem x 16), `s` durations, one font
+ *   family name, and font weights as numbers. Typography and shadow
+ *   composites split into one variable per part, each carrying the Figma
+ *   scope that binds it. A type Figma holds no variable for (cubicBezier,
+ *   transition, border) is not a token.
+ * - Every exported token rides whole in `$extensions.rafters.token`, beside
+ *   its DTCG 2025.10 value (OKLCH, rem, ms, the full font stack, the
+ *   composite) in `$extensions.rafters.value`, so nothing is lost.
+ * - The dark file gives `X` the value of `X--dark`, so the files carry the
+ *   same paths with the same types.
  *
  * - A token's path is its name split on `-` (empty segments dropped), so
  *   `zinc-600` lands at `zinc.600` and `card--dark` at `card.dark`. A token
@@ -11,8 +24,9 @@
  *   express (calc over tokens, em letter spacing, rgb(), shadow lists, the
  *   JSON payloads of typography, focus and motion semantics) is resolved to
  *   spec values; the original CSS stays at `$extensions.rafters.css`.
- * - A value no DTCG type carries is not a token: it is listed, verbatim, in
- *   the root record `$extensions.rafters.unrepresented`. Nothing is dropped.
+ * - A value no DTCG type or Figma variable carries is not a token: it is
+ *   listed, whole, in the root record `$extensions.rafters.unrepresented`.
+ *   Nothing is dropped.
  * - ColorReferences keep the role: `{neutral.50}` resolves through a role
  *   scale (`neutral.50` -> `{zinc.50}`), the DTCG twin of the CSS role scale.
  *
@@ -20,7 +34,13 @@
  * @see https://www.designtokens.org/TR/2025.10/color/
  */
 
-import { REFERENCE_STEP_INDEX, SCALE_POSITIONS, tryParseColor } from '@rafters/color-utils';
+import {
+  oklchToSRGB,
+  REFERENCE_STEP_INDEX,
+  SCALE_POSITIONS,
+  toGamutCeiling,
+  tryParseColor,
+} from '@rafters/color-utils';
 import {
   type ColorReference,
   type ColorValue,
@@ -60,8 +80,6 @@ interface Emitted {
   type?: DTCGType;
   /** A literal, a Ref, or a composite whose sub-values may be Refs. */
   value: unknown;
-  /** Extra `$extensions.rafters` keys (payload keys the DTCG value cannot hold). */
-  extras?: Record<string, unknown>;
 }
 
 interface Unrepresented {
@@ -70,6 +88,31 @@ interface Unrepresented {
 }
 
 type Classified = Emitted | Unrepresented;
+
+/** The types a split composite part takes: the ones Figma reads. */
+type PartType = 'color' | 'dimension' | 'number' | 'fontFamily' | 'string';
+
+/** One variable a typography or shadow composite splits into. */
+interface Part {
+  /** Path below the composite's own path. */
+  key: string;
+  type: PartType;
+  /** A Ref, or a literal in its DTCG 2025.10 form. */
+  value: unknown;
+  /** The Figma scope that binds it to its text or effect property. */
+  scope: string;
+}
+
+/** One mode's file and what the mode comparison needs from it. */
+interface ModeFile {
+  file: DTCGFile;
+  /** Path -> `$type`, for every token and part. */
+  types: Map<string, string>;
+  /** Path -> the token name that owns it. */
+  owners: Map<string, string>;
+  /** Source token name -> why it is not a variable. */
+  unrepresented: Map<string, string>;
+}
 
 /** A literal resolved through any chain of references. */
 type Literal = { type: DTCGType; value: unknown };
@@ -137,6 +180,32 @@ const LENGTH_CATEGORIES = new Set(['spacing', 'radius', 'shadow', 'breakpoint', 
 
 const TYPOGRAPHY_KEYS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing'];
 
+/** The root font size rem is measured against; the generators assume 16px. */
+const ROOT_FONT_SIZE = 16;
+
+/** Types Figma holds no variable for. */
+const UNHELD_TYPES: ReadonlySet<DTCGType> = new Set(['cubicBezier', 'transition', 'border']);
+
+const FIGMA_SCOPES = 'com.figma.scopes';
+
+/** OpenType weight names, as Figma lists font styles. */
+const STYLE_NAMES: Record<number, string> = {
+  100: 'Thin',
+  200: 'ExtraLight',
+  300: 'Light',
+  400: 'Regular',
+  500: 'Medium',
+  600: 'SemiBold',
+  700: 'Bold',
+  800: 'ExtraBold',
+  900: 'Black',
+};
+
+const DARK_SUFFIX = '--dark';
+
+const MODE_MISMATCH =
+  'Its light and dark values take different forms, and both mode files must carry the same paths and types.';
+
 function isColorValue(value: Token['value']): value is ColorValue {
   return typeof value === 'object' && value !== null && 'scale' in value;
 }
@@ -153,14 +222,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function circularError(chain: readonly string[], name: string): Error {
   const loop = chain.includes(name) ? chain.slice(chain.indexOf(name)) : chain;
   return new Error(`toDTCG: circular reference ${[...loop, name].join(' -> ')}`);
-}
-
-/** The payload keys a DTCG composite does not carry, kept under `$extensions.rafters`. */
-function extrasOf(
-  payload: Record<string, unknown>,
-  carried: readonly string[],
-): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(payload).filter(([k]) => !carried.includes(k)));
 }
 
 /** The path segments of a token name: split on `-`, empty segments dropped. */
@@ -190,6 +251,26 @@ function invalidSegment(name: string): string | null {
 /** Floating point noise from resolving calc and em values; colour components are never rounded. */
 function tidy(n: number): number {
   return Math.round(n * 1e6) / 1e6;
+}
+
+function toPx(d: Dimension): Dimension {
+  return d.unit === 'rem' ? { value: tidy(d.value * ROOT_FONT_SIZE), unit: 'px' } : d;
+}
+
+function styleFor(weight: number): string {
+  const hundred = Math.min(900, Math.max(100, Math.round(weight / 100) * 100));
+  return STYLE_NAMES[hundred] ?? 'Regular';
+}
+
+/** An oklch colour as sRGB with hex; `mapped` when it lay outside sRGB. */
+function toSRGB(color: DTCGColorValue): { value: DTCGColorValue; mapped: boolean } {
+  const [l = 0, c = 0, h = 0] = color.components.map((x) => (x === 'none' ? 0 : x));
+  const inside = toGamutCeiling({ l, c, h, alpha: 1 }, 'srgb');
+  const { components, hex } = oklchToSRGB(inside);
+  return {
+    value: { colorSpace: 'srgb', components, alpha: color.alpha ?? 1, hex },
+    mapped: inside.c !== c,
+  };
 }
 
 function normalizeHue(h: number): number {
@@ -282,17 +363,27 @@ class DTCGBuilder {
   private readonly classified = new Map<string, Classified>();
   private readonly classifying: string[] = [];
   private readonly literalChain: string[] = [];
+  private readonly parts = new Map<string, Part[]>();
 
-  constructor(input: Token[]) {
+  /**
+   * @param hidden Names this file does not emit (every `X--dark` with an `X`).
+   * @param stand Name -> the name whose value it takes in this file (the dark
+   *   file's `X` takes `X--dark`'s).
+   * @param forced Names made unrepresented, with why.
+   */
+  constructor(
+    input: Token[],
+    private readonly hidden: ReadonlySet<string> = new Set(),
+    private readonly stand: ReadonlyMap<string, string> = new Map(),
+    private readonly forced: ReadonlyMap<string, string> = new Map(),
+  ) {
     for (const token of input) {
       const existing = this.tokens.get(token.name);
-      if (!existing) {
-        this.tokens.set(token.name, token);
-        continue;
-      }
-      if (JSON.stringify(existing.value) !== JSON.stringify(token.value)) {
+      if (existing && JSON.stringify(existing.value) !== JSON.stringify(token.value)) {
         throw new Error(`toDTCG: duplicate token name "${token.name}" with different values`);
       }
+      // The last of equal duplicates wins, as in the registry.
+      this.tokens.set(token.name, token);
     }
     this.buildRoleScales();
   }
@@ -412,6 +503,9 @@ class DTCGBuilder {
 
     const token = this.tokens.get(name);
     if (!token) throw new Unresolved(name, true);
+
+    const forced = this.forced.get(name);
+    if (forced !== undefined) return { kind: 'unrepresented', reason: forced };
 
     const invalid = invalidSegment(name);
     if (invalid) return { kind: 'unrepresented', reason: invalid };
@@ -617,7 +711,6 @@ class DTCGBuilder {
           delay: { value: 0, unit: 'ms' },
           timingFunction: new Ref(`rafters-ease-${payload.curve}`),
         },
-        extras: extrasOf(payload, ['durationTier', 'curve']),
       };
     }
     if (typeof payload.keyframe === 'string') {
@@ -655,7 +748,6 @@ class DTCGBuilder {
         letterSpacing,
         lineHeight: new Ref(`line-height-${p.lineHeight}`),
       },
-      extras: extrasOf(p, TYPOGRAPHY_KEYS),
     };
   }
 
@@ -688,7 +780,6 @@ class DTCGBuilder {
       kind: 'token',
       type: 'border',
       value: { color, width, style },
-      extras: extrasOf(p, ['width', 'style', 'color']),
     };
   }
 
@@ -700,73 +791,173 @@ class DTCGBuilder {
     return [];
   }
 
-  build(options: Required<ToDTCGOptions>): DTCGFile {
+  /** The value's own type, else the type of the token its reference chain reaches. */
+  private typeOf(name: string): DTCGType {
+    const type = this.typeIfAny(name);
+    if (type === null) throw new Error(`toDTCG: token "${name}" has no type`);
+    return type;
+  }
+
+  /** As typeOf, or null when the chain reaches an unrepresented token. */
+  private typeIfAny(name: string): DTCGType | null {
+    const c = this.classified.get(name);
+    if (c?.kind !== 'token') return null;
+    if (c.type) return c.type;
+    return c.value instanceof Ref ? this.typeIfAny(c.value.name) : null;
+  }
+
+  /** A composite part's literal: itself, or the literal its reference resolves to. */
+  private partLiteral(part: unknown): unknown {
+    return part instanceof Ref ? this.literalOf(part.name).value : part;
+  }
+
+  /**
+   * Marks every token Figma cannot hold as a variable unrepresented, and
+   * splits every typography and shadow composite into its parts.
+   */
+  private splitForFigma(names: string[]): void {
+    for (const name of names) {
+      const c = this.classified.get(name);
+      const type = this.typeIfAny(name);
+      // A chain that reaches an unrepresented token is propagated afterwards.
+      if (c?.kind !== 'token' || type === null) continue;
+      let result: Part[] | string | null = null;
+      if (UNHELD_TYPES.has(type)) {
+        result = `A ${type}; Figma variables hold only colours, numbers, strings and booleans.`;
+      } else if (type === 'typography' || type === 'shadow') {
+        if (c.value instanceof Ref) {
+          result = `An alias of a ${type} composite; only a composite's own value splits into variables.`;
+        } else {
+          try {
+            result =
+              type === 'typography' ? this.typographyParts(c.value) : this.shadowParts(c.value);
+          } catch (e) {
+            if (!(e instanceof Unresolved)) throw e;
+            result = `Its ${type} parts need token "${e.target}", which resolves to no value.`;
+          }
+        }
+      }
+      if (typeof result === 'string') {
+        this.classified.set(name, { kind: 'unrepresented', reason: result });
+      } else if (result) {
+        this.parts.set(name, result);
+      }
+    }
+  }
+
+  /** Family, style, weight, size, line height (ratio x size, in px) and letter spacing. */
+  private typographyParts(value: unknown): Part[] | string {
+    if (!isRecord(value)) return 'A typography value that is not an object.';
+    const weight = this.partLiteral(value.fontWeight);
+    const ratio = this.partLiteral(value.lineHeight);
+    const size = this.partLiteral(value.fontSize);
+    if (typeof weight !== 'number' || typeof ratio !== 'number' || !isRecord(size)) {
+      return 'Its weight, line height or size resolves to no value a text property binds to.';
+    }
+    const px = toPx(size as unknown as Dimension);
+    return [
+      { key: 'family', type: 'fontFamily', value: value.fontFamily, scope: 'FONT_FAMILY' },
+      { key: 'style', type: 'string', value: styleFor(weight), scope: 'FONT_STYLE' },
+      { key: 'weight', type: 'number', value: value.fontWeight, scope: 'FONT_WEIGHT' },
+      { key: 'size', type: 'dimension', value: value.fontSize, scope: 'FONT_SIZE' },
+      {
+        key: 'lineHeight',
+        type: 'dimension',
+        value: { value: tidy(ratio * px.value), unit: 'px' },
+        scope: 'LINE_HEIGHT',
+      },
+      {
+        key: 'letterSpacing',
+        type: 'dimension',
+        value: value.letterSpacing,
+        scope: 'LETTER_SPACING',
+      },
+    ];
+  }
+
+  /** Per layer: colour, offsets, blur and spread. */
+  private shadowParts(value: unknown): Part[] | string {
+    if (!Array.isArray(value)) return 'A shadow value that is not a list of layers.';
+    return value.flatMap((layer: unknown, i): Part[] => {
+      if (!isRecord(layer)) return [];
+      const at = `layer${i + 1}`;
+      const float = (key: string): Part => ({
+        key: `${at}.${key}`,
+        type: 'dimension',
+        value: layer[key],
+        scope: 'EFFECT_FLOAT',
+      });
+      return [
+        { key: `${at}.color`, type: 'color', value: layer.color, scope: 'EFFECT_COLOR' },
+        float('offsetX'),
+        float('offsetY'),
+        float('blur'),
+        float('spread'),
+      ];
+    });
+  }
+
+  build(options: Required<ToDTCGOptions>, onGamutMapped: (name: string) => void): ModeFile {
     const names = [...this.tokens.keys(), ...this.roleScale.keys()];
     for (const name of names) this.classify(name);
 
     this.checkCycles(names);
     this.checkTargets(names);
+    this.splitForFigma(names);
     this.propagateUnrepresented(names);
 
-    const emitted = names.filter((n) => this.classified.get(n)?.kind === 'token');
+    const own = (name: string): string => this.stand.get(name) ?? name;
+    const shown = names.filter((n) => !this.hidden.has(n));
+    const emitted = shown.filter((n) => this.classified.get(own(n))?.kind === 'token');
     const pathOwner = new Map<string, string>();
-    for (const name of emitted) {
-      const path = pathOf(name);
+    const claim = (path: string, name: string): void => {
       const other = pathOwner.get(path);
-      if (other !== undefined) {
+      if (other !== undefined && other !== name) {
         throw new Error(`toDTCG: tokens "${other}" and "${name}" both derive the path "${path}"`);
       }
       pathOwner.set(path, name);
+    };
+    for (const name of emitted) {
+      const parts = this.parts.get(own(name));
+      if (parts) for (const part of parts) claim(`${pathOf(name)}.${part.key}`, name);
+      else claim(pathOf(name), name);
     }
     const groups = new Set<string>();
     for (const path of pathOwner.keys()) {
       const segs = path.split('.');
       for (let i = 1; i < segs.length; i++) groups.add(segs.slice(0, i).join('.'));
     }
-    const layoutPath = (name: string): string => {
-      const path = pathOf(name);
-      return groups.has(path) ? `${path}.$root` : path;
-    };
-
-    const typeMemo = new Map<string, DTCGType>();
-    const typeOf = (name: string): DTCGType => {
-      const memo = typeMemo.get(name);
-      if (memo) return memo;
-      const c = this.classified.get(name);
-      if (c?.kind !== 'token') throw new Error(`toDTCG: token "${name}" has no type`);
-      const type = c.type ?? (c.value instanceof Ref ? typeOf(c.value.name) : undefined);
-      if (!type) throw new Error(`toDTCG: token "${name}" has no type`);
-      typeMemo.set(name, type);
-      return type;
-    };
+    const layoutPath = (path: string): string => (groups.has(path) ? `${path}.$root` : path);
 
     const render = (value: unknown): unknown => {
-      if (value instanceof Ref) return `{${layoutPath(value.name)}}`;
+      if (value instanceof Ref) return `{${layoutPath(pathOf(value.name))}}`;
       if (Array.isArray(value)) return value.map(render);
       if (isRecord(value)) {
         return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, render(v)]));
       }
       return value;
     };
+    /** A literal in the form Figma reads: sRGB, px, s, one family name. */
+    const figmaValue = (name: string, type: string, value: unknown): unknown => {
+      if (value instanceof Ref) return render(value);
+      if (type === 'color') {
+        const { value: color, mapped } = toSRGB(value as DTCGColorValue);
+        if (mapped) onGamutMapped(name);
+        return color;
+      }
+      if (type === 'dimension') return toPx(value as Dimension);
+      if (type === 'duration') {
+        const d = value as { value: number; unit: string };
+        return d.unit === 'ms' ? { value: tidy(d.value / 1000), unit: 's' } : d;
+      }
+      if (type === 'fontFamily' && Array.isArray(value)) return value[0];
+      return value;
+    };
 
     const root: Record<string, unknown> = {};
-    for (const name of emitted) {
-      const c = this.classified.get(name) as Emitted;
-      const out: Record<string, unknown> = { $value: render(c.value), $type: typeOf(name) };
-      const token = this.tokens.get(name);
-      if (token) {
-        if (token.description) out.$description = token.description;
-        else if (token.semanticMeaning) out.$description = token.semanticMeaning;
-        if (token.deprecated) out.$deprecated = true;
-        if (options.includeExtensions) {
-          const rafters: Record<string, unknown> = { ...buildExtensions(token), ...c.extras };
-          if (typeof token.value === 'string') rafters.css = token.value;
-          if (Object.keys(rafters).length > 0) out.$extensions = { rafters };
-        }
-      }
-      const segs = layoutPath(name).split('.');
+    const nodeAt = (segs: readonly string[]): Record<string, unknown> => {
       let node = root;
-      for (const seg of segs.slice(0, -1)) {
+      for (const seg of segs) {
         const next = Object.hasOwn(node, seg) ? node[seg] : undefined;
         if (isRecord(next)) {
           node = next;
@@ -776,23 +967,60 @@ class DTCGBuilder {
           node = group;
         }
       }
-      node[segs[segs.length - 1] as string] = out;
+      return node;
+    };
+    const place = (path: string, out: Record<string, unknown>): void => {
+      const segs = layoutPath(path).split('.');
+      nodeAt(segs.slice(0, -1))[segs[segs.length - 1] as string] = out;
+    };
+    const types = new Map<string, string>();
+
+    for (const name of emitted) {
+      const c = this.classified.get(own(name)) as Emitted;
+      const token = this.tokens.get(own(name));
+      const meta: Record<string, unknown> = {};
+      if (token?.description) meta.$description = token.description;
+      else if (token?.semanticMeaning) meta.$description = token.semanticMeaning;
+      if (token?.deprecated) meta.$deprecated = true;
+      if (options.includeExtensions && token) {
+        meta.$extensions = { rafters: { token, value: render(c.value) } };
+      }
+      const parts = this.parts.get(own(name));
+      if (parts) {
+        Object.assign(nodeAt(pathOf(name).split('.')), meta);
+        for (const part of parts) {
+          const path = `${pathOf(name)}.${part.key}`;
+          place(path, {
+            $value: figmaValue(own(name), part.type, part.value),
+            $type: part.type,
+            $extensions: { [FIGMA_SCOPES]: [part.scope] },
+          });
+          types.set(path, part.type);
+        }
+        continue;
+      }
+      const type = this.typeOf(own(name));
+      const figmaType = type === 'fontWeight' ? 'number' : type;
+      place(pathOf(name), {
+        $value: figmaValue(own(name), type, c.value),
+        $type: figmaType,
+        ...meta,
+      });
+      types.set(pathOf(name), figmaType);
     }
 
+    const unrepresented = new Map<string, string>();
     const unrepresentedEntries: Array<[string, unknown]> = [];
-    for (const [name, token] of this.tokens) {
-      const c = this.classified.get(name);
-      if (c?.kind === 'unrepresented') {
-        unrepresentedEntries.push([
-          name,
-          { value: token.value, category: token.category, reason: c.reason },
-        ]);
-      }
+    for (const name of shown) {
+      const c = this.classified.get(own(name));
+      const token = this.tokens.get(own(name));
+      if (c?.kind !== 'unrepresented' || !token) continue;
+      unrepresented.set(token.name, c.reason);
+      unrepresentedEntries.push([token.name, { reason: c.reason, token }]);
     }
     // fromEntries defines own keys, so a token literally named __proto__ is kept, not swallowed.
-    const unrepresented = Object.fromEntries(unrepresentedEntries);
-    root.$extensions = { rafters: { unrepresented } };
-    return root as DTCGFile;
+    root.$extensions = { rafters: { unrepresented: Object.fromEntries(unrepresentedEntries) } };
+    return { file: root as DTCGFile, types, owners: pathOwner, unrepresented };
   }
 
   /** Format §7.2.3: no reference chain may be circular. */
@@ -846,74 +1074,13 @@ class DTCGBuilder {
         if (dead) {
           this.classified.set(name, {
             kind: 'unrepresented',
-            reason: `It references token "${dead.name}", which has no DTCG type.`,
+            reason: `It references token "${dead.name}", which is not a variable in this export.`,
           });
           changed = true;
         }
       }
     }
   }
-}
-
-/**
- * Rafters-specific extension data for a token
- */
-function buildExtensions(token: Token): Record<string, unknown> {
-  const extensions: Record<string, unknown> = {};
-
-  // Core intelligence metadata
-  if (token.semanticMeaning) extensions.semanticMeaning = token.semanticMeaning;
-  if (token.usageContext) extensions.usageContext = token.usageContext;
-  if (token.usagePatterns) extensions.usagePatterns = token.usagePatterns;
-
-  // Dependency tracking
-  if (token.dependsOn && token.dependsOn.length > 0) extensions.dependsOn = token.dependsOn;
-  if (token.progressionSystem) extensions.progressionSystem = token.progressionSystem;
-  if (token.mathRelationship) extensions.mathRelationship = token.mathRelationship;
-  if (token.scalePosition !== undefined) extensions.scalePosition = token.scalePosition;
-
-  // Responsive behavior
-  if (token.containerQueryAware !== undefined) {
-    extensions.containerQueryAware = token.containerQueryAware;
-  }
-  if (token.reducedMotionAware) extensions.reducedMotionAware = token.reducedMotionAware;
-
-  // Motion metadata
-  if (token.motionIntent) extensions.motionIntent = token.motionIntent;
-  if (token.easingName) extensions.easingName = token.easingName;
-
-  // Export hints
-  if (token.generateUtilityClass !== undefined) {
-    extensions.generateUtilityClass = token.generateUtilityClass;
-  }
-  if (token.tailwindOverride) extensions.tailwindOverride = token.tailwindOverride;
-  if (token.customPropertyOnly) extensions.customPropertyOnly = token.customPropertyOnly;
-
-  // Designer intent (the "why" layer)
-  if (token.userOverride) extensions.userOverride = token.userOverride;
-  if (token.computedValue !== undefined) extensions.computedValue = token.computedValue;
-  if (token.generationRule) extensions.generationRule = token.generationRule;
-
-  // Design system relationships
-  if (token.pairedWith && token.pairedWith.length > 0) extensions.pairedWith = token.pairedWith;
-  if (token.conflictsWith && token.conflictsWith.length > 0) {
-    extensions.conflictsWith = token.conflictsWith;
-  }
-  if (token.applicableComponents && token.applicableComponents.length > 0) {
-    extensions.applicableComponents = token.applicableComponents;
-  }
-  if (token.requiredForComponents && token.requiredForComponents.length > 0) {
-    extensions.requiredForComponents = token.requiredForComponents;
-  }
-
-  // AI intelligence metadata
-  if (token.trustLevel) extensions.trustLevel = token.trustLevel;
-  if (token.cognitiveLoad !== undefined) extensions.cognitiveLoad = token.cognitiveLoad;
-  if (token.consequence) extensions.consequence = token.consequence;
-  if (token.accessibilityLevel) extensions.accessibilityLevel = token.accessibilityLevel;
-  if (token.appliesWhen && token.appliesWhen.length > 0) extensions.appliesWhen = token.appliesWhen;
-
-  return extensions;
 }
 
 /**
@@ -924,24 +1091,84 @@ export interface ToDTCGOptions {
   includeExtensions?: boolean;
 }
 
+/** The export: one file per mode, and what the CLI reports from it. */
+export interface DTCGExport {
+  light: DTCGFile;
+  dark: DTCGFile;
+  /** Every token that is not a variable, with why; each is whole in the files' root record. */
+  unrepresented: Array<{ name: string; reason: string }>;
+  /** Every token whose colour lay outside sRGB and was mapped into it. */
+  gamutMapped: string[];
+}
+
+/** Names whose path or type differs between the two mode files. */
+function modeMismatches(light: ModeFile, dark: ModeFile): string[] {
+  const names = new Set<string>();
+  for (const [a, b] of [
+    [light, dark],
+    [dark, light],
+  ] as const) {
+    for (const [path, type] of a.types) {
+      if (b.types.get(path) === type) continue;
+      const owner = a.owners.get(path);
+      if (owner !== undefined) names.add(owner);
+    }
+  }
+  return [...names];
+}
+
 /**
- * Convert Token[] to a DTCG 2025.10 file.
+ * Convert Token[] to a DTCG 2025.10 file per mode, in the form Figma imports.
  *
  * Needs the whole token set in one call: calc, em, shadow, colour-mix,
- * typography and role references read sibling tokens by name.
+ * typography, role and dark references read sibling tokens by name. A token
+ * `X--dark` whose `X` exists is X's dark value; any other token is in both.
  *
  * Throws on a reference to a token that is not in the input, on a circular
  * reference chain, and on two input tokens with one name and different
- * values. A value no DTCG type carries never throws: it goes to the root
- * `$extensions.rafters.unrepresented` record.
+ * values. A value no Figma variable carries never throws: it goes to the root
+ * `$extensions.rafters.unrepresented` record of each file it belongs to.
  *
  * @example
  * ```typescript
- * const dtcg = toDTCG(generateBaseSystem().allTokens);
- * fs.writeFileSync('tokens.json', JSON.stringify(dtcg, null, 2));
+ * const { light, dark } = toDTCG(generateBaseSystem().allTokens);
+ * fs.writeFileSync('light.tokens.json', JSON.stringify(light, null, 2));
  * ```
  */
-export function toDTCG(tokens: Token[], options: ToDTCGOptions = {}): DTCGFile {
+export function toDTCG(tokens: Token[], options: ToDTCGOptions = {}): DTCGExport {
   const { includeExtensions = true } = options;
-  return new DTCGBuilder(tokens).build({ includeExtensions });
+  const names = new Set(tokens.map((t) => t.name));
+  const darkOf = new Map<string, string>();
+  for (const { name } of tokens) {
+    const base = name.endsWith(DARK_SUFFIX) ? name.slice(0, -DARK_SUFFIX.length) : null;
+    if (base !== null && names.has(base)) darkOf.set(base, name);
+  }
+  const hidden = new Set(darkOf.values());
+
+  const forced = new Map<string, string>();
+  for (;;) {
+    const gamut = new Set<string>();
+    const build = (stand: ReadonlyMap<string, string>): ModeFile =>
+      new DTCGBuilder(tokens, hidden, stand, forced).build({ includeExtensions }, (n) =>
+        gamut.add(n),
+      );
+    const light = build(new Map());
+    const dark = build(darkOf);
+    const mismatched = modeMismatches(light, dark).filter((n) => !forced.has(n));
+    if (mismatched.length > 0) {
+      for (const n of mismatched) {
+        forced.set(n, MODE_MISMATCH);
+        const dark = darkOf.get(n);
+        if (dark !== undefined) forced.set(dark, MODE_MISMATCH);
+      }
+      continue;
+    }
+    const unrepresented = new Map([...light.unrepresented, ...dark.unrepresented]);
+    return {
+      light: light.file,
+      dark: dark.file,
+      unrepresented: [...unrepresented].map(([name, reason]) => ({ name, reason })),
+      gamutMapped: [...gamut].sort(),
+    };
+  }
 }

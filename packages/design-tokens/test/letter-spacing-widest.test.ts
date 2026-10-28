@@ -35,23 +35,11 @@ describe('letter-spacing-widest', () => {
   });
 
   it('is referenced by the shortcut DTCG letterSpacing, not a literal', () => {
-    const dtcg = toDTCG(allTokens);
-    const shortcut = findToken(dtcg, 'shortcut');
-    const value = isObj(shortcut) ? shortcut.$value : undefined;
-    const letterSpacing = isObj(value) ? value.letterSpacing : undefined;
-    expect(letterSpacing).toBe('{letter.spacing.widest}');
-    const target = nodeAt(dtcg, 'letter.spacing.widest');
-    expect(isObj(target) ? target.$value : undefined).toEqual({ value: 0.0694, unit: 'rem' });
+    const { light } = toDTCG(allTokens);
+    const letterSpacing = nodeAt(light, 'shortcut.letterSpacing');
+    expect(isObj(letterSpacing) ? letterSpacing.$value : undefined).toBe('{letter.spacing.widest}');
+    const target = nodeAt(light, 'letter.spacing.widest');
+    expect(isObj(target) ? target.$value : undefined).toEqual({ value: 1.1104, unit: 'px' });
+    expect(nodeAt(target, '$extensions.rafters.value')).toEqual({ value: 0.0694, unit: 'rem' });
   });
 });
-
-/** Depth-first search for the token keyed `name`. */
-function findToken(node: unknown, name: string): unknown {
-  if (!isObj(node)) return undefined;
-  for (const [k, v] of Object.entries(node)) {
-    if (k === name && isObj(v) && '$value' in v) return v;
-    const found = findToken(v, name);
-    if (found !== undefined) return found;
-  }
-  return undefined;
-}

@@ -90,3 +90,23 @@ export function roundOKLCH(oklch: OKLCH): OKLCH {
     alpha: oklch.alpha !== undefined ? Math.round(oklch.alpha * 100) / 100 : 1,
   };
 }
+
+/**
+ * Convert an in-gamut OKLCH colour to sRGB: gamma-encoded components in
+ * [0, 1] (clamped, so a colour on the sRGB boundary cannot round outside it)
+ * and a six-digit hex. Map an out-of-gamut colour first, with
+ * toGamutCeiling(oklch, 'srgb'); alpha is not part of the result.
+ */
+export function oklchToSRGB(oklch: OKLCH): { components: [number, number, number]; hex: string } {
+  const coords = new Color('oklch', [oklch.l, oklch.c, oklch.h]).to('srgb').coords;
+  const channel = (i: number): number => Math.min(1, Math.max(0, Number(coords[i] ?? 0) || 0));
+  const components: [number, number, number] = [channel(0), channel(1), channel(2)];
+  const hex = `#${components
+    .map((v) =>
+      Math.round(v * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+  return { components, hex };
+}

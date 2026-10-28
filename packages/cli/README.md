@@ -57,7 +57,7 @@ Next.js, Vite, Remix, React Router, Astro, vanilla.
 |--------|------|---------|-------------|
 | Tailwind CSS | `rafters.css` | Yes | CSS custom properties with `@theme` |
 | TypeScript | `rafters.ts` | Yes | Type-safe constants with JSDoc intelligence |
-| DTCG JSON | `rafters.json` | No | W3C Design Tokens standard format |
+| DTCG JSON | `dtcg/light.tokens.json`, `dtcg/dark.tokens.json` | No | W3C Design Tokens 2025.10, one file per mode, in the form Figma's Variables panel imports; every rafters field rides in `$extensions.rafters` |
 | Standalone CSS | `rafters.standalone.css` | No | Pre-built, no Tailwind required |
 | Documentation CSS | `rafters.documentation.css` | No | Complete utility surface for docs and previews |
 

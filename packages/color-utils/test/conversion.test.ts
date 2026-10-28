@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hexToOKLCH, oklchToCSS, roundOKLCH } from '../src/conversion.js';
+import { hexToOKLCH, oklchToCSS, oklchToSRGB, roundOKLCH } from '../src/conversion.js';
 
 describe('hexToOKLCH', () => {
   it('converts a standard color', () => {
@@ -131,5 +131,21 @@ describe('oklchToCSS', () => {
     expect(
       oklchToCSS({ l: 0.70001, c: 0.15001, h: 250.001, alpha: 0.5001 }, { precision: 3 }),
     ).toBe('oklch(0.700 0.150 250.001 / 0.500)');
+  });
+});
+
+describe('oklchToSRGB', () => {
+  it('converts a colour to sRGB components and hex', () => {
+    const white = oklchToSRGB({ l: 1, c: 0, h: 0, alpha: 1 });
+    expect(white.hex).toBe('#ffffff');
+    expect(white.components.map((v) => Math.round(v * 1000) / 1000)).toEqual([1, 1, 1]);
+    expect(oklchToSRGB(hexToOKLCH('#3b82f6')).hex).toBe('#3b82f6');
+  });
+
+  it('keeps every component inside [0, 1]', () => {
+    for (const v of oklchToSRGB({ l: 0.7, c: 0.4, h: 145, alpha: 1 }).components) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(1);
+    }
   });
 });
