@@ -254,6 +254,35 @@ function tidy(n: number): number {
   return Math.round(n * 1e6) / 1e6;
 }
 
+/** CSS generic family keywords and system aliases: names a stack falls back to, not fonts Figma can load. */
+const GENERIC_FAMILIES: ReadonlySet<string> = new Set([
+  'serif',
+  'sans-serif',
+  'monospace',
+  'cursive',
+  'fantasy',
+  'math',
+  'emoji',
+  'fangsong',
+  'system-ui',
+  'ui-serif',
+  'ui-sans-serif',
+  'ui-monospace',
+  'ui-rounded',
+  '-apple-system',
+  'BlinkMacSystemFont',
+]);
+
+/**
+ * The family Figma loads a stack by: its first entry that names a font, not a
+ * CSS keyword, with fontsource's ` Variable` suffix dropped, since Figma lists
+ * the variable font under its family name.
+ */
+function familyName(stack: readonly string[]): string {
+  const name = stack.find((f) => !GENERIC_FAMILIES.has(f)) ?? stack[0] ?? '';
+  return name.replace(/ Variable$/, '');
+}
+
 function toPx(d: Dimension): Dimension {
   return d.unit === 'rem' ? { value: tidy(d.value * ROOT_FONT_SIZE), unit: 'px' } : d;
 }
@@ -938,7 +967,7 @@ class DTCGBuilder {
       }
       return value;
     };
-    /** A literal in the form Figma reads: sRGB, px, s, one family name. */
+    /** A literal in the form Figma reads: sRGB, px, s, one loadable family name. */
     const figmaValue = (name: string, type: string, value: unknown): unknown => {
       if (value instanceof Ref) return render(value);
       if (type === 'color') {
@@ -951,7 +980,7 @@ class DTCGBuilder {
         const d = value as { value: number; unit: string };
         return d.unit === 'ms' ? { value: tidy(d.value / 1000), unit: 's' } : d;
       }
-      if (type === 'fontFamily' && Array.isArray(value)) return value[0];
+      if (type === 'fontFamily' && Array.isArray(value)) return familyName(value);
       return value;
     };
 

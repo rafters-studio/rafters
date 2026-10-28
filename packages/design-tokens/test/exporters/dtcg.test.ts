@@ -188,7 +188,7 @@ describe('toDTCG writes the subset Figma imports', () => {
     expect(mapped.c).toBeLessThan(0.3);
   });
 
-  it('writes px dimensions, s durations, one family name and numeric weights', () => {
+  it('writes px dimensions, s durations, one loadable family name and numeric weights', () => {
     expect(tokenFor(out, 'spacing-2')).toMatchObject({
       $type: 'dimension',
       $value: { value: 8, unit: 'px' },
@@ -201,9 +201,11 @@ describe('toDTCG writes the subset Figma imports', () => {
     });
     expect(tokenFor(out, 'font-sans')).toMatchObject({
       $type: 'fontFamily',
-      $value: 'Noto Sans Variable',
+      $value: 'Noto Sans',
       $extensions: { rafters: { value: ['Noto Sans Variable', 'sans-serif'] } },
     });
+    // A CSS keyword is skipped: the mono stack opens with ui-monospace.
+    expect(nodeAt(tokenFor(out, 'font-mono'), '$value')).toBe('SFMono-Regular');
     expect(tokenFor(out, 'font-weight-semibold')).toMatchObject({ $type: 'number', $value: 600 });
     expect(tokenFor(out, 'line-height-lg')).toMatchObject({ $type: 'number', $value: 1.5 });
   });
