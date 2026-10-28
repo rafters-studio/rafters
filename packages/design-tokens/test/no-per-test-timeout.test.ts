@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import ts from 'typescript';
+import { type ESTree, parseSync, Visitor } from 'vite/rolldown/utils';
 import { describe, expect, it } from 'vitest';
 
 // vitest.config.ts sets the one testTimeout for this suite (#2752). A timeout
@@ -16,38 +16,37 @@ function testFiles(dir: string): string[] {
   });
 }
 
-function rootName(expr: ts.Expression): string | undefined {
-  if (ts.isIdentifier(expr)) return expr.text;
-  if (ts.isPropertyAccessExpression(expr)) return rootName(expr.expression);
-  if (ts.isCallExpression(expr)) return rootName(expr.expression);
+function rootName(expr: ESTree.Expression): string | undefined {
+  if (expr.type === 'Identifier') return expr.name;
+  if (expr.type === 'MemberExpression' && !expr.computed) return rootName(expr.object);
+  if (expr.type === 'CallExpression') return rootName(expr.callee);
   return undefined;
 }
 
-function isTimeoutArg(arg: ts.Expression): boolean {
-  if (ts.isNumericLiteral(arg)) return true;
-  if (!ts.isObjectLiteralExpression(arg)) return false;
-  return arg.properties.some((p) => p.name !== undefined && p.name.getText() === 'timeout');
+function isTimeoutArg(arg: ESTree.Argument): boolean {
+  if (arg.type === 'Literal' && typeof arg.value === 'number') return true;
+  if (arg.type !== 'ObjectExpression') return false;
+  return arg.properties.some(
+    (p) =>
+      p.type === 'Property' &&
+      !p.computed &&
+      p.key.type === 'Identifier' &&
+      p.key.name === 'timeout',
+  );
 }
 
 function timeoutSites(file: string): string[] {
-  const source = ts.createSourceFile(
-    file,
-    readFileSync(file, 'utf-8'),
-    ts.ScriptTarget.Latest,
-    true,
-  );
+  const text = readFileSync(file, 'utf-8');
   const sites: string[] = [];
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node)) {
-      const name = rootName(node.expression);
+  new Visitor({
+    CallExpression(node) {
+      const name = rootName(node.callee);
       if (name !== undefined && RUNNERS.has(name) && node.arguments.slice(1).some(isTimeoutArg)) {
-        const { line } = source.getLineAndCharacterOfPosition(node.getStart());
-        sites.push(`${relative(TEST_DIR, file)}:${line + 1}`);
+        const line = text.slice(0, node.start).split('\n').length;
+        sites.push(`${relative(TEST_DIR, file)}:${line}`);
       }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(source);
+    },
+  }).visit(parseSync(file, text).program);
   return sites;
 }
 

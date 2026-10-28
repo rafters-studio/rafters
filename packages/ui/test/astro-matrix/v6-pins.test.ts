@@ -9,6 +9,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { astroCheckTypescript } from '@rafters/toolchain/pnpmfile.mjs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { z } from 'zod';
@@ -21,6 +22,9 @@ const catalogSchema = z.object({ catalog: z.record(z.string(), z.string()) });
 const packageSchema = z.object({ devDependencies: z.record(z.string(), z.string()) });
 
 const catalog = catalogSchema.parse(parse(readFileSync(workspaceFile, 'utf8'))).catalog;
+// The root catalog takes typescript from @rafters/toolchain, at 7. The 6 leg runs astro check,
+// which runs on the TypeScript the toolchain gives @astrojs/check, so its pin tracks that.
+const ranges: Record<string, string | undefined> = { ...catalog, typescript: astroCheckTypescript };
 const v6Pins = packageSchema.parse(JSON.parse(readFileSync(v6PackageFile, 'utf8'))).devDependencies;
 
 /** The v6 pins that mirror a catalog entry. astro and @astrojs/* are the leg's own. */
@@ -50,7 +54,7 @@ function satisfies(pin: Version, range: string, label: string): boolean {
 describe('astro-matrix v6 pins track the root catalog', () => {
   for (const name of tracked) {
     it(`${name}: test/astro-matrix/v6/package.json pin satisfies the catalog range`, () => {
-      const range = catalog[name];
+      const range = ranges[name];
       const pin = v6Pins[name];
       expect(range, `${name} is missing from the pnpm-workspace.yaml catalog`).toBeDefined();
       expect(pin, `${name} is missing from test/astro-matrix/v6/package.json`).toBeDefined();

@@ -4,8 +4,8 @@
  *
  * This is NOT the CLI (`src/index.ts`). It registers only `rafters mcp` and
  * `--version`, deliberately never importing `add`/`init`, so the single-file
- * bundle carries only what the MCP server needs. tsup bundles this entry into
- * `plugin/bin/rafters-mcp.bundle.mjs` (see tsup.config.ts's third target).
+ * bundle carries only what the MCP server needs. vp pack bundles this entry into
+ * `plugin/bin/rafters-mcp.bundle.mjs` (see vite.config.ts's third pack entry).
  */
 import { Command } from 'commander';
 import { mcp } from './commands/mcp.js';

@@ -3,7 +3,7 @@
  *
  * Read at runtime from the package's own package.json rather than injected at
  * build time. `import.meta.url` resolves to `<pkg>/src/version.ts` when running
- * from source and `<pkg>/dist/index.js` once tsup has bundled this module into
+ * from source and `<pkg>/dist/index.js` once vp pack has bundled this module into
  * the single entry -- one level up from either is the same package.json, and
  * npm always ships package.json regardless of the `files` list. A build-time
  * define would leave the source path (which is what vitest runs) reporting a

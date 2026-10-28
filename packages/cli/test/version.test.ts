@@ -48,7 +48,7 @@ describe('rafters --version', () => {
  * still a broken `--version`. The test above spawns tsx against `src/index.ts`,
  * where `new URL('../package.json', import.meta.url)` resolves from `src/` --
  * a layout npm never sees. Consumers execute `dist/index.js`, where the same
- * expression resolves one level up from `dist/`. A tsup `outDir` change, an
+ * expression resolves one level up from `dist/`. A vp pack `outDir` change, an
  * added code-split chunk in a subdirectory, or any relocation of the bundled
  * module breaks that resolution and the source-path test stays green.
  *

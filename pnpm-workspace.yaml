@@ -19,14 +19,17 @@ allowBuilds:
 patchedDependencies:
   vitest@5.0.0: patches/vitest@5.0.0.patch
 
+# Shared versions come from @rafters/toolchain (configDependencies below, applied by
+# .pnpmfile.mjs). An entry here wins over the toolchain's, so this block holds only
+# packages the toolchain does not manage.
 catalog:
+  '@rafters/toolchain': ^0.1.4
   '@axe-core/playwright': ^4.11.0
   # @vitest/browser-playwright dev-pins playwright ^1.62.1; keep the runner in step.
   '@playwright/test': ^1.62.1
   '@testing-library/jest-dom': ^6.6.3
   '@testing-library/react': ^16.1.0
   '@testing-library/user-event': ^14.5.2
-  '@types/node': 24.10.0
   '@types/react': ^19.0.0
   '@types/react-dom': ^19.0.0
   '@vitejs/plugin-react': ^6.0.0
@@ -47,9 +50,13 @@ catalog:
   react: ^19.2.0
   react-dom: ^19.2.0
   stoker: ^2.0.1
-  typescript: 5.9.3
   vitest: ^5.0.0
   vitest-axe: ^1.0.0-pre.3
   vitest-browser-react: ^2.3.0
   zocker: 3.0.0
-  zod: ^4.1.12
+
+configDependencies:
+  '@rafters/toolchain': 0.1.4
+
+minimumReleaseAgeExclude:
+  - '@rafters/toolchain'

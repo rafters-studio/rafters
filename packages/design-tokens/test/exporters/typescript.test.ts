@@ -5,18 +5,16 @@
  * unquoted object key.
  */
 import { hexToOKLCH } from '@rafters/color-utils';
+import { parseSync } from 'vite/rolldown/utils';
 import { describe, expect, it } from 'vitest';
-import ts from 'typescript';
 import { tokensToTypeScript } from '../../src/exporters/typescript.js';
 import { generateBaseSystem } from '../../src/generators/index.js';
 import { importColorFamily } from '../../src/importers/color.js';
 import type { Token } from '@rafters/shared';
 
 function assertParses(source: string): void {
-  const file = ts.createSourceFile('tokens.ts', source, ts.ScriptTarget.Latest, true);
-  const diagnostics = (file as unknown as { parseDiagnostics: ts.DiagnosticWithLocation[] })
-    .parseDiagnostics;
-  expect(diagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))).toEqual([]);
+  const { errors } = parseSync('tokens.ts', source);
+  expect(errors.map((e) => e.message)).toEqual([]);
 }
 
 const hyphenated: Token[] = [

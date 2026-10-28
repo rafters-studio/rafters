@@ -1,6 +1,6 @@
 /**
  * Generate the committed plugin/hooks/agent-contract.md from the live MCP tool
- * surface. Run as a step of the CLI `build` script (after tsup) so the file the
+ * surface. Run as a step of the CLI `build` script (after vp pack) so the file the
  * Claude Code plugin ships at session start stays in lockstep with the tool
  * definitions. A lockstep test asserts the committed file equals this output.
  */

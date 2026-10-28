@@ -47,6 +47,9 @@ jobs:
           node-version: 24.12
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # Fails when a workspace package pins a package @rafters/toolchain manages
+      # instead of taking it through catalog: (#2885).
+      - run: pnpm exec toolchain drift
       # All three engines the root playwright.config.ts declares projects for
       # come from the image. webkit is not optional:
       # test/presence/presence-race.e2e.ts is the only place the browser

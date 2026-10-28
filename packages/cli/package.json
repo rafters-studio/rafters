@@ -28,8 +28,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && tsx scripts/sync-version.ts && tsx scripts/generate-agent-contract.ts",
-    "dev": "tsup --watch",
+    "build": "vp pack && tsx scripts/sync-version.ts && tsx scripts/generate-agent-contract.ts",
+    "dev": "vp pack --watch",
     "test": "pnpm run test:bdd && pnpm run test:unit",
     "test:bdd": "bddgen && playwright test",
     "test:unit": "vitest run",
@@ -46,7 +46,7 @@
     "css-tree": "^3.2.1",
     "execa": "^9.6.1",
     "ora": "^9.0.0",
-    "vite": "^8.1.1"
+    "vite": "catalog:"
   },
   "devDependencies": {
     "@astrojs/compiler-rs": "0.4.0",
@@ -60,9 +60,9 @@
     "@types/css-tree": "^2.3.11",
     "@types/node": "catalog:",
     "playwright-bdd": "catalog:",
-    "tsup": "^8.0.0",
     "tsx": "^4.21.0",
     "typescript": "catalog:",
+    "vite-plus": "catalog:",
     "vitest": "catalog:",
     "zocker": "catalog:"
   }
