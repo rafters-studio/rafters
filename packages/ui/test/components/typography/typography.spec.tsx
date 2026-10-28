@@ -243,26 +243,30 @@ describe('typography [react] -- inherits the surface foreground (#2888)', () => 
     }
   });
 
-  it('every inheriting variant inside a Card computes the Card foreground', () => {
-    const { container } = render(<Card data-testid="surface">{null}</Card>);
-    const card = container.querySelector('[data-testid="surface"]') as HTMLElement;
-    const foreground = getComputedStyle(card).color;
+  const SURFACES = [
+    ['a Card', undefined],
+    ['a surface="primary" Card', 'primary'],
+  ] as const;
+
+  it.each(SURFACES)('every inheriting variant inside %s computes its foreground', (_, surface) => {
     for (const [name, variant] of NAMED) {
       if (!INHERITING.includes(variant)) continue;
       const Component = Named[name] as React.ComponentType<Named.TypographyComponentProps>;
-      const { container: inner } = render(
-        <Card>
+      const { container } = render(
+        <Card surface={surface} data-testid="surface">
           <Component data-testid={name}>x</Component>
         </Card>,
       );
-      const el = inner.querySelector(`[data-testid="${name}"]`) as HTMLElement;
-      expect.soft(getComputedStyle(el).color, name).toBe(foreground);
+      const card = container.querySelector('[data-testid="surface"]') as HTMLElement;
+      const el = container.querySelector(`[data-testid="${name}"]`) as HTMLElement;
+      expect.soft(getComputedStyle(el).color, name).toBe(getComputedStyle(card).color);
+      cleanup();
     }
   });
 
-  it('bare native copy inside a Card computes the Card foreground', () => {
+  it.each(SURFACES)('bare native copy inside %s computes its foreground', (_, surface) => {
     render(
-      <Card data-testid="surface">
+      <Card surface={surface} data-testid="surface">
         <h2>Heading</h2>
         <p>Body</p>
         <ul>
