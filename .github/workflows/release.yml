@@ -44,7 +44,7 @@ jobs:
         working-directory: packages/color-utils
 
       - name: Publish to npm
-        run: npm publish --access=public --provenance
+        run: pnpm publish --access=public --provenance --no-git-checks
         working-directory: packages/cli
 
       - name: Create GitHub Release
