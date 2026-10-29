@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0]
+
+Released with the rafters CLI 0.6.0. `@rafters/ui` is not published to npm;
+the registry serves these components, so this section lists what changed in
+them since CLI 0.5.4. Projects pick these up with `rafters add --update-all`.
+
+### Changed
+
+- **Typography text inherits its surface's foreground (#2888).** `H1` to `H4`,
+  `P`, `Lead`, `Large`, `Small`, `Blockquote`, `Ul` and `Ol` no longer set a
+  text colour by default, so on a Card, a `surface="primary"` part or a dark
+  section they take that surface's foreground. `Code`, `CodeBlock` and `Mark`
+  keep the foreground paired with their background, `Muted` keeps
+  `muted-foreground`, and `color` still sets the colour. `Lead` loses its
+  `muted-foreground`; pass `color` to keep an old colour.
+- **Article prose takes its type from Typography (#2889).** Bare `h1` to `h4`,
+  `p`, `li`, `code` and `pre` inside `<Container as="article">` compute what the
+  matching Typography variant computes, from classes generated from
+  Typography's variants. Article headings set no colour and inherit; `h3` and
+  `h4` gain `tracking-tight`; `h1` grows to `text-5xl` in a container `@lg` and
+  wider; `p` and `li` use `leading-7`; `code` gains `text-foreground`; `pre`
+  gains `text-sm font-mono text-foreground`.
+
 ## [0.5.4]
 
 Released with the rafters CLI 0.5.4. `@rafters/ui` is not published to npm;
