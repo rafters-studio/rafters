@@ -1,5 +1,11 @@
 # rafters
 
+## 0.6.1
+
+### Fixed
+
+- fix(release): **rafters installs outside this repo again (#2897).** 0.6.0 published its `vite` dependency as the pnpm workspace spec `catalog:`, so `pnpx rafters@0.6.0` failed with `ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER`. The CLI now publishes with `pnpm publish`, as `@rafters/shared`, `@rafters/color-utils` and `@rafters/math-utils` already did, which writes each `catalog:` and `workspace:` spec as its resolved version: `vite` is `npm:@voidzero-dev/vite-plus-core@1.0.0`, the vite the CLI is built and tested against.
+
 ## 0.6.0
 
 ### Breaking
