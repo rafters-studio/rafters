@@ -29,3 +29,12 @@ Feature: rafters remove command (#2834)
     Then alpha's files and config entry are gone
     And shared is still installed
     And solo is no longer installed
+
+  Scenario: remove does not need the registry to serve every other installed item (#2900)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And a project where "rafters add alpha beta" has run
+    And the registry no longer serves beta
+    When I run "rafters remove alpha"
+    Then alpha's files and config entry are gone
+    And shared is still installed
+    And solo is no longer installed

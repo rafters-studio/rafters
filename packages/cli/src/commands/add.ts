@@ -432,6 +432,20 @@ function sourceRootFor(config: RaftersConfig | null, cwd: string): string {
 }
 
 /**
+ * The directories `rafters add` writes registry files into: components,
+ * primitives, and the substrate kinds (hooks, lib) under the source root.
+ */
+export function installRoots(config: RaftersConfig | null, cwd: string): string[] {
+  const sourceRoot = sourceRootFor(config, cwd);
+  return [
+    rootFor(config?.componentsPath, cwd, 'components/ui'),
+    rootFor(config?.primitivesPath, cwd, 'lib/primitives'),
+    join(sourceRoot, 'hooks'),
+    join(sourceRoot, 'lib'),
+  ];
+}
+
+/**
  * Transform registry path to project path based on config
  * e.g., "components/ui/button.tsx" -> "app/components/ui/button.tsx"
  *

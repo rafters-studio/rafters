@@ -20,6 +20,7 @@ import { context } from './common.steps.js';
 const { Given, Then, After } = createBdd();
 
 let server: Server | undefined;
+let served = new Map<string, RegistryItem>();
 
 After(async () => {
   const running = server;
@@ -27,7 +28,13 @@ After(async () => {
   if (running) await new Promise<void>((resolve) => running.close(() => resolve()));
 });
 
-function file(path: string, content: string, needs: string[] = []): RegistryFile {
+type NeedTags = Partial<Record<'primitives' | 'hooks', string[]>>;
+
+/** A served file whose JSDoc declares `tags`, served as its registryDependencies too. */
+function file(path: string, body: string, tags: NeedTags = {}): RegistryFile {
+  const lines = Object.entries(tags).map(([tag, names]) => ` * @${tag} ${names.join(' ')}\n`);
+  const content = lines.length > 0 ? `/**\n${lines.join('')} */\n${body}` : body;
+  const needs = Object.values(tags).flat();
   return { path, content, dependencies: [], devDependencies: [], registryDependencies: needs };
 }
 
@@ -65,6 +72,7 @@ async function serve(items: RegistryItem[]): Promise<void> {
     res.end(JSON.stringify(body ?? { error: 'not found' }));
   });
   server = started;
+  served = bodies;
   await new Promise<void>((resolve) => started.listen(0, '127.0.0.1', resolve));
   const address = started.address();
   if (!address || typeof address !== 'object') throw new Error('fixture registry has no port');
@@ -83,10 +91,10 @@ Given(
   async ({}, name: string, primitive: string, hook: string) => {
     await serve([
       item(name, 'ui', [
-        file(`components/ui/${name}.tsx`, `import { ${hook} } from '../../hooks/${hook}';\n`, [
-          primitive,
-          hook,
-        ]),
+        file(`components/ui/${name}.tsx`, `import { ${hook} } from '../../hooks/${hook}';\n`, {
+          primitives: [primitive],
+          hooks: [hook],
+        }),
         file(`components/ui/${name}.astro`, '---\n---\n<div><slot /></div>\n'),
         file(`components/ui/${name}.classes.ts`, `export const ${name}Classes = '';\n`),
       ]),
@@ -101,11 +109,9 @@ Given(
   async ({}, first: string, second: string, shared: string, owner: string, solo: string) => {
     const component = (name: string): RegistryItem =>
       item(name, 'ui', [
-        file(
-          `components/ui/${name}.tsx`,
-          `export const ${name} = null;\n`,
-          name === owner ? [shared, solo] : [shared],
-        ),
+        file(`components/ui/${name}.tsx`, `export const ${name} = null;\n`, {
+          primitives: name === owner ? [shared, solo] : [shared],
+        }),
       ]);
     await serve([
       component(first),
@@ -115,6 +121,12 @@ Given(
     ]);
   },
 );
+
+Given('the registry no longer serves {word}', async ({}, name: string) => {
+  const key = [...served.keys()].find((path) => path.endsWith(`/${name}.json`));
+  expect(key).toBeDefined();
+  if (key) served.delete(key);
+});
 
 Given('the project targets astro', async () => {
   updateConfig((config) => {
