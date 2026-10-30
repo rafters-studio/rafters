@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { ButtonConfig, ButtonSize, ButtonState, ButtonVariant } from './button.behavior';
 

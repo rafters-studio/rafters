@@ -28,6 +28,11 @@
  *   </Accordion.Item>
  * </Accordion>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy roving-focus
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { useMemory } from '../../hooks/use-memory';

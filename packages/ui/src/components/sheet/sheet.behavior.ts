@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager focus-trap outside-click
+ * @lib compose contract disclosable
+ */
 import { compose, type GlueSlice, type Slice } from '../../lib/compose';
 import {
   createBehavior,

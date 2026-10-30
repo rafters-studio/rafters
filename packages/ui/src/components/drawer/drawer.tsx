@@ -37,6 +37,11 @@
  * // Hide close button if needed
  * <DrawerContent showCloseButton={false}>...</DrawerContent>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy slot
+ * @hooks key-input use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

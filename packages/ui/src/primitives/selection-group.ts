@@ -33,6 +33,8 @@
  * menu.toggle('file'); // open
  * menu.toggle('file'); // closed
  * ```
+ *
+ * @primitives memory
  */
 import { createMemory, type Memory } from './memory';
 

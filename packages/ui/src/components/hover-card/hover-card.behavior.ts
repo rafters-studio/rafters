@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager collision-detector types
+ * @lib compose contract disclosable
+ */
 import { compose, type GlueSlice } from '../../lib/compose';
 import {
   createBehavior,

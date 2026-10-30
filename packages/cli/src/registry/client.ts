@@ -196,17 +196,23 @@ export class RegistryClient {
   /**
    * Resolve all dependencies for an item recursively.
    * Returns items in installation order (dependencies first).
+   * `needsOf` names what an item needs; by default its item-level list.
    */
-  async resolveDependencies(name: string, resolved = new Set<string>()): Promise<RegistryItem[]> {
+  async resolveDependencies(
+    name: string,
+    resolved = new Set<string>(),
+    needsOf: (item: RegistryItem) => string[] = (item) =>
+      item.registryDependencies ?? item.primitives,
+  ): Promise<RegistryItem[]> {
     if (resolved.has(name)) return [];
 
     const item = await this.fetchItem(name);
     resolved.add(name);
 
     const deps: RegistryItem[] = [];
-    for (const dep of item.registryDependencies ?? item.primitives) {
+    for (const dep of needsOf(item)) {
       if (!resolved.has(dep)) {
-        deps.push(...(await this.resolveDependencies(dep, resolved)));
+        deps.push(...(await this.resolveDependencies(dep, resolved, needsOf)));
       }
     }
     deps.push(item);

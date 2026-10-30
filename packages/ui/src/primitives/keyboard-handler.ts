@@ -14,6 +14,8 @@
  *   preventDefault: true,
  * });
  * ```
+ *
+ * @primitives types
  */
 
 import type {

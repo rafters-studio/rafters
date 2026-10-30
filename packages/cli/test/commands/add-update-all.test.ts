@@ -34,6 +34,7 @@ const containerItem: RegistryItem = {
       content: FRESH_CONTAINER,
       dependencies: [],
       devDependencies: [],
+      registryDependencies: ['classy'],
     },
   ],
   rules: [],

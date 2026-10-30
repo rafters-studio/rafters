@@ -14,6 +14,8 @@
  *   role: 'button',
  * });
  * ```
+ *
+ * @primitives types
  */
 
 import type { AriaAttributes, CleanupFunction } from './types';

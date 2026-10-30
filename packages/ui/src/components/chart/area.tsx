@@ -39,6 +39,8 @@
  *   </AreaChart>
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { AreaConfig } from './area.behavior';

@@ -29,6 +29,11 @@
  *   <Tabs.Content value="details">Details content</Tabs.Content>
  * </Tabs>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { useMemory } from '../../hooks/use-memory';

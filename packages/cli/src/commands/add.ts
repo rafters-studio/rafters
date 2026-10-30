@@ -298,16 +298,37 @@ const TARGET_GATED_COMPOSITE_FILES: ReadonlyArray<{
 /**
  * Filter a composite item's runtime files by the project's component target.
  * Drops target-gated files (e.g. `Composite.astro`) whose target does not
- * match; leaves all other files untouched. Pure -- no I/O.
+ * match, and every `.tsx` file (the React serializer `to-jsx.tsx`) for astro,
+ * so an astro install writes no file that imports react; leaves all other
+ * files untouched. Pure -- no I/O.
  */
 export function selectCompositeFiles(
   files: RegistryFile[],
   target: ComponentTarget,
 ): RegistryFile[] {
   return files.filter((file) => {
+    if (target === 'astro' && file.path.endsWith('.tsx')) return false;
     const gate = TARGET_GATED_COMPOSITE_FILES.find((g) => file.path.endsWith(g.suffix));
     return gate ? gate.target === target : true;
   });
+}
+
+/**
+ * The files of an item that install for the project's component target.
+ */
+export function selectItemFiles(item: RegistryItem, target: ComponentTarget): RegistryFile[] {
+  if (item.type === 'ui') return selectFilesForFramework(item.files, target).files;
+  if (item.type === 'composite') return selectCompositeFiles(item.files, target);
+  return item.files;
+}
+
+/**
+ * The registry items an item needs for the project's component target: what
+ * the files that install for that target declare, and nothing the other
+ * targets' files declare.
+ */
+export function declaredNeeds(item: RegistryItem, target: ComponentTarget): string[] {
+  return [...new Set(selectItemFiles(item, target).flatMap((f) => f.registryDependencies))];
 }
 
 /**
@@ -918,9 +939,11 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   const frameworkNote = config ? FRAMEWORK_SPECS[config.framework].note : undefined;
   if (frameworkNote) log({ event: 'add:framework_note', message: frameworkNote });
 
-  // Resolve all items and their dependencies
+  // Resolve all items and the needs their target's files declare
   const allItems: RegistryItem[] = [];
   const seen = new Set<string>();
+  const target = getComponentTarget(config);
+  const needsOf = (item: RegistryItem): string[] => declaredNeeds(item, target);
 
   for (const itemName of components) {
     try {
@@ -929,15 +952,15 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
           const composite = await client.fetchComposite(itemName);
           seen.add(itemName);
           allItems.push(composite);
-          for (const dep of composite.registryDependencies ?? composite.primitives) {
+          for (const dep of needsOf(composite)) {
             if (!seen.has(dep)) {
-              const depItems = await client.resolveDependencies(dep, seen);
+              const depItems = await client.resolveDependencies(dep, seen, needsOf);
               allItems.push(...depItems);
             }
           }
         }
       } else {
-        const items = await client.resolveDependencies(itemName, seen);
+        const items = await client.resolveDependencies(itemName, seen, needsOf);
         allItems.push(...items);
       }
     } catch (err) {
@@ -971,7 +994,6 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   const failed: string[] = [];
   const installedItems: RegistryItem[] = [];
   const filteredItems: RegistryItem[] = [];
-  const target = getComponentTarget(config);
 
   for (const item of allItems) {
     // Skip items already tracked in config AND present on disk (unless --overwrite).
@@ -1004,12 +1026,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
 
         // Create a filtered copy with only the framework-selected files
         // so dependency collection doesn't pull in deps from other frameworks
-        if (item.type === 'ui') {
-          const selection = selectFilesForFramework(item.files, target);
-          filteredItems.push({ ...item, files: selection.files });
-        } else {
-          filteredItems.push(item);
-        }
+        filteredItems.push({ ...item, files: selectItemFiles(item, target) });
 
         log({
           event: 'add:installed',

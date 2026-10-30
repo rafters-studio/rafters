@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager outside-click roving-focus
+ * @lib compose contract
+ */
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,

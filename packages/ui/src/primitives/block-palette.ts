@@ -25,6 +25,8 @@
  *   onDragStart: (item) => console.log('Dragging:', item.label),
  * });
  * ```
+ *
+ * @primitives typeahead
  */
 
 import { fuzzyScore } from './typeahead';

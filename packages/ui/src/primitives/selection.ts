@@ -2,6 +2,8 @@
  * Selection primitives for editors
  * Includes block selection for block-based editors and text selection for contenteditable
  * SSR-safe: checks for window existence
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, SelectionRange } from './types';

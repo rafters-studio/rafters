@@ -35,6 +35,11 @@
  *   <ChartTooltip scale={xScale} data={rows} content={<ChartTooltipContent />} />
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy collision-detector graph portal
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

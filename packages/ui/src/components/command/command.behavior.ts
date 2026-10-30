@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager command-palette focus-trap outside-click
+ * @lib compose contract
+ */
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,

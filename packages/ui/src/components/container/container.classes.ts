@@ -1,3 +1,7 @@
+/**
+ * @components grid
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import {
   gridColSpanClasses,

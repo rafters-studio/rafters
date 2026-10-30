@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager roving-focus
+ * @lib contract
+ */
 import { createBehavior, type AriaAttrs, type BehaviorSpec } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
 import { createRovingFocus } from '../../primitives/roving-focus';

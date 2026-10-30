@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { DropdownMenuConfig, DropdownMenuState } from './dropdown-menu.behavior';
 

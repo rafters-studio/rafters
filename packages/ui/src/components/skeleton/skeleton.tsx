@@ -22,6 +22,9 @@
  * // Avatar skeleton
  * <Skeleton style={{ height: '3rem', width: '3rem', borderRadius: '9999px' }} />
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

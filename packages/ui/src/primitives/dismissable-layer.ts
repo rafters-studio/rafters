@@ -14,6 +14,8 @@
  *   disableOutsidePointerEvents: true,
  * });
  * ```
+ *
+ * @primitives types
  */
 
 import type {

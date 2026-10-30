@@ -2,6 +2,8 @@
  * Input events primitive for contenteditable handling
  * Manages beforeinput/input events with IME composition tracking
  * SSR-safe: checks for window existence
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, InputType } from './types';

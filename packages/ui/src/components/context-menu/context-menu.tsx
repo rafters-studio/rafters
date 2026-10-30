@@ -28,6 +28,11 @@
  *   </ContextMenu.Content>
  * </ContextMenu>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy portal slot
+ * @hooks key-input use-memory use-presence
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

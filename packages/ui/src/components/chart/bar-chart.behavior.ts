@@ -1,3 +1,8 @@
+/**
+ * @dependencies zod
+ * @primitives aria-manager graph sr-announcer
+ * @lib contract
+ */
 import { z } from 'zod';
 import type { AriaAttrs, BehaviorSpec, InstanceIds, PartIds } from '../../lib/contract';
 import { createBehavior } from '../../lib/contract';

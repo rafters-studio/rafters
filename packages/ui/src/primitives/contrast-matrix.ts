@@ -13,6 +13,8 @@
  *   scaleName: 'ocean-blue',
  * });
  * ```
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction } from './types';

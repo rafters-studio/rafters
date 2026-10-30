@@ -22,6 +22,9 @@
  *   Saving...
  * </Button>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

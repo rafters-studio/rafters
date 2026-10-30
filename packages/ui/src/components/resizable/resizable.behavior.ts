@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager interactive keyboard-handler types
+ * @lib compose contract
+ */
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,

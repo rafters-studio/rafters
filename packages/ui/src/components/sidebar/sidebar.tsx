@@ -45,6 +45,12 @@
  *   </Sidebar.Inset>
  * </Sidebar.Provider>
  * ```
+ *
+ * @dependencies react
+ * @components sheet
+ * @primitives classy slot
+ * @hooks key-input use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';

@@ -16,6 +16,8 @@
  * floatingElement.style.left = `${position.x}px`;
  * floatingElement.style.top = `${position.y}px`;
  * ```
+ *
+ * @primitives types
  */
 
 import type { Align, Position, Side } from './types';

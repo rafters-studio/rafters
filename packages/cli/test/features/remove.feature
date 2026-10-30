@@ -22,8 +22,10 @@ Feature: rafters remove command (#2834)
     And no file and no config entry changed
 
   @criterion-3
-  Scenario: dependencies stay installed
-    Given a project where "rafters add sidebar" also installed its dependencies
-    When I run "rafters remove sidebar"
-    Then sidebar's files and config entry are gone
-    And every item sidebar depended on is still installed
+  Scenario: remove takes only the needs no other installed component declares (#2900)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And a project where "rafters add alpha beta" has run
+    When I run "rafters remove alpha"
+    Then alpha's files and config entry are gone
+    And shared is still installed
+    And solo is no longer installed

@@ -11,6 +11,8 @@
  * This module calls FR-EDITOR-003's applyOp/applyOpSequence; it does not
  * reimplement block-structural or mark logic, and does not define a
  * parallel op shape.
+ *
+ * @primitives block-ops memory types
  */
 import { createMemory, type Memory } from './memory';
 import type { BaseBlock, InlineContent } from './types';

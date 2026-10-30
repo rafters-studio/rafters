@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavior';
 

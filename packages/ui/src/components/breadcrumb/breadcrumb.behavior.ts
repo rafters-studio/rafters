@@ -1,3 +1,6 @@
+/**
+ * @lib contract
+ */
 import type { BehaviorSpec } from '../../lib/contract';
 import { breadcrumbIconClasses } from './breadcrumb.classes';
 

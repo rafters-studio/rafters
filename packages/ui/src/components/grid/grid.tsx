@@ -30,6 +30,11 @@
  *   <Grid.Item priority="secondary">Chart</Grid.Item>
  * </Grid>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy roving-focus
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

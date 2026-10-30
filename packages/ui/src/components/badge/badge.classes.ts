@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { BadgeConfig, BadgeSize, BadgeState, BadgeVariant } from './badge.behavior';
 

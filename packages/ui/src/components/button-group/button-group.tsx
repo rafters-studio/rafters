@@ -31,6 +31,10 @@
  *   <Button variant="ghost">Table</Button>
  * </ButtonGroup>
  * ```
+ *
+ * @dependencies react
+ * @components button
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

@@ -2,6 +2,8 @@
  * React hook for block selection in editors
  * Wraps the createBlockSelection primitive with React lifecycle management
  * @module hooks/use-block-selection
+ * @dependencies react
+ * @primitives selection
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

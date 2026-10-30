@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { AlertDialogConfig, AlertDialogState } from './alert-dialog.behavior';
 

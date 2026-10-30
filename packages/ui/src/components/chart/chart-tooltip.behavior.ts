@@ -1,3 +1,7 @@
+/**
+ * @primitives collision-detector graph portal sr-announcer types
+ * @lib contract
+ */
 import type { BehaviorSpec, PartIds } from '../../lib/contract';
 import { createBehavior } from '../../lib/contract';
 import { computePosition } from '../../primitives/collision-detector';

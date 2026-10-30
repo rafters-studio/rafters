@@ -23,6 +23,12 @@
  * // Error state
  * <Input invalid placeholder="Invalid input" />
  * ```
+ *
+ * @dependencies react
+ * @components input-group
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

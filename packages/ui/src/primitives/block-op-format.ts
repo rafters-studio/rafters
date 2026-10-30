@@ -5,6 +5,8 @@
  * Reuses InlineMark (primitives/types.ts) as the closed mark vocabulary and
  * operates on a block's InlineContent[] directly: a pure function over a data
  * document, with no DOM or live selection.
+ *
+ * @primitives block-op-content block-op-types types
  */
 import type { BaseBlock } from './types';
 import {

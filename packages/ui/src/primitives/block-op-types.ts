@@ -6,6 +6,8 @@
  * compose()/BehaviorSpec/slice dependency -- the editor stays outside the
  * behavior-layer composer per RULING-EDITOR-HISTORY's Editor interface
  * contract.
+ *
+ * @primitives types
  */
 import type { BaseBlock, InlineContent, InlineMark } from './types';
 

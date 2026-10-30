@@ -1,3 +1,8 @@
+/**
+ * @components dropdown-menu
+ * @primitives aria-manager collision-detector roving-focus
+ * @lib compose contract
+ */
 import { compose, type GlueSlice, type Slice } from '../../lib/compose';
 import {
   createBehavior,

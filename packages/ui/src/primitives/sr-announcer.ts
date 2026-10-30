@@ -16,6 +16,8 @@
  * // Later...
  * announcer.destroy();
  * ```
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, LiveRegionPoliteness, LiveRegionRole } from './types';

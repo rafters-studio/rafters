@@ -25,6 +25,8 @@
  *   <CartesianGrid vertical={false} />
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { CartesianGridConfig } from './cartesian-grid.behavior';

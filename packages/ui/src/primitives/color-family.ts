@@ -38,6 +38,8 @@
  * $state.subscribe((s) => updateUI(s));
  * destroy(); // cleanup
  * ```
+ *
+ * @primitives types
  */
 
 import { atom } from 'nanostores';

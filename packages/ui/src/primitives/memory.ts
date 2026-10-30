@@ -22,6 +22,8 @@
  * state.reset();                          // back to a fresh initial value
  * stop();
  * ```
+ *
+ * @dependencies nanostores
  */
 import { atom, computed, type ReadableAtom } from 'nanostores';
 

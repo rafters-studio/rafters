@@ -19,6 +19,7 @@
  * ```
  *
  * @internal-dependencies @rafters/color-utils
+ * @primitives types
  */
 
 import { oklchToCSS } from '@rafters/color-utils';
