@@ -9,9 +9,11 @@
  * The config records names, not files, so the file set is recomputed the way
  * `add` chose it: each item removed is fetched from the registry and its files
  * are selected for the project's component target and mapped to project paths.
- * What the other installed items still need is read from the JSDoc of the
- * installed files on disk, which `add` copies unchanged, so the registry never
- * has to serve every other installed item.
+ * What the other installed items still need is the union of the need tags in
+ * the JSDoc of the installed files on disk, which `add` copies unchanged, and
+ * the needs the registry serves for each of them, because files installed
+ * before the tags existed carry none. An item the registry no longer serves
+ * counts by its files' tags alone and never blocks the removal.
  */
 
 import { readdir, readFile, rm } from 'node:fs/promises';
@@ -41,8 +43,9 @@ async function declaredOnDisk(cwd: string, roots: string[]): Promise<Map<string,
     let entries: Array<{ name: string; isDirectory: () => boolean }>;
     try {
       entries = await readdir(join(cwd, dir), { withFileTypes: true });
-    } catch {
-      return;
+    } catch (err) {
+      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return;
+      throw err;
     }
     for (const entry of entries) {
       const path = join(dir, entry.name);
@@ -85,40 +88,46 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
   const installedNames = new Set(getInstalledNames(config));
   const onDisk = await declaredOnDisk(cwd, installRoots(config, cwd));
 
+  const removing = new Map<string, RegistryItem>([[name, await client.fetchItem(name)]]);
+  const others = new Map<string, RegistryItem>();
+  const otherNames = [...installedNames].filter((n) => n !== name).sort();
+  const fetched = await Promise.allSettled(otherNames.map((n) => client.fetchItem(n)));
+  for (const [i, result] of fetched.entries()) {
+    const other = otherNames[i];
+    if (other === undefined) continue;
+    if (result.status === 'fulfilled') {
+      others.set(other, result.value);
+      continue;
+    }
+    const reason = result.reason;
+    log({
+      event: 'remove:warning',
+      component: other,
+      message: `Kept ${other}; its needs are read from its installed files only: ${reason instanceof Error ? reason.message : String(reason)}`,
+    });
+  }
+
   // Grow the removal set until no installed need is left that only the
   // removed items declare. A need the registry cannot serve stays installed.
-  const removing = new Map<string, RegistryItem>([[name, await client.fetchItem(name)]]);
-  const unservable = new Set<string>();
   for (;;) {
     const removedPaths = new Set(
       [...removing.values()].flatMap((item) =>
         selectItemFiles(item, target).map((file) => fileProjectPath(file, item, config, cwd)),
       ),
     );
-    const keptNeeds = new Set(
-      [...onDisk].filter(([path]) => !removedPaths.has(path)).flatMap(([, needs]) => needs),
-    );
+    const keptNeeds = new Set([
+      ...[...onDisk].filter(([path]) => !removedPaths.has(path)).flatMap(([, needs]) => needs),
+      ...[...others]
+        .filter(([other]) => !removing.has(other))
+        .flatMap(([, item]) => declaredNeeds(item, target)),
+    ]);
     const unique = [
       ...new Set([...removing.values()].flatMap((item) => declaredNeeds(item, target))),
-    ].filter(
-      (need) =>
-        installedNames.has(need) &&
-        !removing.has(need) &&
-        !unservable.has(need) &&
-        !keptNeeds.has(need),
-    );
+    ].filter((need) => others.has(need) && !removing.has(need) && !keptNeeds.has(need));
     if (unique.length === 0) break;
     for (const need of unique) {
-      try {
-        removing.set(need, await client.fetchItem(need));
-      } catch (err) {
-        unservable.add(need);
-        log({
-          event: 'remove:warning',
-          component: need,
-          message: `Kept ${need}: ${err instanceof Error ? err.message : String(err)}`,
-        });
-      }
+      const item = others.get(need);
+      if (item) removing.set(need, item);
     }
   }
 
