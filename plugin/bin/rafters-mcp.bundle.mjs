@@ -15449,6 +15449,7 @@ const RegistryFileSchema = object({
 	content: string(),
 	dependencies: array(string()),
 	devDependencies: array(string()).default([]),
+	registryDependencies: array(string()).default([]),
 	type: RegistryFileTypeSchema.optional(),
 	target: string().optional()
 });
@@ -15697,12 +15698,12 @@ var RegistryClient = class {
 			return false;
 		}
 	}
-	async resolveDependencies(name, resolved = /* @__PURE__ */ new Set()) {
+	async resolveDependencies(name, resolved = /* @__PURE__ */ new Set(), needsOf = (item) => item.registryDependencies ?? item.primitives) {
 		if (resolved.has(name)) return [];
 		const item = await this.fetchItem(name);
 		resolved.add(name);
 		const deps = [];
-		for (const dep of item.registryDependencies ?? item.primitives) if (!resolved.has(dep)) deps.push(...await this.resolveDependencies(dep, resolved));
+		for (const dep of needsOf(item)) if (!resolved.has(dep)) deps.push(...await this.resolveDependencies(dep, resolved, needsOf));
 		deps.push(item);
 		return deps;
 	}
