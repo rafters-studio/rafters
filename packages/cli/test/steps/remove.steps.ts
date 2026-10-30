@@ -8,7 +8,7 @@
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -69,19 +69,6 @@ function filesFor(name: string): string[] {
 Given('a project where {string} has run', async ({}, command: string) => {
   await runAdd(command);
 });
-
-Given(
-  "{word}'s files carry no need tags, as an older CLI installed them",
-  async ({}, name: string) => {
-    for (const file of filesFor(name)) {
-      const path = join(context.fixturePath, file);
-      const content = readFileSync(path, 'utf8');
-      const stripped = content.replace(/^\s*\*\s*@(?:components|primitives|hooks|lib)\b.*\n/gm, '');
-      expect(stripped, file).not.toBe(content);
-      writeFileSync(path, stripped, 'utf8');
-    }
-  },
-);
 
 Given('an initialised project without {word} installed', async ({}, name: string) => {
   expect(existsSync(configPath())).toBe(true);
