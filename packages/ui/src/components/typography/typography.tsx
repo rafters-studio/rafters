@@ -37,6 +37,9 @@
  *   "Design is not just what it looks like. Design is how it works."
  * </Blockquote>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

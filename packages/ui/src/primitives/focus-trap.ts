@@ -2,6 +2,8 @@
  * Focus trap primitive
  * Client-only, returns cleanup function
  * SSR-safe: checks for window existence
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction } from './types';

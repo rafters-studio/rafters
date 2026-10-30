@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { selectCompositeFiles, selectFilesForFramework } from '../../src/commands/add.js';
-import type { RegistryFile } from '../../src/registry/types.js';
+import {
+  declaredNeeds,
+  selectCompositeFiles,
+  selectFilesForFramework,
+} from '../../src/commands/add.js';
+import type { RegistryFile, RegistryItem } from '../../src/registry/types.js';
 import type { ComponentTarget } from '../../src/utils/detect.js';
 
-function makeFile(path: string): RegistryFile {
-  return { path, content: '', dependencies: [], devDependencies: [] };
+function makeFile(path: string, registryDependencies: string[] = []): RegistryFile {
+  return { path, content: '', dependencies: [], devDependencies: [], registryDependencies };
 }
 
 describe('selectFilesForFramework', () => {
@@ -117,6 +121,15 @@ describe('selectCompositeFiles', () => {
     );
   });
 
+  it('drops the React serializer for the astro target (#2900)', () => {
+    expect(paths(selectCompositeFiles(runtimeFiles, 'astro'))).not.toContain(
+      'lib/composites/to-jsx.tsx',
+    );
+    expect(paths(selectCompositeFiles(runtimeFiles, 'react'))).toContain(
+      'lib/composites/to-jsx.tsx',
+    );
+  });
+
   const nonAstro: ComponentTarget[] = ['react', 'vue', 'svelte'];
   for (const target of nonAstro) {
     it(`drops Composite.astro for the ${target} target`, () => {
@@ -136,10 +149,29 @@ describe('selectCompositeFiles', () => {
     }
   });
 
-  it('keeps non-astro runtime file count stable while only gating Composite.astro', () => {
+  it('gates only Composite.astro, and to-jsx.tsx for astro', () => {
     const astro = selectCompositeFiles(runtimeFiles, 'astro');
     const react = selectCompositeFiles(runtimeFiles, 'react');
-    expect(astro).toHaveLength(runtimeFiles.length);
+    expect(astro).toHaveLength(runtimeFiles.length - 1);
     expect(react).toHaveLength(runtimeFiles.length - 1);
+  });
+});
+
+describe('declaredNeeds (#2900)', () => {
+  const dialog: RegistryItem = {
+    name: 'dialog',
+    type: 'ui',
+    primitives: ['slot', 'use-memory', 'classy'],
+    files: [
+      makeFile('components/ui/dialog.tsx', ['slot', 'use-memory']),
+      makeFile('components/ui/dialog.astro', ['astro-as-child']),
+      makeFile('components/ui/dialog.classes.ts', ['classy']),
+    ],
+    rules: [],
+  };
+
+  it('names only what the target files declare', () => {
+    expect(declaredNeeds(dialog, 'astro').sort()).toEqual(['astro-as-child', 'classy']);
+    expect(declaredNeeds(dialog, 'react').sort()).toEqual(['classy', 'slot', 'use-memory']);
   });
 });

@@ -1,3 +1,6 @@
+/**
+ * @lib compose contract
+ */
 import type { Slice } from './compose';
 import type { PartDecl } from './contract';
 

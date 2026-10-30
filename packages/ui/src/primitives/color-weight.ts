@@ -25,6 +25,8 @@
  * // teardown
  * cleanup();
  * ```
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction } from './types';

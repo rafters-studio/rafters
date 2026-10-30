@@ -24,6 +24,11 @@
  * // Loading state - prevents double submission
  * <Button loading>Processing...</Button>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy sr-announcer
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

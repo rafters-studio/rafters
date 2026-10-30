@@ -23,6 +23,11 @@
  *   </Collapsible.Content>
  * </Collapsible>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy slot
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';

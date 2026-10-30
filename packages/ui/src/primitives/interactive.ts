@@ -8,6 +8,8 @@
  * WCAG Compliance:
  * - 2.1.1 Keyboard (Level A): Full keyboard navigation support
  * - 4.1.2 Name, Role, Value (Level A): Appropriate ARIA roles and states
+ *
+ * @primitives keyboard-handler types
  */
 
 import { createKeyBindings } from './keyboard-handler';

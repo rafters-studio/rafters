@@ -30,6 +30,11 @@
  * // Hide close button if needed
  * <DialogContent showCloseButton={false}>...</DialogContent>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy slot
+ * @hooks key-input use-memory use-presence
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

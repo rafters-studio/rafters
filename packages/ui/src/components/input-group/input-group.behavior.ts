@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager
+ * @lib compose contract
+ */
 import { compose, type Slice } from '../../lib/compose';
 import { type BehaviorSpec, type PartIds } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';

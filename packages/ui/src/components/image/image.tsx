@@ -29,6 +29,10 @@
  *   onUpload={async (file) => uploadFile(file)}
  * />
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @lib contract
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

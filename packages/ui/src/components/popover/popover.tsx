@@ -30,6 +30,11 @@
  *   <Popover.Content>Popover content here</Popover.Content>
  * </Popover>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy outside-click slot types
+ * @hooks key-input use-memory use-presence
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

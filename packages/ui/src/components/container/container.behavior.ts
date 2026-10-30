@@ -1,3 +1,7 @@
+/**
+ * @components grid
+ * @lib contract
+ */
 import type { BehaviorSpec } from '../../lib/contract';
 import type { ResponsiveColumns, SpacingValue } from '../grid/grid.behavior';
 

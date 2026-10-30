@@ -1,3 +1,6 @@
+/**
+ * @primitives memory
+ */
 import { createMemory, type Memory } from '../primitives/memory';
 
 export interface KeyInput {

@@ -30,6 +30,11 @@
  *   </Command.List>
  * </Command>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks key-input use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds, type PayloadArgs } from '../../lib/contract';

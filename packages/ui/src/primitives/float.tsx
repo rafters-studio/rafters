@@ -17,6 +17,9 @@
  *   </Float.Content>
  * </Float.Root>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives collision-detector escape-keydown outside-click portal types
  */
 
 import * as React from 'react';

@@ -38,6 +38,8 @@
  *   </LineChart>
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { LineConfig } from './line.behavior';

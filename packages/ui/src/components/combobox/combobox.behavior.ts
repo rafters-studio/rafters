@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager collision-detector outside-click types
+ * @lib compose contract
+ */
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,

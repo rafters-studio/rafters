@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { SheetConfig, SheetSide, SheetState } from './sheet.behavior';
 

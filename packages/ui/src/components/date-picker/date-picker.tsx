@@ -33,6 +33,11 @@
  * ```tsx
  * <DatePicker name="due" value={date} onValueChange={setDate} placeholder="Pick a date" />
  * ```
+ *
+ * @dependencies react
+ * @components calendar
+ * @hooks key-input use-memory
+ * @lib contract
  */
 
 /**

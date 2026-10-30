@@ -1,3 +1,6 @@
+/**
+ * @components label
+ */
 import { labelClasses } from '../label/label.classes';
 import type { FieldConfig, FieldState } from './field.behavior';
 

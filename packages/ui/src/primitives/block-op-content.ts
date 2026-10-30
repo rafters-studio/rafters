@@ -12,6 +12,8 @@
  * both depend on this canonicalization staying identical to
  * block-operations', so a second copy here would risk the two drifting
  * apart.
+ *
+ * @primitives block-operations types
  */
 import { inlineMarksEqual, mergeAdjacentRuns, splitInlineContent } from './block-operations';
 import type { InlineContent, InlineMark } from './types';

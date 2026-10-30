@@ -47,6 +47,8 @@ export interface RegistryFile {
   content: string;
   dependencies: string[]; // e.g., ["lodash@4.17.21"] - versioned
   devDependencies: string[]; // e.g., ["vitest"] - from @devDependencies JSDoc
+  /** Registry items this file needs, from its @components, @primitives, @hooks and @lib JSDoc tags. */
+  registryDependencies: string[];
   type: RegistryFileType;
   /** Install path relative to the configured directory for `type`, where the served path does not imply it. */
   target?: string;
@@ -366,13 +368,14 @@ export function loadSubstrate(name: string): RegistryItem | null {
     if (!loaded) continue;
 
     const { content, ext } = loaded;
-    const { allExternalDeps, devDependencies, intelligence } = analyzeSource(content, true);
+    const { allExternalDeps, devDependencies, needs, intelligence } = analyzeSource(content, true);
     const files: RegistryFile[] = [
       {
         path: `${kind}/${name}${ext}`,
         content,
         dependencies: allExternalDeps,
         devDependencies,
+        registryDependencies: needs,
         type: kind === 'hooks' ? 'registry:hook' : 'registry:lib',
       },
     ];
@@ -436,6 +439,7 @@ export function loadComposite(name: string): RegistryItem | null {
         content,
         dependencies: [],
         devDependencies: [],
+        registryDependencies: componentDeps,
         type: 'registry:block',
       },
     ];
@@ -495,10 +499,12 @@ export function loadCompositesRuntime(): RegistryItem {
   const primitives = new Set<string>();
   const files: RegistryFile[] = COMPOSITES_RUNTIME_FILES.map((filename) => {
     const source = readFileSync(join(srcDir, filename), 'utf-8');
+    const filePrimitives = new Set<string>();
     const content = source.replace(
       WORKSPACE_PRIMITIVE_SPECIFIER,
       (_match: string, quote: string, name: string) => {
         primitives.add(name);
+        filePrimitives.add(name);
         return `${quote}../primitives/${name}${quote}`;
       },
     );
@@ -507,6 +513,7 @@ export function loadCompositesRuntime(): RegistryItem {
       content,
       dependencies: COMPOSITES_RUNTIME_DEPENDENCIES[filename] ?? [],
       devDependencies: [],
+      registryDependencies: [...filePrimitives].sort(),
       type: 'registry:block',
     };
   });
@@ -799,6 +806,26 @@ export function extractDepsFromSource(content: string): {
   return { dependencies: [...deps], devDependencies: [...devDeps] };
 }
 
+/** JSDoc tags that name the registry items a file needs, one tag per kind. */
+const NEED_TAGS = new Set(['components', 'primitives', 'hooks', 'lib']);
+
+/**
+ * The registry items a file declares it needs: every name in its
+ * `@components`, `@primitives`, `@hooks` and `@lib` JSDoc tags, sorted.
+ */
+export function extractNeedsFromSource(content: string): string[] {
+  const needs = new Set<string>();
+  for (const block of parse(content)) {
+    for (const tag of block.tags) {
+      if (!NEED_TAGS.has(tag.tag)) continue;
+      for (const name of getTagValue(tag).split(/\s+/)) {
+        if (name) needs.add(name);
+      }
+    }
+  }
+  return [...needs].sort();
+}
+
 /**
  * Extract the @parent tag from JSDoc comments in source content.
  *
@@ -825,6 +852,7 @@ function analyzeSource(
   importDeps: ReturnType<typeof extractDependencies>;
   allExternalDeps: string[];
   devDependencies: string[];
+  needs: string[];
   primitiveDeps: string[];
   intelligence: ComponentIntelligence | undefined;
 } {
@@ -839,15 +867,14 @@ function analyzeSource(
     componentName,
   });
 
-  // Merge import-extracted and JSDoc-declared deps, deduplicated
-  const allExternalDeps = [
-    ...new Set([...versionDeps(importDeps.external), ...jsDocDeps.dependencies]),
-  ];
+  // npm dependencies are what the file declares in @dependencies
+  const allExternalDeps = versionDeps(jsDocDeps.dependencies);
 
   return {
     importDeps,
     allExternalDeps,
     devDependencies: jsDocDeps.devDependencies,
+    needs: extractNeedsFromSource(content),
     primitiveDeps,
     intelligence,
   };
@@ -1013,6 +1040,7 @@ export function loadComponent(name: string): RegistryItem | null {
         content,
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
+        registryDependencies: analysis.needs,
       });
 
       // Merge primitive/internal deps from all variants.
@@ -1070,6 +1098,7 @@ export function loadComponent(name: string): RegistryItem | null {
         content,
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
+        registryDependencies: analysis.needs,
       });
       loadedPaths.add(sharedFilePath);
       primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
@@ -1094,6 +1123,7 @@ export function loadComponent(name: string): RegistryItem | null {
             content,
             dependencies: analysis.allExternalDeps,
             devDependencies: analysis.devDependencies,
+            registryDependencies: analysis.needs,
           });
           loadedPaths.add(filePath);
           primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
@@ -1131,6 +1161,7 @@ export function loadComponent(name: string): RegistryItem | null {
         content,
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
+        registryDependencies: analysis.needs,
       });
       loadedPaths.add(`components/ui/${f}`);
 
@@ -1163,6 +1194,7 @@ export function loadComponent(name: string): RegistryItem | null {
         content,
         dependencies: analysis.allExternalDeps,
         devDependencies: analysis.devDependencies,
+        registryDependencies: analysis.needs,
       });
       loadedPaths.add(servedPath);
       primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
@@ -1223,6 +1255,7 @@ export function loadComponent(name: string): RegistryItem | null {
       content: resolved.content,
       dependencies: analysis.allExternalDeps,
       devDependencies: analysis.devDependencies,
+      registryDependencies: analysis.needs,
     });
     loadedPaths.add(servedPath);
     primitivesAll = [...new Set([...primitivesAll, ...analysis.primitiveDeps])];
@@ -1335,7 +1368,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
 
   try {
     const { content, ext: fileExt } = loaded;
-    const { allExternalDeps, devDependencies, primitiveDeps, intelligence } = analyzeSource(
+    const { allExternalDeps, devDependencies, needs, primitiveDeps, intelligence } = analyzeSource(
       content,
       true,
     );
@@ -1346,6 +1379,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
         content,
         dependencies: allExternalDeps,
         devDependencies,
+        registryDependencies: needs,
         type: 'registry:lib',
       },
     ];
@@ -1363,6 +1397,7 @@ export function loadPrimitive(name: string): RegistryItem | null {
           content: siblingLoaded.content,
           dependencies: siblingAnalysis.allExternalDeps,
           devDependencies: siblingAnalysis.devDependencies,
+          registryDependencies: siblingAnalysis.needs,
           type: 'registry:lib',
         });
       }

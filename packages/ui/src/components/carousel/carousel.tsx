@@ -29,6 +29,11 @@
  *   <Carousel.Next />
  * </Carousel>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds, type PayloadArgs } from '../../lib/contract';

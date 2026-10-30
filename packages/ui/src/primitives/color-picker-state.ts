@@ -47,6 +47,8 @@
  * state.$color.subscribe((color) => console.log(color));
  * state.destroy();
  * ```
+ *
+ * @primitives color-area color-input color-swatch hue-bar hue-warp interactive memory types
  */
 import { getGamutTier } from '@rafters/color-utils';
 import { createColorArea, updateColorArea } from './color-area';

@@ -6,6 +6,8 @@
  * Ops carry PRE-ASSIGNED ids for any block they create; these wrappers inject
  * those ids into the primitives -- they never mint ids themselves, so redo
  * replays with the same ids the first application used.
+ *
+ * @primitives block-op-content block-op-types block-operations types
  */
 import {
   blockContentToText,

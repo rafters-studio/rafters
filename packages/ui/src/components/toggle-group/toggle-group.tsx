@@ -28,6 +28,11 @@
  *   <ToggleGroup.Item value="italic"><Italic /></ToggleGroup.Item>
  * </ToggleGroup>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy roving-focus
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

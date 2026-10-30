@@ -19,6 +19,8 @@
  *   onClose: () => console.log('Palette closed'),
  * });
  * ```
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, Command } from './types';

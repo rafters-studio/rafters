@@ -29,6 +29,9 @@
  *   <ChartLegend content={<ChartLegendContent />} />
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy roving-focus
  */
 import * as React from 'react';
 import { createRovingFocus } from '../../primitives/roving-focus';

@@ -28,6 +28,11 @@
  *   </DropdownMenu.Content>
  * </DropdownMenu>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy slot
+ * @hooks key-input use-memory use-presence
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type AriaAttrs, type PartIds } from '../../lib/contract';

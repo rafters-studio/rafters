@@ -30,6 +30,8 @@ export const RegistryFileSchema = z.object({
   content: z.string(),
   dependencies: z.array(z.string()), // e.g., ["lodash@4.17.21"] - versioned
   devDependencies: z.array(z.string()).default([]), // e.g., ["vitest"] - from @devDependencies JSDoc
+  /** Registry items this file declares it needs (@components, @primitives, @hooks, @lib). */
+  registryDependencies: z.array(z.string()).default([]),
   type: RegistryFileTypeSchema.optional(),
   /** Install path relative to the configured directory for `type`, where `path` does not imply it. */
   target: z.string().optional(),
@@ -159,9 +161,9 @@ export const RegistryItemSchema = z.object({
   name: z.string(),
   type: RegistryItemTypeSchema,
   description: z.string().optional(),
-  /** Legacy dependency list, still served for released CLIs; read only when registryDependencies is absent. */
+  /** Legacy dependency list, still served for released CLIs; add reads files[].registryDependencies instead. */
   primitives: z.array(z.string()),
-  /** Every registry item this item's files import (components, primitives, substrate). */
+  /** Every registry item this item's files import, for released CLIs; add reads files[].registryDependencies instead. */
   registryDependencies: z.array(z.string()).optional(),
   /** npm dependencies hoisted from files[].dependencies. */
   dependencies: z.array(z.string()).optional(),

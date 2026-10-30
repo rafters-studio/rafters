@@ -35,6 +35,8 @@
  *   </BarChart>
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { BarConfig } from './bar.behavior';

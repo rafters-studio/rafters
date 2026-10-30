@@ -31,6 +31,8 @@
  *
  * Downstream consumers pipe the result into
  * `RaftersElement.setTokenCSS(output)` once at app init.
+ *
+ * @dependencies css-tree
  */
 
 import { readFile, stat } from 'node:fs/promises';

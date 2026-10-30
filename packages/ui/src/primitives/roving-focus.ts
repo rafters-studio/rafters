@@ -10,6 +10,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/radio/
+ * @primitives types
  */
 
 import type { CleanupFunction, Direction, NavigationCallback, Orientation } from './types';

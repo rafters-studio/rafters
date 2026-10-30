@@ -33,6 +33,9 @@
  *   <img src="/thumb.jpg" alt="Thumbnail" style={{ objectFit: 'cover' }} />
  * </AspectRatio>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

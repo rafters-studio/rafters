@@ -2,6 +2,8 @@
  * React hook for command palette behavior
  * Wraps the createCommandPalette primitive with React lifecycle management
  * @module hooks/use-command-palette
+ * @dependencies react
+ * @primitives command-palette types
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

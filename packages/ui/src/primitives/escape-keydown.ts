@@ -1,6 +1,8 @@
 /**
  * Escape key handling primitive
  * Client-only, returns cleanup function
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, EscapeKeyHandler } from './types';

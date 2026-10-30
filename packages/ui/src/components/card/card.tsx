@@ -46,6 +46,8 @@
  *   <CardContent>...</CardContent>
  * </Card>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { CardConfig, CardElement } from './card.behavior';

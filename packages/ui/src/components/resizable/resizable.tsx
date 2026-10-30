@@ -29,6 +29,11 @@
  *   </ResizablePanel>
  * </ResizablePanelGroup>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

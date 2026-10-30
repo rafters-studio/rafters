@@ -45,6 +45,9 @@
  *   </BreadcrumbList>
  * </Breadcrumb>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy slot
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

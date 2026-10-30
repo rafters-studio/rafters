@@ -12,6 +12,7 @@
  * @registry-type registry:primitive
  *
  * @dependencies none
+ * @primitives types
  */
 import type { BaseBlock, InlineContent } from './types';
 

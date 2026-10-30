@@ -2,6 +2,8 @@
  * React hooks for drag and drop functionality
  * Wraps createDraggable and createDropZone primitives with React lifecycle management
  * @module hooks/use-drag-drop
+ * @dependencies react
+ * @primitives drag-drop
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

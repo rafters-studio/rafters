@@ -31,6 +31,11 @@
  *   </Combobox.Content>
  * </Combobox>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy outside-click
+ * @hooks key-input use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { keyInputOf } from '../../hooks/key-input';

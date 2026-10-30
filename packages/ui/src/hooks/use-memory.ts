@@ -13,6 +13,9 @@
  *   return open ? <div /> : null;
  * }
  * ```
+ *
+ * @dependencies react
+ * @primitives memory
  */
 import { useSyncExternalStore } from 'react';
 import type { Memory } from '../primitives/memory';

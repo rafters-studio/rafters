@@ -70,11 +70,6 @@ Given('a project where {string} has run', async ({}, command: string) => {
   await runAdd(command);
 });
 
-Given('a project where {string} also installed its dependencies', async ({}, command: string) => {
-  await runAdd(command);
-  expect(state.installedFiles.size).toBeGreaterThan(1);
-});
-
 Given('an initialised project without {word} installed', async ({}, name: string) => {
   expect(existsSync(configPath())).toBe(true);
   expect(installedNames()).not.toContain(name);
@@ -110,14 +105,16 @@ Then("{word}'s files and config entry are gone", async ({}, name: string) => {
   expect(installedNames()).not.toContain(name);
 });
 
-Then('every item {word} depended on is still installed', async ({}, name: string) => {
-  const names = installedNames();
-  const dependencies = [...state.installedFiles.keys()].filter((n) => n !== name);
-  expect(dependencies.length).toBeGreaterThan(0);
-  for (const dep of dependencies) {
-    expect(names, dep).toContain(dep);
-    for (const file of filesFor(dep)) {
-      expect(existsSync(join(context.fixturePath, file)), file).toBe(true);
-    }
+Then('{word} is still installed', async ({}, name: string) => {
+  expect(installedNames()).toContain(name);
+  for (const file of filesFor(name)) {
+    expect(existsSync(join(context.fixturePath, file)), file).toBe(true);
+  }
+});
+
+Then('{word} is no longer installed', async ({}, name: string) => {
+  expect(installedNames()).not.toContain(name);
+  for (const file of filesFor(name)) {
+    expect(existsSync(join(context.fixturePath, file)), file).toBe(false);
   }
 });

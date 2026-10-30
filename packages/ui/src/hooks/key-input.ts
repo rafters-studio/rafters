@@ -1,3 +1,7 @@
+/**
+ * @dependencies react
+ * @lib contract
+ */
 import type * as React from 'react';
 import type { KeyInput } from '../lib/contract';
 

@@ -1,3 +1,6 @@
+/**
+ * @lib contract
+ */
 import type { AriaAttrs, BehaviorSpec } from '../../lib/contract';
 
 /**

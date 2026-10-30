@@ -26,6 +26,11 @@
  *   disabled={(date) => date < new Date()}
  * />
  * ```
+ *
+ * @dependencies react
+ * @primitives classy keyboard-handler
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { useMemory } from '../../hooks/use-memory';

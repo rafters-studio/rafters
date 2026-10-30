@@ -23,6 +23,9 @@
  *   );
  * }
  * ```
+ *
+ * @dependencies react
+ * @primitives clipboard
  */
 
 import { useCallback, useEffect, useRef } from 'react';

@@ -14,6 +14,8 @@
  * (`SidebarGroupLabel`, `SidebarGroupAction`, `SidebarMenuButton`,
  * `SidebarMenuAction`, `SidebarMenuSubButton`) so the parse/merge logic is
  * written once, not five times.
+ *
+ * @dependencies ultrahtml
  */
 import { ELEMENT_NODE, type ElementNode, type Node, parse, renderSync } from 'ultrahtml';
 

@@ -10,6 +10,8 @@
  * Plain functions, no compose()/createBehavior/BehaviorSpec/slice dependency
  * -- per RULING-EDITOR-HISTORY's Editor interface contract the editor stays
  * outside the behavior-layer composer.
+ *
+ * @primitives block-op-format block-op-structural block-op-text block-op-types types
  */
 import type { BaseBlock } from './types';
 import { applyMark, removeMark } from './block-op-format';

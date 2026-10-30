@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixed
+
+- fix(registry): **An astro install no longer pulls React-only files (#2900).** `rafters add` with `componentTarget: "astro"` wrote `primitives/slot.ts` and `hooks/use-memory.ts`, which import `react`, so an Astro site needed `@types/react` to build (shingle#191). The registry built one dependency list per component from every file it served, so an astro install got what the `.tsx` needed. Each file under `packages/ui/src` now says what it needs in its JSDoc, one tag per kind: `@components`, `@primitives`, `@hooks`, `@lib`, and `@dependencies` / `@devDependencies` for npm packages; a registry test fails when a file's imports and tags disagree. The registry serves each file's needs as `files[].registryDependencies` and its npm dependencies from `@dependencies`. `rafters add` installs only what the files for the project's target declare, skipping what is already added. On the astro target, `rafters add composites` no longer writes `to-jsx.tsx`, the React serializer. `rafters remove` now also removes each primitive, hook, lib file or component the removed item declared that no other installed item's files declare, and still leaves `package.json` alone. It reads what the other installed items need from the JSDoc of the installed files on disk, so it does not need the registry to serve them. Against a registry that does not serve `files[].registryDependencies`, `add` installs no dependencies.
+
 ## 0.6.1
 
 ### Fixed

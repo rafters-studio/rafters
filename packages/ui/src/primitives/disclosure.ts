@@ -29,6 +29,8 @@
  * d.toggle();
  * stop();
  * ```
+ *
+ * @primitives memory
  */
 import { createMemory, type Memory } from './memory';
 

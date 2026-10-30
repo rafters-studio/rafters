@@ -39,6 +39,9 @@
  *
  * <Label htmlFor="name" variant="destructive">Name is required</Label>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

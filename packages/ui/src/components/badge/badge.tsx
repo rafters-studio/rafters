@@ -22,6 +22,10 @@
  * // Warning indicator
  * <Badge variant="warning">Pending Review</Badge>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @lib contract
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

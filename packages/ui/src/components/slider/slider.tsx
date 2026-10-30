@@ -22,6 +22,11 @@
  * // Range slider with multiple handles
  * <Slider defaultValue={[25, 75]} max={100} step={5} />
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior, type PartIds } from '../../lib/contract';

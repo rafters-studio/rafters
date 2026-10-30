@@ -27,6 +27,11 @@
  *   </Tooltip>
  * </Tooltip.Provider>
  * ```
+ *
+ * @dependencies react react-dom
+ * @primitives classy slot types
+ * @hooks key-input use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createPortal } from 'react-dom';

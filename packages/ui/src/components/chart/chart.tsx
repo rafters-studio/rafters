@@ -40,6 +40,9 @@
  *   {// Bar/Line/Area (#2225-2227) render the marks against config + size}
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy graph
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

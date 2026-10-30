@@ -1,6 +1,8 @@
 /**
  * Outside click/pointer detection primitive
  * Client-only, returns cleanup function
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, OutsideClickHandler } from './types';

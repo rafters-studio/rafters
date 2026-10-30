@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { MenubarConfig, MenubarState } from './menubar.behavior';
 

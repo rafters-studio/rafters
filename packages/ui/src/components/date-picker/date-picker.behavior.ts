@@ -1,3 +1,8 @@
+/**
+ * @components calendar popover
+ * @primitives aria-manager form-value outside-click
+ * @lib compose contract
+ */
 import { compose, type GlueSlice, type Slice } from '../../lib/compose';
 import {
   createBehavior,

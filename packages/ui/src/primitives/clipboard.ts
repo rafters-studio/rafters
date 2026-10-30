@@ -2,6 +2,8 @@
  * Clipboard primitive for copy/cut/paste operations
  * Client-only, returns cleanup function
  * SSR-safe: checks for window existence
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction } from './types';

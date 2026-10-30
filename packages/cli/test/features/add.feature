@@ -72,3 +72,11 @@ Feature: rafters add command
     Then the command should succeed
     And ".rafters/tokens/motion.rafters.json" holds the tokens the current generator emits
     And each carryable stored override is on its token
+
+  Scenario: an astro install writes only what its astro files declare (#2900)
+    Given a registry where panel.tsx declares the primitive slot and the hook use-memory
+    And the project targets astro
+    When I run "rafters add panel --agent"
+    Then the command should succeed
+    And rafters add wrote no file for slot or use-memory
+    And no file rafters add wrote imports react

@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager sr-announcer
+ * @lib compose contract pressable
+ */
 import { compose, type Slice } from '../../lib/compose';
 import {
   createBehavior,

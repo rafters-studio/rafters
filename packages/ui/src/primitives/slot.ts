@@ -13,6 +13,9 @@
  *   mergeClassName: true,
  * });
  * ```
+ *
+ * @dependencies react
+ * @primitives classy types
  */
 
 import type * as React from 'react';

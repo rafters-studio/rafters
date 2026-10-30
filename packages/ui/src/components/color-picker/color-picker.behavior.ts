@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager color-area color-input color-swatch hue-bar hue-warp interactive types
+ * @lib compose contract
+ */
 import { getGamutTier as computeGamutTier } from '@rafters/color-utils';
 import { compose, type Slice } from '../../lib/compose';
 import {

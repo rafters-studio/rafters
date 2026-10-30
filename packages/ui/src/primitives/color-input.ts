@@ -29,6 +29,8 @@
  * // teardown
  * cleanup();
  * ```
+ *
+ * @primitives types
  */
 
 import type { CleanupFunction, OklchColorAlpha } from './types';

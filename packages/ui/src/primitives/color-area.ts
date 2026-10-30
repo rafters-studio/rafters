@@ -8,6 +8,7 @@
  * the primitive handles rendering and ARIA attributes.
  *
  * @internal-dependencies @rafters/color-utils
+ * @primitives types
  */
 
 import { computeGamutBoundaries, oklchToCSS } from '@rafters/color-utils';

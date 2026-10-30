@@ -1,3 +1,6 @@
+/**
+ * @primitives classy
+ */
 import classy from '../../primitives/classy';
 import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
 

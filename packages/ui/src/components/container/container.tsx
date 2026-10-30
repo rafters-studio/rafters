@@ -42,6 +42,10 @@
  *   <Container as="aside" colSpan={1} queryName="rail">…</Container>
  * </Grid>
  * ```
+ *
+ * @dependencies react
+ * @components grid
+ * @primitives classy
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';

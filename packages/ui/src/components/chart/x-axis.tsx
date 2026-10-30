@@ -26,6 +26,8 @@
  *   <XAxis dataKey="month" />
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { XAxisConfig } from './x-axis.behavior';

@@ -85,6 +85,8 @@
  * @example
  * const { present, ref, state } = usePresence(open);
  * return present ? <div ref={ref} data-state={state} /> : null;
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 

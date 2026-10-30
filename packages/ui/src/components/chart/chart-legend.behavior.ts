@@ -1,3 +1,7 @@
+/**
+ * @primitives roving-focus
+ * @lib contract
+ */
 import type { BehaviorSpec, PartIds } from '../../lib/contract';
 import { createRovingFocus } from '../../primitives/roving-focus';
 import { applyAriaProjection, resolveSeriesLabel, type ChartConfig } from './chart.behavior';

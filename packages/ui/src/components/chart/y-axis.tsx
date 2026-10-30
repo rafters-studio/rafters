@@ -24,6 +24,8 @@
  *   <YAxis />
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
  */
 import * as React from 'react';
 import type { YAxisConfig } from './y-axis.behavior';

@@ -11,6 +11,8 @@
  * Ported from the oracle verbatim; the
  * TypographyVariant / TypographyTokenProps types now live on the score
  * (typography.behavior.ts) so the pure behavior test imports them with no DOM.
+ *
+ * @primitives classy
  */
 
 import classy from '../../primitives/classy';

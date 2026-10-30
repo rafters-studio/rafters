@@ -1,3 +1,6 @@
+/**
+ * @components tooltip
+ */
 import { tooltipContentSurfaceClasses } from '../tooltip/tooltip.classes';
 import type { IndicatorVariant } from './chart-tooltip.behavior';
 

@@ -33,6 +33,11 @@
  *   </InputOTP.Group>
  * </InputOTP>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy
+ * @hooks use-memory
+ * @lib contract
  */
 import * as React from 'react';
 import { createBehavior } from '../../lib/contract';

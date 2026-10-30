@@ -1,3 +1,6 @@
+/**
+ * @lib compose contract
+ */
 import type { AriaAttrs, PartDecl } from './contract';
 import type { Slice } from './compose';
 

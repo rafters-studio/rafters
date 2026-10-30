@@ -1,3 +1,7 @@
+/**
+ * @primitives aria-manager
+ * @lib compose contract pressable
+ */
 import { compose, type GlueSlice, type Slice } from '../../lib/compose';
 import {
   createBehavior,

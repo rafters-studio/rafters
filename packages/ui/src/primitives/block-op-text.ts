@@ -3,6 +3,8 @@
  *
  * No text primitive exists in block-operations.ts -- this is new code, not a
  * reimplementation of anything.
+ *
+ * @primitives block-op-content block-op-types types
  */
 import type { BaseBlock, InlineContent } from './types';
 import {

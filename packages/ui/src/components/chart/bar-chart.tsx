@@ -52,6 +52,9 @@
  *   </BarChart>
  * </ChartContainer>
  * ```
+ *
+ * @dependencies react
+ * @primitives classy sr-announcer
  */
 import * as React from 'react';
 import classy from '../../primitives/classy';
