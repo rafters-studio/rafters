@@ -4,25 +4,21 @@ Text is the interface. If the hierarchy isn't clear in the typography alone, no 
 
 ## Components, Not Classes
 
-Every text element uses a typography component. `H1` through `H4`, `P`, `Lead`, `Large`, `Small`, `Muted`, `Code`, `Blockquote`. The sizing, weight, tracking, line-height, and color are encoded in the component. The developer picks the semantic role, not the visual treatment.
+Every text element uses a typography component. `H1` through `H6`, `P`, `Lead`, `Large`, `Small`, `Muted`, `Code`, `Blockquote`. The sizing, weight, tracking, line-height, and color are encoded in the component. The developer picks the semantic role, not the visual treatment.
 
 This is deliberate. `text-sm text-muted-foreground font-medium tracking-wide` is five decisions an AI agent has no business making. `<Muted>` is one decision the designer already made.
-
-<!-- VENEER: Show the full typography scale as a vertical specimen. Each component renders its actual output with the component name beside it. H1 at the top, Small at the bottom. The hierarchy should speak for itself -- no labels needed beyond the component names. -->
 
 ## The Scale
 
 Typography uses the same minor-third progression as spacing. The sizes are mathematically related, not hand-picked. This creates visual harmony between text and space -- the same ratio that determines paragraph padding determines the size difference between H2 and H3.
 
-<!-- VENEER: Show the progression curve with type samples at each position. Overlay the spacing scale on the same curve to show the shared ratio. The connection between text size and surrounding space should be visible. -->
+The sizes ship as fixed `rem` values. They come from the ratio, but changing `font-size-base` at runtime does not move them yet (#2647).
 
 ## Why Not text-sm
 
-`text-sm` is 14px. At default body size, that's below the threshold where sustained reading becomes strained for users over 40. `text-xs` is 12px -- below WCAG AAA recommendations for body text.
+`text-sm` is one step below base, about 13.3px at the default scale. `text-xs` is two steps below, about 11.1px. Sustained reading at those sizes gets harder, especially for older readers.
 
 Small text has its place. Timestamps, footnotes, legal copy. But it's a conscious choice with accessibility implications, not a default. The `<Small>` component exists for these cases. `text-xs` in a className does not.
-
-<!-- VENEER: Show a paragraph at text-base, text-sm, and text-xs side by side. Below each, show the WCAG compliance status. The point isn't that small text is forbidden -- it's that the component makes the tradeoff explicit. -->
 
 ## Each Component Has Intent
 
@@ -39,5 +35,3 @@ Small text has its place. Timestamps, footnotes, legal copy. But it's a consciou
 `<Code>` is the literal. Monospaced, boxed, unmistakable.
 
 `<Blockquote>` is the voice. Someone else's words, set apart.
-
-<!-- VENEER: Show a realistic content page (blog post or product page) with each component labeled in the margin. The reader sees typography in context, not in isolation. -->

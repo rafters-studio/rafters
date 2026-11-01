@@ -24,8 +24,6 @@ These are not suggestions. A menu opened inside a modal shows because `z-depth-d
 
 Each `z-depth-*` class is Tailwind's own `z` utility. `rafters.css` sets `--rafters-depth-<level>` on `:root` and the theme key `--z-index-depth-<level>` to `var(--rafters-depth-<level>)`, so the class compiles to one `z-index` declaration and follows the token.
 
-<!-- VENEER: Exploded view. Show the depth stack as separated horizontal planes, like an architectural section drawing. Each plane labeled with what lives on it. The user sees the spatial model. -->
-
 ## Depth Comes With Shadow
 
 Higher layers cast larger shadows. This is how the real world works -- a sheet of paper held close to a desk casts a tight shadow. Held high, the shadow spreads.
@@ -38,12 +36,8 @@ Higher layers cast larger shadows. This is how the real world works -- a sheet o
 
 The shadow tokens are in `@theme`. Tailwind's `shadow-sm`, `shadow-md`, `shadow-lg` read from the system. Change the shadow definition, every component at that depth updates.
 
-<!-- VENEER: Three cards stacked at different depths. Each casts the corresponding shadow. The user sees depth through shadow, not through z-index numbers. -->
-
 ## Focus Trap
 
 When a modal opens, keyboard focus is trapped inside it. Tab cycles through the modal's focusable elements. Escape closes it. Focus returns to the element that opened it.
 
 This is not optional. Without focus trap, a keyboard user tabs behind the modal into invisible content. The overlay dims the page visually, but screen readers and keyboards don't see visual dimming.
-
-<!-- VENEER: Animated sequence. Modal opens, focus ring moves through its elements, reaches the end, wraps to the beginning. Escape closes, focus returns to the trigger button. Show the focus ring path. -->
