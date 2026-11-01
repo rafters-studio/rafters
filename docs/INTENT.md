@@ -1,8 +1,17 @@
 # Intent
 
-Intent is why a project's design exists. It states what the design will accomplish and why design is needed at all.
+Intent is why a project's design exists. It states what the design will accomplish and why design is needed at all. A designer writes it first, before choosing anything else, and every choice after it answers to that reason.
 
-A designer starts by choosing an intent, and every choice after it answers to that reason. A choice that serves the intent belongs. A choice that serves nothing has no reason to be there.
+An intent is not a brief. A brief says what to make. An intent says why it should exist.
+
+## What the designer writes
+
+Before any starting point, value or component, the designer answers two questions in their own words:
+
+- **What will this design accomplish?**
+- **Why is design needed to do it?**
+
+These answers name no colours, sizes or layouts. Those are choices, and this is what the choices are for. A choice that serves the intent belongs. A choice that serves nothing has no reason to be there.
 
 ## Why the choices are recorded
 
@@ -10,14 +19,15 @@ A design is the choices someone made and why they made them. The why is what las
 
 Choosing differently later is part of the work. What matters is that the reason moves with the choice.
 
-## The five intents
+## What the intent system has
 
-Each intent is a different answer to why the design is needed. `efficient` is where a project begins until a designer chooses otherwise.
+**Five starting points:** `efficient`, `elegant`, `friendly`, `technical` and `editorial`. With the intent written, the designer picks the one closest to it and works from there. A starting point is not the intent. Two projects can begin in the same place for different reasons, and end up somewhere else.
 
-Each of these still has to say what the design will accomplish and why design is needed:
+`efficient` is the default when no other is chosen.
 
-- `efficient`
-- `elegant`
-- `friendly`
-- `technical`
-- `editorial`
+**A record of each choice.** When a designer overrides a token, the system asks why and keeps the answer with the token.
+
+**What it does not have yet:**
+
+- A place to keep what the designer writes. The config's `intent` field holds only the name of the starting point.
+- Starting points that reach the whole system. The motion generator is the only part that reads one, and four of the five have no values of their own yet.
