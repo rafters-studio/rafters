@@ -23,3 +23,7 @@ This is why shadow is in the motion system. The transition from `shadow-sm` to `
 If an element has a shadow, it means something about its elevation. Shadows are not borders, not emphasis, not visual interest. If you want a visual boundary, use a border token. If you want emphasis, use color. Shadow is reserved for depth.
 
 A flat design that uses zero shadows is fine. A design where everything has `shadow-lg` is broken -- if everything is elevated, nothing is.
+
+## Intent
+
+How much elevation a project spends may be a matter of intent: shadow rates differ between intents, though the size of the gap is unreliable. Nothing reads that yet. See [Intent](INTENT.md).

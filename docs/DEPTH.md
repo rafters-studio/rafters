@@ -41,3 +41,7 @@ The shadow tokens are in `@theme`. Tailwind's `shadow-sm`, `shadow-md`, `shadow-
 When a modal opens, keyboard focus is trapped inside it. Tab cycles through the modal's focusable elements. Escape closes it. Focus returns to the element that opened it.
 
 This is not optional. Without focus trap, a keyboard user tabs behind the modal into invisible content. The overlay dims the page visually, but screen readers and keyboards don't see visual dimming.
+
+## Intent
+
+Layer order is structural, and no study suggests intent changes it. See [Intent](INTENT.md).

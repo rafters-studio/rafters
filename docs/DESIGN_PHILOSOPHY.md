@@ -8,6 +8,10 @@ Rafters exists to hold the designer's wants in a form an agent can execute. Not 
 
 The beliefs that shape Rafters come from three traditions. We name them because the principles are easy to state and hard to follow. The work is in what follows.
 
+## Intent
+
+A designer starts by choosing how the project should feel. That choice is its intent, and it is why the rest of the system can agree with itself: which values to use is the designer's, and how many, and where they are allowed, is intent. Everything in this document serves it. [Intent](INTENT.md) says what an intent is, what reaches each part of the system today, and what is still only designed.
+
 ## Craft
 
 Good design is honest. We take that literally. A token that stamps `progressionSystem: minor-third` on its metadata while computing values as `base * N` is not honest. It is a system lying about its own architecture. That lie survived two years in this codebase, behind 85 green tests, because the tests asserted what the code did rather than what it claimed.

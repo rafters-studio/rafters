@@ -35,3 +35,7 @@ Small text has its place. Timestamps, footnotes, legal copy. But it's a consciou
 `<Code>` is the literal. Monospaced, boxed, unmistakable.
 
 `<Blockquote>` is the voice. Someone else's words, set apart.
+
+## Intent
+
+Which typeface is the designer's. How many sizes and weights are in use is intent, and nothing reads that yet. See [Intent](INTENT.md).

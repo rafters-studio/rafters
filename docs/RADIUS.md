@@ -28,3 +28,7 @@ Change `radius-base` from 6px to 2px and the entire scale compresses. Every comp
 Our research across design systems found that radius is the strongest single signal of brand personality. Users can't articulate why one interface feels "professional" and another feels "approachable" -- but the difference is often 2px vs 8px on the corners.
 
 This is why radius is not a detail to pick per-component. It's a system-level decision that cascades everywhere. The designer makes it once. The system enforces it everywhere.
+
+## Intent
+
+Radius follows spacing's base, so a preset that moves the base would move every corner. Presets are not built yet, and the research found that radius does not separate one intent from another. See [Intent](INTENT.md).

@@ -32,7 +32,7 @@ So: **no duration, easing, or keyframe in this system is a constant.** Every one
 
 ## How motion consumes intent
 
-Intent is the project's aesthetic starting position -- the first question Studio asks, before any token exists. It drives spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads.
+Intent is the project's aesthetic starting position -- the first question Studio asks, before any token exists. It drives spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads. [Intent](INTENT.md) says what an intent is. In the code today, the generator reads intent optionally and only `elegant` has a position of its own, so most of what follows about intent is the design rather than what ships.
 
 ## Principles
 

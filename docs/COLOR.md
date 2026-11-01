@@ -53,3 +53,7 @@ The semantic tokens don't store colors. They store references: "primary at posit
 ## The Why-Gate
 
 Override a color and the system asks why. Not to be bureaucratic -- to build institutional memory. Six months from now, someone asks "why is destructive different from the default?" The answer is in the token, not in someone's head who quit in April.
+
+## Intent
+
+Intent never picks a hue; the brand does. How many colours a project uses and where they may appear is intent, and nothing reads that yet. See [Intent](INTENT.md).
