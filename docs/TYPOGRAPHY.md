@@ -38,4 +38,4 @@ Small text has its place. Timestamps, footnotes, legal copy. But it's a consciou
 
 ## Intent
 
-Which typeface is the designer's. How many sizes and weights are in use is intent, and nothing reads that yet. See [Intent](INTENT.md).
+Every choice about type answers to why the project's design exists. See [Intent](INTENT.md).

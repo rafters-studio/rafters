@@ -26,4 +26,4 @@ A flat design that uses zero shadows is fine. A design where everything has `sha
 
 ## Intent
 
-How much elevation a project spends may be a matter of intent: shadow rates differ between intents, though the size of the gap is unreliable. Nothing reads that yet. See [Intent](INTENT.md).
+Every choice about shadow answers to why the project's design exists. See [Intent](INTENT.md).

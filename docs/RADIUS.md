@@ -31,4 +31,4 @@ This is why radius is not a detail to pick per-component. It's a system-level de
 
 ## Intent
 
-Radius follows spacing's base, so a preset that moves the base would move every corner. Presets are not built yet, and the research found that radius does not separate one intent from another. See [Intent](INTENT.md).
+Every choice about radius answers to why the project's design exists. See [Intent](INTENT.md).

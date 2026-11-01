@@ -44,4 +44,4 @@ This is not optional. Without focus trap, a keyboard user tabs behind the modal 
 
 ## Intent
 
-Layer order is structural, and no study suggests intent changes it. See [Intent](INTENT.md).
+Every choice about depth answers to why the project's design exists. See [Intent](INTENT.md).

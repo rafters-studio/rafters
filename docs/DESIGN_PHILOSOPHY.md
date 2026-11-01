@@ -10,7 +10,7 @@ The beliefs that shape Rafters come from three traditions. We name them because 
 
 ## Intent
 
-A designer starts by choosing how the project should feel. That choice is its intent, and it is why the rest of the system can agree with itself: which values to use is the designer's, and how many, and where they are allowed, is intent. Everything in this document serves it. [Intent](INTENT.md) says what an intent is, what reaches each part of the system today, and what is still only designed.
+Design exists for a reason, and a project states that reason first. Its intent says what the design will accomplish and why design is needed, and every choice after it answers to that. Rafters exists to hold those choices and the why behind them. See [Intent](INTENT.md).
 
 ## Craft
 

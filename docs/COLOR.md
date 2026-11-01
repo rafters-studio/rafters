@@ -56,4 +56,4 @@ Override a color and the system asks why. Not to be bureaucratic -- to build ins
 
 ## Intent
 
-Intent never picks a hue; the brand does. How many colours a project uses and where they may appear is intent, and nothing reads that yet. See [Intent](INTENT.md).
+Every choice about colour answers to why the project's design exists. See [Intent](INTENT.md).
