@@ -46,3 +46,14 @@ shape: terse whys, and whats and hows that talk about people in full sentences.
 
 10. Why versus not-why falls to 0.70 or lower on the style swap for all three embedding
     models. Confidence 0.75.
+
+## Added before the rafters test ran
+
+Rafters wrote 20 intents without seeing the controls. Veneer split them into clauses by hand and
+labelled them in `rafters-labelled.json` before any model saw them. They are a different author
+and a harder shape: long sentences, and whats written as purposes. Most clauses are whys, so a
+model that calls everything a why scores high on accuracy alone; why kept and not-why removed
+are the scores that count.
+
+11. Why kept is at least 0.80, and not-why removed falls to 0.50 or lower, on all three embedding
+    models. Confidence 0.65.

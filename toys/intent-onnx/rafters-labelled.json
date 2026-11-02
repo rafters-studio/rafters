@@ -1,0 +1,182 @@
+[
+  {
+    "t": "Patients arrive at a two-room clinic after long drives, often sick, often with a child in tow, and fill in a paper form that asks the same question three ways.",
+    "l": "why"
+  },
+  {
+    "t": "The intake should take the questions to them one at a time, in plain words, on a borrowed tablet",
+    "l": "how"
+  },
+  {
+    "t": "so the nurse gets a history she can trust and the patient feels expected rather than processed.",
+    "l": "why"
+  },
+  {
+    "t": "A volunteer-run library lends drills, ladders and pressure washers, and today the catalogue is a spreadsheet only two people understand.",
+    "l": "why"
+  },
+  {
+    "t": "Design is needed so a neighbour can see what exists, what is out, and how to borrow it without phoning anyone",
+    "l": "why"
+  },
+  {
+    "t": "and so the library feels like a shared shed, not a rental counter.",
+    "l": "what",
+    "feel": true
+  },
+  {
+    "t": "Grantees spend days each year rewriting the same outcomes into our report template, and we read them looking for two numbers.",
+    "l": "why"
+  },
+  { "t": "The report should ask for what we actually use", "l": "why" },
+  { "t": "show grantees what we did with last year's answers", "l": "what" },
+  { "t": "and make honesty about a failed program feel safe to write down.", "l": "why" },
+  {
+    "t": "Dispatchers juggle forty trucks across three screens and a phone, and the cost of a missed exception is a load sitting at a dock overnight.",
+    "l": "why"
+  },
+  {
+    "t": "The console has to make the one truck that needs attention impossible to miss and keep the thirty-nine that are fine quietly out of the way.",
+    "l": "why"
+  },
+  {
+    "t": "The shop's character is its staff picks and handwritten shelf cards, and none of that survives on the current site, which looks like every other storefront.",
+    "l": "why"
+  },
+  { "t": "The site should feel like walking in", "l": "what", "feel": true },
+  { "t": "opinionated recommendations first, events second, the catalogue third", "l": "what" },
+  { "t": "with ordering simple enough that nobody gives up and buys elsewhere.", "l": "why" },
+  {
+    "t": "Residents applying for a fence or a deck permit cannot tell whether their application is moving, so they call the office, and the calls slow the office down.",
+    "l": "why"
+  },
+  {
+    "t": "Design should show every applicant where their permit is, who has it, and what happens next",
+    "l": "why"
+  },
+  { "t": "in language a first-time homeowner understands.", "l": "why" },
+  {
+    "t": "Newcomers want to practise the local language with people, not drills, and local volunteers want to help but do not know where to start.",
+    "l": "why"
+  },
+  { "t": "The app should pair them for short, low-stakes conversations", "l": "how" },
+  {
+    "t": "protect the newcomer's privacy completely, and never make anyone feel graded.",
+    "l": "why"
+  },
+  {
+    "t": "Our audience is ageing and the younger people who do come say the programme reads like a legal notice.",
+    "l": "why"
+  },
+  {
+    "t": "The season should be presented as a set of evenings worth looking forward to, each with a reason to come",
+    "l": "what"
+  },
+  { "t": "while keeping the subscribers who love the composer-and-opus listings.", "l": "why" },
+  {
+    "t": "Reagents expire on shelves because nobody knows who ordered them, and students reorder what is already in the freezer.",
+    "l": "why"
+  },
+  { "t": "The inventory needs to be faster to update than ignoring it", "l": "why" },
+  { "t": "readable from a phone in a glove", "l": "why" },
+  { "t": "clear about what is dangerous before it is clear about what is cheap.", "l": "why" },
+  {
+    "t": "My grandmother's recipes live on stained index cards in three households, and the cousins argue about which version is real.",
+    "l": "why"
+  },
+  {
+    "t": "The archive should keep every version side by side with who wrote it and when",
+    "l": "what"
+  },
+  { "t": "feel warm rather than clinical", "l": "what", "feel": true },
+  { "t": "make it easy for the youngest cousin to add the card she found.", "l": "why" },
+  {
+    "t": "Technicians climb turbines only in safe weather windows, and planning those climbs across a hundred turbines is done on a whiteboard.",
+    "l": "why"
+  },
+  {
+    "t": "Design is needed to show the weather window, the crew and the fault list together",
+    "l": "what"
+  },
+  {
+    "t": "so a planner can commit a day in minutes and a technician knows why they are on that tower.",
+    "l": "why"
+  },
+  {
+    "t": "Our members chose us because we are local and human, and our app feels like it was bought from a vendor, because it was.",
+    "l": "why"
+  },
+  { "t": "The app should do the everyday things fast", "l": "why" },
+  {
+    "t": "and make the human parts visible: a named advisor, plain fees, and a way to talk to someone who knows the member's history.",
+    "l": "what"
+  },
+  {
+    "t": "Visitors carry their phones through the galleries but the current guide asks them to type object numbers and then stare at a screen.",
+    "l": "why"
+  },
+  { "t": "The guide should let people look at the art, not the phone", "l": "why" },
+  { "t": "offering a story when they pause and staying silent when they move on.", "l": "how" },
+  {
+    "t": "New contributors read the docs, fail to build the project, and leave without telling us.",
+    "l": "why"
+  },
+  {
+    "t": "The documentation should get someone from clone to a passing test in one sitting",
+    "l": "why"
+  },
+  { "t": "say plainly what is unfinished", "l": "why" },
+  {
+    "t": "make the people behind the project visible enough that asking a question feels allowed.",
+    "l": "why"
+  },
+  {
+    "t": "Volunteers sit with dying patients, and a missed shift means someone spends their last afternoon alone.",
+    "l": "why"
+  },
+  { "t": "Scheduling should make coverage gaps obvious to the coordinator days ahead", "l": "why" },
+  { "t": "make swapping a shift easy without guilt", "l": "why" },
+  { "t": "respect that these volunteers are giving something heavy.", "l": "why" },
+  {
+    "t": "Shoppers wander the market looking for the one stall that sells duck eggs, and vendors move every week.",
+    "l": "why"
+  },
+  { "t": "The map should be the first thing people check on the walk over", "l": "why" },
+  { "t": "show what is in season and who has it today", "l": "what" },
+  { "t": "give small vendors the same presence as the big ones.", "l": "why" },
+  {
+    "t": "After an outage we write a review document that nobody reads twice, and the same failure returns six months later.",
+    "l": "why"
+  },
+  { "t": "The tool should make the timeline and the decisions easy to reconstruct", "l": "why" },
+  { "t": "keep blame out of the structure itself", "l": "why" },
+  { "t": "connect each review to the ones before it so patterns surface.", "l": "how" },
+  {
+    "t": "The summer reading programme rewards pages read, and the kids who read slowly quit by July.",
+    "l": "why"
+  },
+  { "t": "The tracker should celebrate showing up and finishing", "l": "why" },
+  { "t": "let a child see their own progress without comparing it to anyone else's", "l": "why" },
+  { "t": "give parents a reason to visit the library rather than just the app.", "l": "why" },
+  {
+    "t": "Our buildings are quiet and site-specific, and portfolio sites in our field shout with full-bleed renders.",
+    "l": "why"
+  },
+  { "t": "The portfolio should let the work breathe", "l": "what", "feel": true },
+  { "t": "show the context each building responds to", "l": "what" },
+  {
+    "t": "read like the studio talks: slowly, precisely, with a point of view a client can disagree with.",
+    "l": "what",
+    "feel": true
+  },
+  {
+    "t": "Tenants in one building rarely know their neighbours share the same broken boiler and the same unanswered emails.",
+    "l": "why"
+  },
+  { "t": "The hub should make it safe to report a problem", "l": "why" },
+  { "t": "show tenants they are not alone", "l": "why" },
+  {
+    "t": "turn scattered complaints into a record the union can take to the landlord, without exposing anyone who is afraid.",
+    "l": "why"
+  }
+]

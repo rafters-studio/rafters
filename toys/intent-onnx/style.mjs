@@ -21,5 +21,5 @@ for (const id of ['Xenova/all-MiniLM-L6-v2', 'Xenova/bge-small-en-v1.5', 'Xenova
   const ok = (r) => (r.pl === 'why') === (r.l === 'why');
   const whys = rows.filter((r) => r.l === 'why');
   const nots = rows.filter((r) => r.l !== 'why');
-  console.log(JSON.stringify({ model: id, whyVsNot: +(rows.filter(ok).length / rows.length).toFixed(3), whyKept: +(whys.filter((r) => r.pl === 'why').length / whys.length).toFixed(3), notWhyRemoved: +(nots.filter((r) => r.pl !== 'why').length / nots.length).toFixed(3), wrong: rows.filter((r) => !ok(r)).map((r) => `[${r.l}->${r.pl}] ${r.t}`) }));
+  console.log(JSON.stringify({ model: id, whyVsNot: +(rows.filter(ok).length / rows.length).toFixed(3), whyKept: +(whys.filter((r) => r.pl === 'why').length / whys.length).toFixed(3), notWhyRemoved: +(nots.filter((r) => r.pl !== 'why').length / nots.length).toFixed(3), allWhyBaseline: +(whys.length / rows.length).toFixed(3), withoutFeel: +(rows.filter((r) => !r.feel).filter(ok).length / rows.filter((r) => !r.feel).length).toFixed(3), wrong: rows.filter((r) => !ok(r)).map((r) => `[${r.l}->${r.pl}] ${r.t}`) }));
 }
