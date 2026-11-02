@@ -76,7 +76,7 @@ Override the base in a theme and every token updates through CSS custom property
 
 The ratio is a build-time input rather than a runtime variable, so changing it regenerates. That split is correct: the base scales what exists, the ratio changes *which* positions exist, and a set of tokens cannot appear or disappear through the cascade.
 
-Studio writes values into the `--rafters-*` layer that every theme token points at. That indirection is why applying an intent will need no regeneration -- it will be a batch of custom-property writes, not a build. Presets are not built yet.
+Studio writes values into the `--rafters-*` layer that every theme token points at. That indirection is why applying a starting point will need no regeneration -- it will be a batch of custom-property writes, not a build. Presets are not built yet.
 
 ## Why This Matters
 
