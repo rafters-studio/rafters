@@ -15,6 +15,27 @@ node style.mjs style-swap.json > out-style.jsonl     # trained on controls, test
 Models download to `./models`. Run on an Apple M-series machine, `@huggingface/transformers` 3.7.5,
 q8 quantized models.
 
+## The answer
+
+**Not with these methods.** On intents another author wrote, every model scored below simply calling
+everything a why. The high scores on the controls below came from one author writing both the test
+and the examples. Read the controls table with that in mind.
+
+| Model | Why vs not, rafters' intents (baseline 0.757) | Why kept | Not-why removed | Same, trained on both authors | Why kept | Not-why removed |
+|---|---|---|---|---|---|---|
+| all-MiniLM-L6-v2 | 0.600 | 0.755 | 0.118 | 0.686 | 0.868 | 0.118 |
+| bge-small-en-v1.5 | 0.700 | 0.774 | 0.471 | 0.700 | 0.830 | 0.294 |
+| all-mpnet-base-v2 | 0.729 | 0.868 | 0.294 | 0.729 | 0.887 | 0.235 |
+
+Rafters' 70 clauses hold 53 whys and 17 whats and hows. Most of those 17 stayed in the intent, so the
+models mostly fail at the job this exists for. More examples from the other author did not fix it,
+which points at the method and not only the data: nearest neighbours on these embeddings follow
+topic and shape, and a what written as a purpose ("show what is in season and who has it today")
+looks like a why.
+
+Rerun with `node style.mjs rafters-labelled.json` and `node mixed.mjs`. Rafters wrote its intents
+without seeing the controls; veneer split and labelled them, and some labels are judgment calls.
+
 ## Results on the 20 controls (79 clauses)
 
 | Model | Method | Why vs not | Why kept | Not-why removed | Parts | Intents fully right | Disk | Per clause |
@@ -36,7 +57,7 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 ## What it showed
 
 - **Examples work and zero-shot does not.** Described labels alone almost never recognised a why.
-- **Why versus not-why holds up**, including with the sentence shape swapped.
+- **Why versus not-why held up only for one author**, including with the sentence shape swapped. It did not survive a second author.
 - **Sorting into parts is the weak pass, not the easy one.** At 0.44 to 0.56 it is not usable, with
   only 1 to 8 examples per part. This reversed the prediction.
 - **A bigger model buys little:** mpnet adds 0.04 on why versus not-why and is 4.7 times the size.
@@ -46,8 +67,8 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 
 ## Limits
 
-- One author wrote every clause and every label, so independence is not shown. Sean has not
-  corrected the labels, and rafters' independent set had not arrived when these ran.
+- Veneer wrote or assigned every label, and Sean has not corrected them. The 17 not-why clauses in
+  rafters' set are few, so these scores are rough.
 - 79 and 22 clauses. A difference of one clause moves the style-swap score by 0.045.
 - Clauses are split by hand. Splitting raw text was not tested.
 - `feel` clauses are labelled what, pending Sean's answer.
@@ -66,3 +87,5 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 | 8 | Under 40 MB, 30 ms, 400 MB | Held for the model; the install is far larger |
 | 9 | Bigger models add under 0.05 | Held |
 | 10 | Style swap falls to 0.70 or lower | Wrong: 0.864 to 0.909 |
+| 11 | On rafters' set, why kept at least 0.80 and not-why removed at most 0.50 | Half: removed held at 0.118 to 0.471; only mpnet kept 0.80 |
+| 12 | Mixed training reaches 0.80 on some model; not-why removed stays under 0.60 | First half wrong, best 0.729; second held |
