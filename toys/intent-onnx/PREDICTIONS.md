@@ -66,3 +66,16 @@ clauses in turn and trains on the controls plus the other nine tenths.
 
 12. Why versus not-why reaches 0.80 or better on at least one model, and not-why removed stays
     under 0.60 on all three. Confidence 0.55.
+
+## Added before the classic ML test ran
+
+Word and character n-grams with logistic regression and a linear SVM: no embeddings, no runtime,
+weights small enough to ship as a data file. Tested on rafters' clauses, trained on the controls,
+then on the controls plus nine tenths of rafters' clauses. Fewer than 150 labelled clauses is far
+below what this method usually needs, so this is a floor, not a verdict.
+
+13. Trained on the controls alone, no classifier beats the 0.757 baseline, and not-why removed
+    stays at or under 0.50. Confidence 0.7.
+14. With both authors, the best classifier reaches 0.75 to 0.82 and removes at least 8 of the 17
+    whats and hows. Confidence 0.5.
+15. The saved weights are under 1 MB. Confidence 0.9.
