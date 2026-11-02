@@ -1,0 +1,82 @@
+[
+  {
+    "project": "huttspawn",
+    "text": "A SWTOR guide site written by people who still play. The reader has a fight in ten minutes and wants the answer before the queue pops, so the page leads with what works and the reasoning sits under it for whoever stays. It should feel like a guild officer's notes kept in very good order: dense, dark enough to read beside the game, and sure of itself without any sales pitch."
+  },
+  {
+    "project": "tidebook",
+    "text": "A tide and weather log for people who dig clams and launch small boats. It gets read at five in the morning, in the rain, with wet thumbs. One number matters most, the next safe window, and it should be readable at arm's length. Everything else waits one tap away. Nothing on the screen should look cheerful about a small craft advisory."
+  },
+  {
+    "project": "ledgerline",
+    "text": "Bookkeeping for sole-proprietor tradespeople who hate bookkeeping. A plumber photographs a receipt in the van and goes back to work. The design should never make them feel behind. Show what is settled and name the one thing that needs them, in the words they would use on a job site, not an accountant's. Quiet and plain, like a good invoice."
+  },
+  {
+    "project": "hospice-handoff",
+    "text": "A shift handoff tool for hospice nurses. The person reading has just walked in from a hard visit and is about to walk into another. It must carry what changed for each patient and what the family needs to hear, with no alert theatre: nothing flashes, and nothing is red unless someone must act now. Calm is the function here. Every extra element costs attention this reader does not have."
+  },
+  {
+    "project": "gristmill",
+    "text": "The website of a small heritage flour mill that sells by mail. The stone, the grain, and the farmer's name are the whole story, so the design gets out of their way: generous pages, real photographs of real sacks, type with some weight to it. Buying should take a minute. Nobody should mistake it for a lifestyle brand, because the people who run it would be embarrassed."
+  },
+  {
+    "project": "shuttle-board",
+    "text": "A departures display for a rural transit agency, shown on one aging screen in a community center and on the phones of people who ride it. Many riders are old, some have low vision, and some read English as a second language. Route, time, and whether it is late must read from across a room. It has no brand moment. Its only ambition is to be believed, so when it does not know, it says so."
+  },
+  {
+    "project": "quartet",
+    "text": "A practice companion for amateur string players who meet on Thursdays. It holds the parts, the marked bowings, and the bar everyone keeps falling apart at. On a music stand it has to stay still, turn pages without surprise, and work in dim living rooms. It should feel like a well-used pencil and a good copy of the score. It keeps no streaks and hands out no badges; these people are playing because they love it."
+  },
+  {
+    "project": "permit-desk",
+    "text": "A county building permit portal, for homeowners who will use it twice in their lives and the clerks who use it all day. The homeowner is anxious about doing it wrong, so each step says what is needed, why, and what happens next, and an answer can always be changed. The clerk needs speed and a dense queue. Same data, two very different rooms, and neither should feel like the leftover."
+  },
+  {
+    "project": "fieldnotes-moss",
+    "text": "A shared record for volunteers surveying mosses and lichens on old-growth transects. Data entry happens on a log, offline, with cold hands, and species names are long. It should be patient and exact, and it should treat a beginner's uncertain identification as useful data, not an error. The look comes from herbarium sheets: labels, dates, a specimen and its collector, all given the same respect."
+  },
+  {
+    "project": "after-school-ledger",
+    "text": "Sign-in and pickup for a neighborhood after-school program, run by two staff and thirty parents in a hurry. At 5:45 the question is who is still here and who is allowed to take them. That answer must be impossible to misread. Warm in its words, strict in its behavior: friendly to the parent, immovable about the pickup list."
+  },
+  {
+    "project": "kiln-log",
+    "text": "A firing log for a shared ceramics studio. Potters want to know what was in which kiln, how it ran, and why their celadon came out grey. A firing is a curve over twelve hours, so the curve is the page's main element and the notes hang off it. Earthy without costume. The record should get more valuable with every year it runs, so old firings must stay as easy to find as yesterday's."
+  },
+  {
+    "project": "open-bench",
+    "text": "A booking and induction system for a community tool library and woodshop. New members are a little afraid of the table saw and should be. The design treats safety training as the way in, not a form in the way: you can see what you have unlocked and who can teach you the next thing. Sturdy, labeled like a well-kept shop, and blunt where a blunt sentence keeps fingers attached."
+  },
+  {
+    "project": "dialect-atlas",
+    "text": "An interactive map of how people in one country say the same words, built from volunteered recordings. The voice is the content, so listening has to be one click from anywhere on the map. It should reward wandering the way an old paper atlas does, and it should never rank one way of speaking above another. Scholarly in its care about sources, and openly delighted by its subject."
+  },
+  {
+    "project": "night-pharmacy",
+    "text": "An internal tool for overnight hospital pharmacists verifying orders. Fatigue is the condition it is designed for: at 4 a.m. two similar drug names must look different, doses must align so a wrong decimal stands out, and the safe path must take fewer keystrokes than the unsafe one. Dark, still, and dense. It is never clever, because a clever interface invites a second guess at the wrong moment."
+  },
+  {
+    "project": "seedbank-swap",
+    "text": "A seed exchange among home growers in one bioregion. People offer what grew well for them and say where, because a tomato that thrives in one valley sulks in the next. Place and history matter more than the picture of the fruit. It should feel like a handwritten envelope from a neighbor, unhurried and specific, with no shopping cart anywhere in the idea of it."
+  },
+  {
+    "project": "grief-paperwork",
+    "text": "A guide for someone who has just lost a spouse and is now facing the accounts, the certificates, and the phone calls. It offers one task at a time, says which ones can wait, and never congratulates anyone for finishing. Large type and short sentences, because the reader cannot concentrate this week. It remembers where they stopped, and it asks nothing it does not need."
+  },
+  {
+    "project": "rackspace",
+    "text": "A status and capacity console for a small team running their own servers in a colocation cage. These operators read logs for a living and resent being protected from detail. Show the real numbers, the real hostnames, and the keyboard path to everything. Dense by default, monospace where alignment means something, and color reserved for the states that wake someone up. It should feel like a tool made by the people who use it."
+  },
+  {
+    "project": "ferry-galley",
+    "text": "Ordering for the snack counter on a commuter ferry. The crossing is thirty-five minutes, the line is long, and half the customers are regulars who want the same coffee. A regular should be done in two taps, and a tourist should be able to see the chowder. Bright enough for a sunny deck, sized for one hand while the other holds a railing. It has a little salt in its humor and no loyalty program."
+  },
+  {
+    "project": "tenants-table",
+    "text": "An organizing tool for tenant associations in buildings with absent landlords. It keeps the repair history, the dated letters, and who has agreed to what, because a record is what wins at the housing board. It must work on cheap phones and in several languages, and it must protect people who fear retaliation, so who can see a name is always plain on the screen. Serious and practical, built for neighbors in a stairwell."
+  },
+  {
+    "project": "small-press-catalog",
+    "text": "The catalog of a poetry press that publishes six books a year and keeps all of them in print. Each book gets a page that treats it as an object: its trim size, its paper, a real excerpt set with care. Typography carries the whole design, and it should vary a little with each book as the books themselves do. Browsing should feel like an afternoon in a good shop with an owner who leaves you alone."
+  }
+]

@@ -108,3 +108,15 @@ machine has no API credential, so cost is not measured.
 19. Parts on the controls reaches 0.70, well above the embeddings' 0.56. Confidence 0.65.
 20. It keeps the designer's words: at least 90% of its clauses appear word for word in the source.
     Confidence 0.6.
+
+## Added before the cold test ran
+
+Huttspawn wrote 20 intents with no definition and no examples. Veneer labelled them before any model
+saw them, marking with `d` the clauses that say what the thing does for people, which turn on Sean's
+unanswered why-or-how question. Haiku gets `prompts/split.md` and `prompts/route.md` exactly as
+written for platform, and splits the raw text itself. Scored with the `d` clauses as why, and again
+with them left out.
+
+21. Without the `d` clauses, why versus not is at least 0.80, removing at least 80% of whats and hows.
+    Confidence 0.6.
+22. With them counted as why, why kept is at least 0.75. Confidence 0.55.

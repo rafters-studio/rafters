@@ -1,0 +1,644 @@
+[
+  {
+    "id": "H1",
+    "t": "A SWTOR guide site written by people who still play.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H1",
+    "t": "The reader has a fight in ten minutes and wants the answer before the queue pops,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H1",
+    "t": "so the page leads with what works and the reasoning sits under it for whoever stays.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H1",
+    "t": "It should feel like a guild officer's notes kept in very good order:",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H1",
+    "t": "dense, dark enough to read beside the game, and sure of itself without any sales pitch.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H2",
+    "t": "A tide and weather log for people who dig clams and launch small boats.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H2",
+    "t": "It gets read at five in the morning, in the rain, with wet thumbs.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H2",
+    "t": "One number matters most, the next safe window,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H2",
+    "t": "and it should be readable at arm's length.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H2",
+    "t": "Everything else waits one tap away.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H2",
+    "t": "Nothing on the screen should look cheerful about a small craft advisory.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H3",
+    "t": "Bookkeeping for sole-proprietor tradespeople who hate bookkeeping.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H3",
+    "t": "A plumber photographs a receipt in the van and goes back to work.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H3",
+    "t": "The design should never make them feel behind.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H3",
+    "t": "Show what is settled and name the one thing that needs them,",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H3",
+    "t": "in the words they would use on a job site, not an accountant's.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H3",
+    "t": "Quiet and plain, like a good invoice.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H4",
+    "t": "A shift handoff tool for hospice nurses.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H4",
+    "t": "The person reading has just walked in from a hard visit and is about to walk into another.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H4",
+    "t": "It must carry what changed for each patient and what the family needs to hear,",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H4",
+    "t": "with no alert theatre: nothing flashes, and nothing is red unless someone must act now.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H4",
+    "t": "Calm is the function here.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H4",
+    "t": "Every extra element costs attention this reader does not have.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H5",
+    "t": "The website of a small heritage flour mill that sells by mail.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H5",
+    "t": "The stone, the grain, and the farmer's name are the whole story,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H5",
+    "t": "so the design gets out of their way:",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H5",
+    "t": "generous pages, real photographs of real sacks, type with some weight to it.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H5",
+    "t": "Buying should take a minute.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H5",
+    "t": "Nobody should mistake it for a lifestyle brand, because the people who run it would be embarrassed.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H6",
+    "t": "A departures display for a rural transit agency, shown on one aging screen in a community center and on the phones of people who ride it.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H6",
+    "t": "Many riders are old, some have low vision, and some read English as a second language.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H6",
+    "t": "Route, time, and whether it is late must read from across a room.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H6",
+    "t": "It has no brand moment.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H6",
+    "t": "Its only ambition is to be believed,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H6",
+    "t": "so when it does not know, it says so.",
+    "l": "how",
+    "d": false
+  },
+  {
+    "id": "H7",
+    "t": "A practice companion for amateur string players who meet on Thursdays.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H7",
+    "t": "It holds the parts, the marked bowings, and the bar everyone keeps falling apart at.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H7",
+    "t": "On a music stand it has to stay still, turn pages without surprise, and work in dim living rooms.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H7",
+    "t": "It should feel like a well-used pencil and a good copy of the score.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H7",
+    "t": "It keeps no streaks and hands out no badges;",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H7",
+    "t": "these people are playing because they love it.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H8",
+    "t": "A county building permit portal, for homeowners who will use it twice in their lives and the clerks who use it all day.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H8",
+    "t": "The homeowner is anxious about doing it wrong,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H8",
+    "t": "so each step says what is needed, why, and what happens next, and an answer can always be changed.",
+    "l": "how",
+    "d": false
+  },
+  {
+    "id": "H8",
+    "t": "The clerk needs speed and a dense queue.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H8",
+    "t": "Same data, two very different rooms, and neither should feel like the leftover.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H9",
+    "t": "A shared record for volunteers surveying mosses and lichens on old-growth transects.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H9",
+    "t": "Data entry happens on a log, offline, with cold hands, and species names are long.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H9",
+    "t": "It should be patient and exact,",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H9",
+    "t": "and it should treat a beginner's uncertain identification as useful data, not an error.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H9",
+    "t": "The look comes from herbarium sheets: labels, dates, a specimen and its collector, all given the same respect.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H10",
+    "t": "Sign-in and pickup for a neighborhood after-school program, run by two staff and thirty parents in a hurry.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H10",
+    "t": "At 5:45 the question is who is still here and who is allowed to take them.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H10",
+    "t": "That answer must be impossible to misread.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H10",
+    "t": "Warm in its words, strict in its behavior: friendly to the parent, immovable about the pickup list.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "A firing log for a shared ceramics studio.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "Potters want to know what was in which kiln, how it ran, and why their celadon came out grey.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "A firing is a curve over twelve hours, so the curve is the page's main element and the notes hang off it.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "Earthy without costume.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "The record should get more valuable with every year it runs,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H11",
+    "t": "so old firings must stay as easy to find as yesterday's.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H12",
+    "t": "A booking and induction system for a community tool library and woodshop.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H12",
+    "t": "New members are a little afraid of the table saw and should be.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H12",
+    "t": "The design treats safety training as the way in, not a form in the way:",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H12",
+    "t": "you can see what you have unlocked and who can teach you the next thing.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H12",
+    "t": "Sturdy, labeled like a well-kept shop, and blunt where a blunt sentence keeps fingers attached.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H13",
+    "t": "An interactive map of how people in one country say the same words, built from volunteered recordings.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H13",
+    "t": "The voice is the content, so listening has to be one click from anywhere on the map.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H13",
+    "t": "It should reward wandering the way an old paper atlas does,",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H13",
+    "t": "and it should never rank one way of speaking above another.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H13",
+    "t": "Scholarly in its care about sources, and openly delighted by its subject.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H14",
+    "t": "An internal tool for overnight hospital pharmacists verifying orders.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H14",
+    "t": "Fatigue is the condition it is designed for:",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H14",
+    "t": "at 4 a.m. two similar drug names must look different, doses must align so a wrong decimal stands out,",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H14",
+    "t": "and the safe path must take fewer keystrokes than the unsafe one.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H14",
+    "t": "Dark, still, and dense.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H14",
+    "t": "It is never clever, because a clever interface invites a second guess at the wrong moment.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H15",
+    "t": "A seed exchange among home growers in one bioregion.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H15",
+    "t": "People offer what grew well for them and say where, because a tomato that thrives in one valley sulks in the next.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H15",
+    "t": "Place and history matter more than the picture of the fruit.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H15",
+    "t": "It should feel like a handwritten envelope from a neighbor, unhurried and specific, with no shopping cart anywhere in the idea of it.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H16",
+    "t": "A guide for someone who has just lost a spouse and is now facing the accounts, the certificates, and the phone calls.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H16",
+    "t": "It offers one task at a time, says which ones can wait, and never congratulates anyone for finishing.",
+    "l": "how",
+    "d": false
+  },
+  {
+    "id": "H16",
+    "t": "Large type and short sentences,",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H16",
+    "t": "because the reader cannot concentrate this week.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H16",
+    "t": "It remembers where they stopped, and it asks nothing it does not need.",
+    "l": "how",
+    "d": false
+  },
+  {
+    "id": "H17",
+    "t": "A status and capacity console for a small team running their own servers in a colocation cage.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H17",
+    "t": "These operators read logs for a living and resent being protected from detail.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H17",
+    "t": "Show the real numbers, the real hostnames, and the keyboard path to everything.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H17",
+    "t": "Dense by default, monospace where alignment means something, and color reserved for the states that wake someone up.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H17",
+    "t": "It should feel like a tool made by the people who use it.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H18",
+    "t": "Ordering for the snack counter on a commuter ferry.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H18",
+    "t": "The crossing is thirty-five minutes, the line is long, and half the customers are regulars who want the same coffee.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H18",
+    "t": "A regular should be done in two taps, and a tourist should be able to see the chowder.",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H18",
+    "t": "Bright enough for a sunny deck, sized for one hand while the other holds a railing.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H18",
+    "t": "It has a little salt in its humor and no loyalty program.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "An organizing tool for tenant associations in buildings with absent landlords.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "It keeps the repair history, the dated letters, and who has agreed to what,",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "because a record is what wins at the housing board.",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "It must work on cheap phones and in several languages,",
+    "l": "why",
+    "d": true
+  },
+  {
+    "id": "H19",
+    "t": "and it must protect people who fear retaliation,",
+    "l": "why",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "so who can see a name is always plain on the screen.",
+    "l": "how",
+    "d": false
+  },
+  {
+    "id": "H19",
+    "t": "Serious and practical, built for neighbors in a stairwell.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H20",
+    "t": "The catalog of a poetry press that publishes six books a year and keeps all of them in print.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H20",
+    "t": "Each book gets a page that treats it as an object: its trim size, its paper, a real excerpt set with care.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H20",
+    "t": "Typography carries the whole design, and it should vary a little with each book as the books themselves do.",
+    "l": "what",
+    "d": false
+  },
+  {
+    "id": "H20",
+    "t": "Browsing should feel like an afternoon in a good shop with an owner who leaves you alone.",
+    "l": "what",
+    "d": false
+  }
+]
