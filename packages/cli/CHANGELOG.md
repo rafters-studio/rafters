@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixed
+
+- fix(ui): **`classy()` keeps arbitrary-value classes (#2063).** The runtime check that dropped a bracketed utility and warned is off, for every caller, in development and in production. In React, a closed Accordion or force-mounted Collapsible panel now collapses to 0px, and Accordion, Collapsible, Tooltip, HoverCard, NavigationMenu, ContextMenu, Sidebar and Progress keep the `transition-[...]` and `grid-rows-[...]` classes their classes files declare, as Astro and the web components already did (#2529, #2396, #2195). The `allowArbitrary` option is gone because nothing is left for it to allow. Nothing catches an arbitrary value at runtime now; the plugin hook still catches some at authoring time. Projects pick it up with `rafters add --update-all`.
+
 ## 0.6.2
 
 ### Fixed

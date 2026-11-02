@@ -9,7 +9,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `aria-manager` | a11y | dom | Applies a validated aria/role projection to an element; returns a restore cleanup. | `setAriaAttributes`, `updateAriaAttribute`, `removeAriaAttributes` |
 | `dialog-aria` | a11y | pure | Pure aria-prop builders for dialog/overlay/trigger. | `getDialogAriaProps`, `getOverlayAriaProps`, `getTriggerAriaProps` |
 | `sr-announcer` | a11y | dom | Live-region screen-reader announcements (executor behind the announce effect). | `createAnnouncer`, `announceToScreenReader`, `createPoliteAnnouncer` |
-| `classy` | classes | pure | Tailwind-aware class-string builder with token resolution and arbitrary-value blocking. | `token`, `parseTailwindClass`, `hasArbitraryValue` |
+| `classy` | classes | pure | Tailwind-aware class-string builder with token resolution. | `token`, `parseTailwindClass`, `hasArbitraryValue` |
 | `classy-wc` | classes | pure | The classy companion that composes CSS property declarations for WC shadow DOM. | `composeDeclarations`, `styleRule`, `stylesheet` |
 | `slot` | composition | dom | asChild prop merging: merges parent props onto a child element. | `mergeSlotProps`, `extractSlotProps`, `shouldUseSlot` |
 | `dismissable-layer` | dismissal | dom | Unifies outside-click, escape, and focus-out with a layer stack. | `createDismissableLayer`, `createDismissableLayerStack`, `getDismissableLayerStack` |

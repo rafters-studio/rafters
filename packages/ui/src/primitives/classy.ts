@@ -4,7 +4,7 @@
  * Features:
  * - Full Tailwind syntax understanding (modifiers vs values)
  * - Token refs for design system integration
- * - Arbitrary value detection and blocking
+ * - Arbitrary value detection
  * - Class deduplication and normalization
  *
  * Tailwind class structure: [modifier:]...[modifier:]utility[-value]
@@ -32,8 +32,6 @@ export type TokenMap = (key: string) => string | null;
 export interface ClassyOptions {
   /** Resolve token references to class strings */
   tokenMap?: TokenMap;
-  /** Allow arbitrary (bracketed) values (default: false) */
-  allowArbitrary?: boolean;
   /** Custom warning handler */
   warn?: (msg: string) => void;
   /** Custom class normalization */
@@ -233,19 +231,13 @@ export const SURFACE_CLASSES: Readonly<Record<string, string>> = {
 
 export function createClassy(options?: ClassyOptions) {
   const tokenMap = options?.tokenMap;
-  const allowArbitrary = options?.allowArbitrary ?? false;
   const warn = options?.warn ?? defaultWarn;
   const normalize = options?.normalize ?? ((s: string) => s);
 
   /**
-   * Process a single class string, checking for arbitrary values
+   * Process a single class string
    */
   function processClass(cls: string, seen: Set<string>, out: string[]): void {
-    if (!allowArbitrary && hasArbitraryValue(cls)) {
-      warn(`classy: arbitrary value '${cls}' skipped`);
-      return;
-    }
-
     const norm = normalize(cls);
     if (!seen.has(norm)) {
       seen.add(norm);
@@ -354,7 +346,7 @@ export function createClassy(options?: ClassyOptions) {
 // Default Export
 // ============================================================================
 
-/** Default classy instance (arbitrary values blocked) */
+/** Default classy instance */
 export const classy = createClassy();
 
 export default classy;

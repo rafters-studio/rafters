@@ -42,19 +42,32 @@ describe('classy - token resolution', () => {
   });
 });
 
-describe('classy - bracket blocking', () => {
-  it('skips bracket classes by default and warns', () => {
+describe('classy - bracket classes', () => {
+  it('keeps bracket classes and does not warn', () => {
     const spy = vi.fn();
     const c = createClassy({ warn: spy });
-    const out = c('a', 'w-[10px]', { b: true });
-    expect(out).toBe('a b');
-    expect(spy).toHaveBeenCalled();
+    const out = c('a', 'w-[10px]', { b: true }, 'hover:grid-rows-[minmax(0,0fr)]');
+    expect(out).toBe('a w-[10px] b hover:grid-rows-[minmax(0,0fr)]');
+    expect(spy).not.toHaveBeenCalled();
   });
 
-  it('allows bracket classes when configured', () => {
-    const c = createClassy({ allowArbitrary: true });
-    const out = c('a', 'w-[10px]', 'a');
-    expect(out).toBe('a w-[10px]');
+  it('keeps bracket classes in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const spy = vi.fn();
+    const c = createClassy({ warn: spy });
+    expect(c('a', 'w-[10px]')).toBe('a w-[10px]');
+    expect(spy).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('dedups bracket classes like any other class', () => {
+    const c = createClassy();
+    expect(c('a', 'w-[10px]', 'a', 'w-[10px]')).toBe('a w-[10px]');
+  });
+
+  it('keeps bracket classes that a token resolves to', () => {
+    const c = createClassy({ tokenMap: () => 'w-[10px]' });
+    expect(c(token('k'))).toBe('w-[10px]');
   });
 });
 
@@ -69,13 +82,11 @@ describe('classy - layout utilities pass through', () => {
 });
 
 describe('classy - named grid track utility', () => {
-  it('keeps grid-cols-menu-row and drops the arbitrary track list it replaces', () => {
+  it('keeps grid-cols-menu-row without a warning', () => {
     const spy = vi.fn();
     const c = createClassy({ warn: spy });
     expect(c('grid grid-cols-menu-row')).toBe('grid grid-cols-menu-row');
     expect(spy).not.toHaveBeenCalled();
-    expect(c('grid grid-cols-[auto_auto_1fr_auto]')).toBe('grid');
-    expect(spy).toHaveBeenCalledTimes(1);
   });
 });
 

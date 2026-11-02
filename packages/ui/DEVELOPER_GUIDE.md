@@ -19,7 +19,7 @@ Primitives: API patterns and checklist
  - SSR-safe: always check for DOM availability and return a no-op cleanup when server-side.
  - Return cleanup: every primitive that attaches listeners or state must return a single cleanup function that removes listeners and restores state.
  - Lightweight: avoid large dependencies; primitives should be tiny wrappers around platform APIs.
- - Accept options for behavior (debounce, thresholds, allowArbitrary, etc.) and take explicit callbacks.
+ - Accept options for behavior (debounce, thresholds, etc.) and take explicit callbacks.
 
 Existing primitives (summary)
  - `createFocusTrap(element)` — trap Tab and Shift+Tab inside a container, returns cleanup; use for modal dialogs.
@@ -30,7 +30,7 @@ Existing primitives (summary)
  - `classy` — single smart class builder (explicit, synchronous, opt-in tokenMap). Use `classy('a', someVar, { active: isActive })`.
 
 Class building and tokens
- - Use the `classy` utility to merge and deduplicate classes. `classy` splits multi-class strings, handles objects and arrays, blocks bracketed arbitrary classes by default, and supports an optional `tokenMap`.
+ - Use the `classy` utility to merge and deduplicate classes. `classy` splits multi-class strings, handles objects and arrays, and supports an optional `tokenMap`.
  - Token resolution must be provided explicitly with `createClassy({ tokenMap })`. Do not wire global token registries implicitly in primitives or components.
  - Example usage:
 

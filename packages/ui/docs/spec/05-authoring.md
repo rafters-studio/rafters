@@ -166,8 +166,7 @@ writing motion; this section only says how a classes file consumes them.
    data-[state=open]:transition-transform`), so it is visible from the first
    frame and a focus trap can focus inside it (drawer content). Name transition
    utilities (`transition-opacity`, `transition-transform`, `transition-all`),
-   not `transition-[...]` lists: the React performance passes classes through
-   `classy()`, which drops arbitrary values (#2396).
+   not `transition-[...]` lists.
 3. **Reduced motion is already handled** on the leaves (`docs/MOTION.md`, Reduced
    motion). A component adds no `motion-reduce:` class and no reduced-motion
    media query.
