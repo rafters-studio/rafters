@@ -1,6 +1,6 @@
 /**
- * The named menu-row grid utility is emitted (#2459). classy skips arbitrary
- * track lists, so the track list a menu-style row needs is a named utility.
+ * The named menu-row grid utility is emitted (#2459): the track list a
+ * menu-style row needs is a named utility.
  */
 
 import { describe, expect, it } from 'vitest';

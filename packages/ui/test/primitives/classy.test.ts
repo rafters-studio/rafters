@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createClassy,
   classy as defaultClassy,
@@ -43,6 +43,10 @@ describe('classy - token resolution', () => {
 });
 
 describe('classy - bracket classes', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('keeps bracket classes and does not warn', () => {
     const spy = vi.fn();
     const c = createClassy({ warn: spy });
@@ -57,7 +61,6 @@ describe('classy - bracket classes', () => {
     const c = createClassy({ warn: spy });
     expect(c('a', 'w-[10px]')).toBe('a w-[10px]');
     expect(spy).not.toHaveBeenCalled();
-    vi.unstubAllEnvs();
   });
 
   it('dedups bracket classes like any other class', () => {

@@ -58,7 +58,7 @@ const errorClasses = 'text-body-small ts-body-small text-destructive';
 // border, ring, validity, dim -- off the field inside it (has-*), and lays its
 // columns out in reading order with Grid, so the icons swap sides on a
 // dir="rtl" page with no direction class. One named track list per icon
-// combination (classy skips arbitrary track lists), so an absent icon leaves no
+// combination, so an absent icon leaves no
 // empty track and no stray gap. Padding tightens on the icon's side only.
 const rowClasses =
   'grid grid-flow-col items-center gap-2 h-10 w-full rounded-md border border-input bg-transparent px-3 ' +

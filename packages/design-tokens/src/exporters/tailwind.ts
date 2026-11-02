@@ -1331,8 +1331,7 @@ function generateKeyframes(motionTokens: Token[]): string {
 /**
  * Named grid track lists for rows a component lays out as columns.
  *
- * `classy` drops arbitrary track lists (`grid-cols-[auto_auto_1fr_auto]`), so a
- * track list a component needs is a named utility. grid-cols-menu-row is the
+ * A track list a component needs is a named utility. grid-cols-menu-row is the
  * menu-style row: indicator, icon, label, end (shortcut or chevron). Columns
  * lay out in reading order, so the row mirrors on a dir="rtl" page.
  *

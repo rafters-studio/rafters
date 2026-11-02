@@ -82,8 +82,7 @@ const contentSurfaceClasses = 'bg-popover text-popover-foreground';
 // The transition utility is the bare `transition`: it is the one named utility
 // that covers both opacity and scale and leaves out `left`/`top`, so the
 // placement never animates. Transitioning every property would animate the
-// placement; an opacity-only transition drops the zoom; an arbitrary property list is a
-// bracketed value React's `classy()` drops (#2396).
+// placement; an opacity-only transition drops the zoom.
 const contentClasses =
   'fixed z-depth-popover w-auto rounded-md border p-0 shadow-md outline-none ' +
   'pointer-events-none opacity-0 extent-pop scale-(--rafters-consumed-extent) ' +
