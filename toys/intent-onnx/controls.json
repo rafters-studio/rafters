@@ -1,0 +1,101 @@
+[
+  {"id":"C01","project":"long-form news site","kind":"mixed","clauses":[
+    {"t":"Readers should be able to stay with a long article without being pulled away.","l":"why","p":"none"},
+    {"t":"Most of them arrive tired and on a phone, and if the page fights them they leave.","l":"why","p":"none"},
+    {"t":"Use a serif for the body at a large size.","l":"what","p":"type"},
+    {"t":"Keep the ads out of the text column.","l":"what","p":"spacing"}]},
+  {"id":"C02","project":"hospital appointment portal","kind":"mixed","clauses":[
+    {"t":"Frightened people need to find their appointment without having to think.","l":"why","p":"none"},
+    {"t":"A missed appointment can cost someone months of treatment.","l":"why","p":"none"},
+    {"t":"Big buttons and high contrast everywhere.","l":"what","p":"colour"},
+    {"t":"Nothing should move on the page.","l":"what","p":"motion"}]},
+  {"id":"C03","project":"luxury watch maker","kind":"mixed","clauses":[
+    {"t":"Someone should understand this is worth years of saving before they read a word.","l":"why","p":"none"},
+    {"t":"The product has to feel unhurried and rare.","l":"what","p":"none","feel":true},
+    {"t":"Dark backgrounds with a single gold accent.","l":"what","p":"colour"},
+    {"t":"Very slow fades between images.","l":"what","p":"motion"}]},
+  {"id":"C04","project":"developer API dashboard","kind":"mixed","clauses":[
+    {"t":"Engineers on call need to see what broke in the first ten seconds.","l":"why","p":"none"},
+    {"t":"Every extra click during an outage costs their customers money.","l":"why","p":"none"},
+    {"t":"Monospace for all the numbers.","l":"what","p":"type"},
+    {"t":"Dense tables separated by thin lines instead of cards.","l":"what","p":"spacing"},
+    {"t":"Build it with server components so it loads fast.","l":"how","p":"none"}]},
+  {"id":"C05","project":"children's reading app","kind":"mixed","clauses":[
+    {"t":"Kids who struggle with reading should finish a page and want the next one.","l":"why","p":"none"},
+    {"t":"Their parents need to trust that it is teaching and not just entertaining.","l":"why","p":"none"},
+    {"t":"Round corners and bright primary colours.","l":"what","p":"colour"},
+    {"t":"Characters bounce when you get a word right.","l":"what","p":"motion"}]},
+  {"id":"C06","project":"tax filing service","kind":"mixed","clauses":[
+    {"t":"People dread this and need to feel they will not make an expensive mistake.","l":"why","p":"none"},
+    {"t":"It should remove the fear of getting it wrong, one question at a time.","l":"why","p":"none"},
+    {"t":"Show one question per screen with a progress bar.","l":"how","p":"none"},
+    {"t":"Use a calm blue.","l":"what","p":"colour"}]},
+  {"id":"C07","project":"independent record label","kind":"mixed","clauses":[
+    {"t":"Listeners should feel they found something nobody else knows about.","l":"why","p":"none"},
+    {"t":"The label exists to keep strange records in print, and the site has to earn that.","l":"why","p":"none"},
+    {"t":"Huge condensed type that runs off the edge.","l":"what","p":"type"},
+    {"t":"Sharp corners, no shadows.","l":"what","p":"radius"}]},
+  {"id":"C08","project":"city transit planner","kind":"mixed","clauses":[
+    {"t":"A person standing at a stop in the rain needs the next bus in one glance.","l":"why","p":"none"},
+    {"t":"It has to work for people who do not read the local language.","l":"why","p":"none"},
+    {"t":"Line colours match the signs in the stations.","l":"what","p":"colour"},
+    {"t":"Cache the timetable so it works offline.","l":"how","p":"none"}]},
+  {"id":"C09","project":"small bakery","kind":"mixed","clauses":[
+    {"t":"Neighbours should know what is fresh today and come in before it sells out.","l":"why","p":"none"},
+    {"t":"It should feel warm.","l":"what","p":"none","feel":true},
+    {"t":"A cream background with a hand-drawn logo.","l":"what","p":"colour"},
+    {"t":"Update the menu from a spreadsheet each morning.","l":"how","p":"none"}]},
+  {"id":"C10","project":"legal research tool","kind":"mixed","clauses":[
+    {"t":"Lawyers have to be able to defend every result in front of a judge.","l":"why","p":"none"},
+    {"t":"The design needs to prove where each answer came from.","l":"why","p":"none"},
+    {"t":"Citations in small caps beside the text.","l":"what","p":"type"},
+    {"t":"Two columns with generous margins.","l":"what","p":"spacing"}]},
+  {"id":"C11","project":"fitness habit tracker","kind":"mixed","clauses":[
+    {"t":"People who have quit before need a reason to come back on a bad day.","l":"why","p":"none"},
+    {"t":"Missing a day must not feel like failing.","l":"why","p":"none"},
+    {"t":"Celebrate a streak with confetti.","l":"what","p":"motion"},
+    {"t":"Send a reminder through a push notification at the time they usually train.","l":"how","p":"none"}]},
+  {"id":"C12","project":"open source documentation","kind":"mixed","clauses":[
+    {"t":"Someone new should write correct code without asking anyone.","l":"why","p":"none"},
+    {"t":"Maintainers are drowning in the same questions, and the docs have to take that load.","l":"why","p":"none"},
+    {"t":"A narrow reading column with a sidebar.","l":"what","p":"spacing"},
+    {"t":"Generate the pages from the source code.","l":"how","p":"none"}]},
+  {"id":"C13","project":"museum exhibition","kind":"mixed","clauses":[
+    {"t":"Visitors should leave with a question they cannot stop thinking about.","l":"why","p":"none"},
+    {"t":"The objects have to come first and the interface has to disappear.","l":"why","p":"none"},
+    {"t":"Lots of empty space around each image.","l":"what","p":"spacing"},
+    {"t":"Quiet transitions, nothing that draws the eye.","l":"what","p":"motion"}]},
+  {"id":"C14","project":"banking app for students","kind":"mixed","clauses":[
+    {"t":"Students should always know what they can safely spend this week.","l":"why","p":"none"},
+    {"t":"Most of them have never been shown how money works and are embarrassed to ask.","l":"why","p":"none"},
+    {"t":"The balance is the biggest thing on the screen.","l":"what","p":"type"},
+    {"t":"Make it friendly and modern.","l":"what","p":"none","feel":true}]},
+  {"id":"C15","project":"farm equipment marketplace","kind":"mixed","clauses":[
+    {"t":"Farmers need to compare machines on their phone between jobs with dirty hands.","l":"why","p":"none"},
+    {"t":"A wrong purchase can ruin a season.","l":"why","p":"none"},
+    {"t":"Large tap targets and very little text.","l":"what","p":"spacing"},
+    {"t":"Load low resolution images first.","l":"how","p":"none"}]},
+  {"id":"C16","project":"mental health check-in","kind":"why-only","clauses":[
+    {"t":"Someone in a bad moment should feel less alone within a minute of opening this.","l":"why","p":"none"},
+    {"t":"They should never feel judged for what they say.","l":"why","p":"none"},
+    {"t":"If they need more help than this can give, they should find it without searching.","l":"why","p":"none"}]},
+  {"id":"C17","project":"internal sales tool","kind":"why-only","clauses":[
+    {"t":"Reps waste their mornings hunting for the same three numbers.","l":"why","p":"none"},
+    {"t":"A new hire should be useful in their first week.","l":"why","p":"none"},
+    {"t":"Nobody should have to ask finance for a report again.","l":"why","p":"none"}]},
+  {"id":"C18","project":"portfolio site","kind":"none","clauses":[
+    {"t":"I want black and white with one red accent.","l":"what","p":"colour"},
+    {"t":"Space Grotesk for the headings.","l":"what","p":"type"},
+    {"t":"A big grid of project thumbnails on the home page.","l":"what","p":"spacing"},
+    {"t":"Hover to scale the image up slightly.","l":"what","p":"motion"}]},
+  {"id":"C19","project":"company rebrand","kind":"none","clauses":[
+    {"t":"Use the new purple as the primary colour.","l":"what","p":"colour"},
+    {"t":"Round everything to 8 pixels.","l":"what","p":"radius"},
+    {"t":"Add a soft shadow to every card.","l":"what","p":"shadow"},
+    {"t":"Roll it out through a shared component library.","l":"how","p":"none"}]},
+  {"id":"C20","project":"event ticketing","kind":"none","clauses":[
+    {"t":"It should be clean and modern.","l":"what","p":"none","feel":true},
+    {"t":"Make the checkout flow three steps.","l":"how","p":"none"},
+    {"t":"Sticky header with the event name.","l":"what","p":"depth"},
+    {"t":"Use a 4 pixel spacing grid.","l":"how","p":"spacing"}]}
+]
