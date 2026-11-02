@@ -57,3 +57,12 @@ are the scores that count.
 
 11. Why kept is at least 0.80, and not-why removed falls to 0.50 or lower, on all three embedding
     models. Confidence 0.65.
+
+## Added after the rafters test, before the mixed test ran
+
+On rafters' intents all three models scored below the 0.757 from calling everything a why. The
+mixed test asks whether that is too few examples or the method. It holds out each tenth of rafters'
+clauses in turn and trains on the controls plus the other nine tenths.
+
+12. Why versus not-why reaches 0.80 or better on at least one model, and not-why removed stays
+    under 0.60 on all three. Confidence 0.55.
