@@ -8,17 +8,15 @@ Request: `{"text": string}`.
 
 Response: `{"clauses": [{"t": string, "l": "why" | "what" | "how", "p": string}]}`, where `p` is `none` on a why.
 
-1. Run `split.md` as the system prompt with the text as the user message.
-2. Run `route.md` on the clauses labelled what or how, passing them as a JSON array of strings.
-3. Join the two and return.
+Run `split.md` as the system prompt with the text as the user message. One model call per request, with no conversation and no follow-up turn. The questions a designer answers after the split are fixed text and need no model.
 
 ## What the server must check, because a small model will not always obey
 
 - The output parses as the shape above.
 - Every clause's `t` appears word for word in the request's text, ignoring surrounding whitespace.
-- Every `l` and `p` is one of the allowed values, and `parts` has one entry per item.
+- Every `l` and `p` is one of the allowed values.
 
-If any check fails, retry once, then return `{"clauses": null}`. The caller saves the intent as written, with nothing split. Never return a repaired or partly checked result.
+If any check fails, return `{"clauses": null}` with no retry. The caller saves the intent as written, with nothing split. Never return a repaired or partly checked result.
 
 ## Limits
 
@@ -32,6 +30,10 @@ The response only ever holds the caller's own words and labels, so the endpoint 
 ## Privacy
 
 An intent can describe a client's unannounced project. Do not log or keep the text unless the designer has explicitly agreed. Corrections kept for training are also opt-in.
+
+## Cost
+
+Record input and output tokens per call from the first test. Set `max_tokens` from what the longest allowed text needs, and report the real cost per request before launch.
 
 ## How we will judge it
 
