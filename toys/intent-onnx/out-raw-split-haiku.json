@@ -1,0 +1,685 @@
+[
+  {
+    "id": "R1",
+    "clauses": [
+      {
+        "t": "Patients arrive at a two-room clinic after long drives, often sick, often with a child in tow, and fill in a paper form that asks the same question three ways.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The intake should take the questions to them one at a time, in plain words, on a borrowed tablet",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "so the nurse gets a history she can trust and the patient feels expected rather than processed.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R2",
+    "clauses": [
+      {
+        "t": "A volunteer-run library lends drills, ladders and pressure washers, and today the catalogue is a spreadsheet only two people understand.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Design is needed so a neighbour can see what exists, what is out, and how to borrow it without phoning anyone, and so the library feels like a shared shed, not a rental counter.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R3",
+    "clauses": [
+      {
+        "t": "Grantees spend days each year rewriting the same outcomes into our report template, and we read them looking for two numbers.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The report should ask for what we actually use", "l": "how", "p": "none" },
+      { "t": "show grantees what we did with last year's answers", "l": "how", "p": "none" },
+      {
+        "t": "and make honesty about a failed program feel safe to write down.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R4",
+    "clauses": [
+      {
+        "t": "Dispatchers juggle forty trucks across three screens and a phone, and the cost of a missed exception is a load sitting at a dock overnight.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The console has to make the one truck that needs attention impossible to miss",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "and keep the thirty-nine that are fine quietly out of the way.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R5",
+    "clauses": [
+      {
+        "t": "The shop's character is its staff picks and handwritten shelf cards, and none of that survives on the current site, which looks like every other storefront.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The site should feel like walking in", "l": "why", "p": "none" },
+      {
+        "t": "opinionated recommendations first, events second, the catalogue third",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "with ordering simple enough that nobody gives up and buys elsewhere.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R6",
+    "clauses": [
+      {
+        "t": "Residents applying for a fence or a deck permit cannot tell whether their application is moving, so they call the office, and the calls slow the office down.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Design should show every applicant where their permit is, who has it, and what happens next",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "in language a first-time homeowner understands.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "R7",
+    "clauses": [
+      {
+        "t": "Newcomers want to practise the local language with people, not drills, and local volunteers want to help but do not know where to start.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The app should pair them for short, low-stakes conversations",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "protect the newcomer's privacy completely", "l": "why", "p": "none" },
+      { "t": "and never make anyone feel graded.", "l": "why", "p": "none" }
+    ]
+  },
+  {
+    "id": "R8",
+    "clauses": [
+      {
+        "t": "Our audience is ageing and the younger people who do come say the programme reads like a legal notice.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The season should be presented as a set of evenings worth looking forward to, each with a reason to come",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "while keeping the subscribers who love the composer-and-opus listings.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R9",
+    "clauses": [
+      {
+        "t": "Reagents expire on shelves because nobody knows who ordered them, and students reorder what is already in the freezer.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The inventory needs to be faster to update than ignoring it",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "readable from a phone in a glove", "l": "how", "p": "none" },
+      {
+        "t": "and clear about what is dangerous before it is clear about what is cheap.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R10",
+    "clauses": [
+      {
+        "t": "My grandmother's recipes live on stained index cards in three households, and the cousins argue about which version is real.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The archive should keep every version side by side with who wrote it and when",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "feel warm rather than clinical", "l": "how", "p": "colour" },
+      {
+        "t": "and make it easy for the youngest cousin to add the card she found.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R11",
+    "clauses": [
+      {
+        "t": "Technicians climb turbines only in safe weather windows, and planning those climbs across a hundred turbines is done on a whiteboard.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Design is needed to show the weather window, the crew and the fault list together",
+        "l": "what",
+        "p": "none"
+      },
+      {
+        "t": "so a planner can commit a day in minutes and a technician knows why they are on that tower.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R12",
+    "clauses": [
+      {
+        "t": "Our members chose us because we are local and human, and our app feels like it was bought from a vendor, because it was.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The app should do the everyday things fast", "l": "how", "p": "none" },
+      { "t": "and make the human parts visible", "l": "how", "p": "none" },
+      {
+        "t": "a named advisor, plain fees, and a way to talk to someone who knows the member's history.",
+        "l": "what",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R13",
+    "clauses": [
+      {
+        "t": "Visitors carry their phones through the galleries but the current guide asks them to type object numbers and then stare at a screen.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The guide should let people look at the art, not the phone",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "offering a story when they pause and staying silent when they move on.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R14",
+    "clauses": [
+      {
+        "t": "New contributors read the docs, fail to build the project, and leave without telling us.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The documentation should get someone from clone to a passing test in one sitting",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "say plainly what is unfinished", "l": "how", "p": "none" },
+      {
+        "t": "and make the people behind the project visible enough that asking a question feels allowed.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R15",
+    "clauses": [
+      {
+        "t": "Volunteers sit with dying patients, and a missed shift means someone spends their last afternoon alone.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Scheduling should make coverage gaps obvious to the coordinator days ahead",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "make swapping a shift easy without guilt", "l": "how", "p": "none" },
+      {
+        "t": "and respect that these volunteers are giving something heavy.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R16",
+    "clauses": [
+      {
+        "t": "Shoppers wander the market looking for the one stall that sells duck eggs, and vendors move every week.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The map should be the first thing people check on the walk over",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "show what is in season and who has it today", "l": "what", "p": "none" },
+      { "t": "and give small vendors the same presence as the big ones.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "R17",
+    "clauses": [
+      {
+        "t": "After an outage we write a review document that nobody reads twice, and the same failure returns six months later.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The tool should make the timeline and the decisions easy to reconstruct",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "keep blame out of the structure itself", "l": "how", "p": "none" },
+      {
+        "t": "and connect each review to the ones before it so patterns surface.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R18",
+    "clauses": [
+      {
+        "t": "The summer reading programme rewards pages read, and the kids who read slowly quit by July.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The tracker should celebrate showing up and finishing", "l": "how", "p": "none" },
+      {
+        "t": "let a child see their own progress without comparing it to anyone else's",
+        "l": "how",
+        "p": "none"
+      },
+      {
+        "t": "and give parents a reason to visit the library rather than just the app.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R19",
+    "clauses": [
+      {
+        "t": "Our buildings are quiet and site-specific, and portfolio sites in our field shout with full-bleed renders.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The portfolio should let the work breathe", "l": "how", "p": "spacing" },
+      { "t": "show the context each building responds to", "l": "how", "p": "none" },
+      {
+        "t": "and read like the studio talks: slowly, precisely, with a point of view a client can disagree with.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "R20",
+    "clauses": [
+      {
+        "t": "Tenants in one building rarely know their neighbours share the same broken boiler and the same unanswered emails.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The hub should make it safe to report a problem", "l": "how", "p": "none" },
+      { "t": "show tenants they are not alone", "l": "how", "p": "none" },
+      {
+        "t": "and turn scattered complaints into a record the union can take to the landlord",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "without exposing anyone who is afraid.", "l": "why", "p": "none" }
+    ]
+  },
+  {
+    "id": "C01",
+    "clauses": [
+      {
+        "t": "Readers should be able to stay with a long article without being pulled away.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Most of them arrive tired and on a phone, and if the page fights them they leave.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Use a serif for the body at a large size.", "l": "how", "p": "type" },
+      { "t": "Keep the ads out of the text column.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C02",
+    "clauses": [
+      {
+        "t": "Frightened people need to find their appointment without having to think.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "A missed appointment can cost someone months of treatment.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Big buttons", "l": "how", "p": "spacing" },
+      { "t": "high contrast everywhere", "l": "how", "p": "colour" },
+      { "t": "Nothing should move on the page.", "l": "how", "p": "motion" }
+    ]
+  },
+  {
+    "id": "C03",
+    "clauses": [
+      {
+        "t": "Someone should understand this is worth years of saving before they read a word.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The product has to feel unhurried and rare.", "l": "why", "p": "none" },
+      { "t": "Dark backgrounds with a single gold accent.", "l": "how", "p": "colour" },
+      { "t": "Very slow fades between images.", "l": "how", "p": "motion" }
+    ]
+  },
+  {
+    "id": "C04",
+    "clauses": [
+      {
+        "t": "Engineers on call need to see what broke in the first ten seconds.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Every extra click during an outage costs their customers money.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Monospace for all the numbers.", "l": "how", "p": "type" },
+      { "t": "Dense tables separated by thin lines instead of cards.", "l": "how", "p": "depth" },
+      { "t": "Build it with server components so it loads fast.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C05",
+    "clauses": [
+      {
+        "t": "Kids who struggle with reading should finish a page and want the next one.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Their parents need to trust that it is teaching and not just entertaining.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Round corners", "l": "how", "p": "radius" },
+      { "t": "bright primary colours", "l": "how", "p": "colour" },
+      { "t": "Characters bounce when you get a word right.", "l": "how", "p": "motion" }
+    ]
+  },
+  {
+    "id": "C06",
+    "clauses": [
+      {
+        "t": "People dread this and need to feel they will not make an expensive mistake.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "It should remove the fear of getting it wrong, one question at a time.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Show one question per screen", "l": "how", "p": "none" },
+      { "t": "with a progress bar.", "l": "how", "p": "none" },
+      { "t": "Use a calm blue.", "l": "how", "p": "colour" }
+    ]
+  },
+  {
+    "id": "C07",
+    "clauses": [
+      {
+        "t": "Listeners should feel they found something nobody else knows about.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The label exists to keep strange records in print, and the site has to earn that.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Huge condensed type that runs off the edge.", "l": "how", "p": "type" },
+      { "t": "Sharp corners", "l": "how", "p": "radius" },
+      { "t": "no shadows.", "l": "how", "p": "shadow" }
+    ]
+  },
+  {
+    "id": "C08",
+    "clauses": [
+      {
+        "t": "A person standing at a stop in the rain needs the next bus in one glance.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "It has to work for people who do not read the local language.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Line colours match the signs in the stations.", "l": "how", "p": "colour" },
+      { "t": "Cache the timetable so it works offline.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C09",
+    "clauses": [
+      {
+        "t": "Neighbours should know what is fresh today and come in before it sells out.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "It should feel warm.", "l": "how", "p": "colour" },
+      { "t": "A cream background", "l": "how", "p": "colour" },
+      { "t": "with a hand-drawn logo.", "l": "how", "p": "none" },
+      { "t": "Update the menu from a spreadsheet each morning.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C10",
+    "clauses": [
+      {
+        "t": "Lawyers have to be able to defend every result in front of a judge.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The design needs to prove where each answer came from.", "l": "why", "p": "none" },
+      { "t": "Citations in small caps beside the text.", "l": "how", "p": "type" },
+      { "t": "Two columns with generous margins.", "l": "how", "p": "spacing" }
+    ]
+  },
+  {
+    "id": "C11",
+    "clauses": [
+      {
+        "t": "People who have quit before need a reason to come back on a bad day.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "Missing a day must not feel like failing.", "l": "why", "p": "none" },
+      { "t": "Celebrate a streak with confetti.", "l": "how", "p": "motion" },
+      {
+        "t": "Send a reminder through a push notification at the time they usually train.",
+        "l": "how",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "C12",
+    "clauses": [
+      {
+        "t": "Someone new should write correct code without asking anyone.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Maintainers are drowning in the same questions, and the docs have to take that load.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "A narrow reading column with a sidebar.", "l": "how", "p": "spacing" },
+      { "t": "Generate the pages from the source code.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C13",
+    "clauses": [
+      {
+        "t": "Visitors should leave with a question they cannot stop thinking about.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "The objects have to come first and the interface has to disappear.",
+        "l": "how",
+        "p": "none"
+      },
+      { "t": "Lots of empty space around each image.", "l": "how", "p": "spacing" },
+      { "t": "Quiet transitions", "l": "how", "p": "motion" },
+      { "t": "nothing that draws the eye.", "l": "how", "p": "motion" }
+    ]
+  },
+  {
+    "id": "C14",
+    "clauses": [
+      {
+        "t": "Students should always know what they can safely spend this week.",
+        "l": "why",
+        "p": "none"
+      },
+      {
+        "t": "Most of them have never been shown how money works and are embarrassed to ask.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "The balance is the biggest thing on the screen.", "l": "how", "p": "type" },
+      { "t": "Make it friendly and modern.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C15",
+    "clauses": [
+      {
+        "t": "Farmers need to compare machines on their phone between jobs with dirty hands.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "A wrong purchase can ruin a season.", "l": "why", "p": "none" },
+      { "t": "Large tap targets", "l": "how", "p": "spacing" },
+      { "t": "very little text", "l": "how", "p": "type" },
+      { "t": "Load low resolution images first.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C16",
+    "clauses": [
+      {
+        "t": "Someone in a bad moment should feel less alone within a minute of opening this.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "They should never feel judged for what they say.", "l": "why", "p": "none" },
+      {
+        "t": "If they need more help than this can give, they should find it without searching.",
+        "l": "why",
+        "p": "none"
+      }
+    ]
+  },
+  {
+    "id": "C17",
+    "clauses": [
+      {
+        "t": "Reps waste their mornings hunting for the same three numbers.",
+        "l": "why",
+        "p": "none"
+      },
+      { "t": "A new hire should be useful in their first week.", "l": "why", "p": "none" },
+      { "t": "Nobody should have to ask finance for a report again.", "l": "why", "p": "none" }
+    ]
+  },
+  {
+    "id": "C18",
+    "clauses": [
+      { "t": "I want black and white with one red accent.", "l": "how", "p": "colour" },
+      { "t": "Space Grotesk for the headings.", "l": "how", "p": "type" },
+      { "t": "A big grid of project thumbnails on the home page.", "l": "how", "p": "spacing" },
+      { "t": "Hover to scale the image up slightly.", "l": "how", "p": "motion" }
+    ]
+  },
+  {
+    "id": "C19",
+    "clauses": [
+      { "t": "Use the new purple as the primary colour.", "l": "how", "p": "colour" },
+      { "t": "Round everything to 8 pixels.", "l": "how", "p": "radius" },
+      { "t": "Add a soft shadow to every card.", "l": "how", "p": "shadow" },
+      { "t": "Roll it out through a shared component library.", "l": "how", "p": "none" }
+    ]
+  },
+  {
+    "id": "C20",
+    "clauses": [
+      { "t": "It should be clean and modern.", "l": "how", "p": "none" },
+      { "t": "Make the checkout flow three steps.", "l": "how", "p": "none" },
+      { "t": "Sticky header with the event name.", "l": "how", "p": "depth" },
+      { "t": "Use a 4 pixel spacing grid.", "l": "how", "p": "spacing" }
+    ]
+  }
+]

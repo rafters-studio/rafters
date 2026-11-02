@@ -31,6 +31,13 @@ and the clauses were split by hand from agent writing. Human writing is still un
 Classic ML (`classic.py`, word and character n-grams, 65 to 239 KB) scored 0.60 to 0.73, removing 2 to 4
 of 17 with both authors. About 150 labelled clauses is too few for it; more compute would not change that.
 
+**The definition moves the score more than the model does.** Haiku on raw text, given only Sean's
+words for the definition (`out-raw-split-haiku.json`, `node score.mjs`): 0.643 on rafters' clauses,
+keeping 30 of 53 whys and removing 15 of 17, and 0.975 on the controls. It labelled most "the tracker
+should celebrate showing up" clauses a how, where veneer labelled them a why. Sorting into parts
+scored 0.91 on the controls, far above the embeddings' 0.56. All 159 clauses kept the writer's exact
+words. Whether those clauses are whys is Sean's call, and it decides what the prompts should say.
+
 **Small local embedding models fail too.** On intents another author wrote, every model scored below simply calling
 everything a why. The high scores on the controls below came from one author writing both the test
 and the examples. Read the controls table with that in mind.
@@ -107,3 +114,7 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 | 14 | Classic with both authors reaches 0.75 to 0.82, removing at least 8 of 17 | Wrong: 0.67 to 0.73, removing 2 to 4 |
 | 15 | Classic weights under 1 MB | Held: 65 to 239 KB |
 | 16 | Hosted model reaches 0.80, removing at least 10 of 17 | Held: 0.843, removing 17 |
+| 17 | Raw split on rafters' clauses stays at 0.75, removing at least 12 | Accuracy wrong: 0.643; removed 15 |
+| 18 | Raw split on controls at least 0.85 | Held: 0.975 |
+| 19 | Parts reach 0.70 | Held: 0.91 |
+| 20 | At least 90% of clauses word for word | Held: 159 of 159 |

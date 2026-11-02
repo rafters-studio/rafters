@@ -35,4 +35,4 @@ An intent can describe a client's unannounced project. Do not log or keep the te
 
 ## How we will judge it
 
-`score-endpoint.mjs` runs the 40 intents in this folder through the endpoint and scores them against the labels here. Workers AI models are not the Haiku the earlier runs used, so no earlier score carries over. Which model to use is decided by this test.
+`score.mjs` scores a run of the 40 intents in this folder against the labels here. Workers AI models are not the Haiku the earlier runs used, so no earlier score carries over. Which model to use is decided by this test.
