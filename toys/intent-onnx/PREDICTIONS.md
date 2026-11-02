@@ -36,3 +36,13 @@ on read-back. Both are reported.
 8. The smallest usable model is under 40 MB on disk, runs a clause in under 30 ms after loading,
    and the process holds under 400 MB. Confidence 0.6.
 9. Bigger models help by less than 0.05 accuracy. Confidence 0.5.
+
+## Added after the first run, before the style test ran
+
+The first run scored 0.92 to 0.96 on why versus not-why with examples. The same author wrote
+every clause: whys talk about people in full sentences, whats are terse commands. The models
+may be learning that shape, not the meaning. `style-swap.json` keeps the labels and swaps the
+shape: terse whys, and whats and hows that talk about people in full sentences.
+
+10. Why versus not-why falls to 0.70 or lower on the style swap for all three embedding
+    models. Confidence 0.75.

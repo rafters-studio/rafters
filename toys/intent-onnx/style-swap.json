@@ -1,0 +1,39 @@
+[
+  { "t": "Reduce fear.", "l": "why" },
+  { "t": "Earn trust before the first click.", "l": "why" },
+  { "t": "Help tired readers finish.", "l": "why" },
+  { "t": "Stop wasted mornings.", "l": "why" },
+  { "t": "Make the next bus obvious.", "l": "why" },
+  { "t": "Prove every answer.", "l": "why" },
+  { "t": "Keep strange records alive.", "l": "why" },
+  { "t": "Bring people back on bad days.", "l": "why" },
+  { "t": "Nobody gets lost.", "l": "why" },
+  { "t": "Make saving feel possible.", "l": "why" },
+  { "t": "Readers need a large serif body so that their eyes settle on the letters.", "l": "what" },
+  {
+    "t": "Frightened patients should see a calm blue header on every page they open.",
+    "l": "what"
+  },
+  { "t": "People who visit want a dark teal background behind the product photos.", "l": "what" },
+  { "t": "Students need the balance shown in the biggest type on the screen.", "l": "what" },
+  { "t": "Customers have to see rounded cards with a soft shadow when they arrive.", "l": "what" },
+  {
+    "t": "Parents should be able to see bright primary colours across the whole app.",
+    "l": "what"
+  },
+  { "t": "Farmers need wide margins around each machine photo on their phones.", "l": "what" },
+  { "t": "Visitors should notice a slow fade whenever someone moves between images.", "l": "what" },
+  {
+    "t": "Customers need their pages served from a CDN so that engineers can deploy twice a day.",
+    "l": "how"
+  },
+  {
+    "t": "Readers should get the timetable from a cache that our team refreshes each night.",
+    "l": "how"
+  },
+  {
+    "t": "People have to receive a push notification that a scheduled job sends each morning.",
+    "l": "how"
+  },
+  { "t": "Designers need a shared component library they can publish from a monorepo.", "l": "how" }
+]
