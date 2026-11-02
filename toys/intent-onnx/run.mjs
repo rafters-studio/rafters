@@ -14,7 +14,6 @@ const NLI = ['Xenova/mobilebert-uncased-mnli', 'Xenova/nli-deberta-v3-small'];
 const models = asked.length ? asked : [...EMBED, ...NLI];
 
 const clauses = intents.flatMap((n) => n.clauses.map((c) => ({ ...c, id: n.id, kind: n.kind })));
-const PARTS = ['colour', 'type', 'spacing', 'motion', 'radius', 'shadow', 'depth', 'none'];
 
 // Zero-shot descriptions. Fixed before the first run, never tuned against the scores.
 const WHY_LABELS = {

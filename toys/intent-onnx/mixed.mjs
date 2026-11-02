@@ -14,7 +14,7 @@ for (const id of ['Xenova/all-MiniLM-L6-v2', 'Xenova/bge-small-en-v1.5', 'Xenova
   const tv = [];
   for (const c of test) tv.push({ x: await v(c.t), l: c.l, fold: 0 });
   // Contiguous tenths, so clauses of one intent mostly stay together.
-  tv.forEach((r, i) => { r.fold = Math.floor((i * 10) / tv.length); });
+  for (const [i, r] of tv.entries()) r.fold = Math.floor((i * 10) / tv.length);
   const rows = tv.map((r) => {
     const pool = [...cv, ...tv.filter((o) => o.fold !== r.fold)];
     const votes = {};
