@@ -92,3 +92,19 @@ no labels and a one-paragraph definition.
 
 16. Why versus not reaches at least 0.80, and it removes at least 10 of the 17 whats and hows.
     Confidence 0.6.
+
+## Added before the raw split test ran
+
+Sean approved Haiku. The earlier run had three weaknesses: veneer wrote the definition as well as the
+labels, the clauses were split by hand, and only rafters' set was used. Here the model gets the raw
+text of all 40 intents, splits it itself, and gets only Sean's words for the definition. Its clauses
+are matched to the hand-labelled ones by shared words. It also sorts each what and how into a part of
+the system, on the 45 control whats and hows with a known part. It runs as a subagent because this
+machine has no API credential, so cost is not measured.
+
+17. Why versus not on rafters' clauses stays at or above 0.75, and it removes at least 12 of 17.
+    Confidence 0.55.
+18. Why versus not on the controls is at or above 0.85. Confidence 0.7.
+19. Parts on the controls reaches 0.70, well above the embeddings' 0.56. Confidence 0.65.
+20. It keeps the designer's words: at least 90% of its clauses appear word for word in the source.
+    Confidence 0.6.
