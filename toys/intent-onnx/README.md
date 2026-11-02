@@ -17,7 +17,21 @@ q8 quantized models.
 
 ## The answer
 
-**Not with these methods.** On intents another author wrote, every model scored below simply calling
+**A small local model or classic ML, no. A cheap hosted model, promising.** A Haiku-class model given
+rafters' 70 clauses blind scored 0.843 against the 0.757 baseline. It removed all 17 whats and hows,
+and kept 42 of 53 whys. Its misses all went one way, and several are clauses a person could label
+either way, such as "readable from a phone in a glove". That direction suits a tool with one-click
+correction, because a why sorted away is visible and a what left in the intent is not.
+
+Limits on that result: one run; veneer wrote both the labels and the definition the model was given,
+so they are not independent; it ran as a subagent, not through a bare API call; cost was not measured;
+and the clauses were split by hand from agent writing. Human writing is still untested. Saved in
+`out-hosted-haiku.json`.
+
+Classic ML (`classic.py`, word and character n-grams, 65 to 239 KB) scored 0.60 to 0.73, removing 2 to 4
+of 17 with both authors. About 150 labelled clauses is too few for it; more compute would not change that.
+
+**Small local embedding models fail too.** On intents another author wrote, every model scored below simply calling
 everything a why. The high scores on the controls below came from one author writing both the test
 and the examples. Read the controls table with that in mind.
 
@@ -56,7 +70,7 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 
 ## What it showed
 
-- **Examples work and zero-shot does not.** Described labels alone almost never recognised a why.
+- **Zero-shot does not work.** Described labels alone almost never recognised a why.
 - **Why versus not-why held up only for one author**, including with the sentence shape swapped. It did not survive a second author.
 - **Sorting into parts is the weak pass, not the easy one.** At 0.44 to 0.56 it is not usable, with
   only 1 to 8 examples per part. This reversed the prediction.
@@ -89,3 +103,7 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 | 10 | Style swap falls to 0.70 or lower | Wrong: 0.864 to 0.909 |
 | 11 | On rafters' set, why kept at least 0.80 and not-why removed at most 0.50 | Half: removed held at 0.118 to 0.471; only mpnet kept 0.80 |
 | 12 | Mixed training reaches 0.80 on some model; not-why removed stays under 0.60 | First half wrong, best 0.729; second held |
+| 13 | Classic on controls stays below baseline, removing at most half | Accuracy held; word logistic regression removed 10 of 17 |
+| 14 | Classic with both authors reaches 0.75 to 0.82, removing at least 8 of 17 | Wrong: 0.67 to 0.73, removing 2 to 4 |
+| 15 | Classic weights under 1 MB | Held: 65 to 239 KB |
+| 16 | Hosted model reaches 0.80, removing at least 10 of 17 | Held: 0.843, removing 17 |
