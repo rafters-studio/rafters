@@ -38,6 +38,15 @@ should celebrate showing up" clauses a how, where veneer labelled them a why. So
 scored 0.91 on the controls, far above the embeddings' 0.56. All 159 clauses kept the writer's exact
 words. Whether those clauses are whys is Sean's call, and it decides what the prompts should say.
 
+**Cold writing: huttspawn's 20, with no definition or examples, through `prompts/split.md` and
+`prompts/route.md` on Haiku** (`out-cold-haiku.json`, `node score-cold.mjs`). Scored as predicted: 0.664
+with the disputed clauses as why, 0.764 without them, 0.776 with them as not-why. All 148 clauses kept the
+writer's words. Most of the misses are an artefact of matching clauses by shared words: Haiku split
+opening lines such as "A guide | for someone who has just lost a spouse", a finer split than the hand
+labels, and the scorer then counts the whole line as a why. Excluding those is a reading made after
+seeing the results, not a score. Of the 18 disputed clauses, Haiku called 15 not-why, although
+`split.md` tells it to prefer why when unsure.
+
 **Small local embedding models fail too.** On intents another author wrote, every model scored below simply calling
 everything a why. The high scores on the controls below came from one author writing both the test
 and the examples. Read the controls table with that in mind.
@@ -118,3 +127,5 @@ Style swap (22 clauses, labels kept, shape swapped so whys are terse and whats t
 | 18 | Raw split on controls at least 0.85 | Held: 0.975 |
 | 19 | Parts reach 0.70 | Held: 0.91 |
 | 20 | At least 90% of clauses word for word | Held: 159 of 159 |
+| 21 | Cold, without disputed clauses, at least 0.80, removing at least 80% | Wrong as scored: 0.764, removing 69%; scorer artefact noted above |
+| 22 | Cold, disputed as why, why kept at least 0.75 | Wrong: 31 of 49 |
