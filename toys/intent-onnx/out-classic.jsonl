@@ -1,0 +1,6 @@
+{"features": "word", "clf": "logreg", "controlsOnly": {"acc": 0.614, "kept": "33/53", "removed": "10/17"}, "bothAuthors": {"acc": 0.714, "kept": "47/53", "removed": "3/17"}, "pickleKB": 65}
+{"features": "word", "clf": "svm", "controlsOnly": {"acc": 0.6, "kept": "33/53", "removed": "9/17"}, "bothAuthors": {"acc": 0.729, "kept": "47/53", "removed": "4/17"}, "pickleKB": 65}
+{"features": "char", "clf": "logreg", "controlsOnly": {"acc": 0.657, "kept": "40/53", "removed": "6/17"}, "bothAuthors": {"acc": 0.7, "kept": "46/53", "removed": "3/17"}, "pickleKB": 175}
+{"features": "char", "clf": "svm", "controlsOnly": {"acc": 0.643, "kept": "39/53", "removed": "6/17"}, "bothAuthors": {"acc": 0.671, "kept": "45/53", "removed": "2/17"}, "pickleKB": 175}
+{"features": "word+char", "clf": "logreg", "controlsOnly": {"acc": 0.643, "kept": "38/53", "removed": "7/17"}, "bothAuthors": {"acc": 0.686, "kept": "46/53", "removed": "2/17"}, "pickleKB": 239}
+{"features": "word+char", "clf": "svm", "controlsOnly": {"acc": 0.629, "kept": "36/53", "removed": "8/17"}, "bothAuthors": {"acc": 0.671, "kept": "45/53", "removed": "2/17"}, "pickleKB": 239}

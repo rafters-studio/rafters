@@ -79,3 +79,16 @@ below what this method usually needs, so this is a floor, not a verdict.
 14. With both authors, the best classifier reaches 0.75 to 0.82 and removes at least 8 of the 17
     whats and hows. Confidence 0.5.
 15. The saved weights are under 1 MB. Confidence 0.9.
+
+## Added before the hosted model test ran
+
+Classic ML results, before this test: 13 held on accuracy (0.60 to 0.66, below baseline), though word
+logistic regression removed 10 of 17, just over the 0.50 line. 14 was wrong: both authors gave 0.67
+to 0.73 and removed only 2 to 4 of 17. 15 held: 65 to 239 KB.
+
+Sean: it need not be local, it can call the rafters API. So the size limit is gone, and the question
+is whether a cheap capable model can do this at all. A Haiku-class model gets rafters' 70 clauses with
+no labels and a one-paragraph definition.
+
+16. Why versus not reaches at least 0.80, and it removes at least 10 of the 17 whats and hows.
+    Confidence 0.6.
