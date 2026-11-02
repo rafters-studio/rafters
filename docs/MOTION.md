@@ -6,7 +6,7 @@ That last rule is not taste. Decorative animation measurably impairs recall -- i
 
 ## Why motion exists
 
-**Object permanence.** Objects continue to exist when they are no longer visible -- a understanding humans develop in infancy and take for granted in the physical world.[^piaget-1954] Digital interfaces routinely violate it. A panel vanishes: did it close, minimize, or get destroyed? Without transition, every state change is a discontinuity the brain must resolve consciously rather than intuitively. Disrupting a spatial mental model raises cognitive load.[^tversky-1993]
+**Object permanence.** Objects continue to exist when they are no longer visible -- an understanding humans develop in infancy and take for granted in the physical world.[^piaget-1954] Digital interfaces routinely violate it. A panel vanishes: did it close, minimize, or get destroyed? Without transition, every state change is a discontinuity the brain must resolve consciously rather than intuitively. Disrupting a spatial mental model raises cognitive load.[^tversky-1993]
 
 This is measured, not asserted. Bederson and Boltman had twenty subjects navigate a family tree with and without animated transitions: animation improved spatial recall with no penalty on task time.[^bederson-1999] Heer and Robertson found the same for statistical graphics -- animated transitions preserved which data element was which across chart-type changes.[^heer-2007] Chang and Ungar made the argument as early as 1993: interface elements should behave as though they have mass and inertia.[^chang-1993]
 
@@ -32,7 +32,7 @@ So: **no duration, easing, or keyframe in this system is a constant.** Every one
 
 ## How motion consumes intent
 
-Intent is the project's aesthetic starting position -- the first question Studio asks, before any token exists. It drives spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads.
+A designer writes the project's intent first, then chooses the starting point closest to it. The starting point is meant to drive spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads. [Intent](INTENT.md) says why a project's design exists. In the code today, the generator reads intent optionally and only `elegant` has a position of its own, so most of what follows about intent is the design rather than what ships.
 
 ## Principles
 
@@ -52,7 +52,7 @@ Intent is the project's aesthetic starting position -- the first question Studio
 
 ## Duration tiers
 
-Six tiers, each a **range** rather than a value. The range is the perceptual band the tier must stay inside; the value within it is the designer's, set by intent and adjustable afterward. Studio clamps its picker to the range, so a duration outside its band is not reachable by accident.
+Six tiers, each a **range** rather than a value. The range is the perceptual band the tier must stay inside; the value within it is the designer's, set by intent and adjustable afterward. Studio has no motion picker yet; when it does, it clamps to the range, so a duration outside its band is not reachable by accident.
 
 The tiers are **not a progression.** `moderate` is not `fast × ratio`. It is *somewhere in the communicative window*, and the window is a fact about perception, not a step on a curve. Harmony is spacing's discipline; perception is motion's.
 
@@ -85,7 +85,7 @@ Move intent once and all six shift coherently. That is Audi's one-personality pr
 
 | Curve | Bias (role-fixed) | Bounded by | Default |
 |---|---|---|---|
-| `standard` | symmetric | must read as neutral -- no overshoot | `cubic-bezier(0.25, 0.1, 0.25, 1.0)` |
+| `standard` | responsive start, decelerating finish | must read as neutral -- no overshoot | `cubic-bezier(0.4, 0.0, 0.2, 1.0)` |
 | `enter` | decelerating | must finish slower than it starts | `cubic-bezier(0.0, 0.0, 0.2, 1.0)` |
 | `exit` | accelerating | must start slower than it finishes | `cubic-bezier(0.4, 0.0, 1.0, 1.0)` |
 | `linear` | none | fixed -- the null case, like `instant` | `linear` |
@@ -167,7 +167,7 @@ The user opted out of spatial movement, not out of knowing what changed.
 
 Longer than 500ms means one of three things: the element moves too far (break it into steps), the element is too large (cross-fade instead), or the animation is decorative (remove it). The only exception is full-screen transitions in spatially-navigated applications, where 700ms is absolute.
 
-The tier ranges enforce the 500ms ceiling mechanically -- `slow` tops out there and Studio cannot pick past it. Exceeding it requires the why-gate: the override is recorded with a reason, the previous value preserved, and the system remembers it was a conscious decision rather than a default.
+The tier ranges set the 500ms ceiling -- `slow` tops out there, and an intent cannot push a duration past its band. Exceeding it requires the why-gate: the override is recorded with a reason, the previous value preserved, and the system remembers it was a conscious decision rather than a default.
 
 ## Sources
 
@@ -181,7 +181,6 @@ The research backing this document lives in `vault-2026/projects/rafters/courses
 [^thorpe-1996]: Thorpe, S., Fize, D., & Marlot, C. (1996). Speed of processing in the human visual system. *Nature*, 381, 520-522. Cited here only to mark it as commonly misapplied to motion duration.
 [^card-1983]: Card, S. K., Moran, T. P., & Newell, A. (1983). *The Psychology of Human-Computer Interaction*.
 [^nielsen-1993]: Nielsen, J. (1993). Response Times: The 3 Important Limits. Nielsen Norman Group.
-[^thomas-1981]: Thomas, F., & Johnston, O. (1981). *The Illusion of Life: Disney Animation*.
 [^dragicevic-2011]: Dragicevic, P., et al. (2011). Temporal distortion for animated transitions. *CHI '11*, 2009-2018.
 [^johansson-1973]: Johansson, G. (1973). Visual perception of biological motion. *Perception & Psychophysics*, 14, 201-211.
 [^pratt-2010]: Pratt, J., et al. (2010). It's alive! Animate motion captures visual attention. *Psychological Science*, 21(11), 1724-1730.

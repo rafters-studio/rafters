@@ -67,6 +67,12 @@ Four path fields share this shape:
 
 Each resolves independently. A project can keep components local but pull composites from a shared package, or any other combination. The rules are the same for every field.
 
+## Other Fields
+
+- `intent` -- the project's aesthetic starting point and rollback target. Defaults to `efficient`.
+- `fonts` -- font file locations and web font imports.
+- `installed` -- what `rafters add` has installed, by kind. It is not a list of every component in the project.
+
 ## What Stays a String
 
 CSS path stays a string. So does the framework, the dark mode strategy, the export config. Multi-folder is for asset libraries -- things that compose. Configuration that describes the project itself stays singular.

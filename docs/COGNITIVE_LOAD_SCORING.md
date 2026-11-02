@@ -32,7 +32,7 @@ How much information must the user process simultaneously?
 | 1 | Single piece of information | Badge (one label), Tooltip (one message), Spinner |
 | 2 | Multiple pieces of information competing for attention | DataTable (rows x columns), Calendar (grid of dates), Command palette (filtered list + keyboard hints) |
 
-A Button scores 0 here: the label is the entire information payload, and you already know what it says before you look at it. A Combobox scores 2: the user reads the input value, scans filtered options, and compares matches simultaneously.
+A Button scores 1 here: one label to read. A Combobox scores 2: the user reads the input value, scans filtered options, and compares matches simultaneously.
 
 ### 3. Interaction Complexity (0-2)
 
@@ -64,9 +64,9 @@ How much prior knowledge does the component require to use correctly?
 
 | Score | Meaning | Examples |
 |-------|---------|---------|
-| 0 | Universally understood, no learning | Button, Checkbox, Text input |
+| 0 | Universally understood, no learning | Button, Checkbox |
 | 1 | Familiar pattern with some convention to learn | Accordion (click to expand isn't universal), Tabs (spatial model), Pagination (page numbers) |
-| 2 | Requires learning specific interactions or mental models | Command palette (keyboard shortcuts, search syntax), Menubar (nested submenus, accelerators), Combobox (type-ahead behavior, fuzzy matching) |
+| 2 | Requires learning specific interactions or mental models | Command palette (keyboard shortcuts, search syntax), Menubar (nested submenus, accelerators) |
 
 A Button scores 0: every person who has used a computer knows what a button does. A Command palette scores 2: the user must learn that it exists, how to invoke it, the search syntax, and keyboard navigation.
 
@@ -77,7 +77,7 @@ A Button scores 0: every person who has used a computer knows what a button does
 | Dimension | Score | Reasoning |
 |-----------|-------|-----------|
 | Decision Demand | 1 | Click or don't click. One binary decision. |
-| Information Density | 0 | The label is the entire payload. "Save", "Delete", "Submit". |
+| Information Density | 1 | One label to read. "Save", "Delete", "Submit". |
 | Interaction Complexity | 1 | Click. That's it. (Loading states add visual feedback but no new interaction mode.) |
 | Context Disruption | 0 | The button itself doesn't disrupt. It stays inline, doesn't overlay, doesn't trap focus. |
 | Learning Curve | 0 | Universal. Toddlers can use buttons. |
@@ -114,7 +114,7 @@ The high score comes from disruption + decision stakes, not interaction complexi
 | Context Disruption | 0 | No disruption |
 | Learning Curve | 0 | Nothing to learn |
 
-A horizontal line. The only component that scores zero on every dimension.
+A horizontal line. Nothing to decide, read or do.
 
 ### Badge: 2/10
 
@@ -179,7 +179,7 @@ A flat budget of 15 fails every real screen:
 | Screen | Components | Raw Sum | Practical Load |
 |--------|-----------|---------|----------------|
 | Login form | 2x Input(4) + Button(3) + Card(2) + Label(2)x2 | 17 | Over budget at 15, but login is trivially simple |
-| Settings page | Sidebar(3) + Tabs(4) + 6x Field(3) + 2x Button(3) + Card(2) | 36 | Comfortable settings page, nowhere near "overloaded" |
+| Settings page | Sidebar(3) + Tabs(4) + 6x Field(3) + 2x Button(3) + Card(2) | 33 | Comfortable settings page, nowhere near "overloaded" |
 | Gmail inbox | Sidebar(3) + Table(3) + Toolbar(4) + Tabs(4) + NavigationMenu(5) + Pagination(4) + multiple Buttons | 37 | Complex but millions of users navigate it daily |
 
 Raw additive scoring overcounts because:
@@ -200,6 +200,8 @@ When evaluating a screen composition:
 4. **If over budget**: look for components scoring 4+ that could be simplified, hidden behind progressive disclosure, or moved to a separate view
 
 The budget is a lint, not a hard wall. Going 10% over is a design conversation. Going 50% over is a design problem.
+
+The helper in `packages/ui/src/primitives/intelligence-integration.ts` still applies a flat budget of 15, so it does not follow these tiers yet.
 
 ---
 
@@ -233,16 +235,16 @@ Cognitive load answers "how hard is this to use?" Attention economics answers "w
 
 ## Scoring Reference Table
 
-All 52+ UI components with their scores and primary cost drivers:
+Every UI component's score, from its `@cognitive-load` tag, with its primary cost driver:
 
 | Score | Components | Primary Cost Driver |
 |-------|-----------|-------------------|
-| 0 | Separator, Container, AspectRatio | Structural only, no cognitive demand |
-| 1 | Skeleton, Kbd | Display only, minimal information |
-| 2 | Badge, Breadcrumb, Label, Checkbox, Switch, Toggle, ButtonGroup, Card, Collapsible, Avatar, ScrollArea, Tooltip, Typography, Spinner, Empty, ToggleGroup | Simple state or single information piece |
-| 3 | Button, Alert, Sidebar, Accordion, Slider, RadioGroup, Table, Resizable, Field, HoverCard, Image, Embed, Item | One decision + one interaction mode |
-| 4 | Input, Textarea, InputGroup, InputOTP, Carousel, Tabs, ContextMenu, DropdownMenu, Popover, Progress, Drawer, Grid, BlockWrapper, InlineToolbar, EditorToolbar | Data entry or menu scanning |
-| 5 | Sheet, DatePicker, Calendar, Select, NavigationMenu, Menubar, ColorPicker, BlockCanvas | Multi-step interaction or spatial reasoning |
+| 0 | Separator, Container | Structural only, no cognitive demand |
+| 1 | AspectRatio, Skeleton, Kbd | Display only, minimal information |
+| 2 | Badge, Breadcrumb, Label, Checkbox, Switch, Toggle, ButtonGroup, Card, Collapsible, Avatar, ScrollArea, Tooltip, Typography, Spinner, Empty, Chart | Simple state or single information piece |
+| 3 | Button, Alert, Sidebar, Accordion, Slider, RadioGroup, ToggleGroup, Table, Resizable, Field, HoverCard, Image, Embed, Item | One decision + one interaction mode |
+| 4 | Input, Textarea, InputGroup, InputOTP, Carousel, Tabs, ContextMenu, DropdownMenu, Popover, Progress, Drawer, Grid, DatePicker, Pagination | Data entry or menu scanning |
+| 5 | Sheet, Calendar, Select, NavigationMenu, Menubar, ColorPicker | Multi-step interaction or spatial reasoning |
 | 6 | Dialog, Command, Combobox | Compound interaction modes or learning curve |
 | 7 | AlertDialog | Full context disruption + consequential decision |
 

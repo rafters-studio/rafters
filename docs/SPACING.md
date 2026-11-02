@@ -4,13 +4,11 @@ Spacing is the reason one interface feels calm and another feels claustrophobic.
 
 ## Two Numbers Control Everything
 
-`baseSpacingUnit` is 4px. `progressionRatio` is minor-third (1.2). Change either one and every measurement in the system recalculates.
+`baseSpacingUnit` is 4px. `progressionRatio` is minor-third (1.2). Change either one and spacing, radius and shadow recalculate.
 
 The base sets where every scale starts. The ratio sets how every scale grows. Spacing, typography, radius and shadow all read the same ratio, which is what keeps them from drifting apart -- a system whose spacing says one thing and whose type says another is incoherent, and one source every namespace reads is the only thing that prevents it.
 
 We chose minor-third because it produces steps that feel connected without feeling repetitive. The jumps are large enough to create hierarchy, small enough to maintain cohesion. Perfect-fourth (1.333) spreads further. Major-second (1.125) compresses tighter. The ratio is a design decision, not a default.
-
-<!-- VENEER: Interactive slider for baseSpacingUnit and progressionRatio. As you drag, show a layout (card with heading, paragraph, button) reflowing in real time. The user sees what 4px base feels like vs 5px vs 6px. Show the progression curve alongside -- how the ratio shapes the scale. -->
 
 ## The Scale Is A Progression
 
@@ -33,6 +31,8 @@ Three rules shape it, and none of them is arithmetic.
 
 The name is still the multiplier: `spacing-4` means `base * 4`, and `p-4` still reads as "four units."
 
+The rungs are what the scale offers, and nothing enforces them. Tailwind's `--spacing` key reads `spacing-base`, so any multiple compiles and follows the base: `p-8` and `h-10` work, though neither is a rung.
+
 ## Why Not Linear
 
 A linear ladder -- 4, 8, 12, 16, 20 -- looks principled. It is the scale almost every system ships, and it is wrong for what a scale is for.
@@ -47,7 +47,7 @@ Measure the step in the only unit that matters, which is how much bigger the nex
 | 44 -> 48px | 9.1% |
 | 240 -> 256px | 6.7% |
 
-Non-monotonic. A fifty-percent chasm at the bottom with nothing in between; six-percent distinctions at the top, where choosing between two adjacent positions is choosing nothing. A designer working that scale is handed decisions that do not exist and denied ones that do.
+Non-uniform. A fifty-percent chasm at the bottom with nothing in between; six-percent distinctions at the top, where choosing between two adjacent positions is choosing nothing. A designer working that scale is handed decisions that do not exist and denied ones that do.
 
 The progression is uniform -- the same perceptual step everywhere. It is also *shorter*: 21 positions where the linear ladder needed 34. That density was never generosity. It was compensation for a step size that is wrong at both ends.
 
@@ -63,8 +63,6 @@ Developers never write padding or margin. Container sets boundaries. Grid sets a
 
 Container handles the page: max-width, horizontal padding, vertical rhythm, centering. Grid handles the content: sidebar-main, form, cards, row, stack, split.
 
-<!-- VENEER: Side-by-side. Left: a page with raw padding/margin (messy, inconsistent gaps). Right: the same content in Container + Grid (uniform, rhythmic). No code. Just the visual difference. -->
-
 ## The Cascade Is Live
 
 Every spacing token is a `calc()` expression referencing the base:
@@ -78,18 +76,10 @@ Override the base in a theme and every token updates through CSS custom property
 
 The ratio is a build-time input rather than a runtime variable, so changing it regenerates. That split is correct: the base scales what exists, the ratio changes *which* positions exist, and a set of tokens cannot appear or disappear through the cascade.
 
-Studio writes values into the `--rafters-*` layer that every theme token points at. That indirection is why applying an intent needs no regeneration -- it is a batch of custom-property writes, not a build.
-
-<!-- VENEER: An editable base value input. Below it, a stack of elements at different scale positions. Changing the base visually reflows everything. The user understands cascade by watching it happen. -->
+Studio writes values into the `--rafters-*` layer that every theme token points at. That indirection is why applying a starting point will need no regeneration -- it will be a batch of custom-property writes, not a build. Presets are not built yet.
 
 ## Why This Matters
 
 Twenty developers making "looks right" spacing decisions produces twenty different values where there should be six. The system has opinions about which values exist. If the value you need isn't in the scale, the answer is usually that you need a different value, not a new token.
 
 A scale earns that authority only if every step in it means something. That is why the progression is not decoration on top of a multiplier table -- for two years it was exactly that, and every token claimed otherwise (#2031).
-
-<!-- VENEER: Show a "before" layout with 14px, 18px, 22px, 11px scattered spacing values (highlighted in red). Then the "after" with everything snapped to the scale (highlighted in green). The visual noise disappears. -->
-
-## Open
-
-**Scale naming, and the migration under it.** The name is the multiplier today, and the progression's rungs are no longer consecutive -- seventeen positions the component library uses no longer exist. `docs/migration/spacing-2031.md` has the mapping and what each option costs.
