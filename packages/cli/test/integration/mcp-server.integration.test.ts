@@ -343,13 +343,13 @@ describe('MCP rafters_workspaces config pipeline (unchanged)', () => {
 });
 
 describe('MCP tools with null project root', () => {
-  it('rafters_describe resolves against the injected catalog without a project root', async () => {
+  it('rafters_describe errors without a project root, naming the fix', async () => {
     const handler = new RaftersToolHandler([], null, async () => FIXTURE);
 
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
-    expect(result.isError).toBeFalsy();
     const data = JSON.parse(result.content[0].text as string);
-    expect(data).toMatchObject({ id: 'button', kind: 'component' });
+    expect(data.error).toContain('pnpx rafters@latest init');
+    expect(data).not.toHaveProperty('id');
   });
 
   it('rafters_workspaces returns the empty list without a project root', async () => {
