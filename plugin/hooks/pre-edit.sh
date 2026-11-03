@@ -99,8 +99,6 @@ else
   exit 0
 fi
 
-[ -z "$CONTENT" ] && exit 0
-
 VIOLATIONS=""
 
 # CLASSY IS THE LAW
@@ -181,11 +179,86 @@ if [ "$IS_SOURCE" != "1" ] && echo "$CONTENT" | grep -qE '<(h[1-6]|p|span)\b[^>]
   VIOLATIONS+="USE TYPOGRAPHY COMPONENTS: Found raw <h1>/<p>/<span> with classes. Use H1, H2, P, Small, Code typography components with token props instead.\n"
 fi
 
-if [ -z "$VIOLATIONS" ]; then
+# THE CHECK: veneer's rafters-check, when the project has it, on the file as it
+# would be after the edit. It adds to the rules above and replaces none of them:
+# it reports only brackets, fill and surface. An error denies only on a line the
+# edit changes, so an unrelated edit, or a fix of one finding out of two, goes
+# through. Every line of a Write counts as changed.
+CHECK_ERRORS=""
+CHECK_NOTE=""
+PROJECT_ROOT=$(find_rafters_root "$(dirname "$FILE_PATH")")
+case "$FILE_PATH" in
+  *.tsx|*.astro) CHECK_BIN=$(find_check_bin "$PROJECT_ROOT") ;;
+  *) CHECK_BIN="" ;;
+esac
+
+if [ -n "$CHECK_BIN" ]; then
+  CHECK_APPLIES=1
+  CHANGED_RANGES=""
+  if [ "$TOOL_NAME" = "Write" ]; then
+    PROPOSED="$CONTENT"
+  else
+    # No file on disk, or old_string not in it: the Edit itself will fail, so
+    # there is no after to check.
+    PROPOSED=$(printf '%s' "$INPUT" | jq -r --rawfile disk "$FILE_PATH" '
+      (.tool_input.old_string // "") as $old | (.tool_input.new_string // "") as $new
+      | if $old == "" then error("no old_string") else . end
+      | ($disk | split($old)) as $parts
+      | if ($parts | length) < 2 then error("old_string not found")
+        elif .tool_input.replace_all == true then $parts | join($new)
+        else $parts[0] + $new + ($parts[1:] | join($old))
+        end' 2>/dev/null) || CHECK_APPLIES=0
+    if [ "$CHECK_APPLIES" = "1" ]; then
+      # Normal diff output names the new file's lines after an a or c: 3c3, 5,6c5,7, 8a9,10.
+      CHANGED_RANGES=$(diff <(printf '%s\n' "$(cat "$FILE_PATH")") <(printf '%s\n' "$PROPOSED") \
+        | sed -nE 's/^[0-9,]+[ac]([0-9,]+)$/\1/p')
+    fi
+  fi
+
+  if [ "$CHECK_APPLIES" = "1" ]; then
+    # stderr joins stdout for the could-not-run reason; only report lines are read from it.
+    CHECK_OUTPUT=$(printf '%s' "$PROPOSED" | "$CHECK_BIN" "$PROJECT_ROOT" --stdin "$FILE_PATH" 2>&1)
+    CHECK_EXIT=$?
+    case "$CHECK_EXIT" in
+      0) ;;
+      1)
+        # file:line:column severity code message
+        REPORT_LINE='^[^[:space:]:][^:]*:([0-9]+):[0-9]+ error [^ ]+ '
+        while IFS= read -r LINE; do
+          [[ "$LINE" =~ $REPORT_LINE ]] || continue
+          FINDING_LINE="${BASH_REMATCH[1]}"
+          ON_CHANGED_LINE=0
+          [ "$TOOL_NAME" = "Write" ] && ON_CHANGED_LINE=1
+          for RANGE in $CHANGED_RANGES; do
+            if [ "$FINDING_LINE" -ge "${RANGE%,*}" ] && [ "$FINDING_LINE" -le "${RANGE#*,}" ]; then
+              ON_CHANGED_LINE=1
+            fi
+          done
+          [ "$ON_CHANGED_LINE" = "1" ] && CHECK_ERRORS+="$LINE"$'\n'
+        done <<< "$CHECK_OUTPUT"
+        ;;
+      *)
+        CHECK_NOTE="rafters-check could not run (exit $CHECK_EXIT), so the design check did not judge this edit: $CHECK_OUTPUT"
+        ;;
+    esac
+  fi
+fi
+
+if [ -z "$VIOLATIONS" ] && [ -z "$CHECK_ERRORS" ]; then
+  # A check that could not run does not decide: no permissionDecision, so the
+  # edit goes through the normal permission flow. additionalContext reaches the agent.
+  if [ -n "$CHECK_NOTE" ]; then
+    jq -n --arg note "$CHECK_NOTE" '{
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "additionalContext": $note
+      }
+    }'
+  fi
   exit 0
 fi
 
-REASON=$(printf '%s' "$VIOLATIONS" | head -5)
+REASON=$([ -n "$VIOLATIONS" ] && printf '%s\n' "$VIOLATIONS" | head -5; printf '%s' "$CHECK_ERRORS$CHECK_NOTE")
 jq -n --arg reason "$REASON" '{
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
