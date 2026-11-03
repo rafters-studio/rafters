@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { PopoverConfig, PopoverState } from './popover.behavior';
 
 export interface PopoverClassSet {
@@ -83,7 +83,7 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
 
 export function popoverClasses(config: PopoverConfig, _state: PopoverState): PopoverClassSet {
   return {
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     close: closeClasses,
     closeIcon: closeIconClasses,
   };

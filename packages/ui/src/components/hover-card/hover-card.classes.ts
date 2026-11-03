@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { HoverCardConfig, HoverCardState } from './hover-card.behavior';
 
 export interface HoverCardClassSet {
@@ -117,6 +117,6 @@ export function hoverCardClasses(
 ): HoverCardClassSet {
   return {
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
   };
 }

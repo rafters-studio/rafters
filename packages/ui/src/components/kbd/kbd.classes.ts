@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { KbdConfig, KbdState } from './kbd.behavior';
 
 export interface KbdClassSet {
@@ -30,6 +30,6 @@ export const kbdBaseClasses = `${kbdStructureClasses} ${kbdSurfaceClasses}`;
  */
 export function kbdClasses(config: KbdConfig, _state: KbdState): KbdClassSet {
   return {
-    root: `${kbdStructureClasses} ${classy.fill(config.fill, classy.surface(config.surface, kbdSurfaceClasses))}`,
+    root: `${kbdStructureClasses} ${resolveFill(config.fill, resolveSurface(config.surface, kbdSurfaceClasses))}`,
   };
 }

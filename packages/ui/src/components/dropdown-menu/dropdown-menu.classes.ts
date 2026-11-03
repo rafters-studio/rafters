@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { DropdownMenuConfig, DropdownMenuState } from './dropdown-menu.behavior';
 
 export interface DropdownMenuClassSet {
@@ -133,7 +133,7 @@ export function dropdownMenuClasses(
 ): DropdownMenuClassSet {
   return {
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

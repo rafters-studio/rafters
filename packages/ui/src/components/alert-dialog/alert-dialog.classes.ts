@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { AlertDialogConfig, AlertDialogState } from './alert-dialog.behavior';
 
 export interface AlertDialogClassSet {
@@ -98,7 +98,7 @@ export function alertDialogClasses(
   return {
     overlay: overlayClasses,
     container: containerClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     header: headerClasses,
     footer: footerClasses,
     title: titleClasses,

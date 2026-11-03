@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { ButtonConfig, ButtonSize, ButtonState, ButtonVariant } from './button.behavior';
 
 export interface ButtonClassSet {
@@ -160,7 +160,7 @@ const iconClasses = 'inline-grid place-items-center';
 
 export function buttonClasses(config: ButtonConfig, _state: ButtonState): ButtonClassSet {
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, classy.surface(config.surface, variantSurfaceClasses[config.variant]))} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
+    root: `${baseClasses} ${resolveFill(config.fill, resolveSurface(config.surface, variantSurfaceClasses[config.variant]))} ${variantClasses[config.variant]} ${sizeClasses[config.size]}`,
     spinner: spinnerClasses,
     startIcon: iconClasses,
     endIcon: iconClasses,

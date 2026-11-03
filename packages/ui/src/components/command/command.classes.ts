@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { CommandConfig, CommandState } from './command.behavior';
 
 export interface CommandClassSet {
@@ -137,7 +137,7 @@ const dialogContentClasses =
 
 export function commandClasses(config: CommandConfig, _state: CommandState): CommandClassSet {
   return {
-    root: `${rootClasses} ${classy.fill(config.fill, classy.surface(config.surface, rootSurfaceClasses))}`,
+    root: `${rootClasses} ${resolveFill(config.fill, resolveSurface(config.surface, rootSurfaceClasses))}`,
     inputWrapper: inputWrapperClasses,
     inputIcon: inputIconClasses,
     input: inputClasses,

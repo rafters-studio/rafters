@@ -12,10 +12,10 @@
  * TypographyVariant / TypographyTokenProps types now live on the score
  * (typography.behavior.ts) so the pure behavior test imports them with no DOM.
  *
- * @primitives classy
+ * @primitives surface
  */
 
-import classy from '../../primitives/classy';
+import { resolveFill } from '../../primitives/surface';
 import type { TypographyTokenProps, TypographyVariant } from './typography.behavior';
 
 /** The dimensions a container-query default can set. */
@@ -244,7 +244,7 @@ function emitProps(props: TypographyTokenProps): string {
 /**
  * A fill that is exactly one `bg-fill-*` token wins over `color` and the
  * variant's colour and surface, so the recipe's foreground paints the text
- * (FR-RAF-FILL-003). Any other fill is dropped with a warning by classy.fill.
+ * (FR-RAF-FILL-003). Any other fill is dropped with a warning by resolveFill.
  */
 export function resolveTypography(
   variant: TypographyVariant,
@@ -253,7 +253,7 @@ export function resolveTypography(
   const defaults = VARIANTS[variant];
   const merged: TypographyTokenProps = {};
   for (const key of DIM_KEYS) merged[key] = overrides[key] ?? defaults[key];
-  const fill = classy.fill(overrides.fill);
+  const fill = resolveFill(overrides.fill);
   if (fill) merged.color = undefined;
 
   const parts: string[] = [];

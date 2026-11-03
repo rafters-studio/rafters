@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { BadgeConfig, BadgeSize, BadgeState, BadgeVariant } from './badge.behavior';
 
 export interface BadgeClassSet {
@@ -74,10 +74,10 @@ export function badgeClasses(config: BadgeConfig, _state: BadgeState): BadgeClas
   // variant): an absent variant does not beat surface (FR-RAF-FILL-004).
   const surface =
     config.variant === undefined
-      ? classy.surface(config.surface, variantClasses.default)
+      ? resolveSurface(config.surface, variantClasses.default)
       : variantClasses[config.variant];
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, surface)} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[size]}`,
+    root: `${baseClasses} ${resolveFill(config.fill, surface)} ${variantStructureClasses[variant] ?? ''} ${sizeClasses[size]}`,
     startIcon: iconClasses,
     endIcon: iconClasses,
   };

@@ -1,8 +1,8 @@
 /**
  * @components grid
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import {
   gridColSpanClasses,
   gridGapClasses,
@@ -196,7 +196,7 @@ export function containerClasses(
   if (config.rowSpan) parts.push(gridRowSpanClasses[config.rowSpan] ?? '');
 
   // Container has no base surface: a fill (one bg-fill-* token) or nothing.
-  parts.push(classy.fill(config.fill, classy.surface(config.surface)));
+  parts.push(resolveFill(config.fill, resolveSurface(config.surface)));
 
   if (config.position) parts.push(positionClasses[config.position]);
   if (config.depth) parts.push(depthClasses[config.depth]);

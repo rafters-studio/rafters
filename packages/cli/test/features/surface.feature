@@ -48,3 +48,16 @@ Feature: surfaces are bg-surface-* fills with a surface prop (#2830)
     Then bg-card and every text-*-foreground class compute the same colour as its token, in light and in dark
     When a role that surfaces depend on changes and rafters.css is exported and compiled with real Tailwind
     Then bg-card and every text-*-foreground class compute the same colour as its token, in light and in dark
+
+  @criterion-served
+  Scenario: an installed component receives the new primitive and its surface compiles
+    Given a freshly initialised project
+    When I run "rafters add card"
+    Then the project's primitives folder holds surface.ts and classy.ts is absent
+    And a page rendering Card with surface="panel" compiled with real Tailwind has a rule for bg-surface-panel
+
+  @criterion-update
+  Scenario: a project installed before the move updates as a whole
+    Given a project with card and badge installed from the previous release
+    When I run "rafters add --update-all"
+    Then a page rendering Card with fill="bg-fill-glass" and Badge with surface="panel" renders both, and neither throws

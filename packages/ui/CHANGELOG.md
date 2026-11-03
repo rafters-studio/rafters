@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Fill and surface moved out of classy, to `primitives/surface.ts` (#2910).**
+  What a component paints is unchanged. `classy.fill` is now `resolveFill`,
+  `classy.surface` is now `resolveSurface`, and `SURFACE_CLASSES` moved with
+  them; classy no longer has any of the three. A custom component calling
+  `classy.fill(value, base)` or `classy.surface(name, base)` imports
+  `resolveFill` or `resolveSurface` from the `surface` primitive and calls it
+  with the same arguments.
+
+  Every project updates with `rafters add --update-all`. Do not update a single
+  component: `rafters add --update badge` replaces classy, and any component
+  still on the previous release that calls `classy.fill` then throws at render.
+
 ## [0.6.0]
 
 Released with the rafters CLI 0.6.0. `@rafters/ui` is not published to npm;
