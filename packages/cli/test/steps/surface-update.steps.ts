@@ -50,6 +50,13 @@ function closure(names: readonly string[]): RegistryItem[] {
  * release's tree laid out the same way.
  */
 function previousRelease(names: readonly string[]): RegistryItem[] {
+  // CI's checkout is shallow and carries no tags.
+  const ref = `refs/tags/${PREVIOUS_RELEASE}`;
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', ref], { cwd: REPO, stdio: 'ignore' });
+  } catch {
+    execFileSync('git', ['fetch', '--depth=1', 'origin', `${ref}:${ref}`], { cwd: REPO });
+  }
   const root = join(context.fixturePath, '.previous-release');
   const cwd = join(root, 'apps/registry');
   mkdirSync(cwd, { recursive: true });
