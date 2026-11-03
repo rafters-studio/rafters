@@ -27,7 +27,7 @@ import {
   resolveAreaStrokeClass,
 } from '../../../src/components/chart/area-chart.classes';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
-import { hasArbitraryValue } from '../../../src/primitives/classy';
+import { hasArbitraryValue } from './has-arbitrary-value';
 import { bandScale, linearScale } from '../../../src/primitives/graph';
 
 /**
@@ -513,7 +513,7 @@ describe('areaChartClasses', () => {
     }
   });
 
-  it('emits no arbitrary-value utility (classy.ts hasArbitraryValue)', () => {
+  it('emits no arbitrary-value utility (hasArbitraryValue)', () => {
     for (const value of Object.values(classes)) {
       for (const cls of value.split(/\s+/).filter(Boolean)) {
         expect(hasArbitraryValue(cls), cls).toBe(false);

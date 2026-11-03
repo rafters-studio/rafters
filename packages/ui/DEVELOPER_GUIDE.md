@@ -6,7 +6,7 @@ Purpose
 
 Goals & Principles
  - Keep primitives framework-agnostic and SSR-safe. Primitives operate on raw DOM nodes, return a cleanup function, and are no-op on server.
- - Favor explicitness over magic: token resolution is opt-in via `createClassy({ tokenMap })`.
+ - Favor explicitness over magic.
  - Styling is token-first. Avoid arbitrary Tailwind bracket classes by default; use tokens or known utility classes.
  - Keep component APIs small, predictable, and consistent with the shadcn/Radix patterns used in the POC.
 
@@ -19,7 +19,7 @@ Primitives: API patterns and checklist
  - SSR-safe: always check for DOM availability and return a no-op cleanup when server-side.
  - Return cleanup: every primitive that attaches listeners or state must return a single cleanup function that removes listeners and restores state.
  - Lightweight: avoid large dependencies; primitives should be tiny wrappers around platform APIs.
- - Accept options for behavior (debounce, thresholds, allowArbitrary, etc.) and take explicit callbacks.
+ - Accept options for behavior (debounce, thresholds, etc.) and take explicit callbacks.
 
 Existing primitives (summary)
  - `createFocusTrap(element)` — trap Tab and Shift+Tab inside a container, returns cleanup; use for modal dialogs.
@@ -27,22 +27,16 @@ Existing primitives (summary)
  - `onPointerDownOutside(target, handler)` — call handler when a pointer/touch event starts outside `target`.
  - `onEscapeKeyDown(handler)` — call handler when Escape key is pressed; returns cleanup.
  - `getPortalContainer({ container, enabled })` — SSR-safe portal container resolver.
- - `classy` — single smart class builder (explicit, synchronous, opt-in tokenMap). Use `classy('a', someVar, { active: isActive })`.
+ - `classy` — combines classes and does nothing else. Use `classy('a', someVar, { active: isActive })`.
 
-Class building and tokens
- - Use the `classy` utility to merge and deduplicate classes. `classy` splits multi-class strings, handles objects and arrays, blocks bracketed arbitrary classes by default, and supports an optional `tokenMap`.
- - Token resolution must be provided explicitly with `createClassy({ tokenMap })`. Do not wire global token registries implicitly in primitives or components.
+Class building
+ - Use the `classy` utility to combine classes. `classy` flattens arrays, drops falsy inputs, takes the keys of an object whose value is truthy, splits on whitespace, and removes exact duplicates keeping first position. Every class it receives comes out, including a bracket value, and it never warns. `rafters check` reports bracket values.
  - Example usage:
 
   ```ts
-  import classy, { createClassy, token } from '../primitives/classy';
+  import classy from '../primitives/classy';
 
-  // Default singleton (no tokens):
   const cls = classy('fixed inset-0', isOpen && 'open');
-
-  // Opt-in token map:
-  const c = createClassy({ tokenMap: (k) => ({ 'spacing.4': 'p-4' }[k] ?? null) });
-  c('btn', token('spacing.4')) // -> 'btn p-4'
   ```
 
 Dialog POC notes (how it uses primitives)
@@ -72,7 +66,7 @@ Contribution checklist for new primitives
  - Implement SSR guard at top of function if needed.
  - Return a single cleanup function and document side effects clearly in a short JSDoc comment.
  - Add unit tests under `test/primitives/` covering normal behavior, cleanup, and SSR fallback.
- - Avoid coupling to `classy` token map or any global runtime features.
+ - Avoid coupling to any global runtime features.
 
 Where to look for examples
  - Dialog implementation: `packages/ui/src/components/ui/dialog.tsx` — a complete POC wiring primitives into a component.

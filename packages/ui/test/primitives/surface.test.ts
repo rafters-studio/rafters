@@ -88,10 +88,8 @@ describe('the move out of classy', () => {
   });
 
   it('classy has no fill or surface method and exports no SURFACE_CLASSES', () => {
-    for (const instance of [classyModule.classy, classyModule.createClassy()]) {
-      expect(instance).not.toHaveProperty('fill');
-      expect(instance).not.toHaveProperty('surface');
-    }
+    expect(classyModule.classy).not.toHaveProperty('fill');
+    expect(classyModule.classy).not.toHaveProperty('surface');
     expect(classyModule).not.toHaveProperty('SURFACE_CLASSES');
   });
 });
