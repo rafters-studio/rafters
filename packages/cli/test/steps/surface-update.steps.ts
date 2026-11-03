@@ -1,14 +1,15 @@
 /**
- * Steps for #2910: fill and surface moved out of classy, and a project updates
- * across that move as a whole. The worktree's own source is served as the
- * registry, because the live one holds neither side of the move on demand.
+ * Steps for #2910: fill and surface moved out of classy, an installed component
+ * receives the new primitive, and a project updates across the move as a whole.
+ * The worktree's own source is served as the registry, because the live one
+ * holds neither side of the move on demand.
  *
  * Note: Module-level state is intentional for playwright-bdd step state sharing.
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect } from '@playwright/test';
@@ -23,8 +24,9 @@ import { createFixture } from '../fixtures/projects.js';
 import { context } from './common.steps.js';
 import { serve } from './declared-needs.steps.js';
 import { execRafters } from './helpers.js';
+import { buildRaftersCss } from './import.steps.js';
 
-const { Given, Then } = createBdd();
+const { Given, Then, AfterStep } = createBdd();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '../../../..');
@@ -89,36 +91,68 @@ Given('a project with card and badge installed from the previous release', async
   await serve(closure(names));
 });
 
+/** Render `elements` in a page in the project, with the project's own files; a throw fails the step. */
+function renderPage(elements: readonly string[]): string {
+  const root = context.fixturePath;
+  writeFileSync(
+    join(root, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: { jsx: 'react-jsx', baseUrl: '.', paths: { '@/*': ['./*'] } },
+    }),
+  );
+  writeFileSync(
+    join(root, 'page.tsx'),
+    [
+      "import { renderToStaticMarkup } from 'react-dom/server';",
+      "import { Badge } from '@/components/ui/badge';",
+      "import { Card } from '@/components/ui/card';",
+      'console.log(renderToStaticMarkup(<>',
+      ...elements,
+      '</>));',
+      '',
+    ].join('\n'),
+  );
+  const tsx = join(HERE, '../../node_modules/.bin/tsx');
+  return execFileSync(tsx, ['page.tsx'], { cwd: root, encoding: 'utf8' });
+}
+
+function classesOf(html: string, id: string): string[] | undefined {
+  const tag = new RegExp(`<[^>]*\\bid="${id}"[^>]*>`).exec(html)?.[0];
+  return /\bclass="([^"]*)"/.exec(tag ?? '')?.[1]?.split(/\s+/);
+}
+
+AfterStep({ tags: '@criterion-served' }, async ({ $step }) => {
+  if ($step.title === 'a freshly initialised project') await serve(closure(['card']));
+});
+
+Then("the project's primitives folder holds surface.ts and classy.ts is absent", async () => {
+  const primitives = join(context.fixturePath, 'lib/primitives');
+  expect(existsSync(join(primitives, 'surface.ts'))).toBe(true);
+  expect(existsSync(join(primitives, 'classy.ts'))).toBe(false);
+});
+
+Then(
+  'a page rendering Card with surface={string} compiled with real Tailwind has a rule for {word}',
+  async ({}, surface: string, rule: string) => {
+    const html = renderPage([`<Card id="card" surface="${surface}">c</Card>`]);
+    expect(classesOf(html, 'card')).toContain(rule);
+    const css = await buildRaftersCss([
+      '@source "./page.tsx";',
+      '@source "./components/ui";',
+      '@source "./lib/primitives";',
+    ]);
+    expect(css).toContain(`.${rule} {`);
+  },
+);
+
 Then(
   'a page rendering Card with fill={string} and Badge with surface={string} renders both, and neither throws',
   async ({}, fill: string, surface: string) => {
-    const root = context.fixturePath;
-    writeFileSync(
-      join(root, 'tsconfig.json'),
-      JSON.stringify({
-        compilerOptions: { jsx: 'react-jsx', baseUrl: '.', paths: { '@/*': ['./*'] } },
-      }),
-    );
-    writeFileSync(
-      join(root, 'page.tsx'),
-      [
-        "import { renderToStaticMarkup } from 'react-dom/server';",
-        "import { Badge } from '@/components/ui/badge';",
-        "import { Card } from '@/components/ui/card';",
-        'console.log(renderToStaticMarkup(<>',
-        `  <Card id="card" fill="${fill}">c</Card>`,
-        `  <Badge id="badge" surface="${surface}">b</Badge>`,
-        '</>));',
-        '',
-      ].join('\n'),
-    );
-    const tsx = join(HERE, '../../node_modules/.bin/tsx');
-    const html = execFileSync(tsx, ['page.tsx'], { cwd: root, encoding: 'utf8' });
-    const classesOf = (id: string) => {
-      const tag = new RegExp(`<[^>]*\\bid="${id}"[^>]*>`).exec(html)?.[0];
-      return /\bclass="([^"]*)"/.exec(tag ?? '')?.[1]?.split(/\s+/);
-    };
-    expect(classesOf('card')).toContain(fill);
-    expect(classesOf('badge')).toContain(`bg-surface-${surface}`);
+    const html = renderPage([
+      `<Card id="card" fill="${fill}">c</Card>`,
+      `<Badge id="badge" surface="${surface}">b</Badge>`,
+    ]);
+    expect(classesOf(html, 'card')).toContain(fill);
+    expect(classesOf(html, 'badge')).toContain(`bg-surface-${surface}`);
   },
 );
