@@ -89,6 +89,15 @@ Remove one installed item: deletes the files `rafters add` installed for it and 
 pnpm dlx rafters remove dialog
 ```
 
+### `rafters check [root]`
+
+Run the `rafters-check` bin your project has installed, with the same root. Its stdout, stderr and exit code are the command's own. The bin comes from `@rafters/veneer`, which rafters does not depend on, and is looked for in the project and then each folder above it, so a workspace root's install serves its packages. With no bin, the command prints the install command for your package manager to stderr and exits 2; it installs nothing.
+
+```bash
+pnpm add -D @rafters/veneer
+pnpm dlx rafters check
+```
+
 ### `rafters import`
 
 Import a stylesheet into an existing project by mapping its custom properties. Takes `--css-import <path>` and `--map`, as described under init.

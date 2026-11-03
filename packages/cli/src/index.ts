@@ -8,6 +8,7 @@
 import { Command } from 'commander';
 import { add } from './commands/add.js';
 import { agents } from './commands/agents.js';
+import { check } from './commands/check.js';
 import { importCss } from './commands/import.js';
 import { init } from './commands/init.js';
 import { mcp } from './commands/mcp.js';
@@ -74,6 +75,12 @@ program
   .option('--registry-url <url>', 'Custom registry URL')
   .option('--agent', 'Output JSON for machine consumption')
   .action(withErrorHandler(remove));
+
+program
+  .command('check')
+  .description("Run the project's installed rafters-check bin")
+  .argument('[root]', 'Project root (default: the current directory)')
+  .action(withErrorHandler(check));
 
 program
   .command('studio')
