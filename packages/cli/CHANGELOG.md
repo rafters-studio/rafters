@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli): **`rafters check [root]` runs the project's `rafters-check` bin (#2911).** It runs the bin nearest the root, at or above it, with the same root, prints the bin's stdout and stderr unchanged and exits with its exit code. With no bin, it prints the install command for the project's package manager (`pnpm add -D @rafters/veneer`) to stderr and exits 2, installing nothing. The CLI does not depend on `@rafters/veneer`.
+
 ## 0.6.2
 
 ### Fixed

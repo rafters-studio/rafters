@@ -55,6 +55,30 @@ export async function updateDependencies(
 }
 
 /**
+ * The arguments to the package manager that install these dependencies
+ */
+export function installArgs(
+  packageManager: PackageManager,
+  dependencies: string[],
+  dev: boolean,
+): string[] {
+  const devFlag = dev ? ['-D'] : [];
+
+  switch (packageManager) {
+    case 'npm':
+      return ['install', ...devFlag, ...dependencies];
+
+    case 'deno':
+      // Deno requires npm: prefix
+      return ['add', ...devFlag, ...dependencies.map((dep) => `npm:${dep}`)];
+
+    default:
+      // pnpm, yarn, bun all use 'add' command
+      return ['add', ...devFlag, ...dependencies];
+  }
+}
+
+/**
  * Run the appropriate install command for the package manager
  */
 async function installWithPackageManager(
@@ -63,22 +87,5 @@ async function installWithPackageManager(
   options: { cwd: string; dev: boolean },
 ): Promise<void> {
   const { cwd, dev } = options;
-
-  switch (packageManager) {
-    case 'npm':
-      await execa('npm', ['install', ...(dev ? ['-D'] : []), ...dependencies], { cwd });
-      break;
-
-    case 'deno': {
-      // Deno requires npm: prefix
-      const denoDeps = dependencies.map((dep) => `npm:${dep}`);
-      await execa('deno', ['add', ...(dev ? ['-D'] : []), ...denoDeps], { cwd });
-      break;
-    }
-
-    default:
-      // pnpm, yarn, bun all use 'add' command
-      await execa(packageManager, ['add', ...(dev ? ['-D'] : []), ...dependencies], { cwd });
-      break;
-  }
+  await execa(packageManager, installArgs(packageManager, dependencies, dev), { cwd });
 }
