@@ -213,12 +213,8 @@ Then('the hook denies, naming its line', async () => {
   expect(reason).not.toContain('problems');
 });
 
-Then('the hook denies, naming rafters\\(invalid-fill)', async () => {
-  expect(denyReason()).toContain('rafters(invalid-fill)');
-});
-
-Then('the hook denies, naming rafters\\(arbitrary-value)', async () => {
-  expect(denyReason()).toContain('rafters(arbitrary-value)');
+Then('the hook denies, naming rafters\\({word})', async ({}, code: string) => {
+  expect(denyReason()).toContain(`rafters(${code})`);
 });
 
 Then('the hook denies with LAYOUT IS SOLVED', async () => {
