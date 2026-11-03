@@ -46,6 +46,9 @@ function fixtureHandler(
   return { handler, calls };
 }
 
+/** A workspace whose root holds no .rafters config: the handler has a workspace, the graph has no target. */
+const NO_CONFIG_WS = { name: 'bare', root: '/nonexistent/bare' };
+
 describe('TOOL_DEFINITIONS', () => {
   it('exposes the new primary surface plus deprecated aliases', () => {
     expect(TOOL_DEFINITIONS.map((t) => t.name)).toEqual(
@@ -77,7 +80,7 @@ describe('TOOL_DEFINITIONS', () => {
 
 describe('rafters_describe dispatch', () => {
   it('resolves a dot-address through describe/overlay', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
     expect(JSON.parse(result.content[0].text as string)).toMatchObject({
       id: 'button',
@@ -86,7 +89,7 @@ describe('rafters_describe dispatch', () => {
   });
 
   it('routes a natural-language question through the intent door', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_describe', {
       address: 'what do I use when it needs to be above everything',
     });
@@ -97,7 +100,7 @@ describe('rafters_describe dispatch', () => {
   });
 
   it('stamps workspace presence onto a roster call', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_describe', { address: 'components' });
     const data = JSON.parse(result.content[0].text as string) as Array<{
       id: string;
@@ -111,7 +114,7 @@ describe('rafters_describe dispatch', () => {
   it('returns a structured error (not a throw) when the graph is broken', async () => {
     // A dangling composesWith edge makes #2072's assembleGraph throw at build.
     const broken = [node('button', 'ui', ['does-not-exist'])];
-    const { handler } = fixtureHandler([], null, broken);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS, broken);
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
     expect(JSON.parse(result.content[0].text as string).error).toMatch(
       /failed to build intel graph/,
@@ -134,7 +137,7 @@ describe('rafters_describe dispatch', () => {
         astro: { props: { variant: { type: 'enum', values: ['solid'] } }, snippet: '<b/>' },
       },
     };
-    const { handler } = fixtureHandler([], null, [faceted]);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS, [faceted]);
     const node = JSON.parse(
       (await handler.handleToolCall('rafters_describe', { address: 'button' })).content[0]
         .text as string,
@@ -169,7 +172,7 @@ describe('lazy, cached, per-workspace graph', () => {
 
 describe('rafters_generate', () => {
   it('resolves a bare component id directly, bypassing the intent door entirely', async () => {
-    const { handler } = fixtureHandler([], null); // no config -> ctx.target undefined
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS); // no config -> ctx.target undefined
     const result = await handler.handleToolCall('rafters_generate', { intent: 'button' });
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('button');
@@ -177,7 +180,7 @@ describe('rafters_generate', () => {
   });
 
   it('strips leading filler before the direct lookup ("give me a button" / "a container")', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const a = await handler.handleToolCall('rafters_generate', { intent: 'give me a button' });
     const b = await handler.handleToolCall('rafters_generate', { intent: 'a container' });
     expect(JSON.parse(a.content[0].text as string).error).toContain('button');
@@ -185,7 +188,7 @@ describe('rafters_generate', () => {
   });
 
   it('falls back to the intent door for a semantic query with no direct id match', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_generate', {
       intent: 'what do I use when it needs to be above everything',
     });
@@ -194,7 +197,7 @@ describe('rafters_generate', () => {
   });
 
   it('a filler-stripping phrasing on the same semantic axis still routes via matchIntent using the ORIGINAL string, not the stripped candidate', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     // "i need " strips to "something that sits on top of everything else" --
     // not a real node id, so this MUST fall to matchIntent, which is called
     // with the untouched original sentence.
@@ -206,7 +209,7 @@ describe('rafters_generate', () => {
   });
 
   it('flat-refuses a query matching neither tier, carrying the intent door note', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     for (const intent of ['something that does not exist', 'a login form']) {
       const result = await handler.handleToolCall('rafters_generate', { intent });
       const data = JSON.parse(result.content[0].text as string);
@@ -221,7 +224,7 @@ describe('rafters_generate', () => {
   });
 
   it('a real composite id typed directly is excluded from the direct tier and falls to the generic refusal', async () => {
-    const { handler } = fixtureHandler([], null); // FIXTURE includes node('login-form', 'composite')
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS); // FIXTURE includes node('login-form', 'composite')
     const result = await handler.handleToolCall('rafters_generate', { intent: 'login-form' });
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toEqual({
@@ -232,7 +235,7 @@ describe('rafters_generate', () => {
 
   it('refuses a matchIntent-routed composite by name -- v1 serves components only', async () => {
     const items = [node('modal', 'composite'), node('alert', 'ui'), node('tooltip', 'ui')];
-    const { handler } = fixtureHandler([], null, items);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS, items);
     const result = await handler.handleToolCall('rafters_generate', {
       intent: 'what do I use when it needs to be above everything',
     });
@@ -242,14 +245,14 @@ describe('rafters_generate', () => {
   });
 
   it('builds the graph on first call (unlike the prior stub)', async () => {
-    const { handler, calls } = fixtureHandler([], null);
+    const { handler, calls } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     await handler.handleToolCall('rafters_generate', { intent: 'something that does not exist' });
-    expect(calls['']).toBe(1);
+    expect(calls[NO_CONFIG_WS.root]).toBe(1);
   });
 
   it('surfaces a structured error (not a throw) when the graph is broken', async () => {
     const broken = [node('modal', 'ui', ['does-not-exist'])];
-    const { handler } = fixtureHandler([], null, broken);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS, broken);
     const result = await handler.handleToolCall('rafters_generate', { intent: 'modal' });
     expect(JSON.parse(result.content[0].text as string).error).toMatch(
       /failed to build intel graph/,
@@ -259,7 +262,7 @@ describe('rafters_generate', () => {
 
 describe('deprecated aliases', () => {
   it('rafters_component forwards by-id to describe and is marked deprecated', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_component', { name: 'button' });
     expect(JSON.parse(result.content[0].text as string)).toMatchObject({
       id: 'button',
@@ -268,7 +271,7 @@ describe('deprecated aliases', () => {
   });
 
   it('rafters_composite forwards by-id to describe and is marked deprecated', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_composite', { id: 'login-form' });
     expect(JSON.parse(result.content[0].text as string)).toMatchObject({
       id: 'login-form',
@@ -279,7 +282,7 @@ describe('deprecated aliases', () => {
 
   it('rafters_pattern keeps its composite-search body and never calls the intent door', async () => {
     const matchSpy = vi.spyOn(intent, 'matchIntent');
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_pattern', { solves: 'authentication' });
     expect(JSON.parse(result.content[0].text as string)).toMatchObject({
       deprecated: 'use rafters_describe instead',
@@ -307,7 +310,7 @@ describe('deprecated aliases', () => {
       ],
     });
 
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('rafters_composite', { query: 'fixture' });
     const data = JSON.parse(result.content[0].text as string);
     const composite = data.composites.find((c: { id: string }) => c.id === 'rules-fixture-login');
@@ -321,12 +324,20 @@ describe('deprecated aliases', () => {
 });
 
 describe('rafters_workspaces (unchanged)', () => {
-  it('returns the empty list and null default when nothing is configured', async () => {
+  it('returns the empty list and null default, with the init message, when nothing is configured', async () => {
     const { handler } = fixtureHandler([], null);
     const result = await handler.handleToolCall('rafters_workspaces', {});
     const data = JSON.parse(result.content[0].text as string);
     expect(data.workspaces).toEqual([]);
     expect(data.defaultWorkspace).toBeNull();
+    expect(data.message).toContain('No .rafters folder was found');
+    expect(data.message).toContain('pnpx rafters@latest init');
+  });
+
+  it('carries no message when a workspace exists', async () => {
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
+    const result = await handler.handleToolCall('rafters_workspaces', {});
+    expect(JSON.parse(result.content[0].text as string)).not.toHaveProperty('message');
   });
 
   it('lists every workspace with its default flag', async () => {
@@ -412,7 +423,7 @@ describe('workspace routing', () => {
 
 describe('unknown tool', () => {
   it('returns an error naming the available tools', async () => {
-    const { handler } = fixtureHandler([], null);
+    const { handler } = fixtureHandler([NO_CONFIG_WS], NO_CONFIG_WS);
     const result = await handler.handleToolCall('unknown_tool', {});
     const data = JSON.parse(result.content[0].text as string);
     expect(data.error).toContain('Unknown tool');
@@ -581,5 +592,23 @@ describe('presence is measured from disk, not read from config.installed', () =>
     const data = JSON.parse(result.content[0].text as string);
     expect(data).toMatchObject({ id: 'button', presence: 'available' });
     await rm(root, { recursive: true, force: true });
+  });
+});
+
+describe.each([
+  ['rafters_describe', { address: 'button' }],
+  ['rafters_generate', { intent: 'button' }],
+  ['rafters_component', { name: 'button' }],
+  ['rafters_pattern', { query: 'login' }],
+  ['rafters_composite', { name: 'login-form' }],
+])('%s with no workspace', (tool, args) => {
+  it('errors with the init instruction and holds no component data', async () => {
+    const { handler, calls } = fixtureHandler([], null);
+    const result = await handler.handleToolCall(tool, args);
+    const data = JSON.parse(result.content[0].text as string);
+    expect(Object.keys(data)).toEqual(['error']);
+    expect(data.error).toContain('No .rafters folder was found');
+    expect(data.error).toContain('pnpx rafters@latest init');
+    expect(calls).toEqual({});
   });
 });
