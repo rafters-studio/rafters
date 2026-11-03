@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { SidebarSide, SidebarVariant } from './sidebar.behavior';
 
 /**
@@ -142,7 +142,7 @@ export function sidebarPanelClasses(
   fill?: string,
   surface?: string,
 ): string {
-  return `${panelBaseClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
+  return `${panelBaseClasses} ${resolveFill(fill, resolveSurface(surface, panelSurfaceClasses))} ${panelSideClasses[side]} ${panelVariantClasses[variant]}`.trim();
 }
 
 const triggerClasses = 'inline-flex size-7 items-center justify-center';
@@ -361,7 +361,7 @@ export function sidebarClasses(fill?: string, surface?: string): SidebarClassSet
     provider: providerClasses,
     trigger: triggerClasses,
     rail: railClasses,
-    mobilePanel: `${mobilePanelClasses} ${classy.fill(fill, classy.surface(surface, panelSurfaceClasses))}`,
+    mobilePanel: `${mobilePanelClasses} ${resolveFill(fill, resolveSurface(surface, panelSurfaceClasses))}`,
     inset: insetClasses,
     header: headerClasses,
     footer: footerClasses,

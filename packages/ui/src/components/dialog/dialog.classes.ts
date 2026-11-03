@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { DialogConfig, DialogState } from './dialog.behavior';
 
 export interface DialogClassSet {
@@ -98,7 +98,7 @@ export function dialogClasses(config: DialogConfig, _state: DialogState): Dialog
   return {
     overlay: overlayClasses,
     container: containerClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     header: headerClasses,
     footer: footerClasses,
     title: titleClasses,

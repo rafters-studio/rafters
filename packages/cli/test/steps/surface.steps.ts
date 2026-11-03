@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { DEFAULT_SEMANTIC_COLOR_MAPPINGS } from '@rafters/design-tokens';
 import { expect, type Page } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
-import { SURFACE_CLASSES } from '../../../ui/src/primitives/classy.js';
+import { SURFACE_CLASSES } from '../../../ui/src/primitives/surface.js';
 import { createFixture } from '../fixtures/projects.js';
 import { context } from './common.steps.js';
 import { MEASURED } from './fill-prop.steps.js';

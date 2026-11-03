@@ -67,11 +67,17 @@ API
 - `classy(...inputs)` — default instance (no tokenMap, arbitrary classes blocked)
 - `createClassy({ tokenMap, allowArbitrary, warn })` — create custom instance
 - `token(key)` — mark token references for resolution
-- `classy.fill(value, surface)` — the `fill` prop's merge. A value that is exactly one `bg-fill-*` token is returned on its own and replaces `surface`; an empty or absent value returns `surface`; anything else is dropped with a warning and `surface` is returned. It checks the shape only: the registry decides which fills exist.
-- `classy.surface(name, base)` — the `surface` prop's merge. A known surface name returns its literal `bg-surface-<name>` class from `SURFACE_CLASSES`; an unknown name returns `base`, with no warning.
 
 Why no tailwind-merge?
 
 `classy` intentionally does NOT resolve Tailwind utility conflicts. If you have `p-4 p-8`, both stay - making overrides explicit and debuggable in the DOM.
 
 The design system should be the source of truth. If you're frequently fighting it with utility conflicts, that's a signal to fix the design system, not paper over it with merge logic.
+
+surface
+
+What a component paints, resolved at render. It imports nothing, so `FILL_SHAPE` can be compiled and run from this one file.
+
+- `resolveFill(value, base)` — the `fill` prop's merge. A value that is exactly one `bg-fill-*` token is returned on its own and replaces `base`; an empty or absent value returns `base`; anything else is dropped with a warning and `base` is returned. It checks the shape only: the registry decides which fills exist.
+- `resolveSurface(name, base)` — the `surface` prop's merge. A known surface name returns its literal `bg-surface-<name>` class from `SURFACE_CLASSES`; an unknown name returns `base`, with no warning.
+- `FILL_SHAPE` — the shape a fill must match.

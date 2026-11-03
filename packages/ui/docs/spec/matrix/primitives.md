@@ -11,6 +11,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `sr-announcer` | a11y | dom | Live-region screen-reader announcements (executor behind the announce effect). | `createAnnouncer`, `announceToScreenReader`, `createPoliteAnnouncer` |
 | `classy` | classes | pure | Tailwind-aware class-string builder with token resolution and arbitrary-value blocking. | `token`, `parseTailwindClass`, `hasArbitraryValue` |
 | `classy-wc` | classes | pure | The classy companion that composes CSS property declarations for WC shadow DOM. | `composeDeclarations`, `styleRule`, `stylesheet` |
+| `surface` | classes | pure | Resolves the fill and surface props to what a component paints; imports nothing. | `FILL_SHAPE`, `SURFACE_CLASSES`, `resolveFill` |
 | `slot` | composition | dom | asChild prop merging: merges parent props onto a child element. | `mergeSlotProps`, `extractSlotProps`, `shouldUseSlot` |
 | `dismissable-layer` | dismissal | dom | Unifies outside-click, escape, and focus-out with a layer stack. | `createDismissableLayer`, `createDismissableLayerStack`, `getDismissableLayerStack` |
 | `escape-keydown` | dismissal | dom | Fires on Escape; returns cleanup. | `onEscapeKeyDown` |

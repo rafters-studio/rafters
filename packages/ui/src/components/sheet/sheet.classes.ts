@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { SheetConfig, SheetSide, SheetState } from './sheet.behavior';
 
 export interface SheetClassSet {
@@ -100,7 +100,7 @@ const closeIconClasses = 'h-5 w-5 @md:h-4 @md:w-4';
  *  performance calls this, so the side (a Content-level decoration prop
  *  mirroring shadcn) and the fill are the arguments the base does not fix. */
 export function sheetContentClasses(side: SheetSide, fill?: string, surface?: string): string {
-  return `${contentBaseClasses} ${classy.fill(fill, classy.surface(surface, contentSurfaceClasses))} ${sheetSideClasses[side]}`;
+  return `${contentBaseClasses} ${resolveFill(fill, resolveSurface(surface, contentSurfaceClasses))} ${sheetSideClasses[side]}`;
 }
 
 /** The side-independent class set. The content class is NOT here: it depends on

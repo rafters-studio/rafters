@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { DatePickerConfig, DatePickerState } from './date-picker.behavior';
 
 export interface DatePickerClassSet {
@@ -102,6 +102,6 @@ export function datePickerClasses(
     icon: iconClasses,
     startIcon: iconWrapperClasses,
     endIcon: iconWrapperClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
   };
 }

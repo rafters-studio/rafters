@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { SelectConfig, SelectState } from './select.behavior';
 
 export interface SelectClassSet {
@@ -200,7 +200,7 @@ export function selectClasses(config: SelectConfig, _state: SelectState): Select
     trigger: triggerClasses,
     value: valueClasses,
     chevron: chevronClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     viewport: viewportClasses,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,

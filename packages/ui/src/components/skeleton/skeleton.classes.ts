@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { SkeletonConfig, SkeletonState } from './skeleton.behavior';
 
 export interface SkeletonClassSet {
@@ -55,6 +55,6 @@ const skeletonSurfaceClasses = 'bg-muted';
 
 export function skeletonClasses(config: SkeletonConfig, _state: SkeletonState): SkeletonClassSet {
   return {
-    root: `${skeletonStructureClasses} ${classy.fill(config.fill, classy.surface(config.surface, skeletonSurfaceClasses))}`,
+    root: `${skeletonStructureClasses} ${resolveFill(config.fill, resolveSurface(config.surface, skeletonSurfaceClasses))}`,
   };
 }

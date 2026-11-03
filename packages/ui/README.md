@@ -111,11 +111,11 @@ props can set it, and one wins:
    base's surface outright, including their `hover:` and `active:` colours.
    Anything else (`bg-red-500`, two classes, an old word such as
    `background`) is dropped with a console warning and the next surface down
-   stands. `classy.fill` does this, in `src/primitives/classy.ts`.
+   stands. `resolveFill` does this, in `src/primitives/surface.ts`.
 2. `variant`, when it is passed. `variant="default"` counts as passed.
 3. `surface` -- a surface name such as `card`, `popover` or `muted`. It renders
    the generated `bg-surface-<name>` utility in place of the base surface. An
-   unknown name is ignored. `classy.surface` does this.
+   unknown name is ignored. `resolveSurface` does this, in the same file.
 4. The component's base surface.
 
 `fill` and `surface` go on the part that is the plane: the root of Alert,

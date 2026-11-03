@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { MenubarConfig, MenubarState } from './menubar.behavior';
 
 export interface MenubarClassSet {
@@ -161,7 +161,7 @@ export function menubarClasses(config: MenubarConfig, _state: MenubarState): Men
   return {
     root: rootClasses,
     trigger: triggerClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     checkboxItem: checkboxItemClasses,
     radioItem: radioItemClasses,

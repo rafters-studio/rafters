@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { AlertConfig, AlertState, AlertVariant } from './alert.behavior';
 
 export interface AlertClassSet {
@@ -72,11 +72,11 @@ export function alertClasses(config: AlertConfig, _state: AlertState): AlertClas
   // variant): an absent variant does not beat surface (FR-RAF-FILL-004).
   const surface =
     config.variant === undefined
-      ? classy.surface(config.surface, variantClasses.default)
+      ? resolveSurface(config.surface, variantClasses.default)
       : variantClasses[config.variant];
   // The class set carries only declared parts (Spec 01: Partial<Record<Part,
   // string>>); the sub-component literals above are the direct imports.
   return {
-    root: `${baseClasses} ${classy.fill(config.fill, surface)}`,
+    root: `${baseClasses} ${resolveFill(config.fill, surface)}`,
   };
 }

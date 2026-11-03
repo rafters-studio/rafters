@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { ContextMenuConfig, ContextMenuState } from './context-menu.behavior';
 
 /**
@@ -247,7 +247,7 @@ export function contextMenuClasses(
 ): ContextMenuClassSet {
   return {
     trigger,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurface))} ${content}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurface))} ${content}`,
     subContent,
     item,
     checkboxItem,

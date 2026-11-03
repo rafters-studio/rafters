@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { ComboboxConfig, ComboboxState } from './combobox.behavior';
 
 export interface ComboboxClassSet {
@@ -167,7 +167,7 @@ export function comboboxClasses(config: ComboboxConfig, _state: ComboboxState): 
     chevron: chevronClasses,
     startIcon: startIconClasses,
     itemStartIcon: itemStartIconClasses,
-    content: `${classy.fill(config.fill, classy.surface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
+    content: `${resolveFill(config.fill, resolveSurface(config.surface, contentSurfaceClasses))} ${contentClasses}`,
     item: itemClasses,
     itemIndicator: itemIndicatorClasses,
     itemText: itemTextClasses,

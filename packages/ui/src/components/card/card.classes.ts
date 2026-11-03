@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import type { CardConfig, CardState } from './card.behavior';
 
 export interface CardClassSet {
@@ -77,6 +77,6 @@ export function cardClasses(config: CardConfig, _state: CardState): CardClassSet
   // the two never coexist -- no reliance on compiled source order to pick a
   // winner. Anything but one bg-fill-* token is dropped and the base stands.
   return {
-    root: `${classy.fill(config.fill, classy.surface(config.surface, cardSurfaceClasses))} ${cardStructureClasses}`,
+    root: `${resolveFill(config.fill, resolveSurface(config.surface, cardSurfaceClasses))} ${cardStructureClasses}`,
   };
 }

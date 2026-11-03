@@ -1,7 +1,7 @@
 /**
- * @primitives classy
+ * @primitives surface
  */
-import classy from '../../primitives/classy';
+import { resolveFill, resolveSurface } from '../../primitives/surface';
 import {
   resolveImage,
   type ImageAlignment,
@@ -122,7 +122,7 @@ export function imageClasses(config: ImageConfig, _state: ImageState): ImageClas
   const frame = [
     imageFrameClasses,
     imageRadiusClasses[radius],
-    classy.fill(config.fill, classy.surface(config.surface)),
+    resolveFill(config.fill, resolveSurface(config.surface)),
   ]
     .filter(Boolean)
     .join(' ');

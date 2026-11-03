@@ -63,8 +63,10 @@ function updateConfig(change: (config: Record<string, unknown>) => void): void {
   writeFileSync(configPath(), `${JSON.stringify(record, null, 2)}\n`, 'utf8');
 }
 
-/** Serve `items` and point the project's config at them. */
-async function serve(items: RegistryItem[]): Promise<void> {
+/** Serve `items`, in place of anything served before, and point the project's config at them. */
+export async function serve(items: RegistryItem[]): Promise<void> {
+  const running = server;
+  if (running) await new Promise<void>((resolve) => running.close(() => resolve()));
   const bodies = new Map(items.map((i) => [`/registry/${FOLDER[i.type]}/${i.name}.json`, i]));
   const started = createServer((req, res) => {
     const body = bodies.get(new URL(req.url ?? '/', 'http://x').pathname);
