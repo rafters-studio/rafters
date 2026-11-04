@@ -66,7 +66,9 @@ hook denies any edit that hand-authors a visual decision.
   overrides.
 
 If you do not know what to build or how it should look, get a design direction
-before writing code. The pre-edit hook WILL block violations. Consult the design
+before writing code. The pre-edit hook WILL block violations. When the project has
+the \`rafters-check\` bin, the hook also runs that check on the file as it would be
+after the edit, and denies an error on a line the edit changes. Consult the design
 system BEFORE writing, not after.
 
 ## MCP tools

@@ -5,6 +5,7 @@
 ### Features
 
 - feat(cli): **`rafters check [root]` runs the project's `rafters-check` bin (#2911).** It runs the bin nearest the root, at or above it, with the same root, prints the bin's stdout and stderr unchanged and exits with its exit code. With no bin, it prints the install command for the project's package manager (`pnpm add -D @rafters/veneer`) to stderr and exits 2, installing nothing. The CLI does not depend on `@rafters/veneer`.
+- feat(plugin): **The pre-edit hook runs `rafters-check` on the edited lines (#2912).** For a `.tsx` or `.astro` file the hook enforces, in a project with the bin, the hook checks the file as it would be after the edit with `rafters-check --stdin`, and denies an `error` finding on a line the edit changes, with the finding's report line in the reason. A finding elsewhere in the file does not deny. Exit 2 neither denies nor allows: the edit goes through the normal permission flow and the agent is told the check could not run and why. Every text rule stays, and a project without the bin behaves as before. The agent contract `rafters agents` writes says so.
 
 ## 0.6.2
 

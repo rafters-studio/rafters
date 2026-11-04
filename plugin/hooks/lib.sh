@@ -24,3 +24,19 @@ find_rafters_root() {
   done
   return 1
 }
+
+# find_check_bin <project-root>
+# The nearest rafters-check bin at or above the root, the same walk as
+# findBin in packages/cli/src/commands/check.ts, so a workspace root's bin
+# serves its packages. Prints the bin's path and returns 0, or returns 1.
+find_check_bin() {
+  local dir="$1"
+  while :; do
+    if [ -e "$dir/node_modules/.bin/rafters-check" ]; then
+      printf '%s\n' "$dir/node_modules/.bin/rafters-check"
+      return 0
+    fi
+    [ "$dir" != "/" ] || return 1
+    dir=$(dirname "$dir")
+  done
+}

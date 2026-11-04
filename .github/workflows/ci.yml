@@ -41,6 +41,15 @@ jobs:
             exit 1
           fi
           echo "Playwright image v$image_version matches @playwright/test $lock_version"
+      # plugin/hooks/pre-edit.sh needs jq and the image has none. --user 1001
+      # rules out apt, so this fetches the release binary and checks its hash.
+      - name: Install jq
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL -o "$RUNNER_TEMP/bin/jq" https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-amd64
+          echo "020468de7539ce70ef1bceaf7cde2e8c4f2ca6c3afb84642aabc5c97d9fc2a0d  $RUNNER_TEMP/bin/jq" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/jq"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - uses: pnpm/action-setup@v6.0.10
       - uses: actions/setup-node@v5
         with:
