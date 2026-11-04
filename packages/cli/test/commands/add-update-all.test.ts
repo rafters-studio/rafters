@@ -238,4 +238,91 @@ describe('rafters add --update-all', () => {
     expect(onDisk).toBe(FRESH_CONTAINER);
     expect(summaryOf(eventsFrom(logSpy)).untracked).toBe(0);
   });
+
+  describe('with an installed component the registry no longer serves (#2899)', () => {
+    async function writeStaleProject(): Promise<void> {
+      // Sorted, the dropped name comes first: it must not stop `container`.
+      await writeProject(baseConfig({ components: ['banner', 'container'] }));
+      await mkdir(join(PROJECT_DIR, 'components/ui'), { recursive: true });
+      await writeFile(join(PROJECT_DIR, 'components/ui/container.tsx'), STALE_CONTAINER);
+    }
+
+    const containerOnDisk = (): Promise<string> =>
+      readFile(join(PROJECT_DIR, 'components/ui/container.tsx'), 'utf-8');
+
+    it('refreshes what is served, names what is not, and exits non-zero', async () => {
+      await writeStaleProject();
+
+      await add([], { updateAll: true, agent: true });
+
+      expect(await containerOnDisk()).toBe(FRESH_CONTAINER);
+      const summary = summaryOf(eventsFrom(logSpy));
+      expect(summary.components).toEqual(['classy', 'container']);
+      expect(summary.notInRegistry).toBe(1);
+      expect(summary.notInRegistryComponents).toEqual(['banner']);
+      expect(process.exitCode).toBe(1);
+      expect((await readConfig()).installed?.components).toEqual(['banner', 'container']);
+    });
+
+    it('refreshes a served component that still declares a need the registry dropped', async () => {
+      await writeProject(baseConfig({ components: ['container'] }));
+      await mkdir(join(PROJECT_DIR, 'components/ui'), { recursive: true });
+      await writeFile(join(PROJECT_DIR, 'components/ui/container.tsx'), STALE_CONTAINER);
+      const needsDropped = {
+        ...containerItem,
+        files: containerItem.files.map((file) => ({
+          ...file,
+          registryDependencies: ['classy', 'dropped'],
+        })),
+      };
+      vi.stubGlobal('fetch', async (input: string | URL) => {
+        const { pathname } = new URL(String(input));
+        const body =
+          pathname === '/registry/components/container.json'
+            ? needsDropped
+            : REGISTRY_BODIES[pathname];
+        if (body === undefined) return new Response('not found', { status: 404 });
+        return new Response(JSON.stringify(body), { status: 200 });
+      });
+
+      await add([], { updateAll: true, agent: true });
+
+      expect(await containerOnDisk()).toBe(FRESH_CONTAINER);
+      const summary = summaryOf(eventsFrom(logSpy));
+      expect(summary.components).toEqual(['classy', 'container']);
+      expect(summary.notInRegistryComponents).toEqual(['dropped']);
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('stops without refreshing on a registry failure that is not a 404', async () => {
+      await writeStaleProject();
+      vi.stubGlobal('fetch', async (input: string | URL) => {
+        const { pathname } = new URL(String(input));
+        if (pathname === '/registry/index.json') {
+          return new Response(JSON.stringify(registryIndex), { status: 200 });
+        }
+        if (pathname.endsWith('/container.json')) return new Response('', { status: 503 });
+        return new Response('not found', { status: 404 });
+      });
+
+      await add([], { updateAll: true, agent: true });
+
+      expect(await containerOnDisk()).toBe(STALE_CONTAINER);
+      expect(eventsFrom(logSpy).some((event) => event.event === 'add:complete')).toBe(false);
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('stops without refreshing when the registry cannot be reached', async () => {
+      await writeStaleProject();
+      vi.stubGlobal('fetch', async () => {
+        throw new TypeError('host not found');
+      });
+
+      await add([], { updateAll: true, agent: true });
+
+      expect(await containerOnDisk()).toBe(STALE_CONTAINER);
+      expect(eventsFrom(logSpy).some((event) => event.event === 'add:complete')).toBe(false);
+      expect(process.exitCode).toBe(1);
+    });
+  });
 });

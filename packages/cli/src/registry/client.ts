@@ -30,6 +30,12 @@ const FETCH_ORDER = Object.keys(REGISTRY_SOURCE) as RegistryItemType[];
 type Fetcher = (name: string) => Promise<RegistryItem>;
 
 /**
+ * The registry answered 404 for this name. Network failures and other statuses
+ * are never this, so a caller can tell a dropped item from an unreachable registry.
+ */
+export class RegistryItemNotFoundError extends Error {}
+
+/**
  * Registry client for fetching registry items.
  */
 export class RegistryClient {
@@ -57,7 +63,7 @@ export class RegistryClient {
 
         const response = await fetch(`${this.baseUrl}/registry/${folder}/${name}.json`);
         if (response.status === 404) {
-          throw new Error(`${label} "${name}" not found`);
+          throw new RegistryItemNotFoundError(`${label} "${name}" not found`);
         }
         if (!response.ok) {
           throw new Error(
@@ -104,11 +110,13 @@ export class RegistryClient {
         return await this.fetchByType[type](name);
       } catch (err) {
         // Absent from this source -> try the next; a real error (network/5xx) aborts.
-        if (err instanceof Error && err.message.includes('not found')) continue;
+        if (err instanceof RegistryItemNotFoundError) continue;
         throw err;
       }
     }
-    throw new Error(`"${name}" not found in registry (component, primitive, composite, or rule)`);
+    throw new RegistryItemNotFoundError(
+      `"${name}" not found in registry (component, primitive, composite, or rule)`,
+    );
   }
 
   /**
@@ -197,22 +205,32 @@ export class RegistryClient {
    * Resolve all dependencies for an item recursively.
    * Returns items in installation order (dependencies first).
    * `needsOf` names what an item needs; by default its item-level list.
+   * With `onNotFound`, a name the registry does not serve is reported to it and
+   * skipped; without it, that name throws. Any other failure always throws.
    */
   async resolveDependencies(
     name: string,
     resolved = new Set<string>(),
     needsOf: (item: RegistryItem) => string[] = (item) =>
       item.registryDependencies ?? item.primitives,
+    onNotFound?: (name: string) => void,
   ): Promise<RegistryItem[]> {
     if (resolved.has(name)) return [];
 
-    const item = await this.fetchItem(name);
+    let item: RegistryItem;
+    try {
+      item = await this.fetchItem(name);
+    } catch (err) {
+      if (!onNotFound || !(err instanceof RegistryItemNotFoundError)) throw err;
+      onNotFound(name);
+      return [];
+    }
     resolved.add(name);
 
     const deps: RegistryItem[] = [];
     for (const dep of needsOf(item)) {
       if (!resolved.has(dep)) {
-        deps.push(...(await this.resolveDependencies(dep, resolved, needsOf)));
+        deps.push(...(await this.resolveDependencies(dep, resolved, needsOf, onNotFound)));
       }
     }
     deps.push(item);

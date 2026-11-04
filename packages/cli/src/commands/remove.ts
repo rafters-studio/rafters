@@ -9,16 +9,20 @@
  * The config records names, not files, so the file set is recomputed the way
  * `add` chose it: each item removed is fetched from the registry and its files
  * are selected for the project's component target and mapped to project paths.
+ * An item the registry no longer serves (a 404, never an unreachable registry)
+ * has its files found on disk instead, and the needs it declared stay installed.
  * What the other installed items still need is read from the JSDoc of the
  * installed files on disk, which `add` copies unchanged, so the registry never
  * has to serve every other installed item.
  */
 
+import type { Dirent } from 'node:fs';
 import { readdir, readFile, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { RegistryClient } from '../registry/client.js';
+import { RegistryClient, RegistryItemNotFoundError } from '../registry/client.js';
 import type { RegistryItem, RegistryItemType } from '../registry/types.js';
 import { resolveComponentTarget } from '../utils/detect.js';
+import { hasEntryFor } from '../utils/reconcile.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
 import {
   declaredNeeds,
@@ -29,23 +33,35 @@ import {
   resolveRegistryUrl,
   saveConfig,
   selectItemFiles,
+  substrateProjectPath,
+  transformPath,
 } from './add.js';
+import type { RaftersConfig } from './init.js';
 
 /** The need tags an installed file's JSDoc carries (#2900). */
 const NEED_TAG = /^\s*\*\s*@(?:components|primitives|hooks|lib)[ \t]+([^\n]*)$/gm;
+
+/** The tag a component's separately importable part file names its owner with. */
+const PARENT_TAG = /@parent[ \t]+([\w-]+)/g;
+
+/** What the project wrote beside an installed file; `add` never writes these. */
+const PROJECT_AUTHORED = /\.(test|spec|stories)\./;
+
+/** A directory's entries, or none when it does not exist. */
+async function entriesOf(path: string): Promise<Dirent[]> {
+  try {
+    return await readdir(path, { withFileTypes: true });
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
 
 /** Every installed file under the install roots, by project path, with the needs it declares. */
 async function declaredOnDisk(cwd: string, roots: string[]): Promise<Map<string, string[]>> {
   const declared = new Map<string, string[]>();
   const walk = async (dir: string): Promise<void> => {
-    let entries: Array<{ name: string; isDirectory: () => boolean }>;
-    try {
-      entries = await readdir(join(cwd, dir), { withFileTypes: true });
-    } catch (err) {
-      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return;
-      throw err;
-    }
-    for (const entry of entries) {
+    for (const entry of await entriesOf(join(cwd, dir))) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) await walk(path);
       else if (/\.(ts|tsx|astro)$/.test(entry.name) && !declared.has(path)) {
@@ -57,6 +73,53 @@ async function declaredOnDisk(cwd: string, roots: string[]): Promise<Map<string,
   };
   for (const root of roots) await walk(relative(cwd, join(cwd, root)));
   return declared;
+}
+
+/**
+ * Remove an item the registry no longer serves. Its files are found in the
+ * directory `add` writes its kind into: the entry named for it (`editor/`),
+ * `<name>.*`, never a bare prefix, and any part file tagged `@parent <name>`.
+ */
+async function removeUnserved(
+  name: string,
+  config: RaftersConfig,
+  installed: NonNullable<RaftersConfig['installed']>,
+  cwd: string,
+): Promise<void> {
+  const buckets: Array<[string[] | undefined, string[]]> = [
+    [installed.components, [transformPath('components/ui/', config, cwd)]],
+    [installed.primitives, [transformPath('lib/primitives/', config, cwd)]],
+    [installed.composites, [transformPath('composites/', config, cwd)]],
+    [installed.rules, [transformPath('rules/', config, cwd)]],
+    [
+      installed.substrate,
+      [substrateProjectPath('hooks', config, cwd), substrateProjectPath('lib', config, cwd)],
+    ],
+  ];
+
+  const removed: string[] = [];
+  for (const [bucket, dirs] of buckets) {
+    const index = bucket?.indexOf(name) ?? -1;
+    if (!bucket || index === -1) continue;
+    bucket.splice(index, 1);
+    for (const dir of dirs) {
+      for (const entry of await entriesOf(join(cwd, dir))) {
+        const path = join(cwd, dir, entry.name);
+        const owned =
+          (hasEntryFor([entry.name], name) && !PROJECT_AUTHORED.test(entry.name)) ||
+          (entry.isFile() &&
+            /\.(ts|tsx|astro|vue|svelte)$/.test(entry.name) &&
+            [...(await readFile(path, 'utf-8')).matchAll(PARENT_TAG)].some((m) => m[1] === name));
+        if (!owned) continue;
+        await rm(path, { recursive: true, force: true });
+        removed.push(join(dir, entry.name));
+      }
+    }
+  }
+  await saveConfig(cwd, config);
+
+  log({ event: 'remove:removed', component: name, files: removed });
+  log({ event: 'remove:complete', components: [name] });
 }
 
 export interface RemoveOptions {
@@ -88,7 +151,15 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
 
   // Grow the removal set until no installed need is left that only the
   // removed items declare. A need the registry cannot serve stays installed.
-  const removing = new Map<string, RegistryItem>([[name, await client.fetchItem(name)]]);
+  let requested: RegistryItem;
+  try {
+    requested = await client.fetchItem(name);
+  } catch (err) {
+    if (!(err instanceof RegistryItemNotFoundError)) throw err;
+    await removeUnserved(name, config, config.installed, cwd);
+    return;
+  }
+  const removing = new Map<string, RegistryItem>([[name, requested]]);
   const unservable = new Set<string>();
   for (;;) {
     const removedPaths = new Set(

@@ -15608,6 +15608,7 @@ const REGISTRY_SOURCE = {
 	}
 };
 const FETCH_ORDER = Object.keys(REGISTRY_SOURCE);
+var RegistryItemNotFoundError = class extends Error {};
 var RegistryClient = class {
 	baseUrl;
 	cache = /* @__PURE__ */ new Map();
@@ -15624,7 +15625,7 @@ var RegistryClient = class {
 			const cached = this.cache.get(cacheKey);
 			if (cached) return cached;
 			const response = await fetch(`${this.baseUrl}/registry/${folder}/${name}.json`);
-			if (response.status === 404) throw new Error(`${label} "${name}" not found`);
+			if (response.status === 404) throw new RegistryItemNotFoundError(`${label} "${name}" not found`);
 			if (!response.ok) throw new Error(`Failed to fetch ${label.toLowerCase()} "${name}": ${response.status} ${response.statusText}`);
 			const item = RegistryItemSchema.parse(await response.json());
 			this.cache.set(cacheKey, item);
@@ -15651,10 +15652,10 @@ var RegistryClient = class {
 		for (const type of FETCH_ORDER) try {
 			return await this.fetchByType[type](name);
 		} catch (err) {
-			if (err instanceof Error && err.message.includes("not found")) continue;
+			if (err instanceof RegistryItemNotFoundError) continue;
 			throw err;
 		}
-		throw new Error(`"${name}" not found in registry (component, primitive, composite, or rule)`);
+		throw new RegistryItemNotFoundError(`"${name}" not found in registry (component, primitive, composite, or rule)`);
 	}
 	async fetchAllItems() {
 		const response = await fetch(`${this.baseUrl}/registry/items.json`);
@@ -15698,12 +15699,19 @@ var RegistryClient = class {
 			return false;
 		}
 	}
-	async resolveDependencies(name, resolved = /* @__PURE__ */ new Set(), needsOf = (item) => item.registryDependencies ?? item.primitives) {
+	async resolveDependencies(name, resolved = /* @__PURE__ */ new Set(), needsOf = (item) => item.registryDependencies ?? item.primitives, onNotFound) {
 		if (resolved.has(name)) return [];
-		const item = await this.fetchItem(name);
+		let item;
+		try {
+			item = await this.fetchItem(name);
+		} catch (err) {
+			if (!onNotFound || !(err instanceof RegistryItemNotFoundError)) throw err;
+			onNotFound(name);
+			return [];
+		}
 		resolved.add(name);
 		const deps = [];
-		for (const dep of needsOf(item)) if (!resolved.has(dep)) deps.push(...await this.resolveDependencies(dep, resolved, needsOf));
+		for (const dep of needsOf(item)) if (!resolved.has(dep)) deps.push(...await this.resolveDependencies(dep, resolved, needsOf, onNotFound));
 		deps.push(item);
 		return deps;
 	}

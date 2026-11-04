@@ -6,6 +6,10 @@
 
 - feat(cli): **`rafters check [root]` runs the project's `rafters-check` bin (#2911).** It runs the bin nearest the root, at or above it, with the same root, prints the bin's stdout and stderr unchanged and exits with its exit code. With no bin, it prints the install command for the project's package manager (`pnpm add -D @rafters/veneer`) to stderr and exits 2, installing nothing. The CLI does not depend on `@rafters/veneer`.
 
+### Fixed
+
+- fix(cli): **`add --update-all` and `remove` handle a component the registry dropped (#2899).** `rafters add --update-all` no longer stops at the first name the registry answers 404 for: it refreshes everything the registry serves, lists the rest in its summary as not in the registry (`notInRegistry` and `notInRegistryComponents` on the `add:complete` event), and exits 1. Any other registry or network failure still stops the run. `rafters remove <name>` on such a component takes its config entry and finds its files on disk, since the registry can no longer list them: in the directory `add` writes that kind into, the entry named for it, `<name>.*`, and part files tagged `@parent <name>`, leaving `*.test.*`, `*.spec.*` and `*.stories.*` alone. The needs it declared stay installed, and a flat family file with no such tag (such as chart's `line.tsx`) stays for you to delete.
+
 ## 0.6.2
 
 ### Fixed

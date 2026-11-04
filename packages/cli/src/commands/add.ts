@@ -958,6 +958,10 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
   const seen = new Set<string>();
   const target = getComponentTarget(config);
   const needsOf = (item: RegistryItem): string[] => declaredNeeds(item, target);
+  // Under --update-all a name the registry no longer serves does not stop the
+  // others from refreshing; it is named in the summary and fails the run.
+  const notInRegistry = new Set<string>();
+  const onNotFound = options.updateAll ? (name: string) => notInRegistry.add(name) : undefined;
 
   for (const itemName of components) {
     try {
@@ -974,7 +978,7 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
           }
         }
       } else {
-        const items = await client.resolveDependencies(itemName, seen, needsOf);
+        const items = await client.resolveDependencies(itemName, seen, needsOf, onNotFound);
         allItems.push(...items);
       }
     } catch (err) {
@@ -1152,17 +1156,19 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
     skipped: skipped.length,
     untracked: untrackedNames.length,
     failed: failed.length,
+    notInRegistry: notInRegistry.size,
     components: written,
     skippedComponents: skipped,
     untrackedComponents: untrackedNames,
     failedComponents: failed,
+    notInRegistryComponents: [...notInRegistry],
   });
 
   // An item that could not be installed is a failed run, not a partial success.
   // Exiting 0 here is what lets a scripted install (CI, a postinstall step, an
   // agent shelling out) treat a half-written tree as done. `add` is only called
   // from the CLI entry point, so nothing long-lived is poisoned by this.
-  if (failed.length > 0) {
+  if (failed.length > 0 || notInRegistry.size > 0) {
     process.exitCode = 1;
   }
 
