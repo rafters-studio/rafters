@@ -47,3 +47,18 @@ Feature: rafters remove command (#2834)
     Then alpha's files and config entry are gone
     And shared is still installed
     And solo is no longer installed
+
+  Scenario Outline: remove keeps a need the project's own file imports (#2917)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And a project where "rafters add alpha" has run
+    And the project wrote "<own file>" importing shared
+    When I run "rafters remove alpha --agent"
+    Then alpha's files and config entry are gone
+    And shared is still installed
+    And solo is no longer installed
+    And the output says shared was kept because "<own file>" imports it
+
+    Examples:
+      | own file                    |
+      | src/components/own.tsx      |
+      | src/components/ui/own.tsx   |

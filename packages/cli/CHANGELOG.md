@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- fix(cli): **`rafters remove` keeps a need the project's own files import (#2917).** It deleted a primitive, hook, lib file or component only the removed item declared, even when a file the project wrote imported it, and reported success with the import broken. Now any file in the project that imports a need, inside the install roots or outside them (relative, or `@/` from the source root), keeps it installed, and the run logs `Kept <need>: <file> imports it`. A need nothing imports and no other installed file declares is still removed. The item named on the command line is removed whether or not the project imports it.
 - fix(cli): **`add --update-all` and `remove` handle a component the registry dropped (#2899).** `rafters add --update-all` no longer stops at the first name the registry answers 404 for: it refreshes everything the registry serves, lists the rest in its summary as not in the registry (`notInRegistry` and `notInRegistryComponents` on the `add:complete` event), and exits 1. Any other registry or network failure still stops the run. `rafters remove <name>` on such a component takes its config entry and finds its files on disk, since the registry can no longer list them: in the directory `add` writes that kind into, the entry named for it, `<name>.*`, and part files tagged `@parent <name>`, leaving `*.test.*`, `*.spec.*` and `*.stories.*` alone. The needs it declared stay installed, and a flat family file with no such tag (such as chart's `line.tsx`) stays for you to delete.
 
 ## 0.6.2

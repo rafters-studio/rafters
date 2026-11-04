@@ -11,6 +11,8 @@
  * are selected for the project's component target and mapped to project paths.
  * An item the registry no longer serves (a 404, never an unreachable registry)
  * has its files found on disk instead, and the needs it declared stay installed.
+ * A need any other file in the project imports stays installed too, whether the
+ * project wrote that file or `add` did, and the run names the need and the file.
  * What the other installed items still need is read from the JSDoc of the
  * installed files on disk, which `add` copies unchanged, so the registry never
  * has to serve every other installed item.
@@ -18,7 +20,7 @@
 
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, rm } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { RegistryClient, RegistryItemNotFoundError } from '../registry/client.js';
 import type { RegistryItem, RegistryItemType } from '../registry/types.js';
 import { resolveComponentTarget } from '../utils/detect.js';
@@ -33,6 +35,7 @@ import {
   resolveRegistryUrl,
   saveConfig,
   selectItemFiles,
+  sourceRootFor,
   substrateProjectPath,
   transformPath,
 } from './add.js';
@@ -46,6 +49,50 @@ const PARENT_TAG = /@parent[ \t]+([\w-]+)/g;
 
 /** What the project wrote beside an installed file; `add` never writes these. */
 const PROJECT_AUTHORED = /\.(test|spec|stories)\./;
+
+/** The files whose imports decide whether a need can go. */
+const SOURCE_FILE = /\.(ts|tsx|js|jsx|mts|mjs|astro|vue|svelte)$/;
+
+/** Directories that hold no project source. */
+const NOT_SOURCE = new Set(['node_modules', 'dist', 'build', 'coverage', 'out']);
+
+/** An import specifier: `from 'x'`, `import 'x'`, `import('x')`. */
+const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*['"]([^'"\n]+)['"]/g;
+
+/** A project path with its extension taken off, the form an import names it in. */
+function withoutExtension(path: string): string {
+  return path.replace(/\.(ts|tsx|js|jsx|mts|mjs|astro|vue|svelte)$/, '');
+}
+
+/**
+ * Every source file in the project, by project path, with the files it imports
+ * (extension off): relative imports, and `@/` imports from the source root.
+ */
+async function importsOnDisk(cwd: string, sourceRoot: string): Promise<Map<string, Set<string>>> {
+  const imports = new Map<string, Set<string>>();
+  const walk = async (dir: string): Promise<void> => {
+    for (const entry of await entriesOf(join(cwd, dir))) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.') && !NOT_SOURCE.has(entry.name)) await walk(path);
+      } else if (SOURCE_FILE.test(entry.name)) {
+        const content = await readFile(join(cwd, path), 'utf-8');
+        const targets = new Set<string>();
+        for (const match of content.matchAll(IMPORT)) {
+          const specifier = match[1] ?? '';
+          if (specifier.startsWith('.')) {
+            targets.add(withoutExtension(join(dirname(path), specifier)));
+          } else if (specifier.startsWith('@/')) {
+            targets.add(withoutExtension(join(sourceRoot, specifier.slice(2))));
+          }
+        }
+        imports.set(path, targets);
+      }
+    }
+  };
+  await walk('');
+  return imports;
+}
 
 /** A directory's entries, or none when it does not exist. */
 async function entriesOf(path: string): Promise<Dirent[]> {
@@ -148,6 +195,7 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
   const target = resolveComponentTarget(config);
   const installedNames = new Set(getInstalledNames(config));
   const onDisk = await declaredOnDisk(cwd, installRoots(config, cwd));
+  const importsOf = await importsOnDisk(cwd, sourceRootFor(config, cwd));
 
   // Grow the removal set until no installed need is left that only the
   // removed items declare. A need the registry cannot serve stays installed.
@@ -160,7 +208,7 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
     return;
   }
   const removing = new Map<string, RegistryItem>([[name, requested]]);
-  const unservable = new Set<string>();
+  const kept = new Set<string>();
   for (;;) {
     const removedPaths = new Set(
       [...removing.values()].flatMap((item) =>
@@ -174,17 +222,30 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
       ...new Set([...removing.values()].flatMap((item) => declaredNeeds(item, target))),
     ].filter(
       (need) =>
-        installedNames.has(need) &&
-        !removing.has(need) &&
-        !unservable.has(need) &&
-        !keptNeeds.has(need),
+        installedNames.has(need) && !removing.has(need) && !kept.has(need) && !keptNeeds.has(need),
     );
     if (unique.length === 0) break;
     for (const need of unique) {
       try {
-        removing.set(need, await client.fetchItem(need));
+        const item = await client.fetchItem(need);
+        const files = selectItemFiles(item, target).map((file) =>
+          withoutExtension(fileProjectPath(file, item, config, cwd)),
+        );
+        const importer = [...importsOf].find(
+          ([path, targets]) => !removedPaths.has(path) && files.some((file) => targets.has(file)),
+        );
+        if (importer) {
+          kept.add(need);
+          log({
+            event: 'remove:warning',
+            component: need,
+            message: `Kept ${need}: ${importer[0]} imports it`,
+          });
+        } else {
+          removing.set(need, item);
+        }
       } catch (err) {
-        unservable.add(need);
+        kept.add(need);
         log({
           event: 'remove:warning',
           component: need,
