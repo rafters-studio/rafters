@@ -61,7 +61,7 @@ const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*['"]([^'"\n]+)['"]/g;
 
 /** A project path with its extension taken off, the form an import names it in. */
 function withoutExtension(path: string): string {
-  return path.replace(/\.(ts|tsx|js|jsx|mts|mjs|astro|vue|svelte)$/, '');
+  return path.replace(SOURCE_FILE, '');
 }
 
 /**
