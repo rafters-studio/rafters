@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **classy only combines classes (#2063).** It flattens arrays, drops falsy
+  inputs (`0` and `''` included), takes the keys of an object whose value is
+  truthy, splits on whitespace and removes exact duplicates. Every class it
+  receives comes out, and it never warns. `createClassy`, `token`,
+  `parseTailwindClass`, `hasArbitraryValue`, the options, and `classy.create`,
+  `classy.token`, `classy.parse` and `classy.hasArbitrary` are gone.
+
+  In React, bracket classes rafters ships now render, so the motion in #2396
+  and #2195 returns: the hide transition on tooltip, hover-card and
+  navigation-menu, width on the sidebar, grid rows and opacity on accordion and
+  collapsible, and the property lists on button, checkbox, input, select, slider,
+  switch, toggle and others. A closed React accordion panel now collapses to zero
+  height (#2529). Astro output does not change: the Astro components that call
+  classy pass it no bracket class rafters ships, and they discard a consumer's
+  `class`.
+
+  A bracket a consumer passes to classy, directly or through a React `className`,
+  now renders until `rafters check` reports it. A bracket in a `.ts` file gets no
+  report: the check does not scan those, so it renders unseen.
+
 - **Fill and surface moved out of classy, to `primitives/surface.ts` (#2910).**
   What a component paints is unchanged. `classy.fill` is now `resolveFill`,
   `classy.surface` is now `resolveSurface`, and `SURFACE_CLASSES` moved with

@@ -1,75 +1,66 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createClassy, classy as defaultClassy, token } from '../../src/primitives/classy';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as classyModule from '../../src/primitives/classy';
+import defaultClassy, { type ClassInput, classy } from '../../src/primitives/classy';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
 describe('classy - basic merging', () => {
   it('merges strings, arrays and objects', () => {
-    const c = defaultClassy;
-    const out = c('btn', ['px-4', { hidden: false }], { active: true });
+    const out = classy('btn', ['px-4', { hidden: false }], { active: true });
     expect(out).toBe('btn px-4 active');
   });
 
   it('deduplicates preserving order', () => {
-    const c = defaultClassy;
-    const out = c('a b', 'b c', ['a', 'd']);
+    const out = classy('a b', 'b c', ['a', 'd']);
     expect(out).toBe('a b c d');
   });
-});
 
-describe('classy - token resolution', () => {
-  it('resolves token refs via tokenMap', () => {
-    const tokenMap = (k: string) => {
-      if (k === 'spacing.4') return 'p-4';
-      if (k === 'color.surface') return 'bg-surface';
-      return null;
-    };
-
-    const c = createClassy({ tokenMap });
-    const out = c('btn', token('spacing.4'), { 'is-open': true }, token('color.surface'));
-    expect(out).toBe('btn p-4 is-open bg-surface');
+  it('passes layout utilities through', () => {
+    expect(classy('flex', 'gap-4', 'p-4', 'bg-primary')).toBe('flex gap-4 p-4 bg-primary');
   });
 
-  it('warns on unknown token', () => {
-    const spy = vi.fn();
-    const c = createClassy({ tokenMap: (_k) => null, warn: spy });
-    const out = c(token('unknown.token'), 'ok');
-    expect(out).toBe('ok');
-    expect(spy).toHaveBeenCalled();
+  it('keeps grid-cols-menu-row', () => {
+    expect(classy('grid grid-cols-menu-row')).toBe('grid grid-cols-menu-row');
   });
 });
 
-describe('classy - bracket blocking', () => {
-  it('skips bracket classes by default and warns', () => {
-    const spy = vi.fn();
-    const c = createClassy({ warn: spy });
-    const out = c('a', 'w-[10px]', { b: true });
-    expect(out).toBe('a b');
-    expect(spy).toHaveBeenCalled();
-  });
+// @criterion-1
+describe('classy only combines', () => {
+  const examples: Array<{ inputs: ClassInput[]; output: string }> = [
+    { inputs: ['a b', 'b c'], output: 'a b c' },
+    { inputs: ['a', false, null, undefined, ['b', 'c']], output: 'a b c' },
+    { inputs: [{ a: true, b: false }], output: 'a' },
+    { inputs: ['p-2', 'p-4'], output: 'p-2 p-4' },
+    {
+      inputs: ['w-[3px]', 'md:transition-[width]'],
+      output: 'w-[3px] md:transition-[width]',
+    },
+  ];
 
-  it('allows bracket classes when configured', () => {
-    const c = createClassy({ allowArbitrary: true });
-    const out = c('a', 'w-[10px]', 'a');
-    expect(out).toBe('a w-[10px]');
-  });
+  for (const nodeEnv of ['development', 'production']) {
+    for (const { inputs, output } of examples) {
+      it(`${nodeEnv}: returns "${output}" with no warning`, () => {
+        vi.stubEnv('NODE_ENV', nodeEnv);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(classy(...inputs)).toBe(output);
+        expect(warn).not.toHaveBeenCalled();
+      });
+    }
+  }
 });
 
-describe('classy - layout utilities pass through', () => {
-  it('passes layout utilities through silently', () => {
-    const spy = vi.fn();
-    const c = createClassy({ warn: spy });
-    const out = c('flex', 'gap-4', 'p-4', 'bg-primary');
-    expect(out).toBe('flex gap-4 p-4 bg-primary');
-    expect(spy).not.toHaveBeenCalled();
+describe('classy exports', () => {
+  it('exports only classy, as default and by name', () => {
+    expect(Object.keys(classyModule).sort()).toEqual(['classy', 'default']);
+    expect(defaultClassy).toBe(classy);
   });
-});
 
-describe('classy - named grid track utility', () => {
-  it('keeps grid-cols-menu-row and drops the arbitrary track list it replaces', () => {
-    const spy = vi.fn();
-    const c = createClassy({ warn: spy });
-    expect(c('grid grid-cols-menu-row')).toBe('grid grid-cols-menu-row');
-    expect(spy).not.toHaveBeenCalled();
-    expect(c('grid grid-cols-[auto_auto_1fr_auto]')).toBe('grid');
-    expect(spy).toHaveBeenCalledTimes(1);
+  it('carries no create, token, parse or hasArbitrary', () => {
+    for (const name of ['create', 'token', 'parse', 'hasArbitrary']) {
+      expect(classy).not.toHaveProperty(name);
+    }
   });
 });

@@ -42,12 +42,7 @@ cleanup();
 
 Class helper
 
-This package provides `classy`, a lean class builder with:
-
-- Deterministic `cn`-like merging
-- Automatic deduplication
-- Blocks Tailwind arbitrary bracket syntax by default (enforces design tokens)
-- Optional token resolution via `tokenMap`
+This package provides `classy`, which combines classes and does nothing else. It flattens arrays, drops falsy inputs, takes the keys of an object whose value is truthy, splits on whitespace, removes exact duplicates keeping first position, and joins with one space. Every class it receives comes out, in development and in production, and it never warns.
 
 ```ts
 import classy from './classy';
@@ -58,15 +53,11 @@ classy('flex items-center', isActive && 'bg-primary');
 // With conditionals
 classy('btn', { 'btn-disabled': disabled, 'btn-loading': loading });
 
-// Blocks arbitrary values by default
-classy('w-[100px]'); // warns and skips
+// Exact duplicates go; everything else stays
+classy('a b', 'b c'); // 'a b c'
 ```
 
-API
-
-- `classy(...inputs)` — default instance (no tokenMap, arbitrary classes blocked)
-- `createClassy({ tokenMap, allowArbitrary, warn })` — create custom instance
-- `token(key)` — mark token references for resolution
+Bracket values are reported by `rafters check`, not by `classy`.
 
 Why no tailwind-merge?
 

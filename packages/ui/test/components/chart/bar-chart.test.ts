@@ -22,7 +22,7 @@ import {
   resolveBarFillClass,
 } from '../../../src/components/chart/bar-chart.classes';
 import type { ChartConfig } from '../../../src/components/chart/chart.behavior';
-import { hasArbitraryValue } from '../../../src/primitives/classy';
+import { hasArbitraryValue } from './has-arbitrary-value';
 import { bandScale, linearScale } from '../../../src/primitives/graph';
 
 /**
@@ -438,7 +438,7 @@ describe('motion: matrix declaration (#2225 AC4; BehaviorSpec.motion is spec-res
 describe('barChartClasses', () => {
   // Hex/var() literals only -- NOT a bare `[...]` scan, which would also flag
   // a legitimate variant like `data-[state=visible]:` (a Tailwind ARBITRARY
-  // VARIANT selector, not an arbitrary VALUE). `hasArbitraryValue` (classy.ts)
+  // VARIANT selector, not an arbitrary VALUE). `hasArbitraryValue`
   // already draws that exact line: arbitrary in the utility position only.
   const FORBIDDEN_LITERAL = /#[0-9a-f]{3,8}\b|var\(--/i;
   const classes = barChartClasses({ layout: 'vertical' }, barChart.initialState(baseConfig));
@@ -458,7 +458,7 @@ describe('barChartClasses', () => {
     }
   });
 
-  it('emits no arbitrary-value utility (classy.ts hasArbitraryValue)', () => {
+  it('emits no arbitrary-value utility (hasArbitraryValue)', () => {
     for (const value of Object.values(classes)) {
       for (const cls of value.split(/\s+/).filter(Boolean)) {
         expect(hasArbitraryValue(cls), cls).toBe(false);
