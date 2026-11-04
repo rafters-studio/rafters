@@ -79,11 +79,13 @@ pnpm dlx rafters add --overwrite      # Replace existing files
 
 Each component carries embedded design intelligence (cognitive load, accessibility, do/never guidance, variant patterns). Dependencies resolve automatically.
 
-`--update <names...>` re-fetches named components from the registry; `--update-all` re-fetches every installed one; `--registry-url <url>` points at another registry.
+`--update <names...>` re-fetches named components from the registry; `--update-all` re-fetches every installed one; `--registry-url <url>` points at another registry. When the registry no longer serves an installed component, `--update-all` refreshes the others, names it in its summary as not in the registry, and exits non-zero; any other registry or network failure stops the run.
 
 ### `rafters remove <name>`
 
 Remove one installed item: deletes the files `rafters add` installed for it and takes it off the `installed` list in `.rafters/config.rafters.json`. Items it depended on stay installed. A name that is not installed fails and changes nothing. Outputs are not regenerated, and emptied folders are left in place.
+
+An item the registry no longer serves can still be removed. Its files are found on disk, in the folder `rafters add` writes that kind into: the entry named for it, `<name>.*` (except `*.test.*`, `*.spec.*` and `*.stories.*`), and part files tagged `@parent <name>`. A flat family file with no such tag stays for you to delete.
 
 ```bash
 pnpm dlx rafters remove dialog

@@ -80,3 +80,12 @@ Feature: rafters add command
     Then the command should succeed
     And rafters add wrote no file for slot or use-memory
     And no file rafters add wrote imports react
+
+  Scenario: add --update-all refreshes what the registry serves and names what it does not (#2899)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And a project where "rafters add alpha beta" has run
+    And the registry no longer serves beta
+    And alpha's files have gone stale
+    When I run "rafters add --update-all"
+    Then the command exits non-zero naming beta as not in the registry
+    And alpha's files are fresh again

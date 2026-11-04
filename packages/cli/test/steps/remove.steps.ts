@@ -8,7 +8,7 @@
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
@@ -76,6 +76,26 @@ Given('an initialised project without {word} installed', async ({}, name: string
   state.files = await snapshot(context.fixturePath);
   state.config = readFileSync(configPath(), 'utf8');
 });
+
+const STALE = '// stale';
+
+Given("{word}'s files have gone stale", async ({}, name: string) => {
+  for (const file of filesFor(name)) writeFileSync(join(context.fixturePath, file), STALE, 'utf8');
+});
+
+Then("{word}'s files are fresh again", async ({}, name: string) => {
+  for (const file of filesFor(name)) {
+    expect(readFileSync(join(context.fixturePath, file), 'utf8'), file).not.toBe(STALE);
+  }
+});
+
+Then(
+  'the command exits non-zero naming {word} as not in the registry',
+  async ({}, name: string) => {
+    expect(context.commandResult?.exitCode).not.toBe(0);
+    expect(context.commandResult?.stdout).toContain(`Not in the registry: 1 -- ${name}`);
+  },
+);
 
 Then('none of the files rafters add installed for {word} exist', async ({}, name: string) => {
   for (const file of filesFor(name)) {

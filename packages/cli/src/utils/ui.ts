@@ -273,14 +273,19 @@ export function log(event: Record<string, unknown>): void {
       const skippedCount = event.skipped as number;
       const untrackedCount = event.untracked as number;
       const failedCount = event.failed as number;
+      const notInRegistryCount = event.notInRegistry as number;
       // The headline is the only thing a scrolling reader takes in. Succeeding
       // unconditionally is the same defect the per-outcome lines below exist to
       // fix: honest counts under a green tick still read as a clean run.
       const headline = `Wrote ${written} item${written !== 1 ? 's' : ''}`;
-      if (failedCount > 0) {
+      if (failedCount > 0 || notInRegistryCount > 0) {
         // No claim about the exit code here -- the renderer does not set it and
         // must not assert what it cannot see. add() owns that.
-        context.spinner?.fail(`${headline}, ${failedCount} failed -- see below`);
+        const outcomes = [
+          ...(failedCount > 0 ? [`${failedCount} failed`] : []),
+          ...(notInRegistryCount > 0 ? [`${notInRegistryCount} not in the registry`] : []),
+        ];
+        context.spinner?.fail(`${headline}, ${outcomes.join(', ')} -- see below`);
       } else {
         context.spinner?.succeed(headline);
       }
@@ -297,6 +302,10 @@ export function log(event: Record<string, unknown>): void {
       if (failedCount > 0) {
         const names = (event.failedComponents as string[] | undefined) ?? [];
         console.log(`  Failed: ${failedCount} -- ${names.join(', ')}`);
+      }
+      if (notInRegistryCount > 0) {
+        const names = (event.notInRegistryComponents as string[] | undefined) ?? [];
+        console.log(`  Not in the registry: ${notInRegistryCount} -- ${names.join(', ')}`);
       }
       console.log('');
       break;
