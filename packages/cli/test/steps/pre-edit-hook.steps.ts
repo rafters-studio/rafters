@@ -99,6 +99,8 @@ function hookOutput(): {
 } {
   const stdout = context.commandResult?.stdout ?? '';
   expect(context.commandResult?.exitCode, context.commandResult?.stderr).toBe(0);
+  // Without jq the hook exits 0 with no output, which reads as "does not deny".
+  expect(context.commandResult?.stderr).toBe('');
   if (stdout === '') return {};
   return JSON.parse(stdout).hookSpecificOutput;
 }
