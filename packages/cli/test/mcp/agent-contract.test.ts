@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { generateAgentContract, liveToolNames } from '../../src/mcp/agent-contract.js';
 import { TOOL_DEFINITIONS } from '../../src/mcp/tools.js';
+import { VERSION } from '../../src/version.js';
 
 const REPO_ROOT = join(import.meta.dirname, '../../../..');
 
@@ -43,6 +44,14 @@ describe('generateAgentContract', () => {
     // string. Assert the prohibition sentence actually names rafters@latest.
     expect(contract).toMatch(/Do NOT use[\s\S]*?pnpx rafters@latest/);
     expect(contract).toContain('npx rafters@latest');
+  });
+
+  it('gives a pinned command for a project where rafters is not a dependency', () => {
+    const contract = generateAgentContract();
+    expect(contract).toContain(`pnpm dlx rafters@${VERSION} mcp`);
+    expect(contract).toMatch(/not a dependency[\s\S]*?pnpm dlx rafters@\d/);
+    // The unversioned form is named only as forbidden, never offered as a step.
+    expect(contract).not.toMatch(/^- .*pnpm dlx rafters(?!@\d)/m);
   });
 });
 

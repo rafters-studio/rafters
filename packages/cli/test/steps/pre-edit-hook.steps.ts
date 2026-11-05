@@ -54,15 +54,24 @@ process.stdout.write('1 error\\n');
 process.exitCode = 1;
 `;
 
+/** A type error with its cause on an indented line, a help line, and the summary. */
+const TYPE_ERROR_STUB = `#!/usr/bin/env node
+process.stdout.write("src/pages/k.astro:2:1 error ts(2322) Type '{}' is not assignable to type 'Props'.\\n");
+process.stdout.write("  Property 'id' is missing in type '{}' but required in type 'Props'.\\n");
+process.stdout.write('  help: src/pages/k.astro:2:1 error rafters(help) fix the type\\n');
+process.stdout.write('1 problem\\n');
+process.exitCode = 1;
+`;
+
 const COULD_NOT_RUN_STUB = `#!/usr/bin/env node
 process.stderr.write('no config at the root\\n');
 process.exitCode = 2;
 `;
 
-async function createProject(stub: string | null): Promise<void> {
+async function createProject(stub: string | null, config = '{}'): Promise<void> {
   context.fixturePath = await mkdtemp(join(tmpdir(), 'rafters-fixture-hook-'));
   await mkdir(join(context.fixturePath, '.rafters'));
-  await writeFile(join(context.fixturePath, '.rafters/config.rafters.json'), '{}\n');
+  await writeFile(join(context.fixturePath, '.rafters/config.rafters.json'), `${config}\n`);
   await mkdir(join(context.fixturePath, 'src/pages'), { recursive: true });
   if (stub !== null) {
     const binDir = join(context.fixturePath, 'node_modules/.bin');
@@ -91,6 +100,16 @@ const write = (path: string, content: string): Promise<void> => runHook('Write',
 
 const edit = (oldString: string, newString: string, replaceAll = false): Promise<void> =>
   runHook('Edit', PAGE, { old_string: oldString, new_string: newString, replace_all: replaceAll });
+
+const CLASSES_FILE = 'src/components/hs-card.classes.ts';
+const CLASSES_BRACKET = "export const gap = 'gap-[3px]';";
+
+/** A classes file with `lines` at the given 1-based line numbers and clean text elsewhere. */
+function classesWith(lines: Record<number, string>): string {
+  const file: string[] = [];
+  for (let n = 1; n <= 12; n++) file.push(lines[n] ?? `export const clean${n} = ${n};`);
+  return `${file.join('\n')}\n`;
+}
 
 function hookOutput(): {
   permissionDecision?: string;
@@ -138,6 +157,26 @@ Given('a project whose rafters-check reports a warning and a help line on line 3
   await createProject(NON_ERROR_STUB);
 });
 
+Given('a project whose rafters-check reports a type error with a cause on line 2', async () => {
+  await createProject(TYPE_ERROR_STUB);
+});
+
+Given(
+  'a project with the rafters-check bin and src\\/components\\/hs-card.classes.ts holding a bracket value on line 3',
+  async () => {
+    await createProject(REPORTING_STUB);
+    await mkdir(join(context.fixturePath, 'src/components'), { recursive: true });
+    await writeFile(join(context.fixturePath, CLASSES_FILE), classesWith({ 3: CLASSES_BRACKET }));
+  },
+);
+
+Given('a project whose config names src\\/components\\/ui and src\\/lib\\/primitives', async () => {
+  await createProject(
+    null,
+    '{"componentsPath":"src/components/ui","primitivesPath":["./src/lib/primitives/"]}',
+  );
+});
+
 Given('a project whose rafters-check exits 2', async () => {
   await createProject(COULD_NOT_RUN_STUB);
   await writeFile(join(context.fixturePath, PAGE), pageWith({}));
@@ -181,6 +220,60 @@ When('an agent makes a clean edit', async () => {
   await edit('<p>clean 9</p>', '<p>still clean</p>');
 });
 
+When('an agent makes an Edit of the classes file on line 3 to keep it', async () => {
+  await runHook('Edit', CLASSES_FILE, {
+    old_string: CLASSES_BRACKET,
+    new_string: "export const gap = 'gap-[4px]';",
+  });
+});
+
+When('an agent makes an Edit of the classes file on line 9 with clean text', async () => {
+  await runHook('Edit', CLASSES_FILE, {
+    old_string: 'export const clean9 = 9;',
+    new_string: 'export const clean9 = 90;',
+  });
+});
+
+When('an agent makes a Write of the classes file with a bracket', async () => {
+  await write(CLASSES_FILE, `${CLASSES_BRACKET}\n`);
+});
+
+When('an agent edits {word}', async ({}, file: string) => {
+  await runHook('Edit', file, { old_string: 'a', new_string: 'b' });
+});
+
+When(
+  'an agent writes src\\/pages\\/{word} with a link whose text says the grid',
+  async ({}, file: string) => {
+    await write(`src/pages/${file}`, '<a class="hs-link">the grid</a>\n');
+  },
+);
+
+When('an agent writes src\\/pages\\/{word} with class="hs-grid"', async ({}, file: string) => {
+  await write(`src/pages/${file}`, '<section class="hs-grid">h</section>\n');
+});
+
+When(
+  'an agent writes src\\/components\\/{word} with a p holding class="text-sm"',
+  async ({}, file: string) => {
+    await write(`src/components/${file}`, '<p class="text-sm">note</p>\n');
+  },
+);
+
+When(
+  'an agent writes src\\/pages\\/{word} with a p holding class="text-sm"',
+  async ({}, file: string) => {
+    await write(`src/pages/${file}`, '<p class="text-sm">note</p>\n');
+  },
+);
+
+When(
+  'an agent writes src\\/pages\\/{word} with class="flex p-4 text-sm"',
+  async ({}, file: string) => {
+    await write(`src/pages/${file}`, '<section class="flex p-4 text-sm">j</section>\n');
+  },
+);
+
 When(
   'an agent writes src\\/pages\\/{word} with Card fill="bg-fill-glass extra"',
   async ({}, file: string) => {
@@ -217,6 +310,36 @@ Then('the hook denies, naming its line', async () => {
 
 Then('the hook denies, naming rafters\\({word})', async ({}, code: string) => {
   expect(denyReason()).toContain(`rafters(${code})`);
+});
+
+Then('the hook denies with INSTALLED FILES', async () => {
+  expect(denyReason()).toContain('INSTALLED FILES ARE READ-ONLY');
+});
+
+Then('the hook denies with THE SYSTEM OWNS TYPOGRAPHY', async () => {
+  expect(denyReason()).toContain('THE SYSTEM OWNS TYPOGRAPHY');
+});
+
+Then('the denial holds no backslash-n', async () => {
+  expect(denyReason()).not.toContain('\\n');
+});
+
+Then('the denial has a line for each reason', async () => {
+  const reasons = denyReason().split('\n');
+  expect(reasons.filter((line) => line.length > 0)).toHaveLength(3);
+  expect(reasons).toHaveLength(3);
+});
+
+Then('the denial holds {string}', async ({}, text: string) => {
+  expect(denyReason()).toContain(text);
+});
+
+Then('the denial holds no help line', async () => {
+  expect(denyReason()).not.toContain('help:');
+});
+
+Then('the hook denies, naming ts\\(2322)', async () => {
+  expect(denyReason()).toContain('error ts(2322)');
 });
 
 Then('the hook denies with LAYOUT IS SOLVED', async () => {

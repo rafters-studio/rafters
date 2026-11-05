@@ -1,4 +1,4 @@
-Feature: rafters check runs the project's rafters-check bin (#2911)
+Feature: rafters check runs the project's rafters-check bin (#2911, #2932)
 
   @criterion-1
   Scenario Outline: the bin's result is the command's result
@@ -33,3 +33,12 @@ Feature: rafters check runs the project's rafters-check bin (#2911)
     Given a workspace whose root holds the rafters-check bin and whose package does not
     When I run "rafters check" in the package
     Then the root's bin runs
+
+  @criterion-root
+  Scenario: a root that does not exist
+    Given a pnpm project with no rafters-check bin
+    When I run "rafters check /no/such/dir"
+    Then stderr holds "/no/such/dir does not exist or is not a directory"
+    And stderr does not hold "not installed"
+    And the exit code is 2
+    And no file has changed
