@@ -54,7 +54,7 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 | Part | Presence | ARIA |
 | --- | --- | --- |
 | root | always | `data-state`, `data-disabled` (when disabled) |
-| trigger | always | `aria-expanded`, `aria-controls` (only while content is in the DOM), `data-state`, `data-disabled` (when disabled) |
+| trigger | always | `aria-expanded`, `aria-controls` (only while open), `data-state`, `data-disabled` (when disabled) |
 | content | always | `data-state`, `data-disabled` (when disabled), `inert` (while closed) |
 
 The trigger's `aria-expanded` + `aria-controls` is the complete WAI-ARIA

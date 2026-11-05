@@ -7,7 +7,7 @@
  */
 import * as React from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { commands, userEvent } from 'vitest/browser';
+import { cdp, commands, userEvent } from 'vitest/browser';
 import { cleanup, render } from 'vitest-browser-react';
 import {
   Collapsible,
@@ -145,6 +145,31 @@ describe('collapsible content motion [react]', () => {
       </Collapsible>,
     );
     expectClosed(part('content'));
+  });
+});
+
+describe('collapsible content motion [reduced motion]', () => {
+  afterEach(async () => {
+    await cdp().send('Emulation.setEmulatedMedia', { features: [] });
+  });
+
+  it('prefers-reduced-motion: reduce computes the content durations to 0s', async () => {
+    await render(
+      <Collapsible>
+        <CollapsibleTrigger>t</CollapsibleTrigger>
+        <CollapsibleContent>
+          <div style={{ height: 72 }}>x</div>
+        </CollapsibleContent>
+      </Collapsible>,
+    );
+    const content = part('content');
+    expect(timing(content).duration).not.toBe('0s');
+    await cdp().send('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+    });
+    expect(timing(content).duration).toBe('0s');
+    await userEvent.click(part('trigger'));
+    expect(timing(content).duration).toBe('0s');
   });
 });
 
