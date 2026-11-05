@@ -6,6 +6,10 @@
 
 - feat(cli): **`rafters init` adds `@rafters/veneer` to the project's devDependencies (#2933).** Every init that succeeds (fresh, `--rebuild`, `--reset`, with any flag) installs it with the project's package manager, so `rafters check` finds its `rafters-check` bin. A project that already declares it in any dependency field keeps its version and nothing is reinstalled. A run that refuses installs nothing. If the install fails, init's files stay written and the output names the command to run (`--agent` reports an `init:veneer_install_failed` event). The CLI itself still does not depend on `@rafters/veneer`.
 
+### Fixed
+
+- fix(ui): **Collapsible content now animates (#2924).** The content played no reveal or fade because it was unmounted (React) or `hidden` (React `forceMount`, Astro), and `display: none` stops a transition. Closed content is now in the DOM in React, as accordion's panels are: it carries `inert`, not `hidden`, and has a height of 0px, so it stays out of the tab order and the accessibility tree. `forceMount` is kept and changes nothing. Code that expected no content element while closed, or read `hidden`, should read `inert` instead.
+
 ## 0.7.0
 
 ### Features

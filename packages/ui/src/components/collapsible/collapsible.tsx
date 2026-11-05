@@ -212,28 +212,24 @@ export function CollapsibleTrigger({
 CollapsibleTrigger.displayName = 'CollapsibleTrigger';
 
 export interface CollapsibleContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Keep the content mounted while closed (hidden + data-state=closed). */
+  /** Closed content is always mounted and inert, so this changes nothing; kept so existing callers still compile. */
   forceMount?: boolean;
   /** Render as the child element (polymorphic). */
   asChild?: boolean;
 }
 
 export function CollapsibleContent({
-  forceMount,
+  forceMount: _forceMount,
   asChild,
   className,
   children,
   ...props
 }: CollapsibleContentProps) {
-  const { effectiveOpen, ids, aria, classes } = useCollapsibleContext('CollapsibleContent');
-
-  if (!(forceMount || effectiveOpen)) return null;
+  const { ids, aria, classes } = useCollapsibleContext('CollapsibleContent');
 
   const partProps = {
     'data-part': 'content',
     id: ids.content || undefined,
-    // A force-mounted closed region must stay inert and out of the tab order.
-    hidden: effectiveOpen ? undefined : true,
     className: classy(classes.content, className),
     ...aria.content,
   };
