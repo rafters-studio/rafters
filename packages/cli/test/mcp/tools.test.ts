@@ -84,6 +84,20 @@ describe('rafters_describe dispatch', () => {
     expect(JSON.parse((none.content[0] as { text: string }).text)).toHaveProperty('kinds');
   });
 
+  it('lists real composites in describe(composites), without the composites runtime', async () => {
+    const items = [
+      node('composites', 'composite'),
+      node('heading', 'composite'),
+      node('list', 'composite'),
+    ];
+    const { handler } = fixtureHandler([], null, items);
+    const result = await handler.handleToolCall('rafters_describe', { address: 'composites' });
+    const roster = JSON.parse((result.content[0] as { text: string }).text) as Array<{
+      id: string;
+    }>;
+    expect(roster.map((entry) => entry.id)).toEqual(['heading', 'list']);
+  });
+
   it('does not write wiring to a project named only by its absolute path', async () => {
     const root = await mkdtemp(join(tmpdir(), 'rafters-clone-'));
     await mkdir(join(root, '.rafters'));
@@ -332,6 +346,37 @@ describe('deprecated aliases', () => {
     });
     expect(matchSpy).not.toHaveBeenCalled();
     matchSpy.mockRestore();
+  });
+
+  it('rafters_pattern finds a composite supplied only as a served manifest', async () => {
+    const solves = 'a problem only the served fixture manifest solves';
+    const served: RegistryItem = {
+      ...node('served-fixture', 'composite'),
+      files: [
+        {
+          path: 'composites/served-fixture.composite.json',
+          dependencies: [],
+          content: JSON.stringify({
+            manifest: {
+              id: 'served-fixture',
+              name: 'Served Fixture',
+              category: 'typography',
+              description: 'Fixture served by the registry, on no disk the server can read.',
+              keywords: ['fixture'],
+              cognitiveLoad: 1,
+              solves,
+            },
+            input: [],
+            output: [],
+            blocks: [{ id: '1', type: 'heading', content: 'Heading' }],
+          }),
+        },
+      ],
+    };
+    const { handler } = fixtureHandler([], null, [...FIXTURE, served]);
+    const result = await handler.handleToolCall('rafters_pattern', { solves });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.patterns.map((p: { id: string }) => p.id)).toEqual(['served-fixture']);
   });
 
   it('rafters_composite query search surfaces per-block rules (blockRules coverage)', async () => {
