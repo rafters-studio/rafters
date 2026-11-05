@@ -26,7 +26,7 @@ export function applySplit(
   blocks: BaseBlock[],
   op: Extract<StructuralOp, { kind: 'split' }>,
 ): OpResult {
-  const { blockId, offset, newBlockId } = op;
+  const { blockId, offset, newBlockId, newType } = op;
   const block = blocks.find((b) => b.id === blockId);
   if (!block) throw new Error(`applySplit: block "${blockId}" not found`);
   const total = blockContentToText(block.content).length;
@@ -36,7 +36,7 @@ export function applySplit(
     );
   }
 
-  const result = splitBlock(blocks, blockId, offset, newBlockId);
+  const result = splitBlock(blocks, blockId, offset, newBlockId, newType);
 
   return {
     blocks: result.blocks,

@@ -56,12 +56,36 @@ describe('splitBlock', () => {
     expect(result.blocks[2].content).toBe('');
   });
 
-  it('heading split creates text block', () => {
+  it('a heading split in the middle clones the heading, level included', () => {
     const result = splitBlock(blocks, 'h1', 2, 'new-4');
-    expect(result.blocks[0].type).toBe('heading');
-    expect(result.blocks[0].content).toBe('Ti');
-    expect(result.blocks[1].type).toBe('text');
-    expect(result.blocks[1].content).toBe('tle');
+    expect(result.blocks[0]).toEqual({
+      id: 'h1',
+      type: 'heading',
+      content: 'Ti',
+      meta: { level: 1 },
+    });
+    expect(result.blocks[1]).toEqual({
+      id: 'new-4',
+      type: 'heading',
+      content: 'tle',
+      meta: { level: 1 },
+    });
+  });
+
+  it('a heading split at its end gives an empty paragraph with no meta', () => {
+    const result = splitBlock(blocks, 'h1', 5, 'new-8');
+    expect(result.blocks[0]).toEqual(blocks[0]);
+    expect(result.blocks[1]).toEqual({ id: 'new-8', type: 'text', content: '' });
+  });
+
+  it('a caller-named type wins and carries no meta', () => {
+    const result = splitBlock(blocks, 'h1', 2, 'new-9', 'text');
+    expect(result.blocks[1]).toEqual({ id: 'new-9', type: 'text', content: 'tle' });
+  });
+
+  it('the clone does not share the meta object with the split block', () => {
+    const result = splitBlock(blocks, 'h1', 2, 'new-10');
+    expect(result.blocks[1].meta).not.toBe(result.blocks[0].meta);
   });
 
   it('returns unchanged if block not found', () => {
@@ -252,6 +276,30 @@ describe('insertBlocksAt', () => {
     expect(result.blocks.length).toBeGreaterThan(blocks.length + newBlocks.length - 1);
     expect(result.lastInsertedId).toBe('n2');
     expect(result.blocks.some((b) => b.id === 'p1-split')).toBe(true);
+  });
+
+  it("inserting into the middle of a paragraph leaves the paragraph's tail as a paragraph", () => {
+    const result = insertBlocksAt(blocks, newBlocks, 'p1', 5, 'p1-split');
+    expect(result.blocks.map((b) => b.id)).toEqual([
+      'h1',
+      'p1',
+      'n1',
+      'n2',
+      'p1-split',
+      'p2',
+      'q1',
+    ]);
+    expect(result.blocks[4]).toEqual({ id: 'p1-split', type: 'text', content: ' world' });
+  });
+
+  it("inserting into the middle of a heading leaves the heading's tail as a heading", () => {
+    const result = insertBlocksAt(blocks, newBlocks, 'h1', 2, 'h1-split');
+    expect(result.blocks[3]).toEqual({
+      id: 'h1-split',
+      type: 'heading',
+      content: 'tle',
+      meta: { level: 1 },
+    });
   });
 
   it('throws when the middle-of-block branch is reached without a splitBlockId', () => {
