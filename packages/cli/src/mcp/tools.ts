@@ -377,7 +377,7 @@ export const TOOL_DEFINITIONS = [
     name: 'rafters_pattern',
     description:
       '[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. ' +
-      'Search by what the pattern solves (e.g., "page sections", "prose", "citations") to ' +
+      "Search by what the pattern solves (a word from a composite's solves or appliesWhen) to " +
       'get do/never rules, cognitive load, and designer intent.',
     inputSchema: {
       type: 'object' as const,

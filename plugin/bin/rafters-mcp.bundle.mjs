@@ -16661,10 +16661,16 @@ function describeWithOverlay(addr, graph, ctx) {
 	const result = describe(addr, graph, ctx.target);
 	if (addr === "components" || addr === "composites") {
 		const set = addr === "components" ? ctx.installed.components : ctx.installed.composites;
-		return result.map((entry) => ({
+		const served = result.map((entry) => ({
 			id: entry.id,
 			presence: presenceOf(set, entry.id)
 		}));
+		if (addr === "components") return served;
+		const own = [...set].filter((id) => !graph.nodes.has(id));
+		return [...served, ...own.map((id) => ({
+			id,
+			presence: "installed"
+		}))];
 	}
 	if (addr !== "" && !addr.includes(".") && isNodeResult(result)) return {
 		...result,
@@ -16879,7 +16885,7 @@ const TOOL_DEFINITIONS = [
 	},
 	{
 		name: "rafters_pattern",
-		description: "[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. Search by what the pattern solves (e.g., \"page sections\", \"prose\", \"citations\") to get do/never rules, cognitive load, and designer intent.",
+		description: "[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. Search by what the pattern solves (a word from a composite's solves or appliesWhen) to get do/never rules, cognitive load, and designer intent.",
 		inputSchema: {
 			type: "object",
 			properties: {
