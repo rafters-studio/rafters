@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Features
+
+- feat(cli): **`rafters init` adds `@rafters/veneer` to the project's devDependencies (#2933).** Every init that succeeds (fresh, `--rebuild`, `--reset`, with any flag) installs it with the project's package manager, so `rafters check` finds its `rafters-check` bin. A project that already declares it in any dependency field keeps its version and nothing is reinstalled. A run that refuses installs nothing. If the install fails, init's files stay written and the output names the command to run (`--agent` reports an `init:veneer_install_failed` event). The CLI itself still does not depend on `@rafters/veneer`.
+
 ## 0.7.0
 
 ### Features
