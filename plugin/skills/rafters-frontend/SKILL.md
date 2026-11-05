@@ -50,23 +50,20 @@ you are busy picking hex values, and they are squarely what you are good at.
 
 ## Cognitive load is your instrument
 
-`.rafters/config.rafters.json` carries two designer-set constraints. Read them
-before you write anything.
+`.rafters/config.rafters.json` carries the designer's `intent` -- the project's
+declared personality (elegant company, tech product, zine). Read it before you
+write anything. It narrows which composite and which density fit; a zine and a
+banking app solve "landing page" differently. Match it, never substitute your own.
 
-- `intent` -- the project's declared personality (elegant company, tech product,
-  zine). Narrows which composite and which density fit; a zine and a banking app
-  solve "landing page" differently. Match it, never substitute your own.
-- `attentionBudget` -- how much attention this project spends on a screen. Every
-  component and composite carries a cognitive-load score, and the sum of what you
-  place must stay inside it.
+Every component and composite also carries a cognitive-load score, and
+`describe(<id>)` returns it. Add up what you place on one screen. When the sum
+is more than a reader holds at once, you cut **content** -- never styling. Drop
+it, defer it, split the page, or choose a leaner composite. A screen being too
+busy is a real finding and the system is allowed to say so. This is the main
+lever you have; using it well is the job.
 
-Over budget, you cut **content** -- never styling. Drop it, defer it, split the
-page, or choose a leaner composite. A screen being too busy is a real finding and
-the system is allowed to say so. This is the main lever you have; using it well
-is the job.
-
-If either field is absent, proceed with what the manifest gives you. Do not
-invent values.
+If `intent` is absent, proceed with what the manifest gives you. Do not invent
+a value.
 
 ## The MCP
 
@@ -107,30 +104,48 @@ hand-build what step 2 already solved.
 
 ## Layout
 
-`Container` and `Grid`. Not a `div` with a class string.
+`Container` and `Grid`. Not a `div` with a class string. In an Astro project:
 
-```tsx
+```astro
+---
+import Card from "@/components/ui/card.astro";
+import Container from "@/components/ui/container.astro";
+import Grid from "@/components/ui/grid.astro";
+---
 <Container as="main">
   <Container as="section">
     <h2>Section title</h2>
-    <Grid preset="cards"><Card>...</Card><Card>...</Card></Grid>
+    <Grid preset="linear" columns={3}><Card>...</Card><Card>...</Card></Grid>
   </Container>
 </Container>
 ```
 
+In a React project the same parts are named exports:
+
+```tsx
+import { Card } from '@/components/ui/card';
+import { Container } from '@/components/ui/container';
+import { Grid } from '@/components/ui/grid';
+
+export function Cards() {
+  return (
+    <Container as="main">
+      <Container as="section">
+        <h2>Section title</h2>
+        <Grid preset="linear" columns={3}><Card>...</Card><Card>...</Card></Grid>
+      </Container>
+    </Container>
+  );
+}
+```
+
 Container owns max-width, padding, and gap. Grid owns columns and column gap.
 
-| preset | for |
+| `preset` | for |
 |---|---|
-| linear | equal-priority columns |
-| golden | hierarchical (2:1) |
-| bento | asymmetric showcase |
-| cards | responsive card flow |
-| split | equal columns |
-| sidebar | sidebar + main |
-| form | label/input pairs |
-| row | horizontal group |
-| stack | vertical sequence |
+| `linear` (default) | equal-priority columns, set with `columns` |
+| `golden` | hierarchical (2:1) |
+| `bento` | asymmetric showcase, set with `pattern` |
 
 ## Surfaces and fills
 
@@ -186,19 +201,23 @@ past a pattern to a raw value.
 | `<div className="...">` wrapping `<Button>`/`<Card>`/`<Input>` | nothing -- they carry their own spacing | |
 | `cn(...)` / `twMerge(...)` | `classy(...)` | |
 | `var(--rafters-*)` | never -- the exporter wires these | |
-| editing `lib/primitives/` or `components/ui/*.classes.ts` | fix your code, or file upstream | (installed by `rafters add`) |
+| editing any file under `componentsPath` or `primitivesPath` in `.rafters/config.rafters.json` (`src/components/ui/`, `src/lib/primitives/`) | fix your code, or file upstream | (installed by `rafters add`) |
 
 ## Authoring a custom component
 
 Only when rafters does not ship the affordance. It goes in `src/components/` --
-not `src/components/ui/`, which is rafters-installed and read-only.
+not in `componentsPath` (`src/components/ui/`), which is rafters-installed and
+read-only. A component's `.classes.ts` file is yours too, and holds its class
+strings.
 
 Here the rules invert, and for a reason: you are **building** a pattern rather
 than consuming one, so you are the one applying tokens to a purpose. Write class
-strings, use `classy()` for conditional merging, reference semantic tokens.
+strings, on any element (`<p class="text-sm">` is fine), use `classy()` for
+conditional merging, reference semantic tokens. `classy` is the primitive
+`rafters add` installed in `primitivesPath`; import it from there.
 
 ```tsx
-import { classy } from '@rafters/ui/classy';
+import classy from '@/lib/primitives/classy';
 import type { ReactNode } from 'react';
 
 /** Compact feature card. @cognitive-load 2/10 @accessibility AAA */
@@ -211,15 +230,23 @@ export function FeatureTile({ highlighted, children }: { highlighted?: boolean; 
 }
 ```
 
-Still banned even here: `var(--rafters-*)`, arbitrary values, `cn()`/`twMerge()`.
-Assembly code gets none of these relaxations.
+In an Astro component the same call sits in the markup:
+`<div class={classy('rounded-lg p-6', 'bg-card text-foreground')}>`.
+
+Still banned even here, and the hook and `rafters check` reject them:
+`var(--rafters-*)`, arbitrary values (`w-[300px]`, `gap-[3px]`, `bg-[#fff]`),
+`cn()`/`twMerge()`, `class`/`className` on a rafters component, and a `div`
+wrapping a rafters component. Assembly code gets none of these relaxations.
 
 ## Before you finish
 
 1. Did you solve the cognitive problem, or only render the request? Name what the
    screen asks the reader to hold.
-2. Does the composition fit `attentionBudget`? If you went over, you cut content
-   -- not styling.
+2. Did you keep what you placed within what a reader holds at once? If not, you
+   cut content -- not styling.
 3. Does every choice match the recorded `intent` rather than your own taste?
 4. Does every visible thing trace to a composite, a component, or native HTML
    inside `<Container as="article">`?
+5. Run `rafters check` from the project root, and fix what it reports. It exits 0
+   clean, 1 with findings, and 2 when it could not run -- say so rather than
+   calling the work checked.

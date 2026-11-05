@@ -1,3 +1,4 @@
+import { VERSION } from '../version.js';
 import { TOOL_DEFINITIONS } from './tools.js';
 
 /**
@@ -79,16 +80,18 @@ ${roster}
 
 ## Running the rafters MCP server
 
-Non-Claude-Code hosts wire the server manually. Invoke the \`rafters\` binary that
-is installed in your project, through your package manager:
+Non-Claude-Code hosts wire the server manually. Use the form that matches your
+project, and always a version your project can name:
 
-- \`pnpm exec rafters mcp\`
-- \`npx rafters mcp\`
-- \`yarn rafters mcp\`
+- rafters is a dependency of your project: invoke the copy pinned in your own
+  lockfile through your package manager: \`pnpm exec rafters mcp\`,
+  \`npx rafters mcp\` or \`yarn rafters mcp\`.
+- rafters is not a dependency of your project: run a pinned release,
+  \`pnpm dlx rafters@${VERSION} mcp\` or \`npx rafters@${VERSION} mcp\`.
 
-Run the copy pinned in your own lockfile. Do NOT use \`pnpx rafters@latest\`,
-\`npx rafters@latest\`, \`pnpm dlx rafters\`, or any \`@latest\` pin: these resolve
-outside your lockfile and can drift from the version your project installed --
-the exact staleness that strands you on an old rafters after a new one ships.
+Do NOT use \`pnpx rafters@latest\`, \`npx rafters@latest\`, \`pnpm dlx rafters\`
+with no version, or any \`@latest\` pin: these resolve outside your lockfile and
+can drift from the version your project installed -- the exact staleness that
+strands you on an old rafters after a new one ships.
 `;
 }

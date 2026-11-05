@@ -1,5 +1,11 @@
 # rafters
 
+## Unreleased
+
+### Fixed
+
+- fix(plugin): **The hook, the skill and the contract match the check and how rafters is used (#2932).** The pre-edit hook now runs `rafters-check` on an own `.classes.ts` file as well as `.tsx` and `.astro`, and denies a bracket on an edited line. Every file under the project's `componentsPath` and `primitivesPath` is read-only, not just `*.classes.ts`. Utilities are read only from the class-bearing text (`class=`, `className=`, `classy(...)`), so prose such as `<a class="hs-link">the grid</a>` is no longer a class, and `hs-grid` or `inline-flex` is judged as the whole name it is. A raw `<p class="text-sm">` is allowed in an own component, as the skill says. A denial has real line breaks instead of a literal `\n`, and keeps a finding's cause lines, so a `ts(2322)` denial carries `Property 'id' is missing`. The agent contract gives `pnpm dlx rafters@<version> mcp` for a project where rafters is not a dependency. `SKILL.md` imports `classy` from the project's primitives, lists the Grid presets the Grid has (`linear`, `golden`, `bento`), names no `attentionBudget`, and ends by telling the agent to run `rafters check`. At session start the plugin says when it is older than the version on the npm registry. `rafters check` on a root that does not exist says so, and exits 2.
+
 ## 0.7.0
 
 ### Features
