@@ -145,6 +145,20 @@ Given('the project wrote {string} importing {word}', async ({}, path: string, ne
   writeFileSync(file, `import '@/lib/primitives/${need}';\nexport const own = null;\n`, 'utf8');
 });
 
+Given(
+  'the project wrote {string} with the line {string}',
+  async ({}, path: string, line: string) => {
+    const file = join(context.fixturePath, path);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${line}\nexport const own = null;\n`, 'utf8');
+  },
+);
+
+Given('tsconfig.json maps {string} to {string}', async ({}, alias: string, target: string) => {
+  const config = `{\n  // the project's own alias\n  "compilerOptions": {\n    "paths": { "${alias}": ["${target}"], },\n  },\n}\n`;
+  writeFileSync(join(context.fixturePath, 'tsconfig.json'), config, 'utf8');
+});
+
 Then(
   'the output says {word} was kept because {string} imports it',
   async ({}, need: string, path: string) => {

@@ -124,6 +124,29 @@ Given(
   },
 );
 
+Given(
+  'a registry where {word} declares the primitives {word} and {word} and {word} imports {word}',
+  async ({}, owner: string, first: string, second: string, importer: string, imported: string) => {
+    await serve([
+      item(owner, 'ui', [
+        file(`components/ui/${owner}.tsx`, `export const ${owner} = null;\n`, {
+          primitives: [first, second],
+        }),
+      ]),
+      item(importer, 'primitive', [
+        file(`lib/primitives/${importer}.ts`, `import './${imported}';\nexport {};\n`),
+      ]),
+      item(imported, 'primitive', [file(`lib/primitives/${imported}.ts`, 'export {};\n')]),
+    ]);
+  },
+);
+
+Given('the primitive {word} is served as a directory', async ({}, name: string) => {
+  const served1 = [...served.values()].find((i) => i.name === name);
+  expect(served1).toBeDefined();
+  for (const f of served1?.files ?? []) f.path = f.path.replace(/\.ts$/, '/index.ts');
+});
+
 Given('the registry no longer serves {word}', async ({}, name: string) => {
   const key = [...served.keys()].find((path) => path.endsWith(`/${name}.json`));
   expect(key).toBeDefined();

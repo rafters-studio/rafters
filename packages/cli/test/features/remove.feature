@@ -62,3 +62,31 @@ Feature: rafters remove command (#2834)
       | own file                    |
       | src/components/own.tsx      |
       | src/components/ui/own.tsx   |
+
+  Scenario: remove takes a need that only another removed need imports (#2917)
+    Given a registry where alpha declares the primitives shared and solo and solo imports shared
+    And a project where "rafters add alpha" has run
+    When I run "rafters remove alpha --agent"
+    Then alpha's files and config entry are gone
+    And solo is no longer installed
+    And shared is no longer installed
+
+  Scenario: remove keeps a need the project imports as a directory (#2917)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And the primitive shared is served as a directory
+    And a project where "rafters add alpha" has run
+    And the project wrote "src/components/own.tsx" with the line "import '@/lib/primitives/shared';"
+    When I run "rafters remove alpha --agent"
+    Then alpha's files and config entry are gone
+    And shared is still installed
+    And solo is no longer installed
+
+  Scenario: remove keeps a need the project imports through a tsconfig alias (#2917)
+    Given a registry where alpha and beta both declare the primitive shared and only alpha declares the primitive solo
+    And a project where "rafters add alpha" has run
+    And tsconfig.json maps "@prims/*" to "lib/primitives/*"
+    And the project wrote "src/components/own.tsx" with the line "import '@prims/shared';"
+    When I run "rafters remove alpha --agent"
+    Then alpha's files and config entry are gone
+    And shared is still installed
+    And solo is no longer installed

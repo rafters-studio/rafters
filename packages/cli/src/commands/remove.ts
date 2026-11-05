@@ -25,6 +25,7 @@ import { RegistryClient, RegistryItemNotFoundError } from '../registry/client.js
 import type { RegistryItem, RegistryItemType } from '../registry/types.js';
 import { resolveComponentTarget } from '../utils/detect.js';
 import { hasEntryFor } from '../utils/reconcile.js';
+import { importAliases } from '../utils/ts-aliases.js';
 import { error, log, setAgentMode } from '../utils/ui.js';
 import {
   declaredNeeds,
@@ -65,10 +66,21 @@ function withoutExtension(path: string): string {
 }
 
 /**
+ * The names an import can use for a file: its path without the extension, and
+ * for an `index` file also its directory (`@/lib/x` for `lib/x/index.ts`).
+ */
+function importNames(path: string): string[] {
+  const stem = withoutExtension(path);
+  return stem.endsWith('/index') ? [stem, dirname(stem)] : [stem];
+}
+
+/**
  * Every source file in the project, by project path, with the files it imports
- * (extension off): relative imports, and `@/` imports from the source root.
+ * (extension off): relative imports, `@/` imports from the source root, and
+ * imports through the project's tsconfig `paths` and `baseUrl`.
  */
 async function importsOnDisk(cwd: string, sourceRoot: string): Promise<Map<string, Set<string>>> {
+  const aliased = await importAliases(cwd);
   const imports = new Map<string, Set<string>>();
   const walk = async (dir: string): Promise<void> => {
     for (const entry of await entriesOf(join(cwd, dir))) {
@@ -82,8 +94,11 @@ async function importsOnDisk(cwd: string, sourceRoot: string): Promise<Map<strin
           const specifier = match[1] ?? '';
           if (specifier.startsWith('.')) {
             targets.add(withoutExtension(join(dirname(path), specifier)));
-          } else if (specifier.startsWith('@/')) {
-            targets.add(withoutExtension(join(sourceRoot, specifier.slice(2))));
+          } else {
+            if (specifier.startsWith('@/')) {
+              targets.add(withoutExtension(join(sourceRoot, specifier.slice(2))));
+            }
+            for (const target of aliased(specifier)) targets.add(withoutExtension(target));
           }
         }
         imports.set(path, targets);
@@ -225,25 +240,10 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
         installedNames.has(need) && !removing.has(need) && !kept.has(need) && !keptNeeds.has(need),
     );
     if (unique.length === 0) break;
+    const candidates = new Map<string, RegistryItem>();
     for (const need of unique) {
       try {
-        const item = await client.fetchItem(need);
-        const files = selectItemFiles(item, target).map((file) =>
-          withoutExtension(fileProjectPath(file, item, config, cwd)),
-        );
-        const importer = [...importsOf].find(
-          ([path, targets]) => !removedPaths.has(path) && files.some((file) => targets.has(file)),
-        );
-        if (importer) {
-          kept.add(need);
-          log({
-            event: 'remove:warning',
-            component: need,
-            message: `Kept ${need}: ${importer[0]} imports it`,
-          });
-        } else {
-          removing.set(need, item);
-        }
+        candidates.set(need, await client.fetchItem(need));
       } catch (err) {
         kept.add(need);
         log({
@@ -253,6 +253,36 @@ export async function remove(name: string, options: RemoveOptions): Promise<void
         });
       }
     }
+    // A candidate stays when a file that is not going is importing it; one
+    // kept this way is not going either, so repeat until none changes.
+    for (let changed = true; changed; ) {
+      changed = false;
+      const going = new Set(removedPaths);
+      const pathsOf = new Map<string, string[]>();
+      for (const [need, item] of candidates) {
+        const paths = selectItemFiles(item, target).map((file) =>
+          fileProjectPath(file, item, config, cwd),
+        );
+        pathsOf.set(need, paths);
+        for (const path of paths) going.add(path);
+      }
+      for (const [need, paths] of pathsOf) {
+        const names = paths.flatMap(importNames);
+        const importer = [...importsOf].find(
+          ([path, targets]) => !going.has(path) && names.some((name) => targets.has(name)),
+        );
+        if (!importer) continue;
+        candidates.delete(need);
+        kept.add(need);
+        changed = true;
+        log({
+          event: 'remove:warning',
+          component: need,
+          message: `Kept ${need}: ${importer[0]} imports it`,
+        });
+      }
+    }
+    for (const [need, item] of candidates) removing.set(need, item);
   }
 
   const installed = config.installed;
