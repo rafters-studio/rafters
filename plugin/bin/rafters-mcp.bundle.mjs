@@ -16980,7 +16980,7 @@ var RaftersToolHandler = class {
 	}
 	async updateWorkspaceConfig(workspaceName, patch) {
 		const resolved = this.resolve(workspaceName);
-		if (!resolved) return this.workspaceRequiredError();
+		if (!resolved || !this.workspaces.some((w) => w.root === resolved.root)) return this.workspaceRequiredError();
 		const studioKeys = STUDIO_OWNED_KEYS.filter((k) => k in patch);
 		if (studioKeys.length > 0) return this.errorResult(`${studioKeys.join(", ")} ${studioKeys.length > 1 ? "are" : "is"} a designer decision owned by Rafters Studio, not the MCP. Set ${studioKeys.length > 1 ? "them" : "it"} in Studio.`);
 		const addKeys = ADD_MANAGED_KEYS.filter((k) => k in patch);

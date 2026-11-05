@@ -579,8 +579,9 @@ export class RaftersToolHandler {
     patch: Record<string, unknown>,
   ): Promise<CallToolResult> {
     const resolved = this.resolve(workspaceName);
-    if (!resolved) {
-      // A write needs a concrete target -- when none resolves, list the options.
+    // A write needs a concrete target the session discovered. An absolute path can name any
+    // project on the machine, which is fine to read and is not a target for an agent's write.
+    if (!resolved || !this.workspaces.some((w) => w.root === resolved.root)) {
       return this.workspaceRequiredError();
     }
 

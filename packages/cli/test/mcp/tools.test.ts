@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerComposite } from '@rafters/composites';
@@ -82,6 +82,24 @@ describe('rafters_describe dispatch', () => {
     const empty = await handler.handleToolCall('rafters_describe', { address: '' });
     expect(none).toEqual(empty);
     expect(JSON.parse((none.content[0] as { text: string }).text)).toHaveProperty('kinds');
+  });
+
+  it('does not write wiring to a project named only by its absolute path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rafters-clone-'));
+    await mkdir(join(root, '.rafters'));
+    const configPath = join(root, '.rafters', 'config.rafters.json');
+    const config = JSON.stringify({ componentTarget: 'astro' });
+    await writeFile(configPath, config);
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      workspace: root,
+      componentTarget: 'react',
+    });
+    expect(JSON.parse((result.content[0] as { text: string }).text).error).toBe(
+      'workspace parameter required',
+    );
+    expect(await readFile(configPath, 'utf-8')).toBe(config);
+    await rm(root, { recursive: true });
   });
 
   it('serves the project at an absolute path as the workspace', async () => {

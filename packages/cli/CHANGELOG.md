@@ -8,8 +8,8 @@
 - fix(mcp): **`rafters_describe` with no address returns the surface**, the same answer as `{"address":""}`, instead of `-32603`.
 - fix(mcp): **`describe(composites)` lists composites, and leaves out the runtime.** `rafters_composite` and `rafters_pattern` read the composites the registry serves rather than `node_modules` under the server's cwd, which a project does not have. The registry serves the four typography composites again: it was reading a directory that no longer exists. The roster shows them once the registry deploys.
 - fix(mcp): **The natural-language example in the `rafters_describe` description answers.** The intent door keyed `modal`, which the registry does not serve; it now keys `dialog`. The `rafters_pattern` description's examples are ones the served composites solve.
-- fix(mcp): **`workspace` accepts the absolute path of a project.** The default workspace is the directory the server started in, and changing directory does not move it. An agent in another clone or worktree passes that path, and the call serves the project holding it.
-- fix(cli): **`rafters add` writes a sibling `.astro` import where the file installs.** `context-menu.astro` imported `@/components/ui/context-menu/context-menu-sub.astro`, a path `add` never writes, so the Astro build failed.
+- fix(mcp): **`workspace` accepts the absolute path of a project.** The default workspace is the directory the server started in, and changing directory does not move it. An agent in another clone or worktree passes that path, and the call serves the project holding it. A wiring write still takes only a workspace the session discovered.
+- fix(cli): **`rafters add` writes an import of a part the item serves where that part installs.** `context-menu.astro` imported `@/components/ui/context-menu/context-menu-sub.astro` and `area-chart.tsx` imported `@/components/ui/area-chart/chart`, paths `add` never writes, so the Astro build failed on one and `tsc` on the other.
 
 ## 0.7.0
 

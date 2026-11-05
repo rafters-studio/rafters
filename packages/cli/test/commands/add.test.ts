@@ -237,15 +237,20 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     expect(out).toContain("from '@/components/ui/editor/ops/content'");
   });
 
-  it('keeps a sibling .astro part flat, where it installs', () => {
+  it('keeps a part the item serves flat, where it installs', () => {
     const out = transformFileContent(
-      `import ContextMenuSub from './context-menu-sub.astro';`,
+      `import Sub from './context-menu-sub.astro';\nimport { Chart } from './chart';\nimport { x } from './editor-history';`,
       null,
       'component',
       '/proj',
-      { installPath: 'components/ui/context-menu.astro' },
+      {
+        installPath: 'components/ui/area-chart.tsx',
+        itemPaths: ['components/ui/context-menu-sub.astro', 'components/ui/chart.tsx'],
+      },
     );
     expect(out).toContain("from '@/components/ui/context-menu-sub.astro'");
+    expect(out).toContain("from '@/components/ui/chart'");
+    expect(out).toContain("from '@/components/ui/area-chart/editor-history'");
   });
 
   it('keeps shared-suffix ./imports flat from a main component file', () => {
