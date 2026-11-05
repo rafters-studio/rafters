@@ -237,6 +237,17 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     expect(out).toContain("from '@/components/ui/editor/ops/content'");
   });
 
+  it('keeps a sibling .astro part flat, where it installs', () => {
+    const out = transformFileContent(
+      `import ContextMenuSub from './context-menu-sub.astro';`,
+      null,
+      'component',
+      '/proj',
+      { installPath: 'components/ui/context-menu.astro' },
+    );
+    expect(out).toContain("from '@/components/ui/context-menu-sub.astro'");
+  });
+
   it('keeps shared-suffix ./imports flat from a main component file', () => {
     const out = transformFileContent(
       `import { editorClasses } from './editor.classes';`,

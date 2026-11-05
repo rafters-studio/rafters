@@ -151,11 +151,10 @@ function getCompositesPath(): string {
   // RAFTERS_COMPOSITES_DIR lets a test point composite discovery at a fixtures
   // dir. It feeds BOTH listCompositeNames (the composite node set) and the
   // reverse index below, so #2072's assembleGraph invariant (every composesWith
-  // edge names a real composite node) holds by construction. Unset in
-  // production -> the real dir, which today does not exist -> ENOENT -> [].
+  // edge names a real composite node) holds by construction.
   const override = process.env['RAFTERS_COMPOSITES_DIR'];
   if (override) return override;
-  return join(process.cwd(), '../../packages/ui/src/composites');
+  return join(process.cwd(), '../../packages/composites/src/typography');
 }
 
 /**

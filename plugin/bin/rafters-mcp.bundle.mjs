@@ -15926,8 +15926,370 @@ function pickDefaultWorkspace(workspaces, startDir = process.cwd()) {
 	return null;
 }
 function resolveWorkspace(workspaces, defaultWorkspace, name) {
+	if (name && isAbsolute(name)) {
+		const root = discoverProjectRoot(name);
+		return root ? {
+			name: basename(root),
+			root
+		} : null;
+	}
 	if (name) return workspaces.find((ws) => ws.name === name) ?? null;
 	return defaultWorkspace;
+}
+//#endregion
+//#region src/mcp/facets.ts
+const OPENERS = "{[(<";
+const CLOSERS = "}])>";
+const STRING_LITERAL = /^'([^'\n]*)'$|^"([^"\n]*)"$/;
+const NUMERIC = /^-?\d+(\.\d+)?$/;
+function stripComments(source) {
+	let out = "";
+	for (let i = 0; i < source.length; i++) {
+		const ch = source.charAt(i);
+		const next = source.charAt(i + 1);
+		if (ch === "'" || ch === "\"" || ch === "`") {
+			let end = i + 1;
+			while (end < source.length && source.charAt(end) !== ch) {
+				if (ch !== "`" && source.charAt(end) === "\n") break;
+				end += source.charAt(end) === "\\" ? 2 : 1;
+			}
+			out += source.slice(i, end + 1);
+			i = end;
+		} else if (ch === "/" && next === "/") {
+			while (i < source.length && source.charAt(i) !== "\n") i++;
+			out += "\n";
+		} else if (ch === "/" && next === "*") {
+			const end = source.indexOf("*/", i + 2);
+			i = end === -1 ? source.length : end + 1;
+		} else out += ch;
+	}
+	return out;
+}
+function scan(text, start, visit) {
+	let depth = 0;
+	let i = start;
+	while (i < text.length) {
+		const ch = text.charAt(i);
+		if (ch === "'" || ch === "\"" || ch === "`") {
+			const close = text.indexOf(ch, i + 1);
+			i = close === -1 ? text.length : close + 1;
+			continue;
+		}
+		if (CLOSERS.includes(ch) && !(ch === ">" && text.charAt(i - 1) === "=")) depth--;
+		if (visit(i, depth)) return i;
+		if (OPENERS.includes(ch)) depth++;
+		i++;
+	}
+	return text.length;
+}
+function splitTop(text, separator) {
+	const pieces = [];
+	let from = 0;
+	scan(text, 0, (i, depth) => {
+		if (depth === 0 && text.charAt(i) === separator) {
+			pieces.push(text.slice(from, i));
+			from = i + 1;
+		}
+		return false;
+	});
+	pieces.push(text.slice(from));
+	return pieces.map((piece) => piece.trim()).filter((piece) => piece.length > 0);
+}
+function bracketBody(text, open) {
+	const close = scan(text, open, (i, depth) => i > open && depth === 0);
+	return text.slice(open + 1, close);
+}
+function literalsIn(text) {
+	return [...text.matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)].map((m) => m[1] ?? m[2] ?? "");
+}
+function declarationsIn(source) {
+	const found = /* @__PURE__ */ new Map();
+	for (const m of source.matchAll(/\binterface\s+(\w+)\s*(?:<[^{]*?>)?\s*(extends\b)?/g)) {
+		const name = m[1];
+		if (!name || found.has(name)) continue;
+		const headEnd = m.index + m[0].length;
+		const open = scan(source, headEnd, (i, depth) => depth === 0 && source.charAt(i) === "{");
+		found.set(name, {
+			kind: "interface",
+			bases: m[2] ? splitTop(source.slice(headEnd, open), ",") : [],
+			body: bracketBody(source, open)
+		});
+	}
+	for (const m of source.matchAll(/\btype\s+(\w+)\s*(?:<[^=]*?>)?\s*=/g)) {
+		const name = m[1];
+		if (!name || found.has(name)) continue;
+		const from = m.index + m[0].length;
+		const end = scan(source, from, (i, depth) => depth === 0 && source.charAt(i) === ";");
+		found.set(name, {
+			kind: "alias",
+			expr: source.slice(from, end).trim()
+		});
+	}
+	for (const m of source.matchAll(/\bconst\s+(\w+)\s*=\s*\[([^\]]*)\]\s*as\s+const/g)) {
+		const name = m[1];
+		if (!name || found.has(name)) continue;
+		const values = splitTop(m[2] ?? "", ",").map((entry) => entry.replace(/^['"]|['"]$/g, ""));
+		found.set(name, {
+			kind: "values",
+			values
+		});
+	}
+	for (const m of source.matchAll(/\bconst\s+(\w+)\s*=\s*\{/g)) {
+		const name = m[1];
+		if (!name || found.has(name)) continue;
+		const keys = splitTop(bracketBody(source, m.index + m[0].length - 1), ",").map((entry) => entry.match(/^['"]?([\w-]+)['"]?\s*:/)?.[1]);
+		found.set(name, {
+			kind: "values",
+			values: keys.filter((key) => key !== void 0)
+		});
+	}
+	return found;
+}
+function membersOfBody(body) {
+	const members = /* @__PURE__ */ new Map();
+	for (const entry of splitTop(body, ";")) {
+		const prop = entry.match(/^(?:readonly\s+)?(?:'([^']+)'|"([^"]+)"|([\w$]+))(\?)?\s*(:|\()/);
+		const name = prop?.[1] ?? prop?.[2] ?? prop?.[3];
+		if (!prop || !name) continue;
+		const typeExpr = prop[5] === ":" ? entry.slice(prop[0].length).trim() : "() => void";
+		members.set(name, {
+			optional: prop[4] === "?",
+			typeExpr
+		});
+	}
+	return members;
+}
+function mergeUnion(arms) {
+	const merged = /* @__PURE__ */ new Map();
+	for (const arm of arms) for (const [name, member] of arm) {
+		const inAll = arms.every((other) => other.has(name));
+		const requiredInAll = arms.every((other) => other.get(name)?.optional === false);
+		const earlier = merged.get(name);
+		merged.set(name, {
+			typeExpr: earlier ? `${earlier.typeExpr} | ${member.typeExpr}` : member.typeExpr,
+			optional: !inAll || !requiredInAll
+		});
+	}
+	return merged;
+}
+function membersOf(expr, lookup, seen) {
+	const text = expr.trim();
+	const union = splitTop(text, "|");
+	if (union.length > 1) return mergeUnion(union.map((arm) => membersOf(arm, lookup, seen)));
+	const intersection = splitTop(text, "&");
+	if (intersection.length > 1) {
+		const merged = /* @__PURE__ */ new Map();
+		for (const part of intersection) for (const [name, member] of membersOf(part, lookup, seen)) if (!merged.has(name)) merged.set(name, member);
+		return merged;
+	}
+	if (text.startsWith("(") && text.endsWith(")")) return membersOf(text.slice(1, -1), lookup, seen);
+	if (text.startsWith("{")) return membersOfBody(bracketBody(text, 0));
+	const generic = text.match(/^(\w+)\s*</);
+	if (generic?.[1] && generic.index === 0) {
+		const args = splitTop(bracketBody(text, generic[0].length - 1), ",");
+		const inner = args[0] ? membersOf(args[0], lookup, seen) : /* @__PURE__ */ new Map();
+		const keys = literalsIn(args[1] ?? "");
+		if (generic[1] === "Omit") return new Map([...inner].filter(([name]) => !keys.includes(name)));
+		if (generic[1] === "Pick") return new Map([...inner].filter(([name]) => keys.includes(name)));
+		if (generic[1] === "Partial") return new Map([...inner].map(([name, m]) => [name, {
+			...m,
+			optional: true
+		}]));
+		return inner;
+	}
+	if (seen.has(text)) return /* @__PURE__ */ new Map();
+	const declared = lookup(text);
+	if (declared === void 0 || declared.kind === "values") return /* @__PURE__ */ new Map();
+	const nextSeen = new Set(seen).add(text);
+	if (declared.kind === "alias") return membersOf(declared.expr, lookup, nextSeen);
+	const members = membersOfBody(declared.body);
+	for (const base of declared.bases) for (const [name, member] of membersOf(base, lookup, nextSeen)) if (!members.has(name)) members.set(name, member);
+	return members;
+}
+function expandSpreads(values, lookup) {
+	return values.flatMap((value) => {
+		if (!value.startsWith("...")) return [value];
+		const spread = lookup(value.slice(3));
+		return spread?.kind === "values" ? expandSpreads(spread.values, lookup) : [];
+	});
+}
+function armShape(arm, lookup, seen) {
+	const text = arm.trim();
+	const quoted = text.match(STRING_LITERAL);
+	if (quoted) return { values: [quoted[1] ?? quoted[2] ?? ""] };
+	if (NUMERIC.test(text)) return { values: [text] };
+	if (text === "string" || text === "number" || text === "boolean") return { kind: text };
+	if (text === "true" || text === "false") return { kind: "boolean" };
+	if (text === "string & {}") return { kind: "string" };
+	const fromConst = text.match(/^\(typeof\s+(\w+)\)\[number\]$|^keyof\s+typeof\s+(\w+)$/);
+	if (fromConst) {
+		const declared = lookup(fromConst[1] ?? fromConst[2] ?? "");
+		return declared?.kind === "values" ? { values: expandSpreads(declared.values, lookup) } : void 0;
+	}
+	if (text.startsWith("(") && text.endsWith(")")) return typeShape(text.slice(1, -1), lookup, seen);
+	const indexed = text.match(/^(\w+)\['([^']+)'\]$/);
+	if (indexed?.[1] && indexed[2]) {
+		const member = membersOf(indexed[1], lookup, /* @__PURE__ */ new Set()).get(indexed[2]);
+		return member && typeShape(member.typeExpr, lookup, seen);
+	}
+	if (!/^\w+$/.test(text) || seen.has(text)) return void 0;
+	const declared = lookup(text);
+	if (declared?.kind !== "alias") return void 0;
+	return typeShape(declared.expr, lookup, new Set(seen).add(text));
+}
+function typeShape(expr, lookup, seen) {
+	const shapes = splitTop(expr, "|").filter((arm) => arm !== "undefined" && arm !== "null").map((arm) => armShape(arm, lookup, seen));
+	const known = shapes.filter((shape) => shape !== void 0);
+	if (known.length === 0 || known.length !== shapes.length) return void 0;
+	const kinds = new Set(known.map((shape) => "kind" in shape ? shape.kind : void 0));
+	if (kinds.size === 1) {
+		const [kind] = kinds;
+		if (kind !== void 0) return { kind };
+		return { values: [...new Set(known.flatMap((s) => "values" in s ? s.values : []))] };
+	}
+	if (kinds.has("string")) return { kind: "string" };
+	if (kinds.has("number") && !kinds.has("boolean")) return { kind: "number" };
+}
+function fieldOf(member, fallback, lookup) {
+	const shape = typeShape(member.typeExpr, lookup, /* @__PURE__ */ new Set());
+	const required = member.optional || fallback !== void 0 ? {} : { required: true };
+	if (shape !== void 0 && "kind" in shape) {
+		if (shape.kind === "boolean") return fallback === "true" || fallback === "false" ? {
+			type: "boolean",
+			default: fallback === "true"
+		} : {
+			type: "boolean",
+			...required
+		};
+		if (shape.kind === "number") return fallback !== void 0 && NUMERIC.test(fallback) ? {
+			type: "number",
+			default: Number(fallback)
+		} : {
+			type: "number",
+			...required
+		};
+		return fallback !== void 0 ? {
+			type: "string",
+			default: fallback
+		} : {
+			type: "string",
+			...required
+		};
+	}
+	const values = shape?.values ?? [];
+	return fallback !== void 0 ? {
+		type: "enum",
+		values,
+		default: fallback
+	} : {
+		type: "enum",
+		values,
+		...required
+	};
+}
+function defaultsIn(pattern) {
+	const defaults = /* @__PURE__ */ new Map();
+	for (const binding of splitTop(pattern, ",")) {
+		const m = binding.match(/^['"]?([\w$-]+)['"]?\s*(?::\s*[\w$]+\s*)?=\s*(.+)$/s);
+		if (!m?.[1] || m[2] === void 0) continue;
+		const value = m[2].trim();
+		const quoted = value.match(STRING_LITERAL);
+		if (quoted) defaults.set(m[1], quoted[1] ?? quoted[2] ?? "");
+		else if (value === "true" || value === "false" || NUMERIC.test(value)) defaults.set(m[1], value);
+	}
+	return defaults;
+}
+function astroDefaults(source) {
+	const at = source.search(/\}\s*=\s*Astro\.props/);
+	if (at === -1) return /* @__PURE__ */ new Map();
+	return defaultsIn(bracketBody(source, source.lastIndexOf("const {", at) + 6));
+}
+function reactDefaults(source, tag) {
+	const start = source.match(new RegExp(`(?:function\\s+${tag}\\s*(?:<[^(]*>)?\\(|const\\s+${tag}\\b[^\\n]*?\\(\\()\\s*\\{`));
+	if (!start) return /* @__PURE__ */ new Map();
+	return defaultsIn(bracketBody(source, (start.index ?? 0) + start[0].length - 1));
+}
+function pascalCase(name) {
+	return name.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join("");
+}
+function reactExport(source, name) {
+	const wanted = name.replaceAll("-", "").toLowerCase();
+	return [...source.matchAll(/export\s+(?:function|const)\s+([A-Z]\w*)/g), ...source.matchAll(/export\s*\{([^}]*)\}/g)].flatMap((m) => (m[1] ?? "").split(",").map((part) => part.trim().split(/\s+/).pop() ?? "")).find((id) => id.toLowerCase() === wanted) ?? source.match(/export\s+default\s+([A-Z]\w*)/)?.[1];
+}
+function requiredAttribute(propName, field, typeExpr, id) {
+	if (field.type === "string") return `${propName}="${propName === "id" ? id : propName}"`;
+	if (field.type === "boolean") return propName;
+	if (field.type === "number") return `${propName}={0}`;
+	if (field.type !== "enum") return propName;
+	const [first] = field.values;
+	if (first !== void 0) return NUMERIC.test(first) ? `${propName}={${first}}` : `${propName}="${first}"`;
+	if (typeExpr.includes("=>")) return `${propName}={() => {}}`;
+	if (typeExpr.includes("ReactNode")) return `${propName}="${propName}"`;
+	return `${propName}={${/\[\]$|^(readonly\s+)?Array</.test(typeExpr) ? "[]" : "{}"}}`;
+}
+function usage(tag, attributes, takesContent) {
+	const open = [tag, ...attributes].join(" ");
+	return takesContent ? `<${open}>Content</${tag}>` : `<${open} />`;
+}
+function buildFacet(name, target, rawSource, itemLookup, astroTakesContent) {
+	const stripped = stripComments(rawSource);
+	const source = (target === "astro" ? stripped.match(/^\s*---\n([\s\S]*?)\n---/) : null)?.[1] ?? stripped;
+	const own = declarationsIn(source);
+	const lookup = (typeName) => own.get(typeName) ?? itemLookup(typeName);
+	const tag = target === "astro" ? pascalCase(name) : reactExport(source, name);
+	if (tag === void 0) return void 0;
+	const members = membersOf(target === "astro" ? "Props" : `${tag}Props`, lookup, /* @__PURE__ */ new Set());
+	const defaults = target === "astro" ? astroDefaults(source) : reactDefaults(source, tag);
+	const props = {};
+	const attributes = [];
+	for (const [propName, member] of members) {
+		const field = fieldOf(member, defaults.get(propName), lookup);
+		props[propName] = field;
+		if (field.type !== "grammar" && field.type !== "deprecated" && field.required && propName !== "children") attributes.push(requiredAttribute(propName, field, member.typeExpr, name));
+	}
+	const slots = /* @__PURE__ */ new Set();
+	if (target === "astro") {
+		for (const m of stripped.matchAll(/<slot\s+name="([^"]+)"/g)) if (m[1]) slots.add(m[1]);
+		if (/<slot(?![^>]*\bname=)[\s/>]/.test(stripped)) slots.add("default");
+	} else if (/\bchildren\b/.test(source) || astroTakesContent) slots.add("default");
+	const element = usage(tag, attributes, slots.has("default"));
+	const facet = {
+		props,
+		snippet: target === "astro" ? `---\nimport ${tag} from '@/components/ui/${name}.astro';\n---\n\n${element}` : `import { ${tag} } from '@/components/ui/${name}';\n\n${element}`
+	};
+	if (slots.size > 0) facet.slots = [...slots];
+	return facet;
+}
+function facetReader(items) {
+	let catalog;
+	const catalogLookup = (typeName) => {
+		if (catalog === void 0) {
+			catalog = /* @__PURE__ */ new Map();
+			for (const item of items) for (const file of item.files) {
+				if (!file.path.endsWith(".ts")) continue;
+				for (const [name, declared] of declarationsIn(stripComments(file.content))) if (!catalog.has(name)) catalog.set(name, declared);
+			}
+		}
+		return catalog.get(typeName);
+	};
+	return (item) => {
+		const scripts = /* @__PURE__ */ new Map();
+		for (const file of item.files) {
+			if (!file.path.endsWith(".ts")) continue;
+			for (const [name, declared] of declarationsIn(stripComments(file.content))) if (!scripts.has(name)) scripts.set(name, declared);
+		}
+		const lookup = (typeName) => scripts.get(typeName) ?? catalogLookup(typeName);
+		const sourceOf = (extension) => item.files.find((f) => f.path === `components/ui/${item.name}.${extension}`)?.content;
+		const facets = {};
+		const astroSource = sourceOf("astro");
+		const astro = astroSource && buildFacet(item.name, "astro", astroSource, lookup, false);
+		if (astro) facets.astro = astro;
+		const reactSource = sourceOf("tsx");
+		const takesContent = astro ? (astro.slots ?? []).includes("default") : false;
+		const react = reactSource && buildFacet(item.name, "react", reactSource, lookup, takesContent);
+		if (react) facets.react = react;
+		return facets;
+	};
 }
 //#endregion
 //#region src/mcp/graph.ts
@@ -15935,9 +16297,11 @@ const EXPAND_OP = "*";
 const PROBE_OP = "?";
 function assembleGraph(items) {
 	const nodes = /* @__PURE__ */ new Map();
+	const readFacets = facetReader(items);
 	for (const item of items) {
 		const kind = kindOf(item.type);
 		if (kind === null) continue;
+		if (item.name === "composites") continue;
 		const src = item.intelligence;
 		const intel = {
 			dos: src?.usagePatterns?.dos ?? [],
@@ -15953,7 +16317,7 @@ function assembleGraph(items) {
 			id: item.name,
 			kind,
 			intel,
-			facets: raw["facets"] ?? {},
+			facets: raw["facets"] ?? readFacets(item),
 			composesWith: raw["composites"] ?? [],
 			parts: []
 		};
@@ -16125,7 +16489,7 @@ function expandNode(node, target) {
 //#endregion
 //#region src/mcp/intent.ts
 const INTENT_TAGS = {
-	modal: [
+	dialog: [
 		"attention",
 		"blocking",
 		"above-all",
@@ -16378,7 +16742,7 @@ const STUDIO_OWNED_KEYS = [
 const ADD_MANAGED_KEYS = ["installed"];
 const WORKSPACE_PARAM = { workspace: {
 	type: "string",
-	description: "Workspace name (directory basename). Required when the MCP session has multiple workspaces and none matches cwd. Call rafters_workspaces to list options."
+	description: "Workspace name (directory basename), or the absolute path of the project you are working in. The session's default is the directory the server started in, and changing directory does not move it: when you work in another clone or worktree, pass its path on each call. Required when the MCP session has multiple workspaces and none matches cwd. Call rafters_workspaces to list options."
 } };
 const GENERATE_LEADING_FILLER = [
 	"give me a ",
@@ -16471,10 +16835,10 @@ const TOOL_DEFINITIONS = [
 				...WORKSPACE_PARAM,
 				address: {
 					type: "string",
-					description: "A dot-address (\"button.props.variant\") or a natural-language question."
+					description: "A dot-address (\"button.props.variant\") or a natural-language question. Omit it for the surface."
 				}
 			},
-			required: ["address"]
+			required: []
 		}
 	},
 	{
@@ -16517,7 +16881,7 @@ const TOOL_DEFINITIONS = [
 	},
 	{
 		name: "rafters_pattern",
-		description: "[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. Search by what the pattern solves (e.g., \"authentication\", \"data entry\", \"navigation\") to get do/never rules, cognitive load, and designer intent.",
+		description: "[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. Search by what the pattern solves (e.g., \"page sections\", \"prose\", \"citations\") to get do/never rules, cognitive load, and designer intent.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -16572,7 +16936,7 @@ var RaftersToolHandler = class {
 	async handleToolCall(name, args) {
 		switch (name) {
 			case "rafters_workspaces": return this.handleWorkspaces(args);
-			case "rafters_describe": return this.handleDescribe(args.address, args.workspace);
+			case "rafters_describe": return this.handleDescribe(typeof args.address === "string" ? args.address : "", args.workspace);
 			case "rafters_generate": return this.handleGenerate(args.intent, args.workspace);
 			case "rafters_composite": return this.handleComposite(args);
 			case "rafters_pattern": return this.handlePattern(args);
@@ -16650,15 +17014,22 @@ var RaftersToolHandler = class {
 	}
 	async loadCompositesFromDirs(...dirs) {
 		const { registry } = await discoverFromDirs(...dirs);
-		for (const composite of registry.values()) try {
+		this.registerComposites(registry);
+	}
+	registerComposites(composites) {
+		for (const composite of composites.values()) try {
 			register(composite);
 		} catch {}
 	}
 	async ensureCompositesLoaded(workspace) {
-		if (!this.builtInCompositesLoaded) {
-			await this.loadCompositesFromDirs(join(process.cwd(), "node_modules/@rafters/composites/src/typography"));
+		if (!this.builtInCompositesLoaded) try {
+			const manifests = (await this.itemsSource(workspace)).filter((item) => item.type === "composite").flatMap((item) => item.files).filter((file) => file.path.endsWith(".composite.json"));
+			this.registerComposites(discoverComposites(manifests.map((f) => ({
+				raw: f.content,
+				source: f.path
+			}))).registry);
 			this.builtInCompositesLoaded = true;
-		}
+		} catch {}
 		if (workspace && !this.compositesLoadedFor.has(workspace.root)) {
 			await this.loadCompositesFromDirs(...await this.compositeReadRoots(workspace.root));
 			this.compositesLoadedFor.add(workspace.root);

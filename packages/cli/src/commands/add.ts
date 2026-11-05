@@ -621,8 +621,11 @@ export function transformFileContent(
     transformed = transformed.replace(
       /from\s+['"]\.\/([^'"]+)['"]/g,
       (_match: string, importPath: string) => {
-        // Shared-suffix imports install flat beside the component
-        if (SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))) {
+        // Shared-suffix imports and a sibling .astro part install flat beside the component
+        if (
+          importPath.endsWith('.astro') ||
+          SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))
+        ) {
           return `from '@/${aliasComponents}/${importPath}'`;
         }
         // Everything else is a subsystem file that installs nested

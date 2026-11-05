@@ -16,7 +16,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { discoverProjectRoot } from './discover.js';
 
 export interface Workspace {
@@ -243,12 +243,20 @@ export function pickDefaultWorkspace(
 /**
  * Resolve a workspace name to its root, or fall back to the default.
  * Returns null when no workspace is named and no default is set.
+ *
+ * An absolute path names the project that holds it, whether or not the session
+ * discovered it. The server's cwd is fixed when it starts, so this is how an agent
+ * that has moved into a clone or worktree says which project it is working in.
  */
 export function resolveWorkspace(
   workspaces: Workspace[],
   defaultWorkspace: Workspace | null,
   name: string | undefined,
 ): Workspace | null {
+  if (name && isAbsolute(name)) {
+    const root = discoverProjectRoot(name);
+    return root ? { name: basename(root), root } : null;
+  }
   if (name) {
     return workspaces.find((ws) => ws.name === name) ?? null;
   }

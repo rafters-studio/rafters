@@ -2,7 +2,7 @@
  * The intent door (issue #2075).
  *
  * A second entrance to the intel graph, beside `describe`'s dot-address drill.
- * Where `describe('modal')` answers "tell me about this node," the intent door
+ * Where `describe('dialog')` answers "tell me about this node," the intent door
  * answers a natural-language question -- "what do I use when it needs to be
  * above everything" -- by routing over a small, hand-curated intent-tag
  * vocabulary to a chosen node PLUS its near-miss counter-example: the node an
@@ -57,14 +57,14 @@ export interface IntentNoMatch {
  *
  * Curation rule: every node carries at least one tag it SHARES with another
  * (why they compete for the same question) and at least one that DISTINGUISHES
- * it (what decides the routing). `modal` and `alert` both answer "how do I get
+ * it (what decides the routing). `dialog` and `alert` both answer "how do I get
  * attention," but diverge on blocking/above-all vs inline/passive -- that
- * divergence is exactly what makes `alert` a provable near-miss for `modal`.
+ * divergence is exactly what makes `alert` a provable near-miss for `dialog`.
  *
  * Declaration order is significant: it breaks scoring and near-miss ties.
  */
 const INTENT_TAGS: Readonly<Record<string, readonly IntentTag[]>> = {
-  modal: ['attention', 'blocking', 'above-all', 'focus-trap'],
+  dialog: ['attention', 'blocking', 'above-all', 'focus-trap'],
   alert: ['attention', 'inline', 'passive'],
   tooltip: ['hint', 'passive', 'inline', 'hover'],
 };
