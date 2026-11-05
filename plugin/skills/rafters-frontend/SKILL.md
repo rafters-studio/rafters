@@ -233,7 +233,8 @@ export function FeatureTile({ highlighted, children }: { highlighted?: boolean; 
 In an Astro component the same call sits in the markup:
 `<div class={classy('rounded-lg p-6', 'bg-card text-foreground')}>`.
 
-Still banned even here, and the hook and `rafters check` reject them:
+Still banned even here, and the hook rejects them (`rafters check` also
+reports arbitrary values):
 `var(--rafters-*)`, arbitrary values (`w-[300px]`, `gap-[3px]`, `bg-[#fff]`),
 `cn()`/`twMerge()`, `class`/`className` on a rafters component, and a `div`
 wrapping a rafters component. Assembly code gets none of these relaxations.
