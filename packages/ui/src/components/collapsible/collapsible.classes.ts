@@ -48,13 +48,11 @@ const triggerClasses =
 // child that may shrink below its min-content height and clips its own overflow,
 // the 0fr track cannot collapse and the transition is geometrically inert.
 //
-// KNOWN GAP, NOT MINE TO FIX: every performance either unmounts the content or
-// sets `hidden` on it while closed (collapsible.tsx:206-213 and its Astro/WC
-// counterparts). `display: none` blocks transitions outright, so none of the
-// below runs until the content stays mounted the way accordion's does (present
-// in both states, `inert` when collapsed). Reported on #2277.
+// The content is present in both states and the score projects `inert` while
+// closed, never `hidden`: `display: none` would stop the transition. `overflow-hidden`
+// on the content itself clips bare text, which `[&>*]` cannot reach.
 const contentClasses =
-  'grid [&>*]:min-h-0 [&>*]:overflow-hidden ' +
+  'grid overflow-hidden [&>*]:min-h-0 [&>*]:overflow-hidden ' +
   'transition-[grid-template-rows,opacity] ' +
   'grid-rows-[minmax(0,0fr)] opacity-0 duration-moderate ease-exit ' +
   'group-data-[state=open]:grid-rows-[minmax(0,1fr)] group-data-[state=open]:opacity-100 ' +

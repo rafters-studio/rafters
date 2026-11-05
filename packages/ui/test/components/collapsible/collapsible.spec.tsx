@@ -46,16 +46,23 @@ function domPartIds(root: ParentNode, parts: readonly string[]): Record<string, 
   return ids;
 }
 
+/** Closed content stays in the DOM, inert and never hidden. */
+function isClosed(content: Element | null): boolean {
+  if (!content) throw new Error('content must stay in the DOM');
+  expect(content.hasAttribute('hidden')).toBe(false);
+  return content.hasAttribute('inert');
+}
+
 afterEach(() => {
   cleanup();
 });
 
 describe('collapsible [react]', () => {
-  it('closed: trigger renders collapsed, content absent', async () => {
+  it('closed: trigger renders collapsed, content inert', async () => {
     const { container } = render(<TestCollapsible />);
     const trigger = partElement(container, 'trigger');
     expect(trigger).not.toBeNull();
-    expect(partElement(container, 'content')).toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(true);
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(trigger?.hasAttribute('aria-controls')).toBe(false);
     expect(partElement(container, 'root')?.getAttribute('data-state')).toBe('closed');
@@ -110,9 +117,9 @@ describe('collapsible [react]', () => {
     const trigger = partElement(container, 'trigger') as HTMLElement;
     trigger.focus();
     await user.keyboard('{Enter}');
-    expect(partElement(container, 'content')).not.toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(false);
     await user.keyboard(' ');
-    expect(partElement(container, 'content')).toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(true);
   });
 
   it('click toggles open then closed', async () => {
@@ -120,10 +127,10 @@ describe('collapsible [react]', () => {
     const { container } = render(<TestCollapsible />);
     const trigger = partElement(container, 'trigger') as HTMLElement;
     await user.click(trigger);
-    expect(partElement(container, 'content')).not.toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(false);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     await user.click(trigger);
-    expect(partElement(container, 'content')).toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(true);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -135,17 +142,17 @@ describe('collapsible [react]', () => {
     expect(trigger.disabled).toBe(true);
     expect(trigger.hasAttribute('data-disabled')).toBe(true);
     await user.click(trigger);
-    expect(partElement(container, 'content')).toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(true);
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 
   it('defaultOpen mounts open', async () => {
     const { container } = render(<TestCollapsible defaultOpen />);
-    expect(partElement(container, 'content')).not.toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(false);
     expect(partElement(container, 'trigger')?.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('forceMount keeps the content in the DOM, hidden, while closed', () => {
+  it('forceMount changes nothing: closed content is in the DOM, inert, not hidden', () => {
     const { container } = render(
       <Collapsible>
         <CollapsibleTrigger>Toggle</CollapsibleTrigger>
@@ -157,7 +164,8 @@ describe('collapsible [react]', () => {
     const content = partElement(container, 'content');
     expect(content).not.toBeNull();
     expect(content?.getAttribute('data-state')).toBe('closed');
-    expect(content?.hasAttribute('hidden')).toBe(true);
+    expect(content?.hasAttribute('hidden')).toBe(false);
+    expect(content?.hasAttribute('inert')).toBe(true);
   });
 
   it('uncontrolled callback fires once per real transition', async () => {
@@ -181,9 +189,9 @@ describe('collapsible [react]', () => {
     );
     await user.click(partElement(container, 'trigger') as HTMLElement);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(partElement(container, 'content')).toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(true);
 
     rerender(<TestCollapsible open onOpenChange={onOpenChange} />);
-    expect(partElement(container, 'content')).not.toBeNull();
+    expect(isClosed(partElement(container, 'content'))).toBe(false);
   });
 });

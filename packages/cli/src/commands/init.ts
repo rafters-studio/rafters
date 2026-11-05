@@ -69,7 +69,9 @@ import {
   printCssImportReport,
   readCssImport,
 } from './import.js';
-import { updateDependencies } from '../utils/update-dependencies.js';
+import { getPackageManager } from '../utils/get-package-manager.js';
+import { readInstalledDeps } from '../utils/install-registry-deps.js';
+import { installArgs, updateDependencies } from '../utils/update-dependencies.js';
 // The config shape and its migration now live in a leaf module with no
 // `@rafters/design-tokens` edge, so the MCP plugin bundle can reach them
 // without dragging css-tree into a single-file build. Re-exported here so
@@ -435,6 +437,29 @@ async function installScriptFonts(
   }
 }
 
+const VENEER = '@rafters/veneer';
+
+/**
+ * Leave `@rafters/veneer` in the project's devDependencies (#2933): `rafters
+ * check` runs its `rafters-check` bin. A project that declares it in any
+ * dependency field keeps its version and is not reinstalled. A failed install
+ * does not undo init's files; the event names the command to run.
+ */
+async function ensureVeneer(cwd: string, agentMode: boolean): Promise<void> {
+  const { installed } = await readInstalledDeps(cwd);
+  if (installed.has(VENEER)) return;
+  try {
+    await updateDependencies([], [VENEER], { cwd, silent: agentMode });
+  } catch (err) {
+    const packageManager = await getPackageManager(cwd, { withFallback: true });
+    log({
+      event: 'init:veneer_install_failed',
+      command: `${packageManager} ${installArgs(packageManager, [VENEER], true).join(' ')}`,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 /** Merge import lists in order, each entry once. */
 function mergeImports(...lists: readonly (readonly string[])[]): string[] {
   return [...new Set(lists.flat())];
@@ -740,6 +765,8 @@ async function regenerateFromExisting(
     await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
 
+  await ensureVeneer(cwd, isAgentMode);
+
   log({
     event: 'init:complete',
     outputs,
@@ -875,6 +902,8 @@ async function resetToDefaults(
     };
     await writeFile(paths.config, JSON.stringify(newConfig, null, 2));
   }
+
+  await ensureVeneer(cwd, isAgentMode);
 
   log({
     event: 'init:complete',
@@ -1596,6 +1625,8 @@ export async function init(options: InitOptions): Promise<void> {
       }
     }
   }
+
+  await ensureVeneer(cwd, isAgentMode);
 
   log({
     event: 'init:complete',
