@@ -9,6 +9,8 @@
 ### Fixed
 
 - fix(ui): **Collapsible content now animates (#2924).** The content played no reveal or fade because it was unmounted (React) or `hidden` (React `forceMount`, Astro), and `display: none` stops a transition. Closed content is now in the DOM in React, as accordion's panels are: it carries `inert`, not `hidden`, and has a height of 0px, so it stays out of the tab order and the accessibility tree. `forceMount` is kept and changes nothing. Code that expected no content element while closed, or read `hidden`, should read `inert` instead.
+- fix(ui): **React tooltip, hover-card, navigation-menu and context-menu reveal with their hover-intent timing again (#2195), and a closed Accordion panel collapses to zero height (#2529).** `classy` dropped every class with a bracket in its utility, so in React the `transition-[opacity,pointer-events]` list on the four surfaces and the `grid-rows-[minmax(0,0fr)]` rule on Accordion and Collapsible never reached the DOM. The surfaces revealed instantly with no `delay-hover-intent`, and a closed Accordion item kept its content's height under the trigger. `classy` now only combines classes (#2063), so the classes the delivered files write render. Delivered files that call `classy` change: re-run `rafters add --update-all` to pick them up. Astro and Web Component output is unchanged.
+
 
 ## 0.7.0
 
