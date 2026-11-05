@@ -16260,24 +16260,22 @@ function buildFacet(name, target, rawSource, itemLookup, astroTakesContent) {
 	if (slots.size > 0) facet.slots = [...slots];
 	return facet;
 }
+function scriptDeclarations(items) {
+	const found = /* @__PURE__ */ new Map();
+	for (const file of items.flatMap((item) => item.files)) {
+		if (!file.path.endsWith(".ts")) continue;
+		for (const [name, declared] of declarationsIn(stripComments(file.content))) if (!found.has(name)) found.set(name, declared);
+	}
+	return found;
+}
 function facetReader(items) {
 	let catalog;
 	const catalogLookup = (typeName) => {
-		if (catalog === void 0) {
-			catalog = /* @__PURE__ */ new Map();
-			for (const item of items) for (const file of item.files) {
-				if (!file.path.endsWith(".ts")) continue;
-				for (const [name, declared] of declarationsIn(stripComments(file.content))) if (!catalog.has(name)) catalog.set(name, declared);
-			}
-		}
+		catalog ??= scriptDeclarations(items);
 		return catalog.get(typeName);
 	};
 	return (item) => {
-		const scripts = /* @__PURE__ */ new Map();
-		for (const file of item.files) {
-			if (!file.path.endsWith(".ts")) continue;
-			for (const [name, declared] of declarationsIn(stripComments(file.content))) if (!scripts.has(name)) scripts.set(name, declared);
-		}
+		const scripts = scriptDeclarations([item]);
 		const lookup = (typeName) => scripts.get(typeName) ?? catalogLookup(typeName);
 		const sourceOf = (extension) => item.files.find((f) => f.path === `components/ui/${item.name}.${extension}`)?.content;
 		const facets = {};

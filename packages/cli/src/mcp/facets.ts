@@ -30,6 +30,9 @@ interface Member {
 
 type Members = Map<string, Member>;
 
+/** What a type allows: literal values, or a primitive kind. */
+type Shape = { values: string[] } | { kind: 'string' | 'number' | 'boolean' };
+
 const OPENERS = '{[(<';
 const CLOSERS = '}])>';
 /** A quoted string in stripped source ends at its line, so an apostrophe in JSX text is harmless. */
@@ -239,15 +242,8 @@ function expandSpreads(values: string[], lookup: Lookup): string[] {
   });
 }
 
-/**
- * What one type arm allows: literal values, or a primitive kind. Undefined for anything
- * else (a function, an array, an object, a platform type).
- */
-function armShape(
-  arm: string,
-  lookup: Lookup,
-  seen: ReadonlySet<string>,
-): { values: string[] } | { kind: 'string' | 'number' | 'boolean' } | undefined {
+/** What one type arm allows. Undefined for a function, an array, an object or a platform type. */
+function armShape(arm: string, lookup: Lookup, seen: ReadonlySet<string>): Shape | undefined {
   const text = arm.trim();
   const quoted = text.match(STRING_LITERAL);
   if (quoted) return { values: [quoted[1] ?? quoted[2] ?? ''] };
@@ -276,11 +272,7 @@ function armShape(
   return typeShape(declared.expr, lookup, new Set(seen).add(text));
 }
 
-function typeShape(
-  expr: string,
-  lookup: Lookup,
-  seen: ReadonlySet<string>,
-): { values: string[] } | { kind: 'string' | 'number' | 'boolean' } | undefined {
+function typeShape(expr: string, lookup: Lookup, seen: ReadonlySet<string>): Shape | undefined {
   const arms = splitTop(expr, '|').filter((arm) => arm !== 'undefined' && arm !== 'null');
   const shapes = arms.map((arm) => armShape(arm, lookup, seen));
   const known = shapes.filter((shape) => shape !== undefined);
@@ -454,6 +446,18 @@ function buildFacet(
   return facet;
 }
 
+/** Every declaration in the items' `.ts` files. The first to declare a name keeps it. */
+function scriptDeclarations(items: RegistryItem[]): Declarations {
+  const found: Declarations = new Map();
+  for (const file of items.flatMap((item) => item.files)) {
+    if (!file.path.endsWith('.ts')) continue;
+    for (const [name, declared] of declarationsIn(stripComments(file.content))) {
+      if (!found.has(name)) found.set(name, declared);
+    }
+  }
+  return found;
+}
+
 /**
  * Returns the function that reads an item's facets. Types resolve through the item's own
  * files first, then through every `.ts` file the catalog serves, because a component's
@@ -462,28 +466,12 @@ function buildFacet(
 export function facetReader(items: RegistryItem[]): (item: RegistryItem) => Facets {
   let catalog: Declarations | undefined;
   const catalogLookup: Lookup = (typeName) => {
-    if (catalog === undefined) {
-      catalog = new Map();
-      for (const item of items) {
-        for (const file of item.files) {
-          if (!file.path.endsWith('.ts')) continue;
-          for (const [name, declared] of declarationsIn(stripComments(file.content))) {
-            if (!catalog.has(name)) catalog.set(name, declared);
-          }
-        }
-      }
-    }
+    catalog ??= scriptDeclarations(items);
     return catalog.get(typeName);
   };
 
   return (item) => {
-    const scripts = new Map<string, Declaration>();
-    for (const file of item.files) {
-      if (!file.path.endsWith('.ts')) continue;
-      for (const [name, declared] of declarationsIn(stripComments(file.content))) {
-        if (!scripts.has(name)) scripts.set(name, declared);
-      }
-    }
+    const scripts = scriptDeclarations([item]);
     const lookup: Lookup = (typeName) => scripts.get(typeName) ?? catalogLookup(typeName);
 
     const sourceOf = (extension: string) =>
