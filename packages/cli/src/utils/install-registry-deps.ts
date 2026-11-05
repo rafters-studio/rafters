@@ -118,7 +118,7 @@ interface ReadDepsResult {
  * Read the consumer's package.json and return the combined set of
  * dependency names (without versions), along with whether package.json exists.
  */
-async function readInstalledDeps(targetDir: string): Promise<ReadDepsResult> {
+export async function readInstalledDeps(targetDir: string): Promise<ReadDepsResult> {
   let raw: string;
   try {
     raw = await readFile(join(targetDir, 'package.json'), 'utf-8');
@@ -130,7 +130,12 @@ async function readInstalledDeps(targetDir: string): Promise<ReadDepsResult> {
   try {
     const pkg = JSON.parse(raw) as Record<string, unknown>;
     const installed = new Set<string>();
-    const depFields = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
+    const depFields = [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'optionalDependencies',
+    ] as const;
     for (const field of depFields) {
       const section = pkg[field];
       if (section && typeof section === 'object') {

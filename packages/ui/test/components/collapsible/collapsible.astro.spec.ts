@@ -30,9 +30,10 @@ const trigger = () => document.body.querySelector<HTMLElement>('[data-part="trig
 const content = () => document.body.querySelector<HTMLElement>('[data-part="content"]')!;
 
 describe('collapsible [astro]', () => {
-  it('SSR closed: content hidden and crawlable, trigger collapsed', async () => {
+  it('SSR closed: content inert and crawlable, trigger collapsed', async () => {
     await mount();
-    expect(content().hidden).toBe(true);
+    expect(content().hasAttribute('hidden')).toBe(false);
+    expect(content().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
     expect(trigger().hasAttribute('aria-controls')).toBe(false);
   });
@@ -41,17 +42,20 @@ describe('collapsible [astro]', () => {
     const user = userEvent.setup();
     await mount({}, { default: '<p>Revealed content</p>' });
     await user.click(trigger());
-    expect(content().hidden).toBe(false);
+    expect(content().hasAttribute('hidden')).toBe(false);
+    expect(content().inert).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     expect(trigger().getAttribute('aria-controls')).toBe('c-content');
     await user.click(trigger());
-    expect(content().hidden).toBe(true);
+    expect(content().hasAttribute('hidden')).toBe(false);
+    expect(content().inert).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('SSR defaultOpen renders open and wired', async () => {
     await mount({ defaultOpen: true }, { default: '<p>Revealed content</p>' });
-    expect(content().hidden).toBe(false);
+    expect(content().hasAttribute('hidden')).toBe(false);
+    expect(content().inert).toBe(false);
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     expect(trigger().getAttribute('aria-controls')).toBe('c-content');
   });

@@ -59,6 +59,10 @@ describe('collapsible classes', () => {
     expect(classes.content).toContain('[&>*]:overflow-hidden');
   });
 
+  it('the content clips itself so bare text collapses too', () => {
+    expect(classes.content.split(/\s+/)).toContain('overflow-hidden');
+  });
+
   it('states no timing as a literal and queries reduced motion nowhere', () => {
     for (const value of Object.values(classes)) {
       expect(value).not.toMatch(/\b(duration|delay)-\d/);
