@@ -91,8 +91,11 @@ const collapsibleGlue: GlueSlice<
       trigger: {
         'data-disabled': disabledAttr,
       },
+      // Closed content stays rendered and inert, never `hidden`: `display: none`
+      // stops the reveal transition (05-authoring.md:161).
       content: {
         'data-disabled': disabledAttr,
+        inert: open ? undefined : true,
       },
     };
   },
@@ -148,17 +151,12 @@ export function bindCollapsible(root: HTMLElement): () => void {
 
   const render = () => {
     const state = memory.get();
-    const open = isOpen(state, config);
     const projection = collapsible.aria(state, config, ids);
     for (const part of Object.keys(projection) as CollapsiblePart[]) {
       const attrs = projection[part];
       const el = getPart(part);
       if (el && attrs) applyProjection(el, attrs);
     }
-    // Presence: the content is present-but-hidden, toggled on the open axis. It
-    // stays in light DOM so the exit transition runs on the same node.
-    const content = getPart('content');
-    if (content) content.hidden = !open;
   };
   const unsubscribe = memory.subscribe(render); // fires immediately: first paint
 

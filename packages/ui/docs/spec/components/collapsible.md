@@ -55,7 +55,7 @@ effective value, so intrinsic state can never drift from a controlled consumer.
 | --- | --- | --- |
 | root | always | `data-state`, `data-disabled` (when disabled) |
 | trigger | always | `aria-expanded`, `aria-controls` (only while content is in the DOM), `data-state`, `data-disabled` (when disabled) |
-| content | while open (or forceMount) | `data-state`, `data-disabled` (when disabled) |
+| content | always | `data-state`, `data-disabled` (when disabled), `inert` (while closed) |
 
 The trigger's `aria-expanded` + `aria-controls` is the complete WAI-ARIA
 disclosure wiring; `aria-controls` follows the empty-id convention (ratified
@@ -70,8 +70,9 @@ so an initially-closed collapsible never leaks a dangling reference. Native
 - `keymap`: none. The native `<button>` fulfils Enter/Space as click; a disabled
   button suppresses both, and `canDispatch` is the belt-and-suspenders.
 - Effects: none. Presence is a pure DOM concern -- the content is
-  present-but-hidden in the Astro bind (toggled on the open axis) and mounts
-  on open in React (`forceMount` keeps it mounted, hidden, while closed).
+  present in React and Astro alike and carries `inert`, never `hidden`, while
+  closed, so the reveal transition runs on the same node (`forceMount` is kept
+  for compatibility and changes nothing).
 
 ## Oracle dispositions (boundary 9)
 
@@ -81,7 +82,7 @@ so an initially-closed collapsible never leaks a dangling reference. Native
 | disabled prop (gates onOpenChange) | contract (moved from an imperative `if (disabled) return` to the score's `canDispatch` gate) |
 | Trigger / Content surface | contract |
 | asChild on Trigger and Content | framework affordance (React) |
-| forceMount | contract, with a divergence: a force-mounted closed region carries `hidden` (it must stay inert and out of the tab order) |
+| forceMount | contract, with a divergence: closed content is always mounted and carries `inert`, never `hidden`, so `forceMount` changes nothing |
 | root `data-state` / `data-disabled` | contract (projected via the root part) |
 | content `aria-labelledby={triggerId}` | defect-do-not-port -- name-from-author is prohibited on a role-less div (axe `aria-prohibited-attr`); the trigger's aria-expanded + aria-controls is the complete disclosure wiring, and Radix omits it too |
 | `animate-collapsible-up/down` on content | defect-do-not-port -- those utilities were never defined in the token system, so porting them is dead classes; replaced by `overflow-hidden transition-all duration-200 motion-reduce:transition-none` (declared height-axis intent) |
