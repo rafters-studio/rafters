@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **A block split in the middle clones the block; at its end it gives a
+  paragraph (#2940).** `splitBlock` used to give the new block type `text`
+  and no meta wherever the split fell, so splitting a heading in the middle
+  made its tail a paragraph and dropped its level. Now a split before the end
+  of a block gives a new block with the split block's type and meta, and a
+  split at the end gives an empty `text` block, as before.
+  `insertBlocksAt` splits the same way, so the tail of a block that blocks
+  are inserted into keeps its type. `splitBlock` takes an optional
+  `newType`, and the `split` op an optional `newType` field: when set, the
+  new block has that type and no meta. Code that relied on a mid-block split
+  giving `text` passes `newType: 'text'`.
+
 - **classy only combines classes (#2063).** It flattens arrays, drops falsy
   inputs (`0` and `''` included), takes the keys of an object whose value is
   truthy, splits on whitespace and removes exact duplicates. Every class it

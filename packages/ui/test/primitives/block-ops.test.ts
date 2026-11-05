@@ -8,6 +8,75 @@ function applyThenInverse(blocks: BaseBlock[], op: EditorOp): BaseBlock[] {
   return applyOpSequence(first.blocks, first.inverse);
 }
 
+describe('split type (FR-EDITOR-020)', () => {
+  const heading: BaseBlock[] = [
+    { id: 'h', type: 'heading', content: 'Heading', meta: { level: 2 } },
+  ];
+
+  it('splitting a heading in the middle without naming a type gives two headings of the same level', () => {
+    const result = applyOp(heading, { kind: 'split', blockId: 'h', offset: 3, newBlockId: 'h2' });
+    expect(result.blocks).toEqual([
+      { id: 'h', type: 'heading', content: 'Hea', meta: { level: 2 } },
+      { id: 'h2', type: 'heading', content: 'ding', meta: { level: 2 } },
+    ]);
+  });
+
+  it('splitting a heading at its end without naming a type gives the heading followed by an empty paragraph', () => {
+    const result = applyOp(heading, { kind: 'split', blockId: 'h', offset: 7, newBlockId: 'p' });
+    expect(result.blocks).toEqual([
+      { id: 'h', type: 'heading', content: 'Heading', meta: { level: 2 } },
+      { id: 'p', type: 'text', content: '' },
+    ]);
+  });
+
+  it('splitting a heading and naming the paragraph type gives a heading followed by a paragraph', () => {
+    const result = applyOp(heading, {
+      kind: 'split',
+      blockId: 'h',
+      offset: 3,
+      newBlockId: 'p',
+      newType: 'text',
+    });
+    expect(result.blocks).toEqual([
+      { id: 'h', type: 'heading', content: 'Hea', meta: { level: 2 } },
+      { id: 'p', type: 'text', content: 'ding' },
+    ]);
+  });
+
+  it('undoing a split that named a type restores the original single block', () => {
+    const op: StructuralOp = {
+      kind: 'split',
+      blockId: 'h',
+      offset: 3,
+      newBlockId: 'p',
+      newType: 'text',
+    };
+    expect(applyThenInverse(heading, op)).toEqual(heading);
+  });
+
+  it('undoing a clone split and an end split restores the original single block', () => {
+    expect(
+      applyThenInverse(heading, { kind: 'split', blockId: 'h', offset: 3, newBlockId: 'h2' }),
+    ).toEqual(heading);
+    expect(
+      applyThenInverse(heading, { kind: 'split', blockId: 'h', offset: 7, newBlockId: 'p' }),
+    ).toEqual(heading);
+  });
+
+  it('redo of a typed split replays the same type and id', () => {
+    const op: StructuralOp = {
+      kind: 'split',
+      blockId: 'h',
+      offset: 3,
+      newBlockId: 'p',
+      newType: 'text',
+    };
+    const first = applyOp(heading, op);
+    const redone = applyOp(applyOpSequence(first.blocks, first.inverse), op);
+    expect(redone.blocks).toEqual(first.blocks);
+  });
+});
+
 describe('structural ops', () => {
   it('split/merge round-trip, plain text, reusing the pre-assigned id', () => {
     const blocks: BaseBlock[] = [{ id: 'a', type: 'text', content: 'hello world' }];

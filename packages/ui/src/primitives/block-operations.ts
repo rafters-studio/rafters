@@ -132,17 +132,21 @@ export interface SplitResult {
 
 /**
  * Split a block at a text offset. The block keeps content before the offset,
- * a new text block gets content after the offset.
+ * the new block gets content after the offset.
  *
- * If offset is 0: the current block becomes empty, new block gets all content.
- * If offset is at end: current block keeps all content, new empty block created.
- * Headings always create a text block after (not another heading).
+ * Before the end, the new block is a clone of the split block: its type and
+ * its meta. At the end, the new block is an empty paragraph (type `text`).
+ * A `newType` from the caller wins in both cases, with no meta.
+ *
+ * If offset is 0 on a non-empty block: the current block becomes empty, the
+ * clone gets all content.
  */
 export function splitBlock(
   blocks: BaseBlock[],
   blockId: string,
   offset: number,
   newBlockId: string,
+  newType?: string,
 ): SplitResult {
   const index = blocks.findIndex((b) => b.id === blockId);
   if (index === -1) return { blocks, newBlockId: '' };
@@ -151,13 +155,16 @@ export function splitBlock(
   if (!block) return { blocks, newBlockId: '' };
 
   const [before, after] = splitContent(block.content, offset);
+  const atEnd = offset >= blockContentToText(block.content).length;
 
-  // The new block is always a text block (even after headings)
   const newBlock: BaseBlock = {
     id: newBlockId,
-    type: 'text',
+    type: newType ?? (atEnd ? 'text' : block.type),
     content: after,
   };
+  if (newType === undefined && !atEnd && block.meta !== undefined) {
+    newBlock.meta = { ...block.meta };
+  }
 
   const updatedBlock: BaseBlock = {
     ...block,

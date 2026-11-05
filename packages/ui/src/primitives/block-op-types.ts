@@ -12,7 +12,9 @@
 import type { BaseBlock, InlineContent, InlineMark } from './types';
 
 export type StructuralOp =
-  | { kind: 'split'; blockId: string; offset: number; newBlockId: string }
+  // `newType` is OPTIONAL: unset, a split before the end clones the block and
+  // a split at the end gives a paragraph; set, the new block takes that type.
+  | { kind: 'split'; blockId: string; offset: number; newBlockId: string; newType?: string }
   | { kind: 'mergePrev'; blockId: string }
   | { kind: 'mergeNext'; blockId: string }
   | { kind: 'delete'; blockId: string }
