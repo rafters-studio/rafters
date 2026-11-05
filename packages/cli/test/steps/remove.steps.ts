@@ -8,8 +8,8 @@
  * Parallel execution is disabled in playwright.config.ts to ensure test isolation.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { context } from './common.steps.js';
@@ -138,3 +138,30 @@ Then('{word} is no longer installed', async ({}, name: string) => {
     expect(existsSync(join(context.fixturePath, file)), file).toBe(false);
   }
 });
+
+Given('the project wrote {string} importing {word}', async ({}, path: string, need: string) => {
+  const file = join(context.fixturePath, path);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `import '@/lib/primitives/${need}';\nexport const own = null;\n`, 'utf8');
+});
+
+Given(
+  'the project wrote {string} with the line {string}',
+  async ({}, path: string, line: string) => {
+    const file = join(context.fixturePath, path);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, `${line}\nexport const own = null;\n`, 'utf8');
+  },
+);
+
+Given('tsconfig.json maps {string} to {string}', async ({}, alias: string, target: string) => {
+  const config = `{\n  // the project's own alias\n  "compilerOptions": {\n    "paths": { "${alias}": ["${target}"], },\n  },\n}\n`;
+  writeFileSync(join(context.fixturePath, 'tsconfig.json'), config, 'utf8');
+});
+
+Then(
+  'the output says {word} was kept because {string} imports it',
+  async ({}, need: string, path: string) => {
+    expect(context.commandResult?.stdout).toContain(`Kept ${need}: ${path} imports it`);
+  },
+);

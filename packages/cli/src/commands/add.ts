@@ -426,7 +426,7 @@ function rootFor(field: PathField | undefined, cwd: string, fallback: string): s
  * The project source root, derived from componentsPath minus a trailing
  * `components/ui` (`src/components/ui` -> `src`, `components/ui` -> '').
  */
-function sourceRootFor(config: RaftersConfig | null, cwd: string): string {
+export function sourceRootFor(config: RaftersConfig | null, cwd: string): string {
   const componentsResolved = rootFor(config?.componentsPath, cwd, 'components/ui');
   return componentsResolved.replace(/\/?components\/ui$/, '');
 }
