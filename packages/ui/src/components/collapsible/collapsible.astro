@@ -35,7 +35,7 @@
  * the SAME DOM-native client the Web Component uses. One score, three
  * performances, zero drift.
  *
- * The content stays in light DOM (present-but-hidden) so the expand/collapse
+ * The content stays in light DOM (present and inert, never hidden) so the expand/collapse
  * transition runs on the same node without an unmount to defer.
  */
 import {
@@ -65,7 +65,6 @@ for (const part of Object.keys(collapsible.parts) as CollapsiblePart[]) {
   ids[part] = part === 'root' ? '' : `${id}-${part}`;
 }
 const aria = collapsible.aria(state, config, ids);
-const open = state.open;
 ---
 
 <rafters-collapsible data-part="root" default-open={String(defaultOpen)} class={classes.root} {...aria.root}>
@@ -80,7 +79,7 @@ const open = state.open;
     <slot name="trigger">{label}</slot>
   </button>
 
-  <div id={ids.content} data-part="content" class={classes.content} hidden={!open} {...aria.content}>
+  <div id={ids.content} data-part="content" class={classes.content} {...aria.content}>
     <slot />
   </div>
 </rafters-collapsible>

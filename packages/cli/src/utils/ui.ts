@@ -186,6 +186,10 @@ export function log(event: Record<string, unknown>): void {
       break;
     }
 
+    case 'init:veneer_install_failed':
+      console.log(`\n  Could not install @rafters/veneer. Run: ${event.command}`);
+      break;
+
     case 'init:complete': {
       context.spinner?.succeed('Done!');
       context.spinner = null;

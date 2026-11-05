@@ -31,7 +31,7 @@ function node(name: string, type: RegistryItem['type']): RegistryItem {
   return { name, type, primitives: [], files: [], rules: [] };
 }
 
-const FIXTURE: RegistryItem[] = [node('button', 'ui'), node('modal', 'ui'), node('alert', 'ui')];
+const FIXTURE: RegistryItem[] = [node('button', 'ui'), node('dialog', 'ui'), node('alert', 'ui')];
 
 function handlerFor(root: string): RaftersToolHandler {
   return new RaftersToolHandler(
@@ -60,7 +60,7 @@ describe('MCP describe/generate against an initialized project', () => {
       address: 'what do I use when it needs to be above everything',
     });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data).toMatchObject({ use: { id: 'modal' }, not: { id: 'alert' } });
+    expect(data).toMatchObject({ use: { id: 'dialog' }, not: { id: 'alert' } });
   });
 
   it('rafters_generate resolves a direct component name and returns its verbatim snippet with open slots', async () => {
@@ -69,8 +69,8 @@ describe('MCP describe/generate against an initialized project', () => {
     config.componentTarget = 'react';
     await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
 
-    const modal: RegistryItem = {
-      name: 'modal',
+    const dialog: RegistryItem = {
+      name: 'dialog',
       type: 'ui',
       primitives: [],
       files: [],
@@ -80,30 +80,30 @@ describe('MCP describe/generate against an initialized project', () => {
         react: {
           props: {},
           slots: ['title', 'body'],
-          snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+          snippet: '<Dialog><Dialog.Title /><Dialog.Body /></Dialog>',
         },
       },
     };
     const handler = new RaftersToolHandler(
       [{ name: 'fixture', root: fixturePath }],
       { name: 'fixture', root: fixturePath },
-      async () => [modal, node('alert', 'ui'), node('tooltip', 'ui')],
+      async () => [dialog, node('alert', 'ui'), node('tooltip', 'ui')],
     );
 
-    // Direct tier: bare id, no curated-axis phrasing needed. `modal` has no
+    // Direct tier: bare id, no curated-axis phrasing needed. `dialog` has no
     // file on disk in this fixture (init writes config, never components), so
     // presence is 'available' and generate names the install command.
-    const direct = await handler.handleToolCall('rafters_generate', { intent: 'give me a modal' });
+    const direct = await handler.handleToolCall('rafters_generate', { intent: 'give me a dialog' });
     expect(JSON.parse(direct.content[0].text as string)).toEqual({
-      component: 'modal',
+      component: 'dialog',
       target: 'react',
       presence: 'available',
-      snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+      snippet: '<Dialog><Dialog.Title /><Dialog.Body /></Dialog>',
       slots: [
         { slot: 'title', ownedBy: 'caller', status: 'open' },
         { slot: 'body', ownedBy: 'caller', status: 'open' },
       ],
-      install: 'rafters add modal',
+      install: 'rafters add dialog',
     });
 
     // Intent-door fallback: same component, reached via the semantic axis.
@@ -111,15 +111,15 @@ describe('MCP describe/generate against an initialized project', () => {
       intent: 'what do I use when it needs to be above everything',
     });
     expect(JSON.parse(viaIntent.content[0].text as string)).toEqual({
-      component: 'modal',
+      component: 'dialog',
       target: 'react',
       presence: 'available',
-      snippet: '<Modal><Modal.Title /><Modal.Body /></Modal>',
+      snippet: '<Dialog><Dialog.Title /><Dialog.Body /></Dialog>',
       slots: [
         { slot: 'title', ownedBy: 'caller', status: 'open' },
         { slot: 'body', ownedBy: 'caller', status: 'open' },
       ],
-      install: 'rafters add modal',
+      install: 'rafters add dialog',
     });
   });
 
@@ -129,24 +129,24 @@ describe('MCP describe/generate against an initialized project', () => {
     config.componentTarget = 'astro';
     await writeFixtureFile(fixturePath, '.rafters/config.rafters.json', JSON.stringify(config));
 
-    const modal: RegistryItem = {
-      name: 'modal',
+    const dialog: RegistryItem = {
+      name: 'dialog',
       type: 'ui',
       primitives: [],
       files: [],
       rules: [],
       composites: [],
-      facets: { react: { props: {}, snippet: '<Modal />' } }, // no astro facet
+      facets: { react: { props: {}, snippet: '<Dialog />' } }, // no astro facet
     };
     const handler = new RaftersToolHandler(
       [{ name: 'fixture', root: fixturePath }],
       { name: 'fixture', root: fixturePath },
-      async () => [modal, node('alert', 'ui'), node('tooltip', 'ui')],
+      async () => [dialog, node('alert', 'ui'), node('tooltip', 'ui')],
     );
 
-    const result = await handler.handleToolCall('rafters_generate', { intent: 'modal' });
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'dialog' });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('modal');
+    expect(data.error).toContain('dialog');
     expect(data.error).toContain('astro');
   });
 
