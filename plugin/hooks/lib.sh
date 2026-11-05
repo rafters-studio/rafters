@@ -40,3 +40,31 @@ find_check_bin() {
     dir=$(dirname "$dir")
   done
 }
+
+# is_installed_path <project-root> <file>
+# Returns 0 when <file> is under a folder `rafters add` installs into: the
+# project's componentsPath or primitivesPath, each a string or an array of
+# strings and { "path": ... } entries, relative to the root. A config naming
+# neither falls back to the folders rafters init writes by default.
+is_installed_path() {
+  local root="$1" file="$2" dir
+  local dirs
+  dirs=$(jq -r '[.componentsPath, .primitivesPath][]
+    | select(. != null) | (if type == "array" then .[] else . end)
+    | (if type == "object" then .path else . end) | select(type == "string")' \
+    "$root/.rafters/config.rafters.json" 2>/dev/null)
+  if [ -z "$dirs" ]; then
+    case "$file" in
+      */components/ui/*|*/lib/primitives/*) return 0 ;;
+    esac
+    return 1
+  fi
+  while IFS= read -r dir; do
+    dir="${dir#./}"
+    dir="${dir%/}"
+    [ -n "$dir" ] || continue
+    case "$dir" in /*) ;; *) dir="$root/$dir" ;; esac
+    case "$file" in "$dir"/*) return 0 ;; esac
+  done <<< "$dirs"
+  return 1
+}

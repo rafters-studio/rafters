@@ -85,6 +85,10 @@ Then('stderr holds {string}', async ({}, text: string) => {
   expect(context.commandResult?.stderr).toContain(text);
 });
 
+Then('stderr does not hold {string}', async ({}, text: string) => {
+  expect(context.commandResult?.stderr).not.toContain(text);
+});
+
 Then('no file has changed', async () => {
   expect(await snapshot(context.fixturePath)).toEqual(context.before);
 });

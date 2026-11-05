@@ -7,7 +7,7 @@
  * Astro language server to every project.
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { execa } from 'execa';
 import { getPackageManager } from '../utils/get-package-manager.js';
@@ -30,6 +30,11 @@ function findBin(start: string): string | null {
 
 export async function check(root?: string): Promise<void> {
   const project = resolve(root ?? process.cwd());
+  if (!existsSync(project) || !statSync(project).isDirectory()) {
+    process.stderr.write(`rafters check: ${project} does not exist or is not a directory\n`);
+    process.exitCode = COULD_NOT_RUN;
+    return;
+  }
   const bin = findBin(project);
 
   if (bin === null) {

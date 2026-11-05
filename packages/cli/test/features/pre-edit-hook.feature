@@ -1,4 +1,4 @@
-Feature: the pre-edit hook runs the check on the edited lines (#2912)
+Feature: the pre-edit hook runs the check on the edited lines (#2912, #2932)
 
   @criterion-deny
   Scenario Outline: only an error on an edited line denies
@@ -77,3 +77,69 @@ Feature: the pre-edit hook runs the check on the edited lines (#2912)
     When an agent writes src/pages/d.astro with Card fill="bg-fill-glass extra"
     Then the hook does not deny
     And the hook prints nothing
+
+  @criterion-classes-file
+  Scenario Outline: an own .classes.ts file goes to the bin
+    Given a project with the rafters-check bin and src/components/hs-card.classes.ts holding a bracket value on line 3
+    When an agent makes <edit>
+    Then the hook <result>
+
+    Examples:
+      | edit                                                  | result                                  |
+      | an Edit of the classes file on line 3 to keep it      | denies, naming rafters(arbitrary-value) |
+      | an Edit of the classes file on line 9 with clean text | does not deny                           |
+      | a Write of the classes file with a bracket            | denies, naming rafters(arbitrary-value) |
+
+  @criterion-installed
+  Scenario Outline: an installed file is read-only
+    Given a project whose config names src/components/ui and src/lib/primitives
+    When an agent edits <file>
+    Then the hook <result>
+
+    Examples:
+      | file                                 | result                      |
+      | src/components/ui/button.astro       | denies with INSTALLED FILES |
+      | src/components/ui/button.behavior.ts | denies with INSTALLED FILES |
+      | src/components/ui/button.classes.ts  | denies with INSTALLED FILES |
+      | src/lib/primitives/classy.ts         | denies with INSTALLED FILES |
+      | src/components/hs-card.astro         | does not deny               |
+      | src/lib/format.ts                    | does not deny               |
+
+  @criterion-prose
+  Scenario: prose in a tag's text is not a class
+    Given a project with no rafters-check bin
+    When an agent writes src/pages/g.astro with a link whose text says the grid
+    Then the hook does not deny
+
+  @criterion-prose
+  Scenario: a class named for a layout word is not that utility
+    Given a project with no rafters-check bin
+    When an agent writes src/pages/h.astro with class="hs-grid"
+    Then the hook does not deny
+
+  @criterion-own-component
+  Scenario: an own component may write class strings on a raw element
+    Given a project with no rafters-check bin
+    When an agent writes src/components/hs-note.astro with a p holding class="text-sm"
+    Then the hook does not deny
+
+  @criterion-own-component
+  Scenario: a page may not
+    Given a project with no rafters-check bin
+    When an agent writes src/pages/i.astro with a p holding class="text-sm"
+    Then the hook denies with THE SYSTEM OWNS TYPOGRAPHY
+
+  @criterion-denial-text
+  Scenario: a denial with several reasons has real line breaks
+    Given a project with no rafters-check bin
+    When an agent writes src/pages/j.astro with class="flex p-4 text-sm"
+    Then the denial holds no backslash-n
+    And the denial has a line for each reason
+
+  @criterion-denial-text
+  Scenario: a type error's denial includes its cause
+    Given a project whose rafters-check reports a type error with a cause on line 2
+    When an agent writes src/pages/k.astro with clean text
+    Then the hook denies, naming ts(2322)
+    And the denial holds "Property 'id' is missing"
+    And the denial holds no help line
