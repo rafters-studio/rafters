@@ -49,7 +49,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `cvd-simulation` | picker | dom | Parallel scale strips simulating color-vision-deficiency views. | `createCvdSimulation` |
 | `hue-bar` | picker | dom | 1D hue-spectrum gradient strip. | `createHueBar`, `updateHueBar` |
 
-## Block documents (op model, history, input)
+## Block documents
 
 | primitive | category | kind | is | key api |
 |---|---|---|---|---|
@@ -61,10 +61,3 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `drag-drop` | block | dom | Accessible drag-and-drop with mouse, keyboard, and touch support. | `createDraggable`, `createDropZone`, `resetDragDropState` |
 | `input-events` | block | dom | beforeinput/input handling with IME composition tracking. | `createInputHandler` |
 | `selection` | block | dom | Block and text selection controllers for editors. | `createBlockSelection`, `createTextSelection` |
-| `block-ops` | block | pure | Applies one op to a block document; returns the new blocks and the ordered op sequence that undoes it. | `applyOp`, `applyOpSequence` |
-| `block-op-types` | block | pure | Op vocabulary over BaseBlock[]: structural, format and text ops, and the OpResult shape. | `EditorOp`, `StructuralOp`, `FormatOp` |
-| `block-op-text` | block | pure | insertText / removeText with marked runs, so marks survive undo. | `insertText`, `removeText` |
-| `block-op-format` | block | pure | Apply or remove a mark over a range of a block. | `applyMark`, `removeMark` |
-| `block-op-structural` | block | pure | Split, merge, delete, convert and insert blocks, each with its inverse. | `applySplit`, `applyMergePrev`, `applyMergeNext` |
-| `block-op-content` | block | pure | Run and mark arithmetic on InlineContent: normalise, measure, compare, toggle marks. | `normalizeRuns`, `totalTextLength`, `runsEqual` |
-| `op-history` | block | dom | Op-based undo/redo on one memory cell: coalescing window, cap, grouped inverses, selection carried per step. | `createEditorHistory` |
