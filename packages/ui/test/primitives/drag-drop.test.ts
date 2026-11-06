@@ -4,6 +4,7 @@ import {
   createDropZone,
   resetDragDropState,
 } from '../../src/primitives/drag-drop';
+import { clearAllAnnouncers } from '../../src/primitives/sr-announcer';
 
 describe('createDraggable', () => {
   let element: HTMLDivElement;
@@ -246,6 +247,19 @@ describe('createDraggable', () => {
       expect(element.getAttribute('aria-grabbed')).toBe('true');
 
       controls.cleanup();
+    });
+
+    it('announces keyboard pick-up through the sr-announcer assertive region', () => {
+      clearAllAnnouncers();
+      const controls = createDraggable({ element, data: { id: 'test' } });
+
+      element.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+      expect(document.querySelector('[data-sr-announcer="assertive"]')).not.toBeNull();
+      expect(document.querySelector('[data-drag-drop-announcer]')).toBeNull();
+
+      controls.cleanup();
+      clearAllAnnouncers();
     });
 
     it('commits keyboard drag on second Space key', () => {

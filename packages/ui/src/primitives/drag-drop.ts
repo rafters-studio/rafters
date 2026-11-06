@@ -28,9 +28,10 @@
  * dropZone.cleanup();
  * ```
  *
- * @primitives types
+ * @primitives types sr-announcer
  */
 
+import { createAssertiveAnnouncer } from './sr-announcer';
 import type { CleanupFunction } from './types';
 
 // =============================================================================
@@ -150,7 +151,6 @@ let keyboardDragState: {
   active: boolean;
   data: unknown;
   element: HTMLElement | null;
-  announcer: HTMLElement | null;
   dropZones: Map<HTMLElement, DropZoneOptions>;
   currentDropZone: HTMLElement | null;
   currentDropZoneIndex: number;
@@ -158,7 +158,6 @@ let keyboardDragState: {
   active: false,
   data: null,
   element: null,
-  announcer: null,
   dropZones: new Map(),
   currentDropZone: null,
   currentDropZoneIndex: -1,
@@ -170,59 +169,6 @@ const dropZoneRegistry: Set<HTMLElement> = new Set();
 // =============================================================================
 // Helpers
 // =============================================================================
-
-/**
- * Create a visually hidden live region for screen reader announcements
- */
-function getOrCreateAnnouncer(): HTMLElement {
-  if (typeof window === 'undefined') {
-    return null as unknown as HTMLElement;
-  }
-
-  if (keyboardDragState.announcer) {
-    return keyboardDragState.announcer;
-  }
-
-  const announcer = document.createElement('div');
-  announcer.setAttribute('aria-live', 'assertive');
-  announcer.setAttribute('aria-atomic', 'true');
-  announcer.setAttribute('role', 'status');
-  announcer.setAttribute('data-drag-drop-announcer', 'true');
-
-  // Visually hidden but accessible
-  Object.assign(announcer.style, {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    padding: '0',
-    margin: '-1px',
-    overflow: 'hidden',
-    clip: 'rect(0, 0, 0, 0)',
-    whiteSpace: 'nowrap',
-    border: '0',
-  });
-
-  document.body.appendChild(announcer);
-  keyboardDragState.announcer = announcer;
-
-  return announcer;
-}
-
-/**
- * Announce a message to screen readers
- */
-function announce(message: string): void {
-  if (typeof window === 'undefined') return;
-
-  const announcer = getOrCreateAnnouncer();
-  if (!announcer) return;
-
-  // Clear and set to trigger announcement
-  announcer.textContent = '';
-  requestAnimationFrame(() => {
-    announcer.textContent = message;
-  });
-}
 
 /**
  * Get sorted array of drop zone elements
@@ -535,7 +481,7 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
     const eventData = createEventData(startPosition.x, startPosition.y);
     onDragStart?.(eventData);
 
-    announce(
+    createAssertiveAnnouncer().announce(
       'Grabbed. Use arrow keys to navigate to a drop zone. Space to drop. Escape to cancel.',
     );
   }
@@ -569,7 +515,7 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
       const label =
         newDropZone.getAttribute('aria-label') ??
         `Drop zone ${keyboardDragState.currentDropZoneIndex + 1}`;
-      announce(`Over ${label}`);
+      createAssertiveAnnouncer().announce(`Over ${label}`);
     }
   }
 
@@ -602,7 +548,7 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
       const label =
         newDropZone.getAttribute('aria-label') ??
         `Drop zone ${keyboardDragState.currentDropZoneIndex + 1}`;
-      announce(`Over ${label}`);
+      createAssertiveAnnouncer().announce(`Over ${label}`);
     }
   }
 
@@ -620,14 +566,14 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
         dropZoneOptions?.onDrop?.(data, dropEffect);
 
         const label = keyboardDragState.currentDropZone.getAttribute('aria-label') ?? 'drop zone';
-        announce(`Dropped on ${label}`);
+        createAssertiveAnnouncer().announce(`Dropped on ${label}`);
       } else {
-        announce('Drop cancelled. Target does not accept this item.');
+        createAssertiveAnnouncer().announce('Drop cancelled. Target does not accept this item.');
       }
 
       keyboardDragState.currentDropZone.setAttribute('aria-dropeffect', 'none');
     } else {
-      announce('Dropped');
+      createAssertiveAnnouncer().announce('Dropped');
     }
 
     updateAriaGrabbed(false);
@@ -655,7 +601,7 @@ export function createDraggable(options: DraggableOptions): DraggableControls {
     }
 
     updateAriaGrabbed(false);
-    announce('Drag cancelled');
+    createAssertiveAnnouncer().announce('Drag cancelled');
 
     const rect = element.getBoundingClientRect();
     const eventData = createEventData(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -901,15 +847,10 @@ export function createDropZone(options: DropZoneOptions): DropZoneControls {
  * Reset keyboard drag state (for testing)
  */
 export function resetDragDropState(): void {
-  if (keyboardDragState.announcer) {
-    keyboardDragState.announcer.remove();
-  }
-
   keyboardDragState = {
     active: false,
     data: null,
     element: null,
-    announcer: null,
     dropZones: new Map(),
     currentDropZone: null,
     currentDropZoneIndex: -1,
