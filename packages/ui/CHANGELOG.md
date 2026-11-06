@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **The op primitives are gone (#2942).** `block-ops`, `block-op-types`,
+  `block-op-text`, `block-op-format`, `block-op-structural`,
+  `block-op-content` and `op-history` duplicated `block-operations` and the
+  memory cell a behavior already owns, and nothing used them. The package
+  root no longer exports `applyOp`, `applyOpSequence`, `createEditorHistory`
+  or their types. Edit blocks with `block-operations`, and keep editor state
+  in the behavior's memory cell.
+
 ### Changed
 
 - **A block split in the middle clones the block; at its end it gives a
@@ -17,8 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   split at the end gives an empty `text` block, as before.
   `insertBlocksAt` splits the same way, so the tail of a block that blocks
   are inserted into keeps its type. `splitBlock` takes an optional
-  `newType`, and the `split` op an optional `newType` field: when set, the
-  new block has that type and no meta. Code that relied on a mid-block split
+  `newType`: when set, the new block has that type and no meta. Code that relied on a mid-block split
   giving `text` passes `newType: 'text'`.
 
 - **classy only combines classes (#2063).** It flattens arrays, drops falsy

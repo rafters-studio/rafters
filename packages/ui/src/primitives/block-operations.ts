@@ -30,10 +30,6 @@ export function blockContentToText(content: string | InlineContent[] | undefined
 /**
  * Split run-array content at a character offset, preserving marks/href on
  * each half (a run straddling the offset is itself split in two).
- *
- * Exported so block-op-content.ts can delegate to this
- * single copy instead of carrying its own -- see marksEqual/mergeRuns below
- * for the same rationale.
  */
 export function splitInlineContent(
   content: InlineContent[],
