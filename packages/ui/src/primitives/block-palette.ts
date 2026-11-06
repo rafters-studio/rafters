@@ -9,7 +9,7 @@
  * - 2.1.1 Keyboard (Level A): Full keyboard navigation with arrow keys
  * - 2.4.3 Focus Order (Level A): Logical focus across categories
  * - 4.1.2 Name, Role, Value (Level A): listbox/option/searchbox ARIA roles
- * - 4.1.3 Status Messages (Level AA): Live region announces filtered count
+ * - 4.1.3 Status Messages (Level AA): sr-announcer announces filtered count
  *
  * @example
  * ```typescript
@@ -26,9 +26,10 @@
  * });
  * ```
  *
- * @primitives typeahead
+ * @primitives sr-announcer typeahead
  */
 
+import { createPoliteAnnouncer } from './sr-announcer';
 import { fuzzyScore } from './typeahead';
 
 // =============================================================================
@@ -72,7 +73,7 @@ export interface BlockPaletteControls {
 // Helpers
 // =============================================================================
 
-/** Debounce timer id for live region announcements */
+/** Debounce delay for filtered count announcements */
 const ANNOUNCE_DELAY_MS = 150;
 
 /**
@@ -202,37 +203,17 @@ export function createBlockPalette(options: BlockPaletteOptions): BlockPaletteCo
   let announceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // =========================================================================
-  // Live region for screen reader announcements
+  // Screen reader announcements (sr-announcer), debounced while typing
   // =========================================================================
 
-  const liveRegion = document.createElement('div');
-  liveRegion.setAttribute('aria-live', 'polite');
-  liveRegion.setAttribute('aria-atomic', 'true');
-  liveRegion.setAttribute('role', 'status');
-  liveRegion.setAttribute('data-palette-live', 'true');
-  Object.assign(liveRegion.style, {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    padding: '0',
-    margin: '-1px',
-    overflow: 'hidden',
-    clip: 'rect(0, 0, 0, 0)',
-    whiteSpace: 'nowrap',
-    border: '0',
-  });
-  container.appendChild(liveRegion);
+  const announcer = createPoliteAnnouncer();
 
   function announce(message: string): void {
     if (announceTimer !== null) {
       clearTimeout(announceTimer);
     }
     announceTimer = setTimeout(() => {
-      liveRegion.textContent = '';
-      // Double-rAF ensures the clear is processed before the new text
-      requestAnimationFrame(() => {
-        liveRegion.textContent = message;
-      });
+      announcer.announce(message);
       announceTimer = null;
     }, ANNOUNCE_DELAY_MS);
   }
@@ -556,7 +537,7 @@ export function createBlockPalette(options: BlockPaletteOptions): BlockPaletteCo
       announceTimer = null;
     }
 
-    liveRegion.remove();
+    announcer.destroy();
 
     container.removeAttribute('role');
     container.removeAttribute('aria-activedescendant');
