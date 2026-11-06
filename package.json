@@ -23,7 +23,8 @@
     "preflight": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:unit && pnpm test:a11y && pnpm build",
     "ci": "pnpm test:all",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "release": "pnpm --filter=rafters build"
+    "release": "pnpm --filter=rafters build",
+    "refresh:demo": "tsx scripts/refresh-demo.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",
