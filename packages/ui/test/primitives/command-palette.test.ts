@@ -306,6 +306,29 @@ describe('createCommandPalette', () => {
   });
 
   describe('keyboard navigation', () => {
+    it('prevents the default of its keys only while open', () => {
+      const palette = createCommandPalette({ container, commands });
+      const keys = ['Escape', 'ArrowDown', 'ArrowUp', 'Enter', 'Home', 'End'];
+      const press = (key: string) => {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        container.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
+
+      for (const key of keys) {
+        expect(press(key)).toBe(false);
+      }
+      for (const key of keys) {
+        palette.open();
+        expect(press(key)).toBe(true);
+      }
+      palette.close();
+      for (const key of keys) {
+        expect(press(key)).toBe(false);
+      }
+      palette.cleanup();
+    });
+
     it('closes on Escape', () => {
       const onClose = vi.fn();
       const palette = createCommandPalette({ container, commands, onClose });

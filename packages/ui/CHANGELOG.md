@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`command-palette` handles its keys through `keyboard-handler` (#2945).**
+  Escape, ArrowDown, ArrowUp, Enter, Home and End are bound with
+  `createNavigationHandler` and `createKeyBindings` while the palette is open,
+  and unbound when it closes, instead of in the palette's own `keydown`
+  switch. Each key does what it did. The trigger character keeps its own
+  listener, since `keyboard-handler` matches named keys only.
+  `command-palette` now declares `keyboard-handler` as a primitive it needs.
 - **A block split in the middle clones the block; at its end it gives a
   paragraph (#2940).** `splitBlock` used to give the new block type `text`
   and no meta wherever the split fell, so splitting a heading in the middle

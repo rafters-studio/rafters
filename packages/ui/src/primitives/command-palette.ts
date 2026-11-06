@@ -20,9 +20,10 @@
  * });
  * ```
  *
- * @primitives types
+ * @primitives keyboard-handler types
  */
 
+import { createKeyBindings, createNavigationHandler } from './keyboard-handler';
 import type { CleanupFunction, Command } from './types';
 
 /**
@@ -356,6 +357,8 @@ export function createCommandPalette(options: CommandPaletteOptions): CommandPal
   let query = '';
   let filteredCommands: Command[] = [];
   let selectedIndex = -1;
+  // Removes the open palette's key handlers; set while the palette is open
+  let detachOpenKeys: CleanupFunction | null = null;
 
   /**
    * Get current state
@@ -398,6 +401,7 @@ export function createCommandPalette(options: CommandPaletteOptions): CommandPal
     query = '';
     filteredCommands = [...commands];
     selectedIndex = filteredCommands.length > 0 ? 0 : -1;
+    detachOpenKeys = attachOpenKeys();
     onOpen?.();
     if (selectedIndex >= 0) {
       const selected = filteredCommands[selectedIndex];
@@ -416,6 +420,8 @@ export function createCommandPalette(options: CommandPaletteOptions): CommandPal
     query = '';
     filteredCommands = [];
     selectedIndex = -1;
+    detachOpenKeys?.();
+    detachOpenKeys = null;
     onClose?.();
   };
 
@@ -499,51 +505,32 @@ export function createCommandPalette(options: CommandPaletteOptions): CommandPal
   };
 
   /**
-   * Handle keydown events
+   * Attach the open palette's keys through keyboard-handler; returns their cleanup
+   */
+  function attachOpenKeys(): CleanupFunction {
+    const detachNavigation = createNavigationHandler(container, {
+      onNext: selectNext,
+      onPrevious: selectPrevious,
+      onFirst: selectFirst,
+      onLast: selectLast,
+    });
+    const detachBindings = createKeyBindings(container, [
+      { key: 'Escape', handler: close, preventDefault: true },
+      { key: 'Enter', handler: execute, preventDefault: true },
+    ]);
+    return () => {
+      detachNavigation();
+      detachBindings();
+    };
+  }
+
+  /**
+   * Open the palette on the trigger character while it is closed
    */
   const handleKeyDown = (event: KeyboardEvent) => {
-    const { key } = event;
-
-    // Check for trigger when palette is closed
-    if (!isOpen) {
-      if (shouldTrigger(container, trigger, key)) {
-        event.preventDefault();
-        open();
-      }
-      return;
-    }
-
-    // Handle palette navigation
-    switch (key) {
-      case 'Escape':
-        event.preventDefault();
-        close();
-        break;
-
-      case 'ArrowDown':
-        event.preventDefault();
-        selectNext();
-        break;
-
-      case 'ArrowUp':
-        event.preventDefault();
-        selectPrevious();
-        break;
-
-      case 'Enter':
-        event.preventDefault();
-        execute();
-        break;
-
-      case 'Home':
-        event.preventDefault();
-        selectFirst();
-        break;
-
-      case 'End':
-        event.preventDefault();
-        selectLast();
-        break;
+    if (!isOpen && shouldTrigger(container, trigger, event.key)) {
+      event.preventDefault();
+      open();
     }
   };
 
