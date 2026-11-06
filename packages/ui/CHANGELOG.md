@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **selection-group selects ranges, and block selection holds its selection
+  in it (#2948).** `SelectionGroup.selectRange(anchor, focus, order,
+  additive?)` selects the values of `order` from `anchor` to `focus`,
+  inclusive and in either direction. It replaces the selection, or adds to it
+  when `additive`, and does nothing when either value is not in `order`.
+  `createBlockSelection` no longer keeps a selected set of its own; it keeps
+  only the anchor and focus, and behaves as before. The `selection` primitive
+  now depends on `selection-group`.
+
 - **A block split in the middle clones the block; at its end it gives a
   paragraph (#2940).** `splitBlock` used to give the new block type `text`
   and no meta wherever the split fell, so splitting a heading in the middle

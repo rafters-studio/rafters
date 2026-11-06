@@ -63,6 +63,12 @@ export interface SelectionGroup {
   select(value: string): void;
   /** Toggle a value. Honors `collapsible` in single mode. */
   toggle(value: string): void;
+  /**
+   * Select the values of `order` from `anchor` to `focus`, inclusive, in either
+   * direction. Replaces the selection, or adds to it when `additive`. Does
+   * nothing when either value is not in `order`.
+   */
+  selectRange(anchor: string, focus: string, order: string[], additive?: boolean): void;
   /** Clear all selection. */
   clear(): void;
   /** Whether a value is currently selected. */
@@ -92,13 +98,26 @@ export function createSelectionGroup(options: SelectionGroupOptions = {}): Selec
   const memory = createMemory<SelectionGroupState>(() => ({ selected: toArray(options.initial) }));
 
   const isSelected = (value: string): boolean => memory.get().selected.includes(value);
+  const set = (values: string[]): void => {
+    memory.set({ selected: multiple ? [...values] : values.slice(0, 1) });
+  };
 
   return {
     memory,
     get: () => memory.get().selected,
     isSelected,
-    set: (values) => {
-      memory.set({ selected: multiple ? [...values] : values.slice(0, 1) });
+    set,
+    selectRange: (anchor, focus, order, additive = false) => {
+      const from = order.indexOf(anchor);
+      const to = order.indexOf(focus);
+      if (from === -1 || to === -1) return;
+      const range = order.slice(Math.min(from, to), Math.max(from, to) + 1);
+      if (!additive) {
+        set(range);
+        return;
+      }
+      const current = memory.get().selected;
+      set([...current, ...range.filter((value) => !current.includes(value))]);
     },
     select: (value) => {
       if (!multiple) {

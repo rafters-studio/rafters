@@ -3,9 +3,10 @@
  * Includes block selection for block-based editors and text selection for contenteditable
  * SSR-safe: checks for window existence
  *
- * @primitives types
+ * @primitives selection-group types
  */
 
+import { createSelectionGroup } from './selection-group';
 import type { CleanupFunction, SelectionRange } from './types';
 
 /**
@@ -167,54 +168,45 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
 
   const { container, getBlocks, onSelectionChange, multiSelect = true } = options;
 
-  // Internal state
-  const state: BlockSelectionState = {
-    selected: new Set(),
-    anchor: null,
-    focus: null,
-  };
+  // The selected set lives in the selection group; the range ends live here.
+  const group = createSelectionGroup({ multiple: true });
+  let anchor: string | null = null;
+  let focus: string | null = null;
 
   /**
    * Notify listeners of selection change
    */
   function notifyChange(): void {
-    onSelectionChange?.(new Set(state.selected));
+    onSelectionChange?.(new Set(group.get()));
   }
 
   /**
    * Select a single block, optionally adding to existing selection
    */
   function select(id: string, additive = false): void {
-    if (!multiSelect) {
-      // Single select mode: always replace
-      state.selected.clear();
-      state.selected.add(id);
-      state.anchor = id;
-      state.focus = id;
-    } else if (additive) {
+    if (multiSelect && additive) {
       // Additive: toggle the block in selection
-      if (state.selected.has(id)) {
-        state.selected.delete(id);
+      const removing = group.isSelected(id);
+      group.toggle(id);
+      if (removing) {
         // Update anchor/focus if we removed them
-        if (state.anchor === id) {
-          state.anchor = state.selected.size > 0 ? (Array.from(state.selected)[0] ?? null) : null;
+        if (anchor === id) {
+          anchor = group.get()[0] ?? null;
         }
-        if (state.focus === id) {
-          state.focus = state.anchor;
+        if (focus === id) {
+          focus = anchor;
         }
       } else {
-        state.selected.add(id);
-        state.focus = id;
-        if (state.anchor === null) {
-          state.anchor = id;
+        focus = id;
+        if (anchor === null) {
+          anchor = id;
         }
       }
     } else {
-      // Non-additive: replace selection
-      state.selected.clear();
-      state.selected.add(id);
-      state.anchor = id;
-      state.focus = id;
+      // Single select mode or non-additive: replace selection
+      group.set([id]);
+      anchor = id;
+      focus = id;
     }
     notifyChange();
   }
@@ -223,30 +215,14 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
    * Select all blocks between fromId and toId (inclusive)
    */
   function selectRange(fromId: string, toId: string): void {
-    const blocks = getBlocks();
-    const blockIds = getBlockIds(blocks);
-
-    const fromIndex = blockIds.indexOf(fromId);
-    const toIndex = blockIds.indexOf(toId);
-
-    if (fromIndex === -1 || toIndex === -1) {
+    const blockIds = getBlockIds(getBlocks());
+    if (!blockIds.includes(fromId) || !blockIds.includes(toId)) {
       // One or both IDs not found, do nothing
       return;
     }
-
-    const startIndex = Math.min(fromIndex, toIndex);
-    const endIndex = Math.max(fromIndex, toIndex);
-
-    state.selected.clear();
-    for (let i = startIndex; i <= endIndex; i++) {
-      const id = blockIds[i];
-      if (id !== undefined) {
-        state.selected.add(id);
-      }
-    }
-
-    state.anchor = fromId;
-    state.focus = toId;
+    group.selectRange(fromId, toId, blockIds);
+    anchor = fromId;
+    focus = toId;
     notifyChange();
   }
 
@@ -254,16 +230,10 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
    * Select all blocks
    */
   function selectAll(): void {
-    const blocks = getBlocks();
-    const blockIds = getBlockIds(blocks);
-
-    state.selected.clear();
-    for (const id of blockIds) {
-      state.selected.add(id);
-    }
-
-    state.anchor = blockIds[0] ?? null;
-    state.focus = blockIds[blockIds.length - 1] ?? null;
+    const blockIds = getBlockIds(getBlocks());
+    group.set(blockIds);
+    anchor = blockIds[0] ?? null;
+    focus = blockIds[blockIds.length - 1] ?? null;
     notifyChange();
   }
 
@@ -271,13 +241,13 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
    * Clear all selection
    */
   function clear(): void {
-    if (state.selected.size === 0 && state.anchor === null && state.focus === null) {
+    if (group.get().length === 0 && anchor === null && focus === null) {
       // No change needed
       return;
     }
-    state.selected.clear();
-    state.anchor = null;
-    state.focus = null;
+    group.clear();
+    anchor = null;
+    focus = null;
     notifyChange();
   }
 
@@ -286,9 +256,9 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
    */
   function getState(): BlockSelectionState {
     return {
-      selected: new Set(state.selected),
-      anchor: state.anchor,
-      focus: state.focus,
+      selected: new Set(group.get()),
+      anchor,
+      focus,
     };
   }
 
@@ -307,10 +277,7 @@ export function createBlockSelection(options: BlockSelectionOptions): BlockSelec
     }
 
     const isAdditive = multiSelect && (event.ctrlKey || event.metaKey);
-    const anchor = state.anchor;
-    const isRange = multiSelect && event.shiftKey && anchor !== null;
-
-    if (isRange) {
+    if (multiSelect && event.shiftKey && anchor !== null) {
       selectRange(anchor, id);
     } else {
       select(id, isAdditive);
