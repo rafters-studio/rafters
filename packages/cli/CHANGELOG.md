@@ -5,6 +5,7 @@
 ### Removed
 
 - chore(ui): **The op primitives are gone (#2942).** `block-ops`, `block-op-types`, `block-op-text`, `block-op-format`, `block-op-structural`, `block-op-content` and `op-history` duplicated `block-operations` and a behavior's memory cell, and nothing used them. The registry no longer serves them. A project that installed them keeps its copies until `rafters remove`; edit blocks with `block-operations`.
+- refactor(ui): **`command-palette` and Command fuzzy-match through `typeahead`'s `fuzzyScore` (#2944).** The delivered `command-palette` primitive no longer exports `fuzzyMatch` or `FuzzyMatchResult`, and now depends on `typeahead`; the delivered Command behavior imports `fuzzyScore` from `typeahead` instead of `command-palette`. The same commands match as before; the palette orders them by `fuzzyScore`. Code that imported `fuzzyMatch` should call `fuzzyScore(query, text)` from `typeahead`, where a score above 0 is a match. Projects pick it up with `rafters add --update-all`.
 
 ### Features
 

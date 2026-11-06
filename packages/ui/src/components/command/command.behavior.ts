@@ -1,5 +1,5 @@
 /**
- * @primitives aria-manager command-palette focus-trap outside-click
+ * @primitives aria-manager focus-trap outside-click typeahead
  * @lib compose contract
  */
 import { compose, type Slice } from '../../lib/compose';
@@ -10,9 +10,9 @@ import {
   type PartIds,
 } from '../../lib/contract';
 import { updateAriaAttribute } from '../../primitives/aria-manager';
-import { fuzzyMatch } from '../../primitives/command-palette';
 import { createFocusTrap, preventBodyScroll } from '../../primitives/focus-trap';
 import { onPointerDownOutside } from '../../primitives/outside-click';
+import { fuzzyScore } from '../../primitives/typeahead';
 import { commandClasses } from './command.classes';
 
 /**
@@ -35,10 +35,10 @@ import { commandClasses } from './command.classes';
  *    the ordered set of currently-visible option values, which the bindings
  *    read from the DOM and pass as the action payload.
  *
- * Filtering composes the command-palette primitive's pure `fuzzyMatch` (the
- * createCommandPalette CONTROLLER is cell-owning and editor-specific -- it reads
- * contenteditable selection ranges -- so it does not compose; only the pure
- * matcher does). This upgrades the oracle's substring `includes` filter to
+ * Filtering composes the typeahead primitive's pure `fuzzyScore`, the matcher
+ * command-palette and block-palette rank with (the createCommandPalette
+ * CONTROLLER is cell-owning and editor-specific -- it reads contenteditable
+ * selection ranges -- so it does not compose). This upgrades the oracle's substring `includes` filter to
  * fuzzy matching, the behaviour the issue calls for.
  */
 export interface CommandConfig {
@@ -87,11 +87,11 @@ export function queryValue(state: CommandState, config: CommandConfig): string {
 }
 
 /** Whether an option's searchable text matches the query. An empty query
- *  matches everything; otherwise the command-palette primitive's fuzzyMatch
- *  decides (case-insensitive, prefix/consecutive scored). */
+ *  matches everything; otherwise the typeahead primitive's fuzzyScore decides
+ *  (case-insensitive; the query's characters appear in order). */
 export function matchesQuery(text: string, query: string): boolean {
   if (query === '') return true;
-  return fuzzyMatch(text, query).matches;
+  return fuzzyScore(query, text) > 0;
 }
 
 /** The next highlight given the ordered visible option values, the current

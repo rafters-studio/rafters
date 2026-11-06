@@ -56,7 +56,7 @@ Every primitive under `packages/ui/src/primitives/`. Behavior files COMPOSE thes
 | `block-operations` | block | pure | Pure structural block mutations: split/merge/convert/insert/delete. | `blockContentToText`, `splitBlock`, `mergeWithPrevious` |
 | `block-palette` | block | dom | Categorized grid of draggable block templates with typeahead. | `createBlockPalette` |
 | `clipboard` | block | dom | Copy/cut/paste operations, SSR-safe. | `createClipboard` |
-| `command-palette` | block | dom | Slash-triggered command palette with fuzzy search. | `fuzzyMatch`, `createCommandPalette` |
+| `command-palette` | block | dom | Slash-triggered command palette with fuzzy search. | `createCommandPalette` |
 | `cursor-tracker` | block | dom | Reads/sets cursor position in a contentEditable. | `findBlockElement`, `getCursorPosition`, `isCursorAtBlockStart` |
 | `drag-drop` | block | dom | Accessible drag-and-drop with mouse, keyboard, and touch support. | `createDraggable`, `createDropZone`, `resetDragDropState` |
 | `input-events` | block | dom | beforeinput/input handling with IME composition tracking. | `createInputHandler` |
