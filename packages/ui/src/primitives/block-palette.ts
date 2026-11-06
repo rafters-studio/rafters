@@ -537,7 +537,7 @@ export function createBlockPalette(options: BlockPaletteOptions): BlockPaletteCo
       announceTimer = null;
     }
 
-    announcer.destroy();
+    // The polite announcer is shared; destroying it would silence other users.
 
     container.removeAttribute('role');
     container.removeAttribute('aria-activedescendant');

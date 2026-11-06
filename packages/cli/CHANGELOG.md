@@ -12,7 +12,7 @@
 
 ### Changed
 
-- refactor(ui): **`block-palette` announces through `sr-announcer` (#2946).** The delivered `block-palette` primitive no longer builds its own live region in its container; it announces the filtered count through the shared polite announcer, once typing pauses, and now declares `sr-announcer`, so `rafters add` installs it alongside. The `[data-palette-live]` element is gone; the count is in the `[data-sr-announcer="polite"]` region on `document.body`. Projects pick it up with `rafters add --update-all`.
+- refactor(ui): **`block-palette` announces through `sr-announcer` (#2946).** The delivered `block-palette` primitive no longer builds its own live region in its container; it announces the filtered count through the shared polite announcer, once typing pauses, leaves that shared announcer in place when a palette is destroyed, and now declares `sr-announcer`, so `rafters add` installs it alongside. The `[data-palette-live]` element is gone; the count is in the `[data-sr-announcer="polite"]` region on `document.body`. Projects pick it up with `rafters add --update-all`.
 
 ### Fixed
 

@@ -4,6 +4,7 @@ import {
   type BlockPaletteItem,
   createBlockPalette,
 } from '../../src/primitives/block-palette';
+import { clearAllAnnouncers } from '../../src/primitives/sr-announcer';
 
 // =============================================================================
 // Helpers
@@ -80,6 +81,7 @@ describe('createBlockPalette', () => {
   afterEach(() => {
     palette?.destroy();
     container.remove();
+    clearAllAnnouncers();
     vi.useRealTimers();
   });
 
@@ -774,12 +776,20 @@ describe('createBlockPalette', () => {
       expect(onActivate).not.toHaveBeenCalled();
     });
 
-    it('removes the live region element', () => {
+    it('leaves the shared polite announcer in place for other users', () => {
+      vi.useFakeTimers();
       palette = createBlockPalette({ container, items, categories: CATEGORIES });
-      expect(document.querySelector('[data-sr-announcer="polite"]')).not.toBeNull();
+      const other = createBlockPalette({ container, items, categories: CATEGORIES });
 
       palette.destroy();
-      expect(document.querySelector('[data-sr-announcer="polite"]')).toBeNull();
+      const liveRegion = document.querySelector('[data-sr-announcer="polite"]');
+      expect(liveRegion).not.toBeNull();
+
+      other.setSearchQuery('divider');
+      vi.advanceTimersByTime(220);
+      expect(liveRegion?.isConnected).toBe(true);
+      expect(liveRegion?.textContent).toBe('1 block found');
+      other.destroy();
     });
 
     it('cleans up ARIA attributes on container', () => {

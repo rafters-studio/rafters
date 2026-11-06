@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`block-palette` announces through `sr-announcer` (#2946).** The palette
   no longer builds its own live region inside its container. It announces
   the filtered count through the shared polite announcer
-  (`createPoliteAnnouncer`), still once typing pauses, and destroys it on
-  `destroy()`. The `[data-palette-live]` element is gone; the count is in the
+  (`createPoliteAnnouncer`), still once typing pauses. `destroy()` leaves
+  that shared announcer in place, so destroying one palette silences no other
+  palette or chart tooltip. The `[data-palette-live]` element is gone; the count is in the
   `[data-sr-announcer="polite"]` region on `document.body`.
 
 - **A block split in the middle clones the block; at its end it gives a
