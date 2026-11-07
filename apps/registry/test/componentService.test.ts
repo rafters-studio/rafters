@@ -584,7 +584,7 @@ describe('every component file is installable', () => {
     expect(item?.primitives).toContain('sr-announcer');
   });
 
-  it('chart-legend and chart-tooltip keep their own, unchanged file lists', () => {
+  it('chart-legend and chart-tooltip serve the chart files they import flat, never nested (#2951)', () => {
     for (const name of ['chart-legend', 'chart-tooltip']) {
       expect(loadComponent(name)?.files.map((f) => f.path)).toEqual([
         `components/ui/${name}.tsx`,
@@ -592,9 +592,8 @@ describe('every component file is installable', () => {
         `components/ui/${name}.behavior.ts`,
         `components/ui/${name}.classes.ts`,
         'components/ui/chart.behavior.ts',
-        `components/ui/${name}/chart.tsx`,
-        `components/ui/${name}/chart.classes.ts`,
-        `components/ui/${name}/chart.behavior.ts`,
+        'components/ui/chart.tsx',
+        'components/ui/chart.classes.ts',
       ]);
     }
   });

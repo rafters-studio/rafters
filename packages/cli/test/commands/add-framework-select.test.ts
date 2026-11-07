@@ -81,11 +81,14 @@ describe('selectFilesForFramework', () => {
     );
   });
 
-  it('returns all files when nothing matches and target is react', () => {
-    const oddFiles: RegistryFile[] = [makeFile('components/ui/widget.svelte')];
-    const result = selectFilesForFramework(oddFiles, 'react');
+  it('returns only the shared files when a react target has no .tsx (#2951)', () => {
+    const astroOnly: RegistryFile[] = [
+      makeFile('components/ui/card-header.astro'),
+      makeFile('components/ui/card.classes.ts'),
+    ];
+    const result = selectFilesForFramework(astroOnly, 'react');
     expect(result.fallback).toBe(false);
-    expect(result.files).toEqual(oddFiles);
+    expect(result.files.map((f) => f.path)).toEqual(['components/ui/card.classes.ts']);
   });
 
   it('handles items with only shared files gracefully', () => {

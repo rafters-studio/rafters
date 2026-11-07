@@ -1246,7 +1246,15 @@ export function loadComponent(name: string): RegistryItem | null {
       );
     }
 
-    const servedPath = `components/ui/${name}/${resolved.relPath}`;
+    // A framework or shared file directly in the component directory installs
+    // flat, as the directory owner serves it (#2439): `chart-legend.tsx` imports
+    // `./chart`, which is chart.tsx, never a nested copy of it (#2951).
+    const isDirectoryFile =
+      !resolved.relPath.includes('/') &&
+      (resolved.ext === '.tsx' || isSharedSuffix(resolved.relPath.replace(/\.ts$/, '')));
+    const servedPath = isDirectoryFile
+      ? `components/ui/${resolved.relPath}`
+      : `components/ui/${name}/${resolved.relPath}`;
     if (loadedPaths.has(servedPath)) continue;
 
     const analysis = analyzeSource(resolved.content, false);
