@@ -70,12 +70,12 @@ export interface SemanticContext {
 }
 
 export class SemanticSelectionError extends Error {
-  constructor(
-    public readonly familyName: string,
-    message: string,
-  ) {
+  readonly familyName: string;
+
+  constructor(familyName: string, message: string) {
     super(`semantic selection: family "${familyName}" ${message}`);
     this.name = 'SemanticSelectionError';
+    this.familyName = familyName;
   }
 }
 

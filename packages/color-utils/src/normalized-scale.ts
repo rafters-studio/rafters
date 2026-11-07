@@ -16,12 +16,12 @@ import { SCALE_POSITIONS } from './scale-positions.js';
 
 /** An option createNormalizedScale cannot build from. */
 export class NormalizedScaleError extends Error {
-  constructor(
-    public readonly option: 'lightness' | 'chroma' | 'hue',
-    message: string,
-  ) {
+  readonly option: 'lightness' | 'chroma' | 'hue';
+
+  constructor(option: 'lightness' | 'chroma' | 'hue', message: string) {
     super(`createNormalizedScale: ${option} ${message}`);
     this.name = 'NormalizedScaleError';
+    this.option = option;
   }
 }
 
