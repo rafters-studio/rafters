@@ -14,7 +14,7 @@ import {
   regenerateOutputs,
   resolveContentSources,
 } from '@rafters/design-tokens';
-import { RegistryClient } from '../registry/client.js';
+import { RegistryClient, RegistryItemNotFoundError } from '../registry/client.js';
 import {
   ComponentTargetSchema,
   type RegistryFile,
@@ -280,8 +280,65 @@ export function selectFilesForFramework(
     }
   }
 
-  // React target or react-fallback target with no .tsx either -- return everything
+  // React with no .tsx gets only the shared files, so the caller sees the
+  // component has no React file: an Astro-only part never reaches a React
+  // project (#2951).
+  if (target === 'react') return { files: shared, fallback: false };
+
+  // React-fallback target with no .tsx either -- return everything
   return { files, fallback: false };
+}
+
+/** Whether an item has a component file that installs for the target. */
+function hasComponentFileFor(item: RegistryItem, target: ComponentTarget): boolean {
+  return selectFilesForFramework(item.files, target).files.some((f) => !isSharedFile(f.path));
+}
+
+/**
+ * The name to install for `name` on a React target. An Astro-only part
+ * (`card-header`) is exported in React by its parent's .tsx (`CardHeader` from
+ * `card.tsx`), so the parent installs instead and a note names the export. The
+ * parent is found the way the registry resolves a part's directory: trailing
+ * `-segment`s trimmed off the name, the first component whose own .tsx exports
+ * the part's PascalCase name. Any other name is returned unchanged.
+ */
+async function reactInstallName(name: string, client: RegistryClient): Promise<string> {
+  let item: RegistryItem;
+  try {
+    item = await client.fetchComponent(name);
+  } catch (err) {
+    if (err instanceof RegistryItemNotFoundError) return name;
+    throw err;
+  }
+  if (hasComponentFileFor(item, 'react')) return name;
+
+  const exportName = name
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  const exported = new RegExp(`export\\s+(?:const|function)\\s+${exportName}\\b`);
+  const segments = name.split('-');
+  for (let cut = segments.length - 1; cut > 0; cut--) {
+    const parentName = segments.slice(0, cut).join('-');
+    let parent: RegistryItem;
+    try {
+      parent = await client.fetchComponent(parentName);
+    } catch (err) {
+      if (err instanceof RegistryItemNotFoundError) continue;
+      throw err;
+    }
+    const tsx = parent.files.find((f) => f.path === `components/ui/${parentName}.tsx`);
+    if (!tsx || !exported.test(tsx.content)) continue;
+    log({
+      event: 'add:react-parent',
+      component: name,
+      parent: parentName,
+      export: exportName,
+      message: `${name} has no React file; React gets ${exportName} from ${parentName}. Installing ${parentName}.`,
+    });
+    return parentName;
+  }
+  return name;
 }
 
 /**
@@ -549,15 +606,22 @@ function fileExists(cwd: string, relativePath: string): boolean {
  *                      substrate files both import substrate this way.
  * @param opts.installPath - The file's install path; for a substrate file its
  *                      own dir resolves its `./sibling` imports.
+ * @param opts.flatSiblings - Basenames (no extension) of the files the same item
+ *                      serves flat at `components/ui/<name>`; a component's
+ *                      `./<name>` import stays flat instead of nesting.
  */
 export function transformFileContent(
   content: string,
   config: RaftersConfig | null,
   fileType: 'component' | 'primitive' | 'substrate' | 'composite' = 'component',
   cwd: string = process.cwd(),
-  opts: { substrateKinds?: string[]; installPath?: string } = {},
+  opts: {
+    substrateKinds?: string[];
+    installPath?: string;
+    flatSiblings?: ReadonlySet<string>;
+  } = {},
 ): string {
-  const { substrateKinds = [], installPath } = opts;
+  const { substrateKinds = [], installPath, flatSiblings = new Set<string>() } = opts;
   let transformed = content;
 
   // Get paths from config or use defaults
@@ -623,6 +687,10 @@ export function transformFileContent(
       (_match: string, importPath: string) => {
         // Shared-suffix imports install flat beside the component
         if (SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))) {
+          return `from '@/${aliasComponents}/${importPath}'`;
+        }
+        // A file the same item serves flat (chart's `./chart`, `./x-axis`) installs beside it (#2439)
+        if (flatSiblings.has(importPath.replace(/\.(tsx?|jsx?|astro|vue|svelte)$/, ''))) {
           return `from '@/${aliasComponents}/${importPath}'`;
         }
         // Everything else is a subsystem file that installs nested
@@ -727,6 +795,15 @@ async function installItem(
     filesToInstall = selectCompositeFiles(item.files, getComponentTarget(config));
   }
 
+  const flatSiblings = new Set(
+    item.files
+      .map((f) => f.path)
+      .filter(
+        (p) => p.startsWith('components/ui/') && !p.slice('components/ui/'.length).includes('/'),
+      )
+      .map((p) => basename(p).replace(/\.(tsx?|astro|vue|svelte)$/, '')),
+  );
+
   for (const file of filesToInstall) {
     const projectPath = fileProjectPath(file, item, config, cwd);
     const targetPath = join(cwd, projectPath);
@@ -762,6 +839,7 @@ async function installItem(
     const transformedContent = transformFileContent(file.content, config, fileType, cwd, {
       substrateKinds,
       installPath: file.path,
+      flatSiblings,
     });
     await writeFile(targetPath, transformedContent, 'utf-8');
 
@@ -858,7 +936,17 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
 
   // Handle --list option
   if (options.list) {
-    const availableComponents = await client.listComponents();
+    let availableComponents = await client.listComponents();
+    // A React target lists only items with a React file, so adding every
+    // listed name never asks for an Astro-only part (#2951).
+    if (getComponentTarget(config) === 'react') {
+      const withReact: typeof availableComponents = [];
+      for (const component of availableComponents) {
+        const item = await client.fetchComponent(component.name);
+        if (hasComponentFileFor(item, 'react')) withReact.push(component);
+      }
+      availableComponents = withReact;
+    }
     const availableComposites = await client.listComposites();
     if (options.agent) {
       log({
@@ -978,7 +1066,9 @@ export async function add(componentArgs: string[], options: AddOptions): Promise
           }
         }
       } else {
-        const items = await client.resolveDependencies(itemName, seen, needsOf, onNotFound);
+        const installName =
+          target === 'react' ? await reactInstallName(itemName, client) : itemName;
+        const items = await client.resolveDependencies(installName, seen, needsOf, onNotFound);
         allItems.push(...items);
       }
     } catch (err) {

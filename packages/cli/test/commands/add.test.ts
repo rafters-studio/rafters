@@ -237,6 +237,23 @@ import * as Dialog from '@radix-ui/react-dialog';`;
     expect(out).toContain("from '@/components/ui/editor/ops/content'");
   });
 
+  it('keeps ./imports of files the item serves flat beside the importer (#2439, #2951)', () => {
+    const out = transformFileContent(
+      `import { useChartConfig } from './chart';\nimport { XAxis } from './x-axis';\nimport { fmt } from './format';`,
+      null,
+      'component',
+      '/proj',
+      {
+        installPath: 'components/ui/area-chart.tsx',
+        flatSiblings: new Set(['chart', 'x-axis', 'area-chart']),
+      },
+    );
+    expect(out).toContain("from '@/components/ui/chart'");
+    expect(out).toContain("from '@/components/ui/x-axis'");
+    // Not served flat by the item, so it is still a nested subsystem file.
+    expect(out).toContain("from '@/components/ui/area-chart/format'");
+  });
+
   it('keeps shared-suffix ./imports flat from a main component file', () => {
     const out = transformFileContent(
       `import { editorClasses } from './editor.classes';`,
