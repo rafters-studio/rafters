@@ -10,6 +10,10 @@
 
 - feat(cli): **`rafters init` adds `@rafters/veneer` to the project's devDependencies (#2933).** Every init that succeeds (fresh, `--rebuild`, `--reset`, with any flag) installs it with the project's package manager, so `rafters check` finds its `rafters-check` bin. A project that already declares it in any dependency field keeps its version and nothing is reinstalled. A run that refuses installs nothing. If the install fails, init's files stay written and the output names the command to run (`--agent` reports an `init:veneer_install_failed` event). The CLI itself still does not depend on `@rafters/veneer`.
 
+### Changed
+
+- refactor(ui): **The `selection-group` primitive selects ranges, and `selection` composes it (#2948).** `selectRange(anchor, focus, order, additive?)` selects the values of `order` between `anchor` and `focus`, inclusive, replacing the selection or adding to it when `additive`. Block selection now holds its selected set in `selection-group` and behaves as before. The delivered `selection` primitive now needs `selection-group`, so `rafters add` installs it alongside. Projects pick it up with `rafters add --update-all`.
+
 ### Fixed
 
 - fix(ui): **A block split in the middle clones the block; at its end it gives a paragraph (#2940).** The delivered `block-operations` primitive's `splitBlock` gave the new block type `text` and no meta wherever the split fell, so splitting a heading in the middle made its tail a paragraph and dropped its level. A split before the end now gives the new block the split block's type and meta; a split at the end still gives an empty `text` block. `insertBlocksAt` splits the same way. `splitBlock` takes an optional `newType`, which sets the new block's type with no meta; pass `newType: 'text'` to keep the old mid-block result. Projects pick it up with `rafters add --update-all`.

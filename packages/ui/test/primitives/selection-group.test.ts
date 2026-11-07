@@ -65,6 +65,35 @@ describe('createSelectionGroup', () => {
     });
   });
 
+  describe('selectRange', () => {
+    const order = ['a', 'b', 'c', 'd', 'e'];
+
+    it('selects from anchor to focus inclusive, replacing the selection', () => {
+      const g = createSelectionGroup({ multiple: true, initial: ['e'] });
+      g.selectRange('b', 'd', order);
+      expect(g.get()).toEqual(['b', 'c', 'd']);
+    });
+
+    it('selects the same values when focus comes before anchor', () => {
+      const g = createSelectionGroup({ multiple: true });
+      g.selectRange('d', 'b', order);
+      expect(g.get()).toEqual(['b', 'c', 'd']);
+    });
+
+    it('adds to the selection when additive', () => {
+      const g = createSelectionGroup({ multiple: true, initial: ['e', 'c'] });
+      g.selectRange('a', 'c', order, true);
+      expect(g.get()).toEqual(['e', 'c', 'a', 'b']);
+    });
+
+    it('does nothing when anchor or focus is not in order', () => {
+      const g = createSelectionGroup({ multiple: true, initial: ['a'] });
+      g.selectRange('x', 'c', order);
+      g.selectRange('b', 'x', order);
+      expect(g.get()).toEqual(['a']);
+    });
+  });
+
   describe('subscribe + clear', () => {
     it('notifies on change and clear empties', () => {
       const g = createSelectionGroup({ multiple: true, initial: ['a'] });
