@@ -1,4 +1,5 @@
 /**
+ * @dependencies @rafters/color-utils
  * @primitives aria-manager color-area color-input color-swatch hue-bar hue-warp interactive types
  * @lib compose contract
  */

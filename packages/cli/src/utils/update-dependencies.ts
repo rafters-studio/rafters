@@ -8,6 +8,7 @@
 import { execa } from 'execa';
 import ora from 'ora';
 import { getPackageManager, type PackageManager } from './get-package-manager.js';
+import { log } from './ui.js';
 
 export interface UpdateDependenciesOptions {
   cwd: string;
@@ -87,5 +88,35 @@ async function installWithPackageManager(
   options: { cwd: string; dev: boolean },
 ): Promise<void> {
   const { cwd, dev } = options;
-  await execa(packageManager, installArgs(packageManager, dependencies, dev), { cwd });
+  const args = installArgs(packageManager, dependencies, dev);
+  try {
+    await execa(packageManager, args, { cwd });
+  } catch (error) {
+    // npm refuses any install into a tree that already has a peer conflict,
+    // such as create-vite's typescript-eslint against TypeScript 7 (#2937).
+    // Retry once with --legacy-peer-deps and say which conflict it was.
+    const stderr = errorStderr(error);
+    if (packageManager !== 'npm' || !stderr.includes('ERESOLVE')) throw error;
+    log({
+      event: 'add:deps:legacy-peer-deps',
+      message: `npm refused the install on an existing peer conflict; retrying with --legacy-peer-deps. ${peerConflict(stderr)}`,
+    });
+    await execa(packageManager, [...args, '--legacy-peer-deps'], { cwd });
+  }
+}
+
+function errorStderr(error: unknown): string {
+  if (error instanceof Error && 'stderr' in error && typeof error.stderr === 'string') {
+    return error.stderr;
+  }
+  return '';
+}
+
+/** The lines of npm's ERESOLVE report that name the installed package and the peer it breaks. */
+function peerConflict(stderr: string): string {
+  return stderr
+    .split('\n')
+    .map((line) => line.replace(/^npm (?:error|ERR!)\s*/, '').trim())
+    .filter((line) => line.startsWith('Found: ') || /^peer .+ from /.test(line))
+    .join('; ');
 }

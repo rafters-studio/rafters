@@ -555,14 +555,14 @@ const FRAMEWORK_VERSIONS: Record<string, string> = {
 const EXCLUDED_DEPS = new Set(['react/jsx-runtime', '@types/react', '@types/react-dom']);
 
 /**
- * Prefixes to exclude: internal packages, and every subpath of `astro` itself
+ * Prefixes to exclude: every subpath of `astro` itself
  * (`astro/types`, `astro/runtime/server/index.js`). A subpath is not an npm
  * package name -- `pnpm add astro/runtime/server/index.js` fails outright, and
  * the CLI skips a dependency only on an exact name match, so `astro` being
  * installed does not save it (#2325). Every consumer that installs an .astro
  * target already carries `astro`, which resolves its own subpaths.
  */
-const EXCLUDED_PREFIXES = ['@rafters/', 'astro/'];
+const EXCLUDED_PREFIXES = ['astro/'];
 
 /**
  * Add versions to dependencies
@@ -760,9 +760,9 @@ function isPlaceholderDependency(pkg: string): boolean {
  *   @devDependencies pkg1 pkg2 - dev-time deps for consumers
  *   @internal-dependencies ... - completely excluded from registry output
  *
- * Filters out @rafters/* packages (internal workspace deps, not for consumers)
- * and placeholder words like `none`/`n/a` that document "no dependencies"
- * rather than naming one.
+ * Keeps @rafters/* packages: they are published, and the CLI installs them
+ * pinned to its own version (#2937). Filters out placeholder words like
+ * `none`/`n/a` that document "no dependencies" rather than naming one.
  */
 export function extractDepsFromSource(content: string): {
   dependencies: string[];
@@ -797,7 +797,7 @@ export function extractDepsFromSource(content: string): {
         for (const pkg of value.split(/\s+/)) {
           if (!pkg || pkg.startsWith('(')) break;
           if (isPlaceholderDependency(pkg)) continue;
-          if (!pkg.startsWith('@rafters/')) target.add(pkg);
+          target.add(pkg);
         }
       }
     }

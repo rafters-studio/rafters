@@ -16,8 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   root no longer exports `applyOp`, `applyOpSequence`, `createEditorHistory`
   or their types. Edit blocks with `block-operations`, and keep editor state
   in the behavior's memory cell.
+- **`fuzzyMatch` and `FuzzyMatchResult` are gone from `command-palette`
+  (#2944).** The palette had its own matcher beside `typeahead`'s
+  `fuzzyScore`, which `block-palette` already ranks with. Use
+  `fuzzyScore(query, text)` from `typeahead`: a score above 0 is a match.
 
 ### Changed
+
+- **`command-palette` and Command match through `typeahead`'s `fuzzyScore`
+  (#2944).** The same commands match as before; the palette's order among
+  them now follows `fuzzyScore`, so a start-of-word match can outrank a
+  substring further in. Command keeps the same options visible.
 
 - **A block split in the middle clones the block; at its end it gives a
   paragraph (#2940).** `splitBlock` used to give the new block type `text`

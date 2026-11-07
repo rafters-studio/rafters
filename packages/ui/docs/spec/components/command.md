@@ -28,10 +28,10 @@ reducer value, not a second cell: `createSelectionGroup`/`createCommandPalette`
 own their own cells and do not compose, so the highlight is re-expressed as
 `highlighted` on this cell (the pattern radio-group/select/tabs follow).
 
-Filtering composes the `command-palette` primitive's **pure** `fuzzyMatch`. The
-`createCommandPalette` CONTROLLER does not compose: it owns a cell and is
-editor-specific (its `shouldTrigger` reads contenteditable selection ranges);
-only the pure matcher is a seam.
+Filtering composes the `typeahead` primitive's **pure** `fuzzyScore`, the
+matcher `command-palette` ranks with. The `createCommandPalette` CONTROLLER
+does not compose: it owns a cell and is editor-specific (its `shouldTrigger`
+reads contenteditable selection ranges); only the pure matcher is a seam.
 
 `roving-focus` is deliberately NOT composed. See the oracle dispositions.
 
@@ -125,7 +125,7 @@ fires from the same click path.
 | Command / Dialog / Input / List / Empty / Group / Item / Separator / Shortcut surface + `Command.*` namespace | contract (shadcn drop-in floor) |
 | ArrowDown/Up clamp (no wrap), Home/End to first/last, reset highlight on query change | contract (extracted from the oracle's `min`/`max` on activeIndex) |
 | mouse-enter highlights the pointed option | contract (moved to `pointermove` -> `highlight`) |
-| substring `includes` filter | upgraded to fuzzy matching via the command-palette primitive's `fuzzyMatch` (issue-directed; a deliberate contract change, not a silent swap) |
+| substring `includes` filter | upgraded to fuzzy matching via the typeahead primitive's `fuzzyScore` (issue-directed; a deliberate contract change, not a silent swap) |
 | Enter only set `selectedValue`, never fired the item's action | defect-do-not-port — Enter now invokes the highlighted option through the same click path as pointer, so the option's `onSelect` fires |
 | `roving-focus` (issue's "add" list) | dropped — a combobox keeps DOM focus on the input and points at the active option virtually (aria-activedescendant); roving-focus moves DOM focus and item tabindex (and wraps), which would pull focus off the search box and break typing. Three signals converge: the oracle's aria-activedescendant + its explicit "options not individually focusable" note, the issue's `highlighted` state axis (a reducer value, not DOM focus), and shadcn/cmdk parity (aria-activedescendant). The primitive list is INTENT; this is the INTENT-vs-FACT escape hatch the issue names |
 | `CommandDialog` (React-only convenience) | contract, upgraded: the oracle wrapped Command in a backdrop + Escape listener; it now composes the modal trio (focus-trap + preventBodyScroll + outside-dismiss) via `startCommandDialogEffects`, imitating `dialog` per the issue. Provided in React (the surface the oracle shipped); Astro consumers compose the merged `dialog` + `command` |
