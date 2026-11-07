@@ -20,22 +20,11 @@
  * });
  * ```
  *
- * @primitives types
+ * @primitives typeahead types
  */
 
+import { fuzzyScore } from './typeahead';
 import type { CleanupFunction, Command } from './types';
-
-/**
- * Result of fuzzy matching a query against text
- */
-export interface FuzzyMatchResult {
-  /** Whether the query matches the text */
-  matches: boolean;
-  /** Score for ranking (higher is better) */
-  score: number;
-  /** Indices of matched characters for highlighting */
-  indices: number[];
-}
 
 /**
  * Options for creating a command palette
@@ -100,97 +89,6 @@ export interface CommandPaletteController {
 }
 
 /**
- * Fuzzy match a query against text
- *
- * Scores matches based on:
- * - Exact match: highest score
- * - Prefix match: high score
- * - Consecutive character matches: bonus
- * - Character found: base score
- *
- * @example
- * ```typescript
- * const result = fuzzyMatch('Bold Text', 'bt');
- * // { matches: true, score: X, indices: [0, 5] }
- *
- * const exact = fuzzyMatch('Bold', 'bold');
- * // { matches: true, score: high, indices: [0, 1, 2, 3] }
- * ```
- */
-export function fuzzyMatch(text: string, query: string): FuzzyMatchResult {
-  if (!query) {
-    return { matches: true, score: 0, indices: [] };
-  }
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-
-  // Exact match (case-insensitive) gets highest score
-  if (lowerText === lowerQuery) {
-    const indices: number[] = [];
-    for (let i = 0; i < text.length; i++) {
-      indices.push(i);
-    }
-    return { matches: true, score: 1000, indices };
-  }
-
-  // Check if query is a substring (case-insensitive)
-  const substringIndex = lowerText.indexOf(lowerQuery);
-  if (substringIndex !== -1) {
-    const indices: number[] = [];
-    for (let i = 0; i < query.length; i++) {
-      indices.push(substringIndex + i);
-    }
-    // Prefix match gets higher score than substring elsewhere
-    const prefixBonus = substringIndex === 0 ? 500 : 0;
-    return { matches: true, score: 800 + prefixBonus, indices };
-  }
-
-  // Fuzzy character-by-character matching
-  const indices: number[] = [];
-  let score = 0;
-  let textIndex = 0;
-  let lastMatchIndex = -1;
-  let consecutiveBonus = 0;
-
-  for (let queryIndex = 0; queryIndex < lowerQuery.length; queryIndex++) {
-    const queryChar = lowerQuery[queryIndex];
-    let found = false;
-
-    while (textIndex < lowerText.length) {
-      if (lowerText[textIndex] === queryChar) {
-        indices.push(textIndex);
-        found = true;
-
-        // Consecutive match bonus
-        if (lastMatchIndex === textIndex - 1) {
-          consecutiveBonus += 10;
-        }
-
-        // Start of word bonus (after space or at beginning)
-        if (textIndex === 0 || text[textIndex - 1] === ' ') {
-          score += 20;
-        }
-
-        lastMatchIndex = textIndex;
-        textIndex++;
-        break;
-      }
-      textIndex++;
-    }
-
-    if (!found) {
-      return { matches: false, score: 0, indices: [] };
-    }
-  }
-
-  // Base score for each matched character plus bonuses
-  score += indices.length * 10 + consecutiveBonus;
-
-  return { matches: true, score, indices };
-}
-
-/**
  * Score and filter commands based on query
  */
 function filterCommands(commands: Command[], query: string): Command[] {
@@ -201,30 +99,10 @@ function filterCommands(commands: Command[], query: string): Command[] {
   const scored: Array<{ command: Command; score: number }> = [];
 
   for (const command of commands) {
-    // Match against label
-    const labelMatch = fuzzyMatch(command.label, query);
-    let bestScore = labelMatch.score;
-
-    // Match against description
-    if (command.description) {
-      const descMatch = fuzzyMatch(command.description, query);
-      if (descMatch.matches && descMatch.score > bestScore) {
-        bestScore = descMatch.score;
-      }
-    }
-
-    // Match against keywords
-    if (command.keywords) {
-      for (const keyword of command.keywords) {
-        const keywordMatch = fuzzyMatch(keyword, query);
-        if (keywordMatch.matches && keywordMatch.score > bestScore) {
-          bestScore = keywordMatch.score;
-        }
-      }
-    }
-
-    if (labelMatch.matches || bestScore > 0) {
-      scored.push({ command, score: bestScore });
+    const texts = [command.label, command.description ?? '', ...(command.keywords ?? [])];
+    const score = Math.max(...texts.map((text) => fuzzyScore(query, text)));
+    if (score > 0) {
+      scored.push({ command, score });
     }
   }
 

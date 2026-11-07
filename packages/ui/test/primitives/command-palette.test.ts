@@ -1,122 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCommandPalette, fuzzyMatch } from '../../src/primitives/command-palette';
+import { createCommandPalette } from '../../src/primitives/command-palette';
+import { fuzzyScore } from '../../src/primitives/typeahead';
 import type { Command } from '../../src/primitives/types';
-
-describe('fuzzyMatch', () => {
-  describe('exact matching', () => {
-    it('returns highest score for exact case-insensitive match', () => {
-      const result = fuzzyMatch('Bold', 'bold');
-      expect(result.matches).toBe(true);
-      expect(result.score).toBe(1000);
-      expect(result.indices).toEqual([0, 1, 2, 3]);
-    });
-
-    it('returns highest score for exact case-sensitive match', () => {
-      const result = fuzzyMatch('Bold', 'Bold');
-      expect(result.matches).toBe(true);
-      expect(result.score).toBe(1000);
-      expect(result.indices).toEqual([0, 1, 2, 3]);
-    });
-  });
-
-  describe('substring matching', () => {
-    it('scores prefix matches higher than substring elsewhere', () => {
-      const prefixResult = fuzzyMatch('Bold Text', 'bold');
-      const substringResult = fuzzyMatch('Make Bold', 'bold');
-
-      expect(prefixResult.matches).toBe(true);
-      expect(substringResult.matches).toBe(true);
-      expect(prefixResult.score).toBeGreaterThan(substringResult.score);
-    });
-
-    it('returns correct indices for substring match', () => {
-      const result = fuzzyMatch('Add Bold', 'bold');
-      expect(result.matches).toBe(true);
-      expect(result.indices).toEqual([4, 5, 6, 7]);
-    });
-
-    it('returns correct indices for prefix match', () => {
-      const result = fuzzyMatch('Bold Text', 'bold');
-      expect(result.matches).toBe(true);
-      expect(result.indices).toEqual([0, 1, 2, 3]);
-    });
-  });
-
-  describe('fuzzy character matching', () => {
-    it('matches non-consecutive characters', () => {
-      const result = fuzzyMatch('Bold Text', 'bt');
-      expect(result.matches).toBe(true);
-      expect(result.indices).toEqual([0, 5]);
-    });
-
-    it('matches characters spread across text', () => {
-      const result = fuzzyMatch('Insert Heading', 'ih');
-      expect(result.matches).toBe(true);
-      expect(result.indices).toEqual([0, 7]);
-    });
-
-    it('gives bonus for consecutive matches', () => {
-      const consecutiveResult = fuzzyMatch('Bold', 'bo');
-      const spreadResult = fuzzyMatch('B o l d', 'bo');
-
-      expect(consecutiveResult.matches).toBe(true);
-      expect(spreadResult.matches).toBe(true);
-      // Consecutive should score higher due to bonus
-      expect(consecutiveResult.score).toBeGreaterThan(spreadResult.score);
-    });
-
-    it('gives bonus for word boundary matches', () => {
-      const wordStartResult = fuzzyMatch('Bold Text', 'bt');
-      // Both B and T are at word boundaries
-      expect(wordStartResult.matches).toBe(true);
-      expect(wordStartResult.score).toBeGreaterThan(0);
-    });
-  });
-
-  describe('non-matching cases', () => {
-    it('returns no match when characters not found', () => {
-      const result = fuzzyMatch('Bold', 'xyz');
-      expect(result.matches).toBe(false);
-      expect(result.score).toBe(0);
-      expect(result.indices).toEqual([]);
-    });
-
-    it('returns no match when characters in wrong order', () => {
-      const result = fuzzyMatch('Bold', 'db');
-      expect(result.matches).toBe(false);
-      expect(result.score).toBe(0);
-      expect(result.indices).toEqual([]);
-    });
-
-    it('returns no match when not all characters found', () => {
-      const result = fuzzyMatch('Bold', 'boldy');
-      expect(result.matches).toBe(false);
-      expect(result.score).toBe(0);
-      expect(result.indices).toEqual([]);
-    });
-  });
-
-  describe('empty query', () => {
-    it('matches everything with empty query', () => {
-      const result = fuzzyMatch('Bold Text', '');
-      expect(result.matches).toBe(true);
-      expect(result.score).toBe(0);
-      expect(result.indices).toEqual([]);
-    });
-  });
-
-  describe('case insensitivity', () => {
-    it('matches regardless of case', () => {
-      const lowerResult = fuzzyMatch('BOLD', 'bold');
-      const upperResult = fuzzyMatch('bold', 'BOLD');
-      const mixedResult = fuzzyMatch('BoLd', 'bOlD');
-
-      expect(lowerResult.matches).toBe(true);
-      expect(upperResult.matches).toBe(true);
-      expect(mixedResult.matches).toBe(true);
-    });
-  });
-});
 
 describe('createCommandPalette', () => {
   let container: HTMLDivElement;
@@ -449,6 +334,24 @@ describe('createCommandPalette', () => {
 
       expect(palette.getState().filteredCommands).toHaveLength(1);
       expect(palette.getState().filteredCommands[0]?.id).toBe('heading');
+      palette.cleanup();
+    });
+
+    it("ranks matches by typeahead's fuzzyScore", () => {
+      const ranked: Command[] = [
+        { id: 'within', label: 'Within', action: vi.fn() },
+        { id: 'heading-insert', label: 'Heading Insert', action: vi.fn() },
+      ];
+      const palette = createCommandPalette({ container, commands: ranked });
+
+      palette.open();
+      palette.setQuery('hi');
+
+      expect(fuzzyScore('hi', 'Heading Insert')).toBeGreaterThan(fuzzyScore('hi', 'Within'));
+      expect(palette.getState().filteredCommands.map((c) => c.id)).toEqual([
+        'heading-insert',
+        'within',
+      ]);
       palette.cleanup();
     });
 
