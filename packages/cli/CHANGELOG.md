@@ -10,6 +10,10 @@
 
 - feat(cli): **`rafters init` adds `@rafters/veneer` to the project's devDependencies (#2933).** Every init that succeeds (fresh, `--rebuild`, `--reset`, with any flag) installs it with the project's package manager, so `rafters check` finds its `rafters-check` bin. A project that already declares it in any dependency field keeps its version and nothing is reinstalled. A run that refuses installs nothing. If the install fails, init's files stay written and the output names the command to run (`--agent` reports an `init:veneer_install_failed` event). The CLI itself still does not depend on `@rafters/veneer`.
 
+### Changed
+
+- refactor(ui): **The delivered `drag-drop` primitive announces through `sr-announcer` (#2947).** It no longer appends its own `[data-drag-drop-announcer]` live region; keyboard pick-up, move, drop and cancel are announced through the shared assertive `sr-announcer` region (`role="alert"`), which clears each message after a second. `rafters add drag-drop` now installs `sr-announcer` with it. Projects pick it up with `rafters add --update-all`.
+
 ### Fixed
 
 - fix(ui): **A block split in the middle clones the block; at its end it gives a paragraph (#2940).** The delivered `block-operations` primitive's `splitBlock` gave the new block type `text` and no meta wherever the split fell, so splitting a heading in the middle made its tail a paragraph and dropped its level. A split before the end now gives the new block the split block's type and meta; a split at the end still gives an empty `text` block. `insertBlocksAt` splits the same way. `splitBlock` takes an optional `newType`, which sets the new block's type with no meta; pass `newType: 'text'` to keep the old mid-block result. Projects pick it up with `rafters add --update-all`.

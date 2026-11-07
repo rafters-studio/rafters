@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Keyboard drag announces through `sr-announcer` (#2947).** `drag-drop` no
+  longer builds its own live region: pick-up, move, drop and cancel are
+  announced through the shared assertive region `createAssertiveAnnouncer`
+  owns (`data-sr-announcer="assertive"`, `role="alert"`). The
+  `[data-drag-drop-announcer]` element is gone, and an announcement clears
+  after a second, as every `sr-announcer` message does. `drag-drop` now
+  declares `sr-announcer` among its primitives.
+
 - **A block split in the middle clones the block; at its end it gives a
   paragraph (#2940).** `splitBlock` used to give the new block type `text`
   and no meta wherever the split fell, so splitting a heading in the middle
