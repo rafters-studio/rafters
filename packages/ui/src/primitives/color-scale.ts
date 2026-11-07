@@ -15,7 +15,7 @@
  * });
  * ```
  *
- * @internal-dependencies @rafters/color-utils
+ * @dependencies @rafters/color-utils
  * @primitives types
  */
 

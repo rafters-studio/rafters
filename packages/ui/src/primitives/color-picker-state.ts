@@ -19,9 +19,8 @@
  * @accessibility Delegates to interactive primitive for keyboard navigation; screen reader support via ARIA on each surface
  * @semantic-meaning Composition = unified color selection; leaf primitives handle individual rendering concerns
  *
- * @dependencies nanostores@^0.11.0
+ * @dependencies nanostores@^0.11.0 @rafters/color-utils
  * @devDependencies
- * @internal-dependencies @rafters/color-utils
  *
  * @usage-patterns
  * DO: Use createColorPickerState to get a single reactive atom for the entire picker

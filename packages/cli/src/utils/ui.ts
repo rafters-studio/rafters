@@ -253,6 +253,10 @@ export function log(event: Record<string, unknown>): void {
       console.warn(`  Warning: ${event.message}`);
       break;
 
+    case 'add:deps:legacy-peer-deps':
+      console.warn(`  Warning: ${event.message}`);
+      break;
+
     case 'add:deps:dry-run': {
       const dryDeps = event.dependencies as string[];
       console.log('  [dry-run] Would install:');

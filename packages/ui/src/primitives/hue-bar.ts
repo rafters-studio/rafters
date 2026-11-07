@@ -7,7 +7,7 @@
  * Framework-agnostic, SSR-safe. The caller provides the canvas element;
  * the primitive handles rendering and ARIA attributes.
  *
- * @internal-dependencies @rafters/color-utils
+ * @dependencies @rafters/color-utils
  * @primitives hue-warp types
  */
 

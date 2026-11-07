@@ -1,3 +1,4 @@
+/// <reference path="./apca-w3.d.ts" />
 /**
  * Accessibility contrast calculation and compliance checking functions.
  *
