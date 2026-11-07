@@ -396,6 +396,13 @@ describe('propFieldToFieldDescriptor (#2165)', () => {
  * package a stranger holds under that name. An item with no external
  * dependencies must emit an empty list, never a placeholder string.
  */
+describe('extractDepsFromSource keeps published @rafters/* packages (#2937)', () => {
+  it('declares @rafters/color-utils so the CLI installs it', () => {
+    const source = `/**\n * @dependencies @rafters/color-utils\n */\nexport const x = 1;\n`;
+    expect(extractDepsFromSource(source).dependencies).toEqual(['@rafters/color-utils']);
+  });
+});
+
 describe('extractDepsFromSource placeholder handling (#2219)', () => {
   it('treats "none" as no external dependencies', () => {
     const source = `/**\n * @dependencies none\n */\nexport const x = 1;\n`;

@@ -48,7 +48,9 @@ function importedNeeds(file: string, content: string): Record<Kind, string[]> {
       else if (kind !== 'components') throw new Error(`${file}: unmapped import ${spec}`);
       continue;
     }
-    if (spec.startsWith('node:') || spec.startsWith('@rafters/') || spec.startsWith('astro:'))
+    // `@rafters/ui` is the package these files belong to (usage examples in
+    // JSDoc name it); every other @rafters/* package is a real npm dependency.
+    if (spec.startsWith('node:') || spec.startsWith('astro:') || spec.startsWith('@rafters/ui'))
       continue;
     const parts = spec.split('/');
     found.dependencies.add(spec.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]);
