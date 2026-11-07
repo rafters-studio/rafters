@@ -4,6 +4,7 @@ import {
   type BlockPaletteItem,
   createBlockPalette,
 } from '../../src/primitives/block-palette';
+import { clearAllAnnouncers } from '../../src/primitives/sr-announcer';
 
 // =============================================================================
 // Helpers
@@ -80,6 +81,7 @@ describe('createBlockPalette', () => {
   afterEach(() => {
     palette?.destroy();
     container.remove();
+    clearAllAnnouncers();
     vi.useRealTimers();
   });
 
@@ -92,9 +94,10 @@ describe('createBlockPalette', () => {
     expect(container.getAttribute('role')).toBe('listbox');
   });
 
-  it('creates a live region inside the container', () => {
+  it('announces through the polite sr-announcer and creates no live region of its own', () => {
     palette = createBlockPalette({ container, items, categories: CATEGORIES });
-    const liveRegion = container.querySelector('[data-palette-live]');
+    expect(container.querySelector('[aria-live]')).toBeNull();
+    const liveRegion = document.querySelector('[data-sr-announcer="polite"]');
     expect(liveRegion).not.toBeNull();
     expect(liveRegion?.getAttribute('aria-live')).toBe('polite');
     expect(liveRegion?.getAttribute('role')).toBe('status');
@@ -216,7 +219,7 @@ describe('createBlockPalette', () => {
       // Advance past debounce + rAF
       vi.advanceTimersByTime(200);
 
-      const liveRegion = container.querySelector('[data-palette-live]');
+      const liveRegion = document.querySelector('[data-sr-announcer="polite"]');
       // The announce uses rAF, so we need to trigger it
       // In jsdom rAF is synchronous with fake timers
       vi.advanceTimersByTime(20);
@@ -638,7 +641,7 @@ describe('createBlockPalette', () => {
       // rAF in jsdom
       vi.advanceTimersByTime(20);
 
-      const liveRegion = container.querySelector('[data-palette-live]') as HTMLElement;
+      const liveRegion = document.querySelector('[data-sr-announcer="polite"]') as HTMLElement;
       // The region should have been set (rAF is synchronous in jsdom with fake timers)
       expect(liveRegion).not.toBeNull();
     });
@@ -650,10 +653,15 @@ describe('createBlockPalette', () => {
       // "divider" should match exactly 1 item
       palette.setSearchQuery('divider');
 
-      vi.advanceTimersByTime(200);
+      const liveRegion = document.querySelector('[data-sr-announcer="polite"]');
+      vi.advanceTimersByTime(100);
+      expect(liveRegion?.textContent).toBe('');
+
+      vi.advanceTimersByTime(100);
       vi.advanceTimersByTime(20);
 
       expect(palette.getFilteredItems()).toHaveLength(1);
+      expect(liveRegion?.textContent).toBe('1 block found');
     });
   });
 
@@ -768,12 +776,20 @@ describe('createBlockPalette', () => {
       expect(onActivate).not.toHaveBeenCalled();
     });
 
-    it('removes the live region element', () => {
+    it('leaves the shared polite announcer in place for other users', () => {
+      vi.useFakeTimers();
       palette = createBlockPalette({ container, items, categories: CATEGORIES });
-      expect(container.querySelector('[data-palette-live]')).not.toBeNull();
+      const other = createBlockPalette({ container, items, categories: CATEGORIES });
 
       palette.destroy();
-      expect(container.querySelector('[data-palette-live]')).toBeNull();
+      const liveRegion = document.querySelector('[data-sr-announcer="polite"]');
+      expect(liveRegion).not.toBeNull();
+
+      other.setSearchQuery('divider');
+      vi.advanceTimersByTime(220);
+      expect(liveRegion?.isConnected).toBe(true);
+      expect(liveRegion?.textContent).toBe('1 block found');
+      other.destroy();
     });
 
     it('cleans up ARIA attributes on container', () => {
