@@ -549,15 +549,17 @@ function fileExists(cwd: string, relativePath: string): boolean {
  *                      substrate files both import substrate this way.
  * @param opts.installPath - The file's install path; for a substrate file its
  *                      own dir resolves its `./sibling` imports.
+ * @param opts.itemPaths - The served paths of the item's files; a `./part` among
+ *                      them installs flat, not nested under the importing file's name.
  */
 export function transformFileContent(
   content: string,
   config: RaftersConfig | null,
   fileType: 'component' | 'primitive' | 'substrate' | 'composite' = 'component',
   cwd: string = process.cwd(),
-  opts: { substrateKinds?: string[]; installPath?: string } = {},
+  opts: { substrateKinds?: string[]; installPath?: string; itemPaths?: string[] } = {},
 ): string {
-  const { substrateKinds = [], installPath } = opts;
+  const { substrateKinds = [], installPath, itemPaths = [] } = opts;
   let transformed = content;
 
   // Get paths from config or use defaults
@@ -621,8 +623,12 @@ export function transformFileContent(
     transformed = transformed.replace(
       /from\s+['"]\.\/([^'"]+)['"]/g,
       (_match: string, importPath: string) => {
-        // Shared-suffix imports install flat beside the component
-        if (SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))) {
+        // Shared-suffix imports and a part the item serves beside this file install flat
+        const servedFlat = itemPaths.some(
+          (p) =>
+            p === `components/ui/${importPath}` || p.startsWith(`components/ui/${importPath}.`),
+        );
+        if (servedFlat || SHARED_SUFFIX_BASES.some((s) => importPath.endsWith(s))) {
           return `from '@/${aliasComponents}/${importPath}'`;
         }
         // Everything else is a subsystem file that installs nested
@@ -762,6 +768,7 @@ async function installItem(
     const transformedContent = transformFileContent(file.content, config, fileType, cwd, {
       substrateKinds,
       installPath: file.path,
+      itemPaths: item.files.map((f) => f.path),
     });
     await writeFile(targetPath, transformedContent, 'utf-8');
 

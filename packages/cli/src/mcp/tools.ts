@@ -45,6 +45,7 @@ import { isAbsolute, join } from 'node:path';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
   type CompositeFile,
+  discoverComposites,
   getAllComposites,
   getCompositesByCategory,
   registerComposite,
@@ -160,7 +161,7 @@ const WORKSPACE_PARAM = {
   workspace: {
     type: 'string',
     description:
-      'Workspace name (directory basename). Required when the MCP session has multiple workspaces and none matches cwd. Call rafters_workspaces to list options.',
+      "Workspace name (directory basename), or the absolute path of the project you are working in. The session's default is the directory the server started in, and changing directory does not move it: when you work in another clone or worktree, pass its path on each call. Required when the MCP session has multiple workspaces and none matches cwd. Call rafters_workspaces to list options.",
   },
 } as const;
 
@@ -321,10 +322,11 @@ export const TOOL_DEFINITIONS = [
         ...WORKSPACE_PARAM,
         address: {
           type: 'string',
-          description: 'A dot-address ("button.props.variant") or a natural-language question.',
+          description:
+            'A dot-address ("button.props.variant") or a natural-language question. Omit it for the surface.',
         },
       },
-      required: ['address'],
+      required: [],
     },
   },
   {
@@ -375,7 +377,7 @@ export const TOOL_DEFINITIONS = [
     name: 'rafters_pattern',
     description:
       '[DEPRECATED -- use rafters_describe] Get design pattern guidance by querying composites. ' +
-      'Search by what the pattern solves (e.g., "authentication", "data entry", "navigation") to ' +
+      "Search by what the pattern solves (a word from a composite's solves or appliesWhen) to " +
       'get do/never rules, cognitive load, and designer intent.',
     inputSchema: {
       type: 'object' as const,
@@ -491,7 +493,10 @@ export class RaftersToolHandler {
       case 'rafters_workspaces':
         return this.handleWorkspaces(args);
       case 'rafters_describe':
-        return this.handleDescribe(args.address as string, args.workspace as string | undefined);
+        return this.handleDescribe(
+          typeof args.address === 'string' ? args.address : '',
+          args.workspace as string | undefined,
+        );
       case 'rafters_generate':
         return this.handleGenerate(args.intent as string, args.workspace as string | undefined);
       case 'rafters_composite':
@@ -574,8 +579,9 @@ export class RaftersToolHandler {
     patch: Record<string, unknown>,
   ): Promise<CallToolResult> {
     const resolved = this.resolve(workspaceName);
-    if (!resolved) {
-      // A write needs a concrete target -- when none resolves, list the options.
+    // A write needs a concrete target the session discovered. An absolute path can name any
+    // project on the machine, which is fine to read and is not a target for an agent's write.
+    if (!resolved || !this.workspaces.some((w) => w.root === resolved.root)) {
       return this.workspaceRequiredError();
     }
 
@@ -643,7 +649,11 @@ export class RaftersToolHandler {
    */
   private async loadCompositesFromDirs(...dirs: string[]): Promise<void> {
     const { registry } = await discoverFromDirs(...dirs);
-    for (const composite of registry.values()) {
+    this.registerComposites(registry);
+  }
+
+  private registerComposites(composites: Map<string, CompositeFile>): void {
+    for (const composite of composites.values()) {
       try {
         registerComposite(composite);
       } catch {
@@ -654,10 +664,18 @@ export class RaftersToolHandler {
 
   private async ensureCompositesLoaded(workspace: Workspace | null): Promise<void> {
     if (!this.builtInCompositesLoaded) {
-      await this.loadCompositesFromDirs(
-        join(process.cwd(), 'node_modules/@rafters/composites/src/typography'),
-      );
-      this.builtInCompositesLoaded = true;
+      try {
+        const manifests = (await this.itemsSource(workspace))
+          .filter((item) => item.type === 'composite')
+          .flatMap((item) => item.files)
+          .filter((file) => file.path.endsWith('.composite.json'));
+        this.registerComposites(
+          discoverComposites(manifests.map((f) => ({ raw: f.content, source: f.path }))).registry,
+        );
+        this.builtInCompositesLoaded = true;
+      } catch {
+        // An unreachable registry leaves the workspace's own composites; the next call retries.
+      }
     }
 
     if (workspace && !this.compositesLoadedFor.has(workspace.root)) {

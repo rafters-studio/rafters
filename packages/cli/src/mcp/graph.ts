@@ -26,6 +26,7 @@
  */
 
 import type { ComponentTarget, Facet, PropField, RegistryItem } from '../registry/types.js';
+import { facetReader } from './facets.js';
 
 // A child a caller can drill into next. `type` says whether to drill and what returns.
 export type ChildType =
@@ -153,10 +154,13 @@ const PROBE_OP = '?';
  */
 export function assembleGraph(items: RegistryItem[]): Graph {
   const nodes = new Map<string, GraphNode>();
+  const readFacets = facetReader(items);
 
   for (const item of items) {
     const kind = kindOf(item.type);
     if (kind === null) continue; // rule/substrate are not describe-able nodes
+    // Served with type `composite`, but it is the runtime composites install, not one of them.
+    if (item.name === 'composites') continue;
 
     const src = item.intelligence;
     const intel: GraphIntel = {
@@ -174,7 +178,7 @@ export function assembleGraph(items: RegistryItem[]): Graph {
       id: item.name,
       kind,
       intel,
-      facets: (raw['facets'] as GraphNode['facets']) ?? {},
+      facets: (raw['facets'] as GraphNode['facets']) ?? readFacets(item),
       composesWith: (raw['composites'] as string[]) ?? [],
       parts: [],
     };

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerComposite } from '@rafters/composites';
@@ -16,12 +16,12 @@ function node(
   return { name, type, primitives: [], files: [], rules: [], composites };
 }
 
-// A fixture catalog large enough to exercise every dispatch path. modal/alert/
+// A fixture catalog large enough to exercise every dispatch path. dialog/alert/
 // tooltip are the nodes intent.ts's curated INTENT_TAGS route over.
 const FIXTURE: RegistryItem[] = [
   node('button', 'ui'),
   node('container', 'ui'),
-  node('modal', 'ui'),
+  node('dialog', 'ui'),
   node('alert', 'ui'),
   node('tooltip', 'ui'),
   node('login-form', 'composite'),
@@ -76,6 +76,66 @@ describe('TOOL_DEFINITIONS', () => {
 });
 
 describe('rafters_describe dispatch', () => {
+  it('answers no address the way it answers an empty one', async () => {
+    const { handler } = fixtureHandler([], null);
+    const none = await handler.handleToolCall('rafters_describe', {});
+    const empty = await handler.handleToolCall('rafters_describe', { address: '' });
+    expect(none).toEqual(empty);
+    expect(JSON.parse((none.content[0] as { text: string }).text)).toHaveProperty('kinds');
+  });
+
+  it('lists real composites in describe(composites), without the composites runtime', async () => {
+    const items = [
+      node('composites', 'composite'),
+      node('heading', 'composite'),
+      node('list', 'composite'),
+    ];
+    const { handler } = fixtureHandler([], null, items);
+    const result = await handler.handleToolCall('rafters_describe', { address: 'composites' });
+    const roster = JSON.parse((result.content[0] as { text: string }).text) as Array<{
+      id: string;
+    }>;
+    expect(roster.map((entry) => entry.id)).toEqual(['heading', 'list']);
+  });
+
+  it('does not write wiring to a project named only by its absolute path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rafters-clone-'));
+    await mkdir(join(root, '.rafters'));
+    const configPath = join(root, '.rafters', 'config.rafters.json');
+    const config = JSON.stringify({ componentTarget: 'astro' });
+    await writeFile(configPath, config);
+    const { handler } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_workspaces', {
+      workspace: root,
+      componentTarget: 'react',
+    });
+    expect(JSON.parse((result.content[0] as { text: string }).text).error).toBe(
+      'workspace parameter required',
+    );
+    expect(await readFile(configPath, 'utf-8')).toBe(config);
+    await rm(root, { recursive: true });
+  });
+
+  it('serves the project at an absolute path as the workspace', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rafters-clone-'));
+    await mkdir(join(root, '.rafters'));
+    await mkdir(join(root, 'src'));
+    await writeFile(
+      join(root, '.rafters', 'config.rafters.json'),
+      JSON.stringify({ componentTarget: 'astro' }),
+    );
+    const { handler, calls } = fixtureHandler([], null);
+    const result = await handler.handleToolCall('rafters_describe', {
+      address: 'button',
+      workspace: join(root, 'src'),
+    });
+    expect(JSON.parse((result.content[0] as { text: string }).text)).toMatchObject({
+      target: 'astro',
+    });
+    expect(calls[root]).toBe(1);
+    await rm(root, { recursive: true });
+  });
+
   it('resolves a dot-address through describe/overlay', async () => {
     const { handler } = fixtureHandler([], null);
     const result = await handler.handleToolCall('rafters_describe', { address: 'button' });
@@ -91,7 +151,7 @@ describe('rafters_describe dispatch', () => {
       address: 'what do I use when it needs to be above everything',
     });
     expect(JSON.parse(result.content[0].text as string)).toMatchObject({
-      use: { id: 'modal' },
+      use: { id: 'dialog' },
       not: { id: 'alert' },
     });
   });
@@ -105,7 +165,7 @@ describe('rafters_describe dispatch', () => {
     }>;
     // Nothing installed in a config-less workspace -> everything available.
     expect(data.every((entry) => entry.presence === 'available')).toBe(true);
-    expect(data.map((e) => e.id)).toEqual(expect.arrayContaining(['button', 'modal']));
+    expect(data.map((e) => e.id)).toEqual(expect.arrayContaining(['button', 'dialog']));
   });
 
   it('returns a structured error (not a throw) when the graph is broken', async () => {
@@ -190,7 +250,7 @@ describe('rafters_generate', () => {
       intent: 'what do I use when it needs to be above everything',
     });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('modal');
+    expect(data.error).toContain('dialog');
   });
 
   it('a filler-stripping phrasing on the same semantic axis still routes via matchIntent using the ORIGINAL string, not the stripped candidate', async () => {
@@ -202,7 +262,7 @@ describe('rafters_generate', () => {
       intent: 'I need something that sits on top of everything else',
     });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('modal');
+    expect(data.error).toContain('dialog');
   });
 
   it('flat-refuses a query matching neither tier, carrying the intent door note', async () => {
@@ -231,13 +291,13 @@ describe('rafters_generate', () => {
   });
 
   it('refuses a matchIntent-routed composite by name -- v1 serves components only', async () => {
-    const items = [node('modal', 'composite'), node('alert', 'ui'), node('tooltip', 'ui')];
+    const items = [node('dialog', 'composite'), node('alert', 'ui'), node('tooltip', 'ui')];
     const { handler } = fixtureHandler([], null, items);
     const result = await handler.handleToolCall('rafters_generate', {
       intent: 'what do I use when it needs to be above everything',
     });
     const data = JSON.parse(result.content[0].text as string);
-    expect(data.error).toContain('modal');
+    expect(data.error).toContain('dialog');
     expect(data.error).toContain('composite');
   });
 
@@ -248,9 +308,9 @@ describe('rafters_generate', () => {
   });
 
   it('surfaces a structured error (not a throw) when the graph is broken', async () => {
-    const broken = [node('modal', 'ui', ['does-not-exist'])];
+    const broken = [node('dialog', 'ui', ['does-not-exist'])];
     const { handler } = fixtureHandler([], null, broken);
-    const result = await handler.handleToolCall('rafters_generate', { intent: 'modal' });
+    const result = await handler.handleToolCall('rafters_generate', { intent: 'dialog' });
     expect(JSON.parse(result.content[0].text as string).error).toMatch(
       /failed to build intel graph/,
     );
@@ -286,6 +346,37 @@ describe('deprecated aliases', () => {
     });
     expect(matchSpy).not.toHaveBeenCalled();
     matchSpy.mockRestore();
+  });
+
+  it('rafters_pattern finds a composite supplied only as a served manifest', async () => {
+    const solves = 'a problem only the served fixture manifest solves';
+    const served: RegistryItem = {
+      ...node('served-fixture', 'composite'),
+      files: [
+        {
+          path: 'composites/served-fixture.composite.json',
+          dependencies: [],
+          content: JSON.stringify({
+            manifest: {
+              id: 'served-fixture',
+              name: 'Served Fixture',
+              category: 'typography',
+              description: 'Fixture served by the registry, on no disk the server can read.',
+              keywords: ['fixture'],
+              cognitiveLoad: 1,
+              solves,
+            },
+            input: [],
+            output: [],
+            blocks: [{ id: '1', type: 'heading', content: 'Heading' }],
+          }),
+        },
+      ],
+    };
+    const { handler } = fixtureHandler([], null, [...FIXTURE, served]);
+    const result = await handler.handleToolCall('rafters_pattern', { solves });
+    const data = JSON.parse(result.content[0].text as string);
+    expect(data.patterns.map((p: { id: string }) => p.id)).toEqual(['served-fixture']);
   });
 
   it('rafters_composite query search surfaces per-block rules (blockRules coverage)', async () => {

@@ -8,15 +8,15 @@ import {
 } from '../../src/mcp/intent.js';
 
 // Fixture graph shaped like #2072's own: component nodes with intel that carries
-// semanticMeaning, no props needed for intent routing. `modal`/`alert` are the
+// semanticMeaning, no props needed for intent routing. `dialog`/`alert` are the
 // curated pair the acceptance criteria exercise; `tooltip` gives a SECOND
 // routing target so the mechanism is shown to generalize past one hardcoded pair.
 function fixture(): Graph {
   const nodes = new Map<string, GraphNode>([
     [
-      'modal',
+      'dialog',
       {
-        id: 'modal',
+        id: 'dialog',
         kind: 'component',
         intel: { dos: [], nevers: [], semanticMeaning: 'blocking overlay above all content' },
         facets: {},
@@ -53,12 +53,12 @@ function fixture(): Graph {
 vdescribe('matchIntent -- the intent door', () => {
   const graph = fixture();
 
-  it('routes "above everything" to modal with alert as the near-miss', () => {
+  it('routes "above everything" to dialog with alert as the near-miss', () => {
     const result = matchIntent(
       'what do I use when it needs to be above everything',
       graph,
     ) as IntentMatch;
-    expect(result.use.id).toBe('modal');
+    expect(result.use.id).toBe('dialog');
     expect(result.not.id).toBe('alert');
     expect(result.because).toContain('blocking');
     expect(result.because).toContain('inline');
@@ -69,7 +69,7 @@ vdescribe('matchIntent -- the intent door', () => {
       'I need something that sits on top of everything else',
       graph,
     ) as IntentMatch;
-    expect(result.use.id).toBe('modal');
+    expect(result.use.id).toBe('dialog');
   });
 
   it('routes a different question to a different pair -- the mechanism is not one hardcoded pair', () => {
@@ -84,7 +84,7 @@ vdescribe('matchIntent -- the intent door', () => {
       'what do I use when it needs to be above everything',
       graph,
     ) as IntentMatch;
-    expect(result.because).toBe('modal is blocking/above-all; alert is inline/passive');
+    expect(result.because).toBe('dialog is blocking/above-all; alert is inline/passive');
   });
 
   it('falls through cleanly when no axis matches', () => {
@@ -102,20 +102,20 @@ vdescribe('matchIntent -- the intent door', () => {
       'what do I use when it needs to be above everything',
       graph,
     ) as IntentMatch;
-    expect(result.use).toEqual(describe('modal', graph));
+    expect(result.use).toEqual(describe('dialog', graph));
     expect(result.not).toEqual(describe('alert', graph));
   });
 
   it('a node with no formable counter-example falls through rather than returning a half-pair', () => {
-    // A graph with ONLY modal has no near-miss to compute, so the door stays
+    // A graph with ONLY dialog has no near-miss to compute, so the door stays
     // shut. IntentMatch.not is non-optional, so IntentNoMatch is the sole
     // type-legal result -- a deviation from the spec's two listed no-match paths,
     // documented in the implementation header.
     const soloNodes = new Map<string, GraphNode>([
       [
-        'modal',
+        'dialog',
         {
-          id: 'modal',
+          id: 'dialog',
           kind: 'component',
           intel: { dos: [], nevers: [] },
           props: {},

@@ -115,7 +115,12 @@ export function describeWithOverlay(
   if (addr === 'components' || addr === 'composites') {
     const set = addr === 'components' ? ctx.installed.components : ctx.installed.composites;
     const roster = result as Array<{ id: string }>;
-    return roster.map((entry) => ({ id: entry.id, presence: presenceOf(set, entry.id) }));
+    const served = roster.map((entry) => ({ id: entry.id, presence: presenceOf(set, entry.id) }));
+    if (addr === 'components') return served;
+    // A workspace's own composites are on its disk and in no registry, so the graph has
+    // no node for them; the roster still lists them beside the served ones.
+    const own = [...set].filter((id) => !graph.nodes.has(id));
+    return [...served, ...own.map((id) => ({ id, presence: 'installed' as const }))];
   }
 
   // Single node: a bare id that resolved to a node gets the full stamp. A bad id

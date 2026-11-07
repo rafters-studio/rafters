@@ -206,6 +206,21 @@ vdescribe('describeWithOverlay -- roster tagging', () => {
       { id: 'stack', presence: 'installed' },
     ]);
   });
+
+  it("lists the workspace's own composites beside the served ones", () => {
+    const composed = assembleGraph([
+      ...items,
+      { name: 'stack', type: 'composite', primitives: [], files: [], rules: [] },
+    ]);
+    const ctx: OverlayContext = {
+      target: 'astro',
+      installed: { components: new Set(), composites: new Set(['own-form']) },
+    };
+    expect(describeWithOverlay('composites', composed, ctx)).toEqual([
+      { id: 'stack', presence: 'available' },
+      { id: 'own-form', presence: 'installed' },
+    ]);
+  });
 });
 
 vdescribe('describeWithOverlay -- no shared mutable state', () => {
