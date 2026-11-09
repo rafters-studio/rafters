@@ -35,6 +35,19 @@ describe('grid classes', () => {
     expect(dashboard).not.toContain('first-child');
   });
 
+  // #2967 criterion-1: every value offered names a rung of the shipped progression.
+  it('gap and padding steps land on rungs of the spacing progression, in order', () => {
+    // The shipped minor-third rungs, as spacing-progression reports them (SPACING.md).
+    const rungs = [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18];
+    const steps = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] as const;
+    for (const [index, step] of steps.entries()) {
+      const rung = rungs[index] as number;
+      expect(gridClasses({ gap: step }, {}).root).toContain(`gap-${rung}`);
+      expect(gridClasses({ padding: step }, {}).root).toContain(`p-${rung}`);
+    }
+    expect(gridClasses({ gap: '0' }, {}).root).toContain('gap-0');
+  });
+
   // #2966 criterion-1: a span responds to width on the same axis as columns.
   it('a responsive span emits base plus breakpoint spans, like columns', () => {
     expect(resolveColSpanClasses({ base: 1, lg: 2 })).toBe('col-span-1 lg:col-span-2');

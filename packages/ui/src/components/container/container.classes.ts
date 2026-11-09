@@ -34,6 +34,9 @@ const sizeClasses: Record<string, string> = {
   full: 'w-full',
 };
 
+/** Steps, not multipliers (#2967): key N is the Nth step of the spacing scale,
+ *  written as the existing utility for that rung of the shipped minor-third
+ *  progression, so no value can land off the scale. */
 const paddingClasses: Record<string, string> = {
   '0': 'p-0',
   '1': 'p-1',
@@ -42,12 +45,15 @@ const paddingClasses: Record<string, string> = {
   '4': 'p-4',
   '5': 'p-5',
   '6': 'p-6',
-  '8': 'p-8',
-  '10': 'p-10',
-  '12': 'p-12',
-  '16': 'p-16',
-  '20': 'p-20',
-  '24': 'p-24',
+  '7': 'p-7',
+  '8': 'p-9',
+  '9': 'p-11',
+  '10': 'p-13',
+  '11': 'p-15',
+  '12': 'p-18',
+  '13': 'p-22',
+  '14': 'p-27',
+  '15': 'p-32',
 };
 
 /** Stack mode: vertical flow with gap. */
@@ -59,12 +65,15 @@ const stackGapClasses: Record<string, string> = {
   '4': 'flex flex-col gap-4',
   '5': 'flex flex-col gap-5',
   '6': 'flex flex-col gap-6',
-  '8': 'flex flex-col gap-8',
-  '10': 'flex flex-col gap-10',
-  '12': 'flex flex-col gap-12',
-  '16': 'flex flex-col gap-16',
-  '20': 'flex flex-col gap-20',
-  '24': 'flex flex-col gap-24',
+  '7': 'flex flex-col gap-7',
+  '8': 'flex flex-col gap-9',
+  '9': 'flex flex-col gap-11',
+  '10': 'flex flex-col gap-13',
+  '11': 'flex flex-col gap-15',
+  '12': 'flex flex-col gap-18',
+  '13': 'flex flex-col gap-22',
+  '14': 'flex flex-col gap-27',
+  '15': 'flex flex-col gap-32',
 };
 
 /** gap=true walks the spacing scale by size: component tier into section tier. */

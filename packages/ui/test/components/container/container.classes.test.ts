@@ -24,7 +24,8 @@ describe('container classes', () => {
 
   it('explicit padding suppresses the auto edge padding', () => {
     const padded = root({ size: '4xl', padding: '8' });
-    expect(padded).toContain('p-8');
+    // Step 8 is the 8th rung, 9 (#2967).
+    expect(padded).toContain('p-9');
     expect(padded).not.toContain('@md:px-6');
   });
 
@@ -41,9 +42,9 @@ describe('container classes', () => {
 
   it('gap=true derives from size by walking the spacing scale', () => {
     expect(root({ size: 'sm', gap: true })).toContain('gap-3');
-    expect(root({ size: '7xl', gap: true })).toContain('gap-12');
+    expect(root({ size: '7xl', gap: true })).toContain('gap-18');
     expect(root({ gap: true })).toContain('gap-6');
-    expect(root({ size: '5xl', gap: true, columns: 2 })).toContain('gap-10');
+    expect(root({ size: '5xl', gap: true, columns: 2 })).toContain('gap-13');
   });
 
   it('self-placement spans and depth ride the shared vocabularies', () => {

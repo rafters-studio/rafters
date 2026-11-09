@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Grid and Container spacing values are steps on the scale (#2967).**
+  `gap` and `padding` take `'0'` to `'12'`, and Container's padding adds
+  `'13'` to `'15'`. Each value is a step, not a multiplier: `'8'` is the
+  eighth rung of the spacing progression, written as that rung's existing
+  utility (`gap-9` on the shipped minor third), so no value lands off the
+  scale. Steps 1 to 7 are unchanged; `'8'`, `'10'` and `'12'` now render the
+  8th, 10th and 12th rungs (36px, 52px and 72px at a 4px base). Container's
+  `'16'`, `'20'` and `'24'` are gone; use `'13'` to `'15'`.
 - **Spans and the golden preset respond to width (#2966).** `colSpan` on
   `Container` and `Grid.Item` now takes a fixed span or a per-breakpoint
   object, `{ base: 1, lg: 2 }`, on the same viewport axis as `columns`, so a
