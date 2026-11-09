@@ -48,8 +48,9 @@ import {
   type GridConfig,
   type GridPart,
   type ResponsiveColumns,
+  type ResponsiveSpan,
 } from './grid.behavior';
-import { gridClasses, gridColSpanClasses, gridRowSpanClasses } from './grid.classes';
+import { gridClasses, gridRowSpanClasses, resolveColSpanClasses } from './grid.classes';
 
 type FixedColumns = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
@@ -194,7 +195,7 @@ export interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
   /** The item DECLARES what it is; the stock layouts place it by this
    *  projection, never by source order. */
   priority?: ContentPriority;
-  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  colSpan?: ResponsiveSpan;
   rowSpan?: 1 | 2 | 3;
 }
 
@@ -204,7 +205,7 @@ function GridItem({ priority, colSpan, rowSpan, className, ...props }: GridItemP
   // its child stretches to the track, so a Card spans every row the item does.
   const classes = classy(
     'grid',
-    colSpan && gridColSpanClasses[colSpan],
+    colSpan && resolveColSpanClasses(colSpan),
     rowSpan && gridRowSpanClasses[rowSpan],
     className,
   );

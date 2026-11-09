@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Spans and the golden preset respond to width (#2966).** `colSpan` on
+  `Container` and `Grid.Item` now takes a fixed span or a per-breakpoint
+  object, `{ base: 1, lg: 2 }`, on the same viewport axis as `columns`, so a
+  child can span two tracks on a desktop and one on a phone. A fixed span
+  behaves as before. The `golden` preset now stacks in one column below `lg`
+  and is 2:1 from `lg`, instead of three squeezed columns at every width.
+  New exports: `resolveColSpanClasses`, `ResponsiveSpan`, `SpanValue`.
+
 - **`command-palette` and Command match through `typeahead`'s `fuzzyScore`
   (#2944).** The same commands match as before; the palette's order among
   them now follows `fuzzyScore`, so a start-of-word match can outrank a

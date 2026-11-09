@@ -23,6 +23,8 @@ beforeEach(() => {
     .flex { display: flex; }
     .flex-col { flex-direction: column; }
     .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    /* golden is 2:1 from lg (#2966); the stand-in measures its lg layout. */
+    .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .grid-rows-2 { grid-template-rows: repeat(2, minmax(0, 1fr)); }
     [data-part="root"] { gap: 16px; width: 800px; }

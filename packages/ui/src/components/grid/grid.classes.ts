@@ -4,6 +4,8 @@ import type {
   GridConfig,
   GridState,
   ResponsiveColumns,
+  ResponsiveSpan,
+  SpanValue,
 } from './grid.behavior';
 
 export interface GridClassSet {
@@ -66,7 +68,9 @@ export const gridColumnClasses: Record<string | number, string> = {
  * source order is irrelevant. The oracle's first-child selectors inferred
  * intent from position: defect-do-not-port.
  */
-export const gridGoldenClasses = 'grid-cols-3 [&>[data-priority=primary]]:col-span-2';
+/** Golden: a stack below lg, then 2:1 with the primary child taking two of three tracks. */
+export const gridGoldenClasses =
+  'grid-cols-1 lg:grid-cols-3 lg:[&>[data-priority=primary]]:col-span-2';
 
 export const gridBentoPatterns: Record<BentoPattern, string> = {
   editorial:
@@ -198,6 +202,102 @@ export function resolveColumnsClasses(columns: ResponsiveColumns | undefined): s
     const value: ColumnsValue | undefined = columns[breakpoint];
     if (value !== undefined) {
       const cls = gridResponsiveColumnClasses[breakpoint][value];
+      if (cls) parts.push(cls);
+    }
+  }
+  return parts.join(' ');
+}
+
+/** Per-breakpoint span maps -- literal strings for the JIT scanner, on the
+ *  same viewport axis as gridResponsiveColumnClasses so a span and the
+ *  columns it sits in change at the same width. */
+const gridResponsiveColSpanClasses: Record<ColumnsBreakpoint, Record<number, string>> = {
+  sm: {
+    1: 'sm:col-span-1',
+    2: 'sm:col-span-2',
+    3: 'sm:col-span-3',
+    4: 'sm:col-span-4',
+    5: 'sm:col-span-5',
+    6: 'sm:col-span-6',
+    7: 'sm:col-span-7',
+    8: 'sm:col-span-8',
+    9: 'sm:col-span-9',
+    10: 'sm:col-span-10',
+    11: 'sm:col-span-11',
+    12: 'sm:col-span-12',
+  },
+  md: {
+    1: 'md:col-span-1',
+    2: 'md:col-span-2',
+    3: 'md:col-span-3',
+    4: 'md:col-span-4',
+    5: 'md:col-span-5',
+    6: 'md:col-span-6',
+    7: 'md:col-span-7',
+    8: 'md:col-span-8',
+    9: 'md:col-span-9',
+    10: 'md:col-span-10',
+    11: 'md:col-span-11',
+    12: 'md:col-span-12',
+  },
+  lg: {
+    1: 'lg:col-span-1',
+    2: 'lg:col-span-2',
+    3: 'lg:col-span-3',
+    4: 'lg:col-span-4',
+    5: 'lg:col-span-5',
+    6: 'lg:col-span-6',
+    7: 'lg:col-span-7',
+    8: 'lg:col-span-8',
+    9: 'lg:col-span-9',
+    10: 'lg:col-span-10',
+    11: 'lg:col-span-11',
+    12: 'lg:col-span-12',
+  },
+  xl: {
+    1: 'xl:col-span-1',
+    2: 'xl:col-span-2',
+    3: 'xl:col-span-3',
+    4: 'xl:col-span-4',
+    5: 'xl:col-span-5',
+    6: 'xl:col-span-6',
+    7: 'xl:col-span-7',
+    8: 'xl:col-span-8',
+    9: 'xl:col-span-9',
+    10: 'xl:col-span-10',
+    11: 'xl:col-span-11',
+    12: 'xl:col-span-12',
+  },
+  '2xl': {
+    1: '2xl:col-span-1',
+    2: '2xl:col-span-2',
+    3: '2xl:col-span-3',
+    4: '2xl:col-span-4',
+    5: '2xl:col-span-5',
+    6: '2xl:col-span-6',
+    7: '2xl:col-span-7',
+    8: '2xl:col-span-8',
+    9: '2xl:col-span-9',
+    10: '2xl:col-span-10',
+    11: '2xl:col-span-11',
+    12: '2xl:col-span-12',
+  },
+};
+
+/** A child's span: a fixed span everywhere, or base plus breakpoint spans. */
+export function resolveColSpanClasses(span: ResponsiveSpan | undefined): string {
+  if (span === undefined) return '';
+  if (typeof span === 'number') return gridColSpanClasses[span] ?? '';
+
+  const parts: string[] = [];
+  if (span.base !== undefined) {
+    const base = gridColSpanClasses[span.base];
+    if (base) parts.push(base);
+  }
+  for (const breakpoint of breakpointOrder) {
+    const value: SpanValue | undefined = span[breakpoint];
+    if (value !== undefined) {
+      const cls = gridResponsiveColSpanClasses[breakpoint][value];
       if (cls) parts.push(cls);
     }
   }

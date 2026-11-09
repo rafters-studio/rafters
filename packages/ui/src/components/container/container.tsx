@@ -58,7 +58,7 @@ import type {
   ContainerSize,
 } from './container.behavior';
 import { containerClasses } from './container.classes';
-import type { ResponsiveColumns } from '../grid/grid.behavior';
+import type { ResponsiveColumns, ResponsiveSpan } from '../grid/grid.behavior';
 
 /**
  * A static score has nothing to subscribe to: the performance is pure
@@ -76,7 +76,7 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   columns?: ResponsiveColumns;
   query?: boolean;
   queryName?: string;
-  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  colSpan?: ResponsiveSpan;
   rowSpan?: 1 | 2 | 3;
   position?: ContainerPosition;
   depth?: ContainerDepth;
