@@ -8,13 +8,17 @@ Rafters exists to hold the designer's wants in a form an agent can execute. Not 
 
 The beliefs that shape Rafters come from three traditions. We name them because the principles are easy to state and hard to follow. The work is in what follows.
 
+## Intent
+
+Design exists for a reason, and a project states that reason first. Its intent says what the design will accomplish and why design is needed, and every choice after it answers to that. Rafters exists to hold those choices and the why behind them. See [Intent](INTENT.md).
+
 ## Craft
 
 Good design is honest. We take that literally. A token that stamps `progressionSystem: minor-third` on its metadata while computing values as `base * N` is not honest. It is a system lying about its own architecture. That lie survived two years in this codebase, behind 85 green tests, because the tests asserted what the code did rather than what it claimed.
 
 Honesty in a design system is structural. When spacing says it derives from a ratio, the emitted CSS contains `calc(var(--rafters-spacing-base) * n)`, with `n` taken from the ratio's progression, not a literal that happens to equal the same number today. When radius says it cascades from spacing, the custom property references the spacing variable, and changing the spacing base moves every radius value at runtime. The relationship is the product, not the number. A number is a snapshot. A relationship is a design decision that survives the next change.
 
-Simplicity means digging through the depth of the complexity. Two numbers control every measurement in Rafters: a base and a ratio. That is simple. Making it actually work took thousands of hours: rounding multipliers instead of pixels so token names stay integers, dropping colliding positions instead of shipping duplicates, anchoring shadow geometry to the same progression that drives spacing. The simplicity is real because the complexity underneath it is resolved, not hidden.
+Simplicity means digging through the depth of the complexity. Two numbers drive the measurements in Rafters: a base and a ratio. That is simple. Making it actually work took thousands of hours: rounding multipliers instead of pixels so token names stay integers, dropping colliding positions instead of shipping duplicates, anchoring shadow geometry to the same progression that drives spacing. The simplicity is real because the complexity underneath it is resolved, not hidden.
 
 Good design is as little design as possible. A designer working in Rafters sets a base, a ratio, a few color hues, and a handful of typography compositions. Everything else generates. They never pick eleven color stops. They never hand-tune twenty spacing values. They never enumerate fourteen typography roles and hope an engineer keeps them current. Rafters does the arithmetic. The designer does the thinking.
 

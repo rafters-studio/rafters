@@ -83,6 +83,7 @@ entry in `packages/cli/CHANGELOG.md`.
 ## Docs
 
 - [Design philosophy](docs/DESIGN_PHILOSOPHY.md)
+- [Intent](docs/INTENT.md): why a project's design exists
 - Token namespaces: [colour](docs/COLOR.md), [spacing](docs/SPACING.md),
   [typography](docs/TYPOGRAPHY.md), [radius](docs/RADIUS.md),
   [shadow](docs/SHADOW.md), [depth](docs/DEPTH.md), [motion](docs/MOTION.md)

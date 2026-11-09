@@ -4,7 +4,7 @@ Shadow tells the user how far something is from the surface beneath it. A card r
 
 ## Three Tiers
 
-We don't need twelve shadow variants. We need three that mean something.
+The registry holds a longer scale, from `none` and `xs` up. Rafters' components use three steps, because those three mean something.
 
 **shadow-sm** is resting. Cards, inputs, keyboard indicators. The element is on the page, barely lifted. The shadow says "I'm a distinct thing" without saying "look at me."
 
@@ -12,15 +12,11 @@ We don't need twelve shadow variants. We need three that mean something.
 
 **shadow-lg** is commanding. Modals, sheets, command palettes. The element demands attention and blocks the page beneath it. The shadow says "deal with me first."
 
-<!-- VENEER: Three cards at each shadow tier. No labels. The user should be able to tell which is resting, which is interactive, and which is commanding just from the shadow. If they can't, the shadow values are wrong. -->
-
 ## Shadow Responds to Interaction
 
 A card at rest has `shadow-sm`. On hover, it lifts to `shadow-md`. The shadow shift is the feedback -- the user sees the card respond to their cursor before they click.
 
 This is why shadow is in the motion system. The transition from `shadow-sm` to `shadow-md` uses `duration-fast` (150ms) with the standard easing curve. The shadow grows smoothly, not instantly.
-
-<!-- VENEER: An interactive card. Hover it and watch the shadow grow. The transition should feel physical -- like picking up a sheet of paper. -->
 
 ## Shadow Is Not Decoration
 
@@ -28,4 +24,6 @@ If an element has a shadow, it means something about its elevation. Shadows are 
 
 A flat design that uses zero shadows is fine. A design where everything has `shadow-lg` is broken -- if everything is elevated, nothing is.
 
-<!-- VENEER: Two layouts. Left: shadows used correctly (card rests, dropdown floats, modal commands). Right: shadows everywhere (visual noise, no hierarchy). The user sees that restraint communicates. Excess obscures. -->
+## Intent
+
+Every choice about shadow answers to why the project's design exists. See [Intent](INTENT.md).
