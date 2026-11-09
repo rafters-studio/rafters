@@ -83,3 +83,7 @@ Studio writes values into the `--rafters-*` layer that every theme token points 
 Twenty developers making "looks right" spacing decisions produces twenty different values where there should be six. The system has opinions about which values exist. If the value you need isn't in the scale, the answer is usually that you need a different value, not a new token.
 
 A scale earns that authority only if every step in it means something. That is why the progression is not decoration on top of a multiplier table -- for two years it was exactly that, and every token claimed otherwise (#2031).
+
+## Intent
+
+Every choice about spacing answers to why the project's design exists. See [Intent](INTENT.md).
