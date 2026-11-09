@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { gridClasses, resolveColumnsClasses } from '../../../src/components/grid/grid.classes';
+import {
+  gridClasses,
+  resolveColSpanClasses,
+  resolveColumnsClasses,
+} from '../../../src/components/grid/grid.classes';
 
 describe('grid classes', () => {
   it('auto columns respond to ONE axis -- the container (double-axis defect not ported)', () => {
@@ -29,6 +33,27 @@ describe('grid classes', () => {
     expect(dashboard).toContain('grid-cols-4');
     expect(dashboard).toContain('[&>[data-priority=primary]]:row-span-2');
     expect(dashboard).not.toContain('first-child');
+  });
+
+  // #2966 criterion-1: a span responds to width on the same axis as columns.
+  it('a responsive span emits base plus breakpoint spans, like columns', () => {
+    expect(resolveColSpanClasses({ base: 1, lg: 2 })).toBe('col-span-1 lg:col-span-2');
+    expect(resolveColSpanClasses({ md: 3, '2xl': 12 })).toBe('md:col-span-3 2xl:col-span-12');
+  });
+
+  // #2966 criterion-2: a fixed span is unchanged.
+  it('a fixed span spans the same tracks at every width', () => {
+    expect(resolveColSpanClasses(2)).toBe('col-span-2');
+    expect(resolveColSpanClasses(undefined)).toBe('');
+  });
+
+  // #2966 criterion-3: golden stacks below lg and is 2:1 from lg.
+  it('golden stacks below lg and gives the primary child two of three tracks from lg', () => {
+    const golden = gridClasses({ preset: 'golden' }, {}).root;
+    expect(golden).toContain('grid-cols-1');
+    expect(golden).toContain('lg:grid-cols-3');
+    expect(golden).toContain('lg:[&>[data-priority=primary]]:col-span-2');
+    expect(golden).not.toMatch(/(?<![\w:-])grid-cols-3/);
   });
 
   it('auto-scaling spacing applies only when gap and padding are both omitted', () => {

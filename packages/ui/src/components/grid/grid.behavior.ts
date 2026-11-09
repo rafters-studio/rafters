@@ -40,6 +40,22 @@ export interface ResponsiveColumnsObject {
 
 export type ResponsiveColumns = ColumnsValue | ResponsiveColumnsObject;
 
+/** How many tracks a child spans: 1 to 12. */
+export type SpanValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+/** A span per breakpoint, on the same viewport axis as ResponsiveColumns. */
+export interface ResponsiveSpanObject {
+  base?: SpanValue | undefined;
+  sm?: SpanValue | undefined;
+  md?: SpanValue | undefined;
+  lg?: SpanValue | undefined;
+  xl?: SpanValue | undefined;
+  '2xl'?: SpanValue | undefined;
+}
+
+/** A fixed span, or one that changes at breakpoints the way `columns` does. */
+export type ResponsiveSpan = SpanValue | ResponsiveSpanObject;
+
 export type SpacingValue = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
 
 export interface GridConfig {

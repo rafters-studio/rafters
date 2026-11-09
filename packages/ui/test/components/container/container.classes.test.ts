@@ -54,6 +54,14 @@ describe('container classes', () => {
     expect(placed).toContain('sticky top-0');
   });
 
+  // #2966 criterion-1: a container placed in a responsive grid spans responsively.
+  it('a responsive span follows the grid it sits in', () => {
+    const placed = root({ colSpan: { base: 1, lg: 2 } });
+    expect(placed).toContain('col-span-1');
+    expect(placed).toContain('lg:col-span-2');
+    expect(placed).not.toMatch(/(?<![\w:-])col-span-2/);
+  });
+
   it('article mode carries the typographic flow and prose measure', () => {
     const article = root({ as: 'article' });
     expect(article).toContain('max-w-prose');
