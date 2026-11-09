@@ -4,9 +4,9 @@
  */
 import { resolveFill, resolveSurface } from '../../primitives/surface';
 import {
-  gridColSpanClasses,
   gridGapClasses,
   gridRowSpanClasses,
+  resolveColSpanClasses,
   resolveColumnsClasses,
 } from '../grid/grid.classes';
 import type {
@@ -201,7 +201,7 @@ export function containerClasses(
     parts.push(stackGapClasses[stackGap] ?? '');
   }
 
-  if (config.colSpan) parts.push(gridColSpanClasses[config.colSpan] ?? '');
+  if (config.colSpan) parts.push(resolveColSpanClasses(config.colSpan));
   if (config.rowSpan) parts.push(gridRowSpanClasses[config.rowSpan] ?? '');
 
   // Container has no base surface: a fill (one bg-fill-* token) or nothing.

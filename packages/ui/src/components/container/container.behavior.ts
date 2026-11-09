@@ -3,7 +3,7 @@
  * @lib contract
  */
 import type { BehaviorSpec } from '../../lib/contract';
-import type { ResponsiveColumns, SpacingValue } from '../grid/grid.behavior';
+import type { ResponsiveColumns, ResponsiveSpan, SpacingValue } from '../grid/grid.behavior';
 
 /**
  * Container: the div-soup killer. A static score -- no state, no actions,
@@ -76,7 +76,7 @@ export interface ContainerConfig {
   query?: boolean | undefined;
   queryName?: string | undefined;
   /** Self-placement when this Container is a grid child. */
-  colSpan?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | undefined;
+  colSpan?: ResponsiveSpan | undefined;
   rowSpan?: 1 | 2 | 3 | undefined;
   position?: ContainerPosition | undefined;
   depth?: ContainerDepth | undefined;
