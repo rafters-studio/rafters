@@ -40,7 +40,21 @@ export interface ResponsiveColumnsObject {
 
 export type ResponsiveColumns = ColumnsValue | ResponsiveColumnsObject;
 
-export type SpacingValue = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+/** A step on the spacing scale, 0 to 12 (#2967): '8' is the 8th step, not 8 x base. */
+export type SpacingValue =
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | '11'
+  | '12';
 
 export interface GridConfig {
   preset?: GridPreset | undefined;

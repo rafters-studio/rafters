@@ -45,7 +45,8 @@ export type ContainerSize =
   | '7xl'
   | 'full';
 
-export type ContainerPadding = SpacingValue | '16' | '20' | '24';
+/** Container reaches three more steps for section-scale padding (#2967). */
+export type ContainerPadding = SpacingValue | '13' | '14' | '15';
 
 export type ContainerPosition = 'sticky' | 'fixed' | 'relative' | 'absolute' | 'static';
 

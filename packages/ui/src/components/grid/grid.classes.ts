@@ -10,6 +10,9 @@ export interface GridClassSet {
   root: string;
 }
 
+/** Steps, not multipliers (#2967): key N is the Nth step of the spacing scale,
+ *  written as the existing utility for that rung of the shipped minor-third
+ *  progression, so no value can land off the scale. */
 export const gridGapClasses: Record<string, string> = {
   '0': 'gap-0',
   '1': 'gap-1',
@@ -18,9 +21,12 @@ export const gridGapClasses: Record<string, string> = {
   '4': 'gap-4',
   '5': 'gap-5',
   '6': 'gap-6',
-  '8': 'gap-8',
-  '10': 'gap-10',
-  '12': 'gap-12',
+  '7': 'gap-7',
+  '8': 'gap-9',
+  '9': 'gap-11',
+  '10': 'gap-13',
+  '11': 'gap-15',
+  '12': 'gap-18',
 };
 
 export const gridPaddingClasses: Record<string, string> = {
@@ -31,15 +37,18 @@ export const gridPaddingClasses: Record<string, string> = {
   '4': 'p-4',
   '5': 'p-5',
   '6': 'p-6',
-  '8': 'p-8',
-  '10': 'p-10',
-  '12': 'p-12',
+  '7': 'p-7',
+  '8': 'p-9',
+  '9': 'p-11',
+  '10': 'p-13',
+  '11': 'p-15',
+  '12': 'p-18',
 };
 
 /** Auto-scaling spacing via container queries -- Grid's default when
  *  neither gap nor padding is explicit. */
 export const gridAutoSpacingClasses =
-  'gap-3 p-3 @md:gap-4 @md:p-4 @lg:gap-6 @lg:p-6 @xl:gap-8 @xl:p-8';
+  'gap-3 p-3 @md:gap-4 @md:p-4 @lg:gap-6 @lg:p-6 @xl:gap-9 @xl:p-9';
 
 /** Column classes. `auto` responds to the CONTAINER (one axis -- the
  *  oracle also stacked viewport defaults on top of these, a live
