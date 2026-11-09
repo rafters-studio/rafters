@@ -4,7 +4,7 @@ Spacing is the reason one interface feels calm and another feels claustrophobic.
 
 ## Two Numbers Control Everything
 
-`baseSpacingUnit` is 4px. `progressionRatio` is minor-third (1.2). Change either one and spacing, radius and shadow recalculate.
+`baseSpacingUnit` is 4px. `progressionRatio` is minor-third (1.2). Change either one and the whole system recalculates.
 
 The base sets where every scale starts. The ratio sets how every scale grows. Spacing, typography, radius and shadow all read the same ratio, which is what keeps them from drifting apart -- a system whose spacing says one thing and whose type says another is incoherent, and one source every namespace reads is the only thing that prevents it.
 

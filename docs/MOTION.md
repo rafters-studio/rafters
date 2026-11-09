@@ -159,7 +159,9 @@ The reduced-motion substitutions are **not ours to derive.** WCAG 2.2 governs th
 
 **Replaced with cross-fade:** modal, sheet, page, dropdown -- each at a shortened duration.
 
-**Removed:** all transform animation, bounce and overshoot, spinner rotation (becomes pulsing opacity), parallax, ambient motion.
+**Removed:** all transform animation, bounce and overshoot, parallax, ambient motion.
+
+**Kept:** a busy indicator keeps its loop. A spinner that stops says the work stopped, which is false while the work is still running (#2155).
 
 The user opted out of spatial movement, not out of knowing what changed.
 
