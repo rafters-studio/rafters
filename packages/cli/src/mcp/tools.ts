@@ -250,6 +250,20 @@ interface GenerateResult {
   install?: string;
 }
 
+// ==================== No workspace ====================
+
+const NO_WORKSPACE_MESSAGE =
+  'No .rafters folder was found. Run `pnpx rafters@latest init` in the project, then try again.';
+
+/** Tools that answer from a workspace; with none, they error instead of returning partial data. */
+const NEEDS_WORKSPACE: ReadonlySet<string> = new Set([
+  'rafters_describe',
+  'rafters_generate',
+  'rafters_component',
+  'rafters_pattern',
+  'rafters_composite',
+]);
+
 // ==================== Tool Definitions ====================
 
 export const TOOL_DEFINITIONS = [
@@ -487,6 +501,9 @@ export class RaftersToolHandler {
   }
 
   async handleToolCall(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
+    if (this.workspaces.length === 0 && NEEDS_WORKSPACE.has(name)) {
+      return this.errorResult(NO_WORKSPACE_MESSAGE);
+    }
     switch (name) {
       case 'rafters_workspaces':
         return this.handleWorkspaces(args);
@@ -556,6 +573,7 @@ export class RaftersToolHandler {
           isDefault: w.name === this.defaultWorkspace?.name,
         })),
         defaultWorkspace: this.defaultWorkspace?.name ?? null,
+        ...(this.workspaces.length === 0 && { message: NO_WORKSPACE_MESSAGE }),
       });
     }
 
