@@ -32,7 +32,7 @@ So: **no duration, easing, or keyframe in this system is a constant.** Every one
 
 ## How motion consumes intent
 
-A designer writes the project's intent first, then chooses the starting point closest to it. The starting point is meant to drive spacing, type, radius and depth as well as motion; a system whose spacing says *elegant* and whose motion says *efficient* is incoherent, and the only way to prevent that is one source every namespace reads. [Intent](INTENT.md) says why a project's design exists. In the code today, the generator reads intent optionally and only `elegant` has a position of its own, so most of what follows about intent is the design rather than what ships.
+A designer writes the project's intent first, then chooses the starting point closest to it. The starting point is meant to drive spacing, type, radius and depth as well as motion; a system whose spacing says _elegant_ and whose motion says _efficient_ is incoherent, and the only way to prevent that is one source every namespace reads. [Intent](INTENT.md) says why a project's design exists. In the code today, the generator reads intent optionally and only `elegant` has a position of its own, so most of what follows about intent is the design rather than what ships.
 
 ## Principles
 
@@ -54,16 +54,16 @@ A designer writes the project's intent first, then chooses the starting point cl
 
 Six tiers, each a **range** rather than a value. The range is the perceptual band the tier must stay inside; the value within it is the designer's, set by intent and adjustable afterward. Studio has no motion picker yet; when it does, it clamps to the range, so a duration outside its band is not reachable by accident.
 
-The tiers are **not a progression.** `moderate` is not `fast × ratio`. It is *somewhere in the communicative window*, and the window is a fact about perception, not a step on a curve. Harmony is spacing's discipline; perception is motion's.
+The tiers are **not a progression.** `moderate` is not `fast × ratio`. It is _somewhere in the communicative window_, and the window is a fact about perception, not a step on a curve. Harmony is spacing's discipline; perception is motion's.
 
-| Tier | Range | Default | Band | Purpose |
-|------|-------|---------|------|---------|
-| `instant` | fixed 0 | 0ms | -- | Cursor changes, text selection, badge counts. No perceptible transition. |
-| `micro` | 50-120ms | 100ms | at the instantaneous threshold | Focus rings, press feedback. Immediate but visible. |
-| `fast` | 120-200ms | 150ms | below the communicative window | Hover states. The cursor is already there; the response must match its speed. |
-| `moderate` | 200-300ms | 250ms | communicative | Dropdowns, tab switches, small reveals. |
-| `normal` | 300-400ms | 350ms | communicative, larger movement | Modal entrances, toggles, standard state transitions. The workhorse. |
-| `slow` | 400-500ms | 500ms | at the sluggish boundary | Sheets, page transitions, large spatial movement where the user needs orientation. |
+| Tier       | Range     | Default | Band                           | Purpose                                                                            |
+| ---------- | --------- | ------- | ------------------------------ | ---------------------------------------------------------------------------------- |
+| `instant`  | fixed 0   | 0ms     | --                             | Cursor changes, text selection, badge counts. No perceptible transition.           |
+| `micro`    | 50-120ms  | 100ms   | at the instantaneous threshold | Focus rings, press feedback. Immediate but visible.                                |
+| `fast`     | 120-200ms | 150ms   | below the communicative window | Hover states. The cursor is already there; the response must match its speed.      |
+| `moderate` | 200-300ms | 250ms   | communicative                  | Dropdowns, tab switches, small reveals.                                            |
+| `normal`   | 300-400ms | 350ms   | communicative, larger movement | Modal entrances, toggles, standard state transitions. The workhorse.               |
+| `slow`     | 400-500ms | 500ms   | at the sluggish boundary       | Sheets, page transitions, large spatial movement where the user needs orientation. |
 
 Defaults are the values the system ships at neutral intent. Nothing moves until a designer moves it.
 
@@ -77,20 +77,20 @@ Six curves. Rafters is not a brand -- it is the system a brand is built on, and 
 
 A curve is a **role** whose shape resolves from intent, bounded by what that role has to communicate. Three parameters describe any of them:
 
-- **bias** -- where the energy sits. Low is decelerating (arrival), high is accelerating (departure), mid is symmetric. **Fixed by the role** -- it is what makes `enter` *enter*.
+- **bias** -- where the energy sits. Low is decelerating (arrival), high is accelerating (departure), mid is symmetric. **Fixed by the role** -- it is what makes `enter` _enter_.
 - **intensity** -- distance from linear. **Set by intent.** This is the personality dial.
 - **settle** -- how tightly a spring comes to rest. **Set by intent**, springs only.
 
 Move intent once and all six shift coherently. That is Audi's one-personality property, without collapsing to one curve.
 
-| Curve | Bias (role-fixed) | Bounded by | Default |
-|---|---|---|---|
-| `standard` | responsive start, decelerating finish | must read as neutral -- no overshoot | `cubic-bezier(0.4, 0.0, 0.2, 1.0)` |
-| `enter` | decelerating | must finish slower than it starts | `cubic-bezier(0.0, 0.0, 0.2, 1.0)` |
-| `exit` | accelerating | must start slower than it finishes | `cubic-bezier(0.4, 0.0, 1.0, 1.0)` |
-| `linear` | none | fixed -- the null case, like `instant` | `linear` |
-| `spring-smooth` | decelerating + settle | critically damped, no visible bounce | `cubic-bezier(0.2, 0.9, 0.3, 1.0)` |
-| `spring-snappy` | decelerating + tight settle | settles faster than smooth, still no bounce | `cubic-bezier(0.2, 0.8, 0.2, 1.0)` |
+| Curve           | Bias (role-fixed)                     | Bounded by                                  | Default                            |
+| --------------- | ------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| `standard`      | responsive start, decelerating finish | must read as neutral -- no overshoot        | `cubic-bezier(0.4, 0.0, 0.2, 1.0)` |
+| `enter`         | decelerating                          | must finish slower than it starts           | `cubic-bezier(0.0, 0.0, 0.2, 1.0)` |
+| `exit`          | accelerating                          | must start slower than it finishes          | `cubic-bezier(0.4, 0.0, 1.0, 1.0)` |
+| `linear`        | none                                  | fixed -- the null case, like `instant`      | `linear`                           |
+| `spring-smooth` | decelerating + settle                 | critically damped, no visible bounce        | `cubic-bezier(0.2, 0.9, 0.3, 1.0)` |
+| `spring-snappy` | decelerating + tight settle           | settles faster than smooth, still no bounce | `cubic-bezier(0.2, 0.8, 0.2, 1.0)` |
 
 The emotional register is not decoration. It is how the shape is read, and it is empirically grounded: Dragicevic et al. tested constant-speed against slow-in/slow-out for object tracking, and slow-in/slow-out won.[^dragicevic-2011]
 
@@ -118,13 +118,13 @@ Expand and collapse animate `grid-template-rows` (`0fr` <-> `1fr`), never `heigh
 
 These are rules, not values. A cross-parameter rule has no home in any single token -- so instead of leaving them as prose, they live as structured, queryable metadata an agent composing motion can read before it writes the wrong thing. They exist because the number of possible parameter combinations is larger than intuition can navigate.
 
-| Parameter | Rule | Why |
-|---|---|---|
-| Direction | Horizontal or vertical. **Never diagonal.** | The eye tracks one axis at a time. Axis-aligned movement creates order. |
-| Scaling | May combine with movement. | Scale changes state, movement changes position; together they read as arriving at a new size. |
-| Opacity | May combine with movement. | Fade plus slide is the standard enter/exit. Fade alone is for elements that do not move. |
-| Rotation | Small elements only. **Never combined with another parameter.** | Rotation is visually dominant; combined with translation it is chaos. Isolated, it reads as processing. |
-| Timing | Sequential, not simultaneous. | Staggered sequences create narrative. Simultaneous animation is noise. |
+| Parameter | Rule                                                            | Why                                                                                                     |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Direction | Horizontal or vertical. **Never diagonal.**                     | The eye tracks one axis at a time. Axis-aligned movement creates order.                                 |
+| Scaling   | May combine with movement.                                      | Scale changes state, movement changes position; together they read as arriving at a new size.           |
+| Opacity   | May combine with movement.                                      | Fade plus slide is the standard enter/exit. Fade alone is for elements that do not move.                |
+| Rotation  | Small elements only. **Never combined with another parameter.** | Rotation is visually dominant; combined with translation it is chaos. Isolated, it reads as processing. |
+| Timing    | Sequential, not simultaneous.                                   | Staggered sequences create narrative. Simultaneous animation is noise.                                  |
 
 ### Where the constraints live
 
@@ -132,12 +132,12 @@ The table above is mirrored by machine-readable data and a validator (`packages/
 
 - **`MOTION_COMBINATION_CONSTRAINTS`** -- the five constraints as data, each carrying an `id`, `rule`, `rationale`, and a `kind`.
 - **`MOTION_GOVERNING_RULE`** -- the rule below, with its three questions and its enforcement posture.
-- **`validateMotionComposition(composition)`** -- takes a proposed animation described by the *parameters it engages* (translate axis, scale, opacity, rotation, element size, timing) and returns the constraint violations. An empty list means legal. `isLegalMotionComposition` is the boolean wrapper.
+- **`validateMotionComposition(composition)`** -- takes a proposed animation described by the _parameters it engages_ (translate axis, scale, opacity, rotation, element size, timing) and returns the constraint violations. An empty list means legal. `isLegalMotionComposition` is the boolean wrapper.
 
 Two splits are deliberate and are recorded in the data itself:
 
-- **Permission vs prohibition.** Only Direction, Rotation, and Timing have teeth -- the validator rejects diagonal movement, rotation combined with anything (or on a large element), and simultaneous timing. Scaling and Opacity are `kind: 'permission'`: they *bless* combining with movement (`scale + move`, `fade + slide`), so the validator never rejects them. A validator that rejected "any two parameters combined" would contradict this spec.
-- **Mechanical vs advisory** for the governing rule (below). Its `enforcement` field is `mechanical-presence-advisory-truth`: the validator mechanically requires that a composition *declares* which question it answers, but whether the declared answer is *true* is a human or agent judgment and stays advisory.
+- **Permission vs prohibition.** Only Direction, Rotation, and Timing have teeth -- the validator rejects diagonal movement, rotation combined with anything (or on a large element), and simultaneous timing. Scaling and Opacity are `kind: 'permission'`: they _bless_ combining with movement (`scale + move`, `fade + slide`), so the validator never rejects them. A validator that rejected "any two parameters combined" would contradict this spec.
+- **Mechanical vs advisory** for the governing rule (below). Its `enforcement` field is `mechanical-presence-advisory-truth`: the validator mechanically requires that a composition _declares_ which question it answers, but whether the declared answer is _true_ is a human or agent judgment and stays advisory.
 
 **Governing rule -- motion that answers no question does not move.** If an animation does not tell the user what happened, where they are, or what to expect next, it is decorative. This one has teeth: decorative animation measurably impairs recall.[^stokes-2020] `validateMotionComposition` enforces the presence half -- a composition with no declared `answers` is rejected.
 
@@ -175,18 +175,32 @@ The tier ranges set the 500ms ceiling -- `slow` tops out there, and an intent ca
 
 The research backing this document lives in `vault-2026/projects/rafters/courses/motion-as-emotional-safety.md` (full citations) and `vault-2026/concepts/motion-as-emotional-safety.md` (the Audi analysis). Note that the concepts document still attributes the 200-300ms window to Thorpe; the course corrects it, and this document follows the course.
 
-[^piaget-1954]: Piaget, J. (1954). *The Construction of Reality in the Child*. Basic Books.
-[^tversky-1993]: Tversky, B. (1993). Cognitive maps, cognitive collages, and spatial mental models. *Spatial Information Theory*, 14-24.
-[^bederson-1999]: Bederson, B. B., & Boltman, A. (1999). Does Animation Help Users Build Mental Maps of Spatial Information? *IEEE InfoVis '99*, 28-35.
-[^heer-2007]: Heer, J., & Robertson, G. G. (2007). Animated Transitions in Statistical Data Graphics. *IEEE TVCG*, 13(6), 1240-1247.
-[^chang-1993]: Chang, B.-W., & Ungar, D. (1993). Animation: from cartoons to the user interface. *UIST '93*, 45-55.
-[^thorpe-1996]: Thorpe, S., Fize, D., & Marlot, C. (1996). Speed of processing in the human visual system. *Nature*, 381, 520-522. Cited here only to mark it as commonly misapplied to motion duration.
-[^card-1983]: Card, S. K., Moran, T. P., & Newell, A. (1983). *The Psychology of Human-Computer Interaction*.
+[^piaget-1954]: Piaget, J. (1954). _The Construction of Reality in the Child_. Basic Books.
+
+[^tversky-1993]: Tversky, B. (1993). Cognitive maps, cognitive collages, and spatial mental models. _Spatial Information Theory_, 14-24.
+
+[^bederson-1999]: Bederson, B. B., & Boltman, A. (1999). Does Animation Help Users Build Mental Maps of Spatial Information? _IEEE InfoVis '99_, 28-35.
+
+[^heer-2007]: Heer, J., & Robertson, G. G. (2007). Animated Transitions in Statistical Data Graphics. _IEEE TVCG_, 13(6), 1240-1247.
+
+[^chang-1993]: Chang, B.-W., & Ungar, D. (1993). Animation: from cartoons to the user interface. _UIST '93_, 45-55.
+
+[^thorpe-1996]: Thorpe, S., Fize, D., & Marlot, C. (1996). Speed of processing in the human visual system. _Nature_, 381, 520-522. Cited here only to mark it as commonly misapplied to motion duration.
+
+[^card-1983]: Card, S. K., Moran, T. P., & Newell, A. (1983). _The Psychology of Human-Computer Interaction_.
+
 [^nielsen-1993]: Nielsen, J. (1993). Response Times: The 3 Important Limits. Nielsen Norman Group.
-[^dragicevic-2011]: Dragicevic, P., et al. (2011). Temporal distortion for animated transitions. *CHI '11*, 2009-2018.
-[^johansson-1973]: Johansson, G. (1973). Visual perception of biological motion. *Perception & Psychophysics*, 14, 201-211.
-[^pratt-2010]: Pratt, J., et al. (2010). It's alive! Animate motion captures visual attention. *Psychological Science*, 21(11), 1724-1730.
-[^stokes-2020]: Stokes, A. (2020). Decorative animations impair recall and are a source of extraneous cognitive load. *Advances in Physiology Education*, 44, 107-111.
-[^agrawal-2009]: Agrawal, Y., et al. (2009). Disorders of balance and vestibular function in US adults. *Archives of Internal Medicine*, 169(10), 938-944.
+
+[^dragicevic-2011]: Dragicevic, P., et al. (2011). Temporal distortion for animated transitions. _CHI '11_, 2009-2018.
+
+[^johansson-1973]: Johansson, G. (1973). Visual perception of biological motion. _Perception & Psychophysics_, 14, 201-211.
+
+[^pratt-2010]: Pratt, J., et al. (2010). It's alive! Animate motion captures visual attention. _Psychological Science_, 21(11), 1724-1730.
+
+[^stokes-2020]: Stokes, A. (2020). Decorative animations impair recall and are a source of extraneous cognitive load. _Advances in Physiology Education_, 44, 107-111.
+
+[^agrawal-2009]: Agrawal, Y., et al. (2009). Disorders of balance and vestibular function in US adults. _Archives of Internal Medicine_, 169(10), 938-944.
+
 [^w3c-mq5]: W3C (2020). Media Queries Level 5: prefers-reduced-motion.
+
 [^wcag-2.3.3]: W3C (2023). WCAG 2.2 SC 2.3.3: Animation from Interactions (AAA).

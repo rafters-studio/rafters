@@ -32,7 +32,7 @@ make.
 
 - **Intent** (`config.intent`) -- the project's declared personality and
   constraints (elegant company, tech product, personal blog, zine...). This is the
-  *designer's* taste, not yours. It narrows which composite or density fits: a zine
+  _designer's_ taste, not yours. It narrows which composite or density fits: a zine
   and a banking app solve "landing page" differently, and the intent tells you
   which. Select to match the recorded intent; never substitute your own.
 - **Attention economics** (`config.attentionBudget` -- the cognitive-load
@@ -73,9 +73,13 @@ separate tool.)
 ```tsx
 <Container as="article">
   <h1>Page Title</h1>
-  <p>Body paragraph with inline <code>code</code>.</p>
+  <p>
+    Body paragraph with inline <code>code</code>.
+  </p>
   <blockquote>A pull quote.</blockquote>
-  <ul><li>List item</li></ul>
+  <ul>
+    <li>List item</li>
+  </ul>
 </Container>
 ```
 
@@ -89,24 +93,27 @@ system. Do not import `H1`/`P`/`Small`/`Code` for content, and do not pass them
 <Container as="main">
   <Container as="section">
     <h2>Section title</h2>
-    <Grid preset="cards"><Card>...</Card><Card>...</Card></Grid>
+    <Grid preset="cards">
+      <Card>...</Card>
+      <Card>...</Card>
+    </Grid>
   </Container>
 </Container>
 ```
 
 Container owns max-width, padding, gap. Grid owns columns and column gap.
 
-| Grid preset | Use for |
-|---|---|
-| linear | Equal-priority columns |
-| golden | Hierarchical (2:1) |
-| bento | Asymmetric showcase |
-| cards | Responsive card flow |
-| split | Equal columns |
-| sidebar | Sidebar + main |
-| form | Label/input pairs |
-| row | Horizontal group |
-| stack | Vertical sequence |
+| Grid preset | Use for                |
+| ----------- | ---------------------- |
+| linear      | Equal-priority columns |
+| golden      | Hierarchical (2:1)     |
+| bento       | Asymmetric showcase    |
+| cards       | Responsive card flow   |
+| split       | Equal columns          |
+| sidebar     | Sidebar + main         |
+| form        | Label/input pairs      |
+| row         | Horizontal group       |
+| stack       | Vertical sequence      |
 
 ## Variant is semantic, never aesthetic
 
@@ -121,20 +128,20 @@ JSDoc for the situation -- not chosen because you like how it looks.
 
 Every row here is a write the hook rejects. Pre-empt it.
 
-| Never (assembly code) | Instead |
-|---|---|
-| `cn(...)` / `twMerge(...)` | `classy(...)` (rarely needed -- usually a component should own it) |
-| arbitrary values: `w-[300px]`, `text-[14px]`, `bg-[#hex]` | design tokens |
-| `flex`, `grid`, `gap-*`, `items-*`, `justify-*` | `Container` / `Grid` |
-| `p-*`, `m-*`, `px-*`, `mt-*` ... | `Container` owns spacing |
-| `bg-primary`, `text-destructive`, `border-success` ... | composite block `variant`, or component `variant` prop per JSDoc |
-| `text-sm`, `text-4xl`, `font-bold` ... | native HTML inside `<Container as="article">`, or the composite |
-| `rounded-*`, `shadow-*`, `w-[0-9]`, `h-*`, `max-w-*` ... | component-owned; don't set them |
-| `var(--rafters-*)` anywhere | never -- the exporter wires variables; consumers don't reference them |
-| `class=`/`className=` on a Rafters component | its token props (`variant`, `size`, ...) |
-| `<div className="...">` wrapping `<Button>`/`<Input>`/`<Card>`/`<Select>`/`<Dialog>` | components include their own spacing -- no wrapper |
-| `<h1>`/`<p>`/`<span>` **with classes** | bare native HTML inside `<Container as="article">`, or a component |
-| editing `lib/primitives/` or `components/ui/*.classes.ts` | read-only (installed by `rafters add`); fix consuming code or file upstream |
+| Never (assembly code)                                                                | Instead                                                                     |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `cn(...)` / `twMerge(...)`                                                           | `classy(...)` (rarely needed -- usually a component should own it)          |
+| arbitrary values: `w-[300px]`, `text-[14px]`, `bg-[#hex]`                            | design tokens                                                               |
+| `flex`, `grid`, `gap-*`, `items-*`, `justify-*`                                      | `Container` / `Grid`                                                        |
+| `p-*`, `m-*`, `px-*`, `mt-*` ...                                                     | `Container` owns spacing                                                    |
+| `bg-primary`, `text-destructive`, `border-success` ...                               | composite block `variant`, or component `variant` prop per JSDoc            |
+| `text-sm`, `text-4xl`, `font-bold` ...                                               | native HTML inside `<Container as="article">`, or the composite             |
+| `rounded-*`, `shadow-*`, `w-[0-9]`, `h-*`, `max-w-*` ...                             | component-owned; don't set them                                             |
+| `var(--rafters-*)` anywhere                                                          | never -- the exporter wires variables; consumers don't reference them       |
+| `class=`/`className=` on a Rafters component                                         | its token props (`variant`, `size`, ...)                                    |
+| `<div className="...">` wrapping `<Button>`/`<Input>`/`<Card>`/`<Select>`/`<Dialog>` | components include their own spacing -- no wrapper                          |
+| `<h1>`/`<p>`/`<span>` **with classes**                                               | bare native HTML inside `<Container as="article">`, or a component          |
+| editing `lib/primitives/` or `components/ui/*.classes.ts`                            | read-only (installed by `rafters add`); fix consuming code or file upstream |
 
 ## The one exception: authoring a custom component
 
@@ -146,13 +153,24 @@ is how a custom component hooks into the token system.
 
 ```tsx
 // src/components/FeatureTile.tsx
-import { classy } from '@rafters/ui/classy';
-import type { ReactNode } from 'react';
+import { classy } from "@rafters/ui/classy";
+import type { ReactNode } from "react";
 
 /** Compact feature card. @cognitive-load 2/10 @accessibility AAA */
-export function FeatureTile({ highlighted, children }: { highlighted?: boolean; children: ReactNode }) {
+export function FeatureTile({
+  highlighted,
+  children,
+}: {
+  highlighted?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className={classy('rounded-lg p-6', highlighted ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}>
+    <div
+      className={classy(
+        "rounded-lg p-6",
+        highlighted ? "bg-primary text-primary-foreground" : "bg-card text-foreground",
+      )}
+    >
       {children}
     </div>
   );

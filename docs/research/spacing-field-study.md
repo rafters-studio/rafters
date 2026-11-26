@@ -39,7 +39,7 @@ address.
 
 > **Superseded reading.** This section originally presented the pattern as a major
 > triad. An adversarial review refuted the musical interpretation; see "the test where
-> the two readings diverge" below. The *measurement* stands unchanged -- the set, the
+> the two readings diverge" below. The _measurement_ stands unchanged -- the set, the
 > percentages and the 23x gap are all reproducible from `spacing-study.jsonl`. Only the
 > explanation changed, from chord to inherited lineage.
 
@@ -49,14 +49,14 @@ address.
 Every octave band carries all three members, in the same order of prevalence -- root
 heaviest, fifth second, third third:
 
-| band | root (2^n) | third (5:4) | fifth (3:2) |
-|---|---|---|---|
-| 2 : 2.5 : 3 | 2 (980) | 2.5 (35) | 3 (309) |
-| 4 : 5 : 6 | 4 (2577) | 5 (296) | 6 (1102) |
-| 8 : 10 : 12 | **8 (5367)** | 10 (1679) | 12 (2349) |
-| 16 : 20 : 24 | 16 (2711) | 20 (967) | 24 (2161) |
-| 32 : 40 : 48 | 32 (1059) | 40 (459) | 48 (445) |
-| 64 : 80 : 96 | 64 (189) | 80 (112) | 96 (105) |
+| band         | root (2^n)   | third (5:4) | fifth (3:2) |
+| ------------ | ------------ | ----------- | ----------- |
+| 2 : 2.5 : 3  | 2 (980)      | 2.5 (35)    | 3 (309)     |
+| 4 : 5 : 6    | 4 (2577)     | 5 (296)     | 6 (1102)    |
+| 8 : 10 : 12  | **8 (5367)** | 10 (1679)   | 12 (2349)   |
+| 16 : 20 : 24 | 16 (2711)    | 20 (967)    | 24 (2161)   |
+| 32 : 40 : 48 | 32 (1059)    | 40 (459)    | 48 (445)    |
+| 64 : 80 : 96 | 64 (189)     | 80 (112)    | 96 (105)    |
 
 Pure octaves alone -- `4, 8, 16, 32, 64` -- account for 49.6%. The thirds and fifths
 carry the other 37.6%.
@@ -64,23 +64,23 @@ carry the other 37.6%.
 ### It is not "round numbers on a grid"
 
 The obvious deflation is that these are just convenient multiples of 4 and the triad
-reading is pattern-matching. The discriminator is the multiples of 4 that are *not*
+reading is pattern-matching. The discriminator is the multiples of 4 that are _not_
 triad members. They are equally round, equally available, equally easy to type:
 
-| value | role | instances | present on |
-|---|---|---|---|
-| 8 | root | 5367 | 30/30 sites |
-| 16 | root | 2711 | 30/30 |
-| 24 | fifth | 2161 | 29/30 |
-| 4 | root | 2577 | 28/30 |
-| 12 | fifth | 2349 | 27/30 |
-| 20 | third | 967 | 26/30 |
-| 32 | root | 1059 | 26/30 |
-| 40 | third | 459 | 25/30 |
-| 48 | fifth | 445 | 23/30 |
-| **36** | -- | **178** | **10/30** |
-| **28** | -- | **62** | **8/30** |
-| **44** | -- | **20** | **4/30** |
+| value  | role  | instances | present on  |
+| ------ | ----- | --------- | ----------- |
+| 8      | root  | 5367      | 30/30 sites |
+| 16     | root  | 2711      | 30/30       |
+| 24     | fifth | 2161      | 29/30       |
+| 4      | root  | 2577      | 28/30       |
+| 12     | fifth | 2349      | 27/30       |
+| 20     | third | 967       | 26/30       |
+| 32     | root  | 1059      | 26/30       |
+| 40     | third | 459       | 25/30       |
+| 48     | fifth | 445       | 23/30       |
+| **36** | --    | **178**   | **10/30**   |
+| **28** | --    | **62**    | **8/30**    |
+| **44** | --    | **20**    | **4/30**    |
 
 Triad multiples of 4 average 2011 instances and appear on 23-30 sites. Non-triad
 multiples average 87 and appear on 4-10. A 23x gap on values that are otherwise
@@ -134,16 +134,16 @@ third the config has carried since before the regression at #384.
 **Does not settle why**, and this is a real limit rather than a hedge. Two
 explanations fit the data equally:
 
-1. *Harmony* -- the ratios are perceptually right and designers converge on them.
-2. *Learned convention* -- the 8pt grid is taught, 12-column thinking came from
+1. _Harmony_ -- the ratios are perceptually right and designers converge on them.
+2. _Learned convention_ -- the 8pt grid is taught, 12-column thinking came from
    Bootstrap and outlived it, and a 10px lineage supplies the thirds. 4:5:6 is what a
    trained grid looks like once people also need half-steps.
 
 Framework detection cannot separate them. Sampling the extremes found **bespoke CSS at
 both ends** -- Gucci (96%) ships hashed CSS modules with zero utility classes,
 Net-a-porter (96%) ships pure BEM, and Aesop (28%) is also bespoke. So shipped tooling
-does not predict the pattern. But class names reveal which framework is *in the page*,
-not which conventions the designer *learned*, and no amount of additional sampling
+does not predict the pattern. But class names reveal which framework is _in the page_,
+not which conventions the designer _learned_, and no amount of additional sampling
 fixes that: every site in reach was built by someone trained in the same decade.
 
 For the practical decision this may not matter -- if 4:5:6 is the vocabulary designers
@@ -153,7 +153,7 @@ is what is used."
 
 **Does not settle:** what rafters should ship. A design system may be more opinionated
 than the field, and convergence is weak evidence when much of it is framework
-inheritance -- though the 23x gap argues that designers are *filtering* an inherited
+inheritance -- though the 23x gap argues that designers are _filtering_ an inherited
 linear ladder down to harmonic positions rather than accepting it. That filtering is
 the empirical form of the homogeneity argument: sites are handed 4, 8, 12, 16, 20, 24,
 28, 32, 36, 40, 44, 48 and spend their instances on the triad members while leaving 28,

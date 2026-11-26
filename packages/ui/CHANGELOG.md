@@ -249,7 +249,7 @@ consumers through the registry as they merged.
   `<Line dataKey="desktop"/>` child per series (its own behavior + three
   decorators, absence by omission like Bar's `<Bar>`) derives the series
   list in declaration order and takes precedence outright over the `series:
-  string[]` config prop, which still works fully on its own; categoryKey
+string[]` config prop, which still works fully on its own; categoryKey
   lives on the composed `<XAxis dataKey>` child, same as Bar. `smooth`
   toggles `linePath` (straight segments, default) vs `smoothPath`; `dots`
   (default true) renders one point marker per datum. A LineChart with no
@@ -640,7 +640,7 @@ consumers through the registry as they merged.
   score (`badge.behavior.ts` + `badge.classes.ts` + `badge.tsx`), imitating
   Container: no state, no actions, no keymap, no motion block. Full oracle
   variant vocabulary preserved (`default | primary | secondary | destructive
-  | success | warning | info | muted | accent | outline | ghost | link`),
+| success | warning | info | muted | accent | outline | ghost | link`),
   plus the `sm | default | lg` size scale. `asChild` is not carried forward
   yet -- deferred, see `docs/spec/components/badge.md`. WC/Astro bindings
   not yet written.

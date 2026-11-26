@@ -1,33 +1,33 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './test',
-  testMatch: ['**/*.{spec,a11y}.{ts,tsx}'],
+  testDir: "./test",
+  testMatch: ["**/*.{spec,a11y}.{ts,tsx}"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'list',
+  reporter: "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3001",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: ['**/*.{spec,a11y}.{ts,tsx}'],
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: ["**/*.{spec,a11y}.{ts,tsx}"],
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-      testMatch: ['**/*.spec.{ts,tsx}'],
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: ["**/*.spec.{ts,tsx}"],
     },
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-      testMatch: ['**/*.spec.{ts,tsx}'],
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+      testMatch: ["**/*.spec.{ts,tsx}"],
     },
   ],
 });

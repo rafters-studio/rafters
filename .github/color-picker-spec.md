@@ -32,7 +32,7 @@ updateX(element, options) => void              // hot-update without teardown
 ```typescript
 // -- already exists --
 export type CleanupFunction = () => void;
-export type GamutTier = 'gold' | 'silver' | 'fail';
+export type GamutTier = "gold" | "silver" | "fail";
 
 // -- new additions --
 
@@ -53,7 +53,7 @@ export interface MoveDelta {
 }
 
 /** Dimension mode for the interactive primitive */
-export type InteractiveMode = '1d-horizontal' | '1d-vertical' | '2d';
+export type InteractiveMode = "1d-horizontal" | "1d-vertical" | "2d";
 
 /** OKLCH color triplet without alpha */
 export interface OklchColor {
@@ -107,6 +107,7 @@ export function inP3(l: number, c: number, h: number): boolean;
 Each function performs two transforms:
 
 **Step 1: OKLCH to Oklab**
+
 ```
 a = c * cos(h * PI / 180)
 b = c * sin(h * PI / 180)
@@ -115,6 +116,7 @@ b = c * sin(h * PI / 180)
 **Step 2: Oklab to linear RGB (via LMS intermediary)**
 
 Oklab to LMS (cube roots):
+
 ```
 l_ = L + 0.3963377774 * a + 0.2158037573 * b
 m_ = L - 0.1055613458 * a - 0.0638541728 * b
@@ -126,6 +128,7 @@ s3 = s_ * s_ * s_
 ```
 
 LMS to linear-sRGB (3x3 matrix):
+
 ```
 r = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3
 g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3
@@ -133,6 +136,7 @@ b = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3
 ```
 
 LMS to linear-P3 (different 3x3 matrix):
+
 ```
 r = +3.1277147370 * l3 - 2.2571303530 * m3 + 0.1294156160 * s3
 g = -1.0910898340 * l3 + 2.4133174100 * m3 - 0.3222275760 * s3
@@ -195,7 +199,7 @@ export interface InteractiveOptions {
    * When 'rtl', ArrowLeft increases and ArrowRight decreases the horizontal axis.
    * @default 'ltr'
    */
-  dir?: 'ltr' | 'rtl';
+  dir?: "ltr" | "rtl";
 }
 
 /**
@@ -219,10 +223,7 @@ export function createInteractive(
 /**
  * Hot-update options without teardown. Useful for toggling disabled state.
  */
-export function updateInteractive(
-  element: HTMLElement,
-  options: InteractiveOptions,
-): void;
+export function updateInteractive(element: HTMLElement, options: InteractiveOptions): void;
 ```
 
 ### Keyboard mapping
@@ -230,17 +231,17 @@ export function updateInteractive(
 Uses `createNavigationHandler` from `./keyboard-handler` with appropriate orientation.
 Additional bindings via `createKeyboardHandler` for Shift multiplier, PageUp/Down, Home/End.
 
-| Key            | 1D-horizontal       | 1D-vertical          | 2D                           |
-|----------------|----------------------|----------------------|------------------------------|
-| ArrowRight     | dLeft: +0.01         | (ignored)            | dLeft: +0.01                 |
-| ArrowLeft      | dLeft: -0.01         | (ignored)            | dLeft: -0.01                 |
-| ArrowDown      | (ignored)            | dTop: +0.01          | dTop: +0.01                  |
-| ArrowUp        | (ignored)            | dTop: -0.01          | dTop: -0.01                  |
-| Shift+Arrow    | 5x multiplier        | 5x multiplier        | 5x multiplier                |
-| PageDown       | dLeft: +0.05         | dTop: +0.05          | dTop: +0.05                  |
-| PageUp         | dLeft: -0.05         | dTop: -0.05          | dTop: -0.05                  |
-| Home           | dLeft: jump to 0     | dTop: jump to 0      | dLeft: jump to 0             |
-| End            | dLeft: jump to 1     | dTop: jump to 1      | dLeft: jump to 1             |
+| Key         | 1D-horizontal    | 1D-vertical     | 2D               |
+| ----------- | ---------------- | --------------- | ---------------- |
+| ArrowRight  | dLeft: +0.01     | (ignored)       | dLeft: +0.01     |
+| ArrowLeft   | dLeft: -0.01     | (ignored)       | dLeft: -0.01     |
+| ArrowDown   | (ignored)        | dTop: +0.01     | dTop: +0.01      |
+| ArrowUp     | (ignored)        | dTop: -0.01     | dTop: -0.01      |
+| Shift+Arrow | 5x multiplier    | 5x multiplier   | 5x multiplier    |
+| PageDown    | dLeft: +0.05     | dTop: +0.05     | dTop: +0.05      |
+| PageUp      | dLeft: -0.05     | dTop: -0.05     | dTop: -0.05      |
+| Home        | dLeft: jump to 0 | dTop: jump to 0 | dLeft: jump to 0 |
+| End         | dLeft: jump to 1 | dTop: jump to 1 | dLeft: jump to 1 |
 
 In RTL mode, ArrowLeft/Right semantics are swapped (ArrowLeft = +dLeft, ArrowRight = -dLeft).
 
@@ -309,21 +310,19 @@ export function createColorArea(
  * Re-render the canvas with new options (e.g. when hue changes).
  * Avoids teardown/rebuild -- just repaints.
  */
-export function updateColorArea(
-  canvas: HTMLCanvasElement,
-  options: ColorAreaOptions,
-): void;
+export function updateColorArea(canvas: HTMLCanvasElement, options: ColorAreaOptions): void;
 ```
 
 ### Rendering algorithm
 
 For each column x (0 to width):
-  1. Map x to lightness: `l = x / width`
-  2. For each row y (0 to height):
-     - Map y to chroma: `c = (1 - y / height) * maxChroma` (top = high chroma)
-     - If `inSrgb(l, c, hue)` or `inP3(l, c, hue)`: paint pixel with
-       `ctx.fillStyle = 'oklch(l c hue)'` (modern browsers handle the conversion)
-     - Else: paint black (`#000`)
+
+1. Map x to lightness: `l = x / width`
+2. For each row y (0 to height):
+   - Map y to chroma: `c = (1 - y / height) * maxChroma` (top = high chroma)
+   - If `inSrgb(l, c, hue)` or `inP3(l, c, hue)`: paint pixel with
+     `ctx.fillStyle = 'oklch(l c hue)'` (modern browsers handle the conversion)
+   - Else: paint black (`#000`)
 
 The canvas uses `ctx.fillStyle` with native `oklch()` CSS strings for accurate color
 reproduction on wide-gamut displays. Out-of-gamut regions fade to black, providing
@@ -362,7 +361,7 @@ export interface HueBarOptions {
    * Orientation of the strip.
    * @default 'horizontal'
    */
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
 
   /** Device pixel ratio override (default: window.devicePixelRatio) */
   dpr?: number;
@@ -374,27 +373,22 @@ export interface HueBarOptions {
  *
  * Sets: role="img", aria-label="Hue spectrum".
  */
-export function createHueBar(
-  canvas: HTMLCanvasElement,
-  options: HueBarOptions,
-): CleanupFunction;
+export function createHueBar(canvas: HTMLCanvasElement, options: HueBarOptions): CleanupFunction;
 
 /**
  * Re-render with new lightness/chroma (e.g. when area selection changes).
  */
-export function updateHueBar(
-  canvas: HTMLCanvasElement,
-  options: HueBarOptions,
-): void;
+export function updateHueBar(canvas: HTMLCanvasElement, options: HueBarOptions): void;
 ```
 
 ### Rendering algorithm
 
 For each pixel along the primary axis (0 to length):
-  1. Map pixel to hue: `h = (pixel / length) * 360`
-  2. If `inSrgb(lightness, chroma, h)` or `inP3(lightness, chroma, h)`:
-     paint with `ctx.fillStyle = 'oklch(lightness chroma h)'`
-  3. Else: paint black
+
+1. Map pixel to hue: `h = (pixel / length) * 360`
+2. If `inSrgb(lightness, chroma, h)` or `inP3(lightness, chroma, h)`:
+   paint with `ctx.fillStyle = 'oklch(lightness chroma h)'`
+3. Else: paint black
 
 The canvas uses native `oklch()` CSS strings via `ctx.fillStyle`. Out-of-gamut hues
 are painted black, matching the color-area behavior.
@@ -458,7 +452,7 @@ export interface ColorInputField {
   element: HTMLInputElement;
 
   /** Which OKLCH channel this field controls */
-  channel: 'l' | 'c' | 'h' | 'alpha';
+  channel: "l" | "c" | "h" | "alpha";
 }
 
 export interface ColorInputOptions {
@@ -484,7 +478,7 @@ export interface ColorInputOptions {
    * Number of decimal places to display per channel.
    * @default { l: 2, c: 3, h: 0, alpha: 2 }
    */
-  precision?: Partial<Record<'l' | 'c' | 'h' | 'alpha', number>>;
+  precision?: Partial<Record<"l" | "c" | "h" | "alpha", number>>;
 }
 
 /**
@@ -507,20 +501,17 @@ export function createColorInput(
  * Update displayed values (e.g. when color changes from pointer interaction).
  * Does NOT fire onChange (prevents feedback loops).
  */
-export function updateColorInput(
-  fields: ColorInputField[],
-  options: ColorInputOptions,
-): void;
+export function updateColorInput(fields: ColorInputField[], options: ColorInputOptions): void;
 ```
 
 ### Channel constraints
 
-| Channel | Min | Max  | Step  | Precision | aria-label        |
-|---------|-----|------|-------|-----------|-------------------|
-| L       | 0   | 1    | 0.01  | 2         | "Lightness"       |
-| C       | 0   | 0.4  | 0.001 | 3         | "Chroma"          |
-| H       | 0   | 360  | 1     | 0         | "Hue"             |
-| alpha   | 0   | 1    | 0.01  | 2         | "Alpha"           |
+| Channel | Min | Max | Step  | Precision | aria-label  |
+| ------- | --- | --- | ----- | --------- | ----------- |
+| L       | 0   | 1   | 0.01  | 2         | "Lightness" |
+| C       | 0   | 0.4 | 0.001 | 3         | "Chroma"    |
+| H       | 0   | 360 | 1     | 0         | "Hue"       |
+| alpha   | 0   | 1   | 0.01  | 2         | "Alpha"     |
 
 ### Input handling
 
@@ -586,14 +577,16 @@ export function updateColorInput(
 ### Composition example
 
 ```typescript
-import { createInteractive, updateInteractive } from './interactive';
-import { createColorArea, updateColorArea } from './color-area';
-import { createHueBar, updateHueBar } from './hue-bar';
-import { createColorInput, updateColorInput } from './color-input';
-import { createSwatch, updateSwatch, toOklch } from './color-swatch';
+import { createInteractive, updateInteractive } from "./interactive";
+import { createColorArea, updateColorArea } from "./color-area";
+import { createHueBar, updateHueBar } from "./hue-bar";
+import { createColorInput, updateColorInput } from "./color-input";
+import { createSwatch, updateSwatch, toOklch } from "./color-swatch";
 
 // State
-let l = 0.7, c = 0.15, hue = 250;
+let l = 0.7,
+  c = 0.15,
+  hue = 250;
 const maxChroma = 0.4;
 
 // 1. Paint the 2D area canvas
@@ -610,7 +603,7 @@ const cleanupHueThumb = createSwatch(hueThumbEl, { l, c, h: hue });
 
 // 5. Attach pointer tracking to the area
 const cleanupAreaInteractive = createInteractive(areaContainer, {
-  mode: '2d',
+  mode: "2d",
   onMove: (point) => {
     // point.left -> lightness (0-1)
     // point.top -> chroma (inverted: 0=maxChroma, 1=0)
@@ -628,13 +621,17 @@ const cleanupAreaInteractive = createInteractive(areaContainer, {
     updateHueBar(hueCanvas, { lightness: l, chroma: c });
 
     // Update numeric inputs
-    updateColorInput(inputFields, { fields: inputFields, value: { l, c, h: hue }, onChange: handleInputChange });
+    updateColorInput(inputFields, {
+      fields: inputFields,
+      value: { l, c, h: hue },
+      onChange: handleInputChange,
+    });
   },
 });
 
 // 6. Attach pointer tracking to the hue bar
 const cleanupHueInteractive = createInteractive(hueContainer, {
-  mode: '1d-horizontal',
+  mode: "1d-horizontal",
   onMove: (point) => {
     hue = point.left * 360;
 
@@ -677,19 +674,19 @@ function cleanup() {
 
 ## 9. Responsibility Matrix
 
-| Concern                        | interactive | color-area | hue-bar | color-swatch (thumb) | color-input | oklch-gamut |
-|--------------------------------|:-----------:|:----------:|:-------:|:--------------------:|:-----------:|:-----------:|
-| Pointer/touch/keyboard input   | YES         | --         | --      | --                   | --          | --          |
-| Canvas rendering               | --          | YES        | YES     | --                   | --          | --          |
-| Element positioning            | --          | --         | --      | caller CSS           | --          | --          |
-| Color display                  | --          | YES        | YES     | YES                  | --          | --          |
-| Numeric value entry            | --          | --         | --      | --                   | YES         | --          |
-| Gamut pixel classification     | --          | YES        | YES     | --                   | --          | YES         |
-| Gamut tier indication          | --          | --         | --      | YES (data attr)      | --          | --          |
-| Gamut tier computation         | --          | --         | --      | --                   | --          | --          |
-| ARIA attributes                | YES         | YES        | YES     | YES                  | YES         | --          |
-| Event listener cleanup         | YES         | --         | --      | --                   | YES         | --          |
-| Style/attribute cleanup        | YES         | YES        | YES     | YES                  | YES         | --          |
+| Concern                      | interactive | color-area | hue-bar | color-swatch (thumb) | color-input | oklch-gamut |
+| ---------------------------- | :---------: | :--------: | :-----: | :------------------: | :---------: | :---------: |
+| Pointer/touch/keyboard input |     YES     |     --     |   --    |          --          |     --      |     --      |
+| Canvas rendering             |     --      |    YES     |   YES   |          --          |     --      |     --      |
+| Element positioning          |     --      |     --     |   --    |      caller CSS      |     --      |     --      |
+| Color display                |     --      |    YES     |   YES   |         YES          |     --      |     --      |
+| Numeric value entry          |     --      |     --     |   --    |          --          |     YES     |     --      |
+| Gamut pixel classification   |     --      |    YES     |   YES   |          --          |     --      |     YES     |
+| Gamut tier indication        |     --      |     --     |   --    |   YES (data attr)    |     --      |     --      |
+| Gamut tier computation       |     --      |     --     |   --    |          --          |     --      |     --      |
+| ARIA attributes              |     YES     |    YES     |   YES   |         YES          |     YES     |     --      |
+| Event listener cleanup       |     YES     |     --     |   --    |          --          |     YES     |     --      |
+| Style/attribute cleanup      |     YES     |    YES     |   YES   |         YES          |     YES     |     --      |
 
 "--" means the primitive explicitly does NOT handle this concern.
 "caller CSS" means the caller is responsible, not the primitive.
@@ -722,21 +719,22 @@ thumb use case. The caller adds positioning CSS.
 ## 11. Import Rules (Copyability)
 
 Each primitive may only import from:
+
 - `./types` (shared types within primitives)
 - Sibling primitives within `packages/ui/src/primitives/`
 
 Allowed cross-primitive imports:
 
-| File              | May import from           | What                                      |
-|-------------------|---------------------------|--------------------------------------------|
-| `interactive.ts`  | `./keyboard-handler`      | `createNavigationHandler`, `createKeyboardHandler` |
-| `interactive.ts`  | `./types`                 | `CleanupFunction`, `NormalizedPoint`, etc. |
-| `color-area.ts`   | `./oklch-gamut`           | `inSrgb`, `inP3`                          |
-| `color-area.ts`   | `./types`                 | `CleanupFunction`                         |
-| `hue-bar.ts`      | `./oklch-gamut`           | `inSrgb`, `inP3`                          |
-| `hue-bar.ts`      | `./types`                 | `CleanupFunction`                         |
-| `color-input.ts`  | `./types`                 | `CleanupFunction`, `OklchColorAlpha`      |
-| `oklch-gamut.ts`  | (none)                    | Pure math, no imports                     |
+| File             | May import from      | What                                               |
+| ---------------- | -------------------- | -------------------------------------------------- |
+| `interactive.ts` | `./keyboard-handler` | `createNavigationHandler`, `createKeyboardHandler` |
+| `interactive.ts` | `./types`            | `CleanupFunction`, `NormalizedPoint`, etc.         |
+| `color-area.ts`  | `./oklch-gamut`      | `inSrgb`, `inP3`                                   |
+| `color-area.ts`  | `./types`            | `CleanupFunction`                                  |
+| `hue-bar.ts`     | `./oklch-gamut`      | `inSrgb`, `inP3`                                   |
+| `hue-bar.ts`     | `./types`            | `CleanupFunction`                                  |
+| `color-input.ts` | `./types`            | `CleanupFunction`, `OklchColorAlpha`               |
+| `oklch-gamut.ts` | (none)               | Pure math, no imports                              |
 
 No primitive imports from `@rafters/color-utils`, `@rafters/shared`, or any
 workspace package. The caller imports from those packages if needed and passes

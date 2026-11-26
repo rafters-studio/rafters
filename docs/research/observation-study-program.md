@@ -9,12 +9,12 @@ study worked and two measurement studies before it did not.
 
 Colour is the clearest case and is **out of scope by operator ruling** — hue is brand
 identity and the system does not prescribe it. But Aesop being brown is identity;
-Aesop being *monochrome* is register. Vercel forcing another company's logo to greyscale
+Aesop being _monochrome_ is register. Vercel forcing another company's logo to greyscale
 is a rule about where colour may appear at all. Those are counts and permissions, not
 values, and they are the same question as element-count-per-viewport.
 
-The boundary generalises: *which* typeface is the designer's, how many weights and how far
-apart is register. *Which* products go on the page is merchandising, how many is register.
+The boundary generalises: _which_ typeface is the designer's, how many weights and how far
+apart is register. _Which_ products go on the page is merchandising, how many is register.
 
 Everything below studies counts and permissions. Nothing below picks a value.
 
@@ -42,8 +42,8 @@ Seven rules, each earned:
 4. **Same-job comparison isolates the variable.** Gucci, Etsy and Ulta on the identical
    task — category browse — produced three densities and was the cleanest comparison in
    the study. Cross-task comparisons confound.
-5. **Control for surface job.** The same brand runs a spacious *persuading* register and a
-   dense *working* register within one viewport. Compare marketing to marketing, or
+5. **Control for surface job.** The same brand runs a spacious _persuading_ register and a
+   dense _working_ register within one viewport. Compare marketing to marketing, or
    product to product, never across.
 6. **Prefer convergent findings.** Anything two instruments reach independently outweighs
    anything one instrument reaches confidently. The technical hairline signature was found
@@ -59,14 +59,14 @@ Seven rules, each earned:
 - A beautiful shape is more suspect, not less.
 - Run the refutation on the finding you like, not only the one you doubt.
 - Circularity: if sites were assigned to intents by an earlier study, "the elegant sites
-  are elegant" is definitional. Only *device* findings are independent.
+  are elegant" is definitional. Only _device_ findings are independent.
 
 ## On physical brands, and why the corpus does not change
 
 Half the corpus are brands whose register was established in atoms — a store, a shopping
 bag, a garment's finish, a lobby, a print campaign, across a century in several cases
 (Hermès 1837, Rolex 1905, Prada 1913, Gucci 1921). Their website is a transcription. The
-other half — Stripe, Vercel, Linear, GitHub — have no physical antecedent; the site *is*
+other half — Stripe, Vercel, Linear, GitHub — have no physical antecedent; the site _is_
 the brand.
 
 This looked like it demanded a second corpus of campaign and retail material. It does not,
@@ -76,35 +76,35 @@ Going to the boutique would confirm it, not reveal it.
 
 Worth recording as context rather than as work: **almost nothing in the observed registers
 originated on the web.** Technical inherited Swiss by way of Material; luxury inherited
-retail and print. Only the Swiss line was ever *packaged* — Material, Bootstrap, Ant,
+retail and print. Only the Swiss line was ever _packaged_ — Material, Bootstrap, Ant,
 Tailwind — which is a better explanation for web homogenisation than designer laziness.
 There has only ever been one register available as a system.
 
 ## Coverage map
 
-| dimension | what is established | method | confidence | gap |
-|---|---|---|---|---|
-| **motion** | five intents; values are entropy, found by knobs; jagged per-intent waves; efficient owns no peak by design | knobs + 30-site sweep | **high** for the model, **none** for four intents' values | four non-efficient intents have no measured values |
-| **spacing** | six void languages; separation device (line vs gap) is intent, pitch is a second dial; the scale itself carries nothing | observation, 28 pages | **high** on device, **high** on the negative | reasons not recorded; budget unmeasured |
-| **elevation / depth / shadow** | elevation-share is a **mid-hump** — flat at extremes, bulging at efficient/friendly; extremes separate planes by other means | two computed-style sweeps | **high on the shape** — two instruments agree on order — **low on separation** (between/within 0.84) | see the unification below |
-| **type** | monospace → technical (3/3) and → efficient (3/3), absent from friendly 0/3 and elegant 0/2; serif → editorial | two computed-style sweeps | **high** for mono as a categorical — the strongest presence signal besides springs | scale, weight, measure; the harmonic attempt was refuted |
-| **border** | **border rate separates** — technical 20.5%, efficient 8.7%, editorial 6.6%, mass 4.6%, elegant 4.0%, friendly 3.1% (between/within **4.22**), and technical spends **one width** | computed-style sweep + observation | **high** — convergent, found twice by different instruments | which elements carry it |
-| **radius** | ~~part of the friendly signature~~ — **not supported at n=14** (0.50). Friendly alone spans 4 / 8 / 12 | computed-style sweep | **none** — the friendly bundle loses this leg | where radius applies — container, control, image |
-| ~~colour~~ | **out of scope** — hue is identity | — | — | count and placement fold into the budget study |
-| **focus / breakpoint** | nothing | — | — | may not be intent-bearing; cheap check before any study |
+| dimension                      | what is established                                                                                                                                                               | method                             | confidence                                                                                           | gap                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **motion**                     | five intents; values are entropy, found by knobs; jagged per-intent waves; efficient owns no peak by design                                                                       | knobs + 30-site sweep              | **high** for the model, **none** for four intents' values                                            | four non-efficient intents have no measured values       |
+| **spacing**                    | six void languages; separation device (line vs gap) is intent, pitch is a second dial; the scale itself carries nothing                                                           | observation, 28 pages              | **high** on device, **high** on the negative                                                         | reasons not recorded; budget unmeasured                  |
+| **elevation / depth / shadow** | elevation-share is a **mid-hump** — flat at extremes, bulging at efficient/friendly; extremes separate planes by other means                                                      | two computed-style sweeps          | **high on the shape** — two instruments agree on order — **low on separation** (between/within 0.84) | see the unification below                                |
+| **type**                       | monospace → technical (3/3) and → efficient (3/3), absent from friendly 0/3 and elegant 0/2; serif → editorial                                                                    | two computed-style sweeps          | **high** for mono as a categorical — the strongest presence signal besides springs                   | scale, weight, measure; the harmonic attempt was refuted |
+| **border**                     | **border rate separates** — technical 20.5%, efficient 8.7%, editorial 6.6%, mass 4.6%, elegant 4.0%, friendly 3.1% (between/within **4.22**), and technical spends **one width** | computed-style sweep + observation | **high** — convergent, found twice by different instruments                                          | which elements carry it                                  |
+| **radius**                     | ~~part of the friendly signature~~ — **not supported at n=14** (0.50). Friendly alone spans 4 / 8 / 12                                                                            | computed-style sweep               | **none** — the friendly bundle loses this leg                                                        | where radius applies — container, control, image         |
+| ~~colour~~                     | **out of scope** — hue is identity                                                                                                                                                | —                                  | —                                                                                                    | count and placement fold into the budget study           |
+| **focus / breakpoint**         | nothing                                                                                                                                                                           | —                                  | —                                                                                                    | may not be intent-bearing; cheap check before any study  |
 
 ## The pattern across every result so far: presence separates, magnitude does not
 
 Read the table above by what kind of measure each row is, and it sorts cleanly:
 
-| separates — **presence and permission** | does not — **magnitude** |
-|---|---|
-| monospace → technical, efficient (3/3, 3/3) | duration → elegant (1.05; 8× within-elegant in the earlier sweep) |
-| serif → editorial | radius → friendly (0.50; friendly alone spans 4/8/12) |
-| springs — 29 of 30 sites zero overshoot, friendly-only | chroma (claimed twice, wrong twice) |
-| border rate, and technical spending **one** width (4.22) | elevation share as a magnitude (0.84 — the *order* still holds) |
+| separates — **presence and permission**                  | does not — **magnitude**                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------- |
+| monospace → technical, efficient (3/3, 3/3)              | duration → elegant (1.05; 8× within-elegant in the earlier sweep) |
+| serif → editorial                                        | radius → friendly (0.50; friendly alone spans 4/8/12)             |
+| springs — 29 of 30 sites zero overshoot, friendly-only   | chroma (claimed twice, wrong twice)                               |
+| border rate, and technical spending **one** width (4.22) | elevation share as a magnitude (0.84 — the _order_ still holds)   |
 
-*Does this appear at all, and how many rungs exist* separates registers. *How much* does
+_Does this appear at all, and how many rungs exist_ separates registers. _How much_ does
 not. Two instruments, two corpora, two studies neither of which was designed to test this.
 
 It is also consistent with the boundary this program already operates inside — which
@@ -136,7 +136,7 @@ at once.
 
 **Elevation and spacing-separation may be the same question.**
 
-Both ask: *how do you say this thing is a separate plane?* The candidate answers are
+Both ask: _how do you say this thing is a separate plane?_ The candidate answers are
 shadow, border, gap, fill, overlap. The negative-space study found border-versus-gap is
 intent-bearing. The elevation study found shadow-share is a mid-hump whose extremes
 separate "by other means" — and named those means as whitespace at elegant/editorial and
@@ -153,14 +153,14 @@ answered before either is designed.
 Re-derive across the twenty-eight pages already read. No new browsing. Turns a device
 catalogue into applicable rules. Worked examples:
 
-| register | device | what it solves |
-|---|---|---|
-| Gucci | shows 0 of 374 | a grid invites comparison; comparison is the wrong frame for a €3,000 purchase |
-| Ulta | shows everything at once | the deal *is* the product; density is merchandise |
-| GitHub | hairline at ~57px pitch | rows-per-screen is the metric when scanning a known repo |
-| Airbnb | gaps and rounded images, no borders | the photograph is the product; it needs room and must not read as a database row |
-| Duolingo | enormous soft targets | the user is a beginner one frustration from quitting |
-| Vercel | no image, no colour, monochrome logos | the audience distrusts marketing, so not-persuading is the persuasion |
+| register | device                                | what it solves                                                                   |
+| -------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| Gucci    | shows 0 of 374                        | a grid invites comparison; comparison is the wrong frame for a €3,000 purchase   |
+| Ulta     | shows everything at once              | the deal _is_ the product; density is merchandise                                |
+| GitHub   | hairline at ~57px pitch               | rows-per-screen is the metric when scanning a known repo                         |
+| Airbnb   | gaps and rounded images, no borders   | the photograph is the product; it needs room and must not read as a database row |
+| Duolingo | enormous soft targets                 | the user is a beginner one frustration from quitting                             |
+| Vercel   | no image, no colour, monochrome logos | the audience distrusts marketing, so not-persuading is the persuasion            |
 
 ## Later — type
 
@@ -168,7 +168,7 @@ The ratio question is closed. What remains observable, and it was visible withou
 for it: **how much of the page's meaning is carried by letters versus image.** Vercel is
 all type and no image; Gucci is all image with type as a whisper. Extends the axis the
 prior work started with serif and mono. Also: weight contrast, case and tracking as
-signature, whether type sits *on* the image or beside it, and how long a line is allowed
+signature, whether type sits _on_ the image or beside it, and how long a line is allowed
 to get.
 
 Same-job comparison: the product or category page across intents, since every one of them
@@ -176,7 +176,7 @@ must name a thing and say one sentence about it.
 
 ## Later — radius, focus, breakpoint
 
-Radius: record *where* it is applied, not how much. Airbnb rounds images; GitHub rounds
+Radius: record _where_ it is applied, not how much. Airbnb rounds images; GitHub rounds
 nothing. Half a day.
 
 Focus and breakpoint: check before studying. "Not intent-bearing" is a result worth

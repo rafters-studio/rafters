@@ -7,29 +7,12 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./generators/*": "./src/generators/*.ts"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
   },
   "scripts": {
-    "test": "vitest run",
-    "test:unit": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .turbo coverage"
-  },
-  "dependencies": {
-    "@rafters/color-utils": "workspace:*",
-    "@rafters/math-utils": "workspace:*",
-    "@rafters/shared": "workspace:*",
-    "css-tree": "^3.2.1",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@types/css-tree": "^2.3.11",
-    "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "vitest": "catalog:"
+    "build": "vp pack"
   }
 }

@@ -1,7 +1,7 @@
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, http } from "msw";
 
 export const handlers = [
-  http.get('/api/health', () => {
-    return HttpResponse.json({ status: 'ok' });
+  http.get("/api/health", () => {
+    return HttpResponse.json({ status: "ok" });
   }),
 ];

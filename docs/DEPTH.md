@@ -6,19 +6,19 @@ Interfaces have layers. A dropdown sits above the page. A modal sits above the p
 
 Every layer has a fixed position. No z-index wars. No `z-[9999]`.
 
-| Layer | Utility | Default | What lives here |
-|-------|---------|---------|----------------|
-| Below | `z-depth-below` | -1 | Backgrounds and decorative elements behind the page |
-| Base | `z-depth-base` | 0 | Page content, cards, form controls |
-| Sticky | `z-depth-sticky` | 20 | Sticky headers and toolbars |
-| Navigation | `z-depth-navigation` | 25 | Sidebars, slide-out navigation |
-| Fixed | `z-depth-fixed` | 30 | Fixed elements that stay visible |
-| Overlay | `z-depth-overlay` | 35 | The backdrop that dims the page behind a modal |
-| Modal | `z-depth-modal` | 40 | Dialogs, sheets |
-| Dropdown | `z-depth-dropdown` | 50 | Select menus, dropdown menus, autocomplete |
-| Popover | `z-depth-popover` | 50 | Popovers, which open above modals |
-| Tooltip | `z-depth-tooltip` | 60 | Tooltips, the highest common layer |
-| Max | `z-depth-max` | 9999 | Emergency overlays such as dev tools |
+| Layer      | Utility              | Default | What lives here                                     |
+| ---------- | -------------------- | ------- | --------------------------------------------------- |
+| Below      | `z-depth-below`      | -1      | Backgrounds and decorative elements behind the page |
+| Base       | `z-depth-base`       | 0       | Page content, cards, form controls                  |
+| Sticky     | `z-depth-sticky`     | 20      | Sticky headers and toolbars                         |
+| Navigation | `z-depth-navigation` | 25      | Sidebars, slide-out navigation                      |
+| Fixed      | `z-depth-fixed`      | 30      | Fixed elements that stay visible                    |
+| Overlay    | `z-depth-overlay`    | 35      | The backdrop that dims the page behind a modal      |
+| Modal      | `z-depth-modal`      | 40      | Dialogs, sheets                                     |
+| Dropdown   | `z-depth-dropdown`   | 50      | Select menus, dropdown menus, autocomplete          |
+| Popover    | `z-depth-popover`    | 50      | Popovers, which open above modals                   |
+| Tooltip    | `z-depth-tooltip`    | 60      | Tooltips, the highest common layer                  |
+| Max        | `z-depth-max`        | 9999    | Emergency overlays such as dev tools                |
 
 These are not suggestions. A menu opened inside a modal shows because `z-depth-dropdown` is above `z-depth-modal`; give a component another component's layer and that ordering breaks.
 
@@ -28,11 +28,11 @@ Each `z-depth-*` class is Tailwind's own `z` utility. `rafters.css` sets `--raft
 
 Higher layers cast larger shadows. This is how the real world works -- a sheet of paper held close to a desk casts a tight shadow. Held high, the shadow spreads.
 
-| Depth | Shadow |
-|-------|--------|
-| Base (cards, inputs) | `shadow-sm` -- tight, subtle |
-| Dropdown, popover | `shadow-md` -- visible but grounded |
-| Modal, sheet | `shadow-lg` -- clearly elevated |
+| Depth                | Shadow                              |
+| -------------------- | ----------------------------------- |
+| Base (cards, inputs) | `shadow-sm` -- tight, subtle        |
+| Dropdown, popover    | `shadow-md` -- visible but grounded |
+| Modal, sheet         | `shadow-lg` -- clearly elevated     |
 
 The shadow tokens are in `@theme`. Tailwind's `shadow-sm`, `shadow-md`, `shadow-lg` read from the system. Change the shadow definition, every component at that depth updates.
 

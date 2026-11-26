@@ -1,8 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
 
-test.describe('Accessibility Infrastructure @a11y', () => {
-  test('detects no violations in accessible button', async ({ page }) => {
+test.describe("Accessibility Infrastructure @a11y", () => {
+  test("detects no violations in accessible button", async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>
       <html lang="en">
@@ -16,13 +16,13 @@ test.describe('Accessibility Infrastructure @a11y', () => {
     `);
 
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
 
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('validates AxeBuilder is working correctly', async ({ page }) => {
+  test("validates AxeBuilder is working correctly", async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>
       <html lang="en">
@@ -41,7 +41,7 @@ test.describe('Accessibility Infrastructure @a11y', () => {
     expect(Array.isArray(accessibilityScanResults.violations)).toBe(true);
   });
 
-  test('validates WCAG 2.2 AA compliance', async ({ page }) => {
+  test("validates WCAG 2.2 AA compliance", async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>
       <html lang="en">
@@ -57,13 +57,13 @@ test.describe('Accessibility Infrastructure @a11y', () => {
     `);
 
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
       .analyze();
 
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('validates color contrast requirements', async ({ page }) => {
+  test("validates color contrast requirements", async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>
       <html lang="en">
@@ -78,12 +78,12 @@ test.describe('Accessibility Infrastructure @a11y', () => {
       </html>
     `);
 
-    const accessibilityScanResults = await new AxeBuilder({ page }).withTags(['wcag2aa']).analyze();
+    const accessibilityScanResults = await new AxeBuilder({ page }).withTags(["wcag2aa"]).analyze();
 
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
-  test('validates keyboard navigation', async ({ page }) => {
+  test("validates keyboard navigation", async ({ page }) => {
     await page.setContent(`
       <!DOCTYPE html>
       <html lang="en">
@@ -101,7 +101,7 @@ test.describe('Accessibility Infrastructure @a11y', () => {
     `);
 
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
+      .withTags(["wcag2a", "wcag2aa"])
       .analyze();
 
     expect(accessibilityScanResults.violations).toEqual([]);

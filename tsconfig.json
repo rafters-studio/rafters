@@ -3,6 +3,6 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["test/**/*"],
+  "include": ["test/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

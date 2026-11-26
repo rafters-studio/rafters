@@ -4,79 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./primitives/*": "./src/primitives/*.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./dialog": "./src/components/dialog/dialog.tsx",
-    "./skeleton": "./src/components/skeleton/skeleton.tsx",
-    "./lib/*": "./src/lib/*.ts"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
   },
   "scripts": {
-    "matrix:motion": "tsx test/matrix/render-motion-matrix.ts",
-    "generate:article-type": "tsx scripts/generate-article-type.ts",
-    "test": "vitest",
-    "test:unit": "vitest run",
-    "test:spec": "vitest run --project browser --project astro",
-    "test:astro": "vitest run -p astro",
-    "test:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 test",
-    "test:a11y": "VITEST_A11Y_ONLY=1 vitest run --project browser --project astro",
-    "check:astro": "astro check",
-    "check:astro:v6": "pnpm astro:v6:install && pnpm -C test/astro-matrix/v6 check",
-    "astro:v6:install": "pnpm -C test/astro-matrix/v6 install --frozen-lockfile",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@rafters/color-utils": "workspace:*",
-    "@rafters/design-tokens": "workspace:*",
-    "css-tree": "^3.2.1",
-    "nanostores": "^1.1.0",
-    "ultrahtml": "^1.6.0"
-  },
-  "devDependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@hookform/resolvers": "^5.2.2",
-    "@playwright/test": "catalog:",
-    "@rafters/shared": "workspace:*",
-    "@testing-library/jest-dom": "catalog:",
-    "@testing-library/react": "catalog:",
-    "@testing-library/user-event": "catalog:",
-    "@types/css-tree": "^2.3.11",
-    "@types/d3-array": "^3.2.2",
-    "@types/d3-scale": "^4.0.9",
-    "@types/d3-shape": "^3.2.0",
-    "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
-    "@vitest/browser-playwright": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
-    "astro": "^7.3.2",
-    "axe-core": "catalog:",
-    "d3-array": "^3.2.4",
-    "d3-scale": "^4.0.2",
-    "d3-shape": "^3.2.0",
-    "happy-dom": "catalog:",
-    "preact": "^11.0.0",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-hook-form": "^7.66.0",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
-    "vitest-axe": "catalog:",
-    "vitest-browser-react": "catalog:",
-    "yaml": "^2.9.0",
-    "zod": "catalog:"
-  },
-  "peerDependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "vue": "^3.4.0",
-    "zod": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "vue": {
-      "optional": true
-    }
+    "build": "vp pack"
   }
 }
