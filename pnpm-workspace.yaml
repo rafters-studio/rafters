@@ -5,13 +5,8 @@ packages:
 # Build-script decisions (pnpm 11 allowBuilds, replaces onlyBuiltDependencies).
 # false = binaries arrive via optional platform deps; the postinstall is redundant.
 allowBuilds:
-  '@parcel/watcher': false
   esbuild: false
-  lefthook: true
   msw: false
-  sharp: false
-  vue-demi: true
-  workerd: false
 
 # Vitest 5 creates os.tmpdir()/<nanoid> for its core module fetcher and never
 # removes it, leaking one dir per run (still true in 5.0.2). The patch removes
@@ -23,40 +18,20 @@ patchedDependencies:
 # .pnpmfile.mjs). An entry here wins over the toolchain's, so this block holds only
 # packages the toolchain does not manage.
 catalog:
-  '@rafters/toolchain': ^0.1.4
-  '@axe-core/playwright': ^4.11.0
-  # @vitest/browser-playwright dev-pins playwright ^1.62.1; keep the runner in step.
-  '@playwright/test': ^1.62.1
-  '@testing-library/jest-dom': ^6.6.3
-  '@testing-library/react': ^16.1.0
-  '@testing-library/user-event': ^14.5.2
-  '@types/react': ^19.0.0
-  '@types/react-dom': ^19.0.0
-  '@vitejs/plugin-react': ^6.0.0
-  # Vitest moves as one block: every first-party companion peers on the exact
-  # vitest version it ships with, so a partial bump does not resolve.
-  '@vitest/browser-playwright': ^5.0.0
-  '@vitest/coverage-v8': ^5.0.0
-  '@vitest/ui': ^5.0.0
-  axe-core: ^4.11.0
-  comment-parser: ^1.4.1
-  esbuild: ^0.27.3
+  "@rafters/toolchain": ^0.1.6
+  "@axe-core/playwright": ^4.11.0
+  "@playwright/test": ^1.62.1
+  "@testing-library/jest-dom": ^6.6.3
+  "@testing-library/react": ^16.1.0
   happy-dom: ^20.0.10
-  hono: 4.11.0
-  lefthook: ^1.10.0
-  lit: ^3.3.1
   msw: ^2.11.6
-  playwright-bdd: ^9.2.1
   react: ^19.2.0
   react-dom: ^19.2.0
-  stoker: ^2.0.1
   vitest: ^5.0.0
-  vitest-axe: ^1.0.0-pre.3
-  vitest-browser-react: ^2.3.0
   zocker: 3.0.0
 
 configDependencies:
-  '@rafters/toolchain': 0.1.4
+  "@rafters/toolchain": 0.1.6
 
 minimumReleaseAgeExclude:
-  - '@rafters/toolchain'
+  - "@rafters/toolchain"

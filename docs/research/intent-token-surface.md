@@ -9,20 +9,20 @@ question, correct instrument.
 
 ## The matrix
 
-| | **elegant** Gucci | **editorial** Atlantic | **technical** GitHub | **efficient** Vercel | **friendly** Duolingo | **mass** Ulta |
-|---|---|---|---|---|---|---|
-| elements sampled | 5317 | 419 | 1723 | 943 | 765 | 3684 |
-| base font size | 16 | 16 | **14** | 16 | **17** | 16 |
-| sizes carrying the page | 4 | **12** | 5 | 8 | 4 | 4 |
-| line-height | normal / 1.33 / 1.5 | **1.15 / 1.25 / 1** | 1.5 | 1.5 / 1.43 | 1.18 | 1.5 / 1.14 |
-| **tracking** | **−0.03 / −0.04** | 0, +0.038 on labels | **0** | **0** | 0 | **+0.016 / +0.025** |
-| weights in use | 400, 500 | 400, 300 | 400, 500, 600 | 400 (+450) | **500, 700** | **300**, 700 |
-| type families | 1 | **4** (serif + mono + sans) | 2 + mono | 2 + mono | 1 | 1 |
-| **radius workhorse** | **2** | 4 | 6 | 6 | **12** | 8 |
-| radius distinct | 5 | 2 | 8 | 8 | 2 | 6 |
-| **border widths** | 1, 3 | 1, 2 | **1 only** (224×) | **1 only** | **2, 4 — never 1** | 1 |
-| shadow instances | **1** | **1** | **31** | 13 | 1 | 3 |
-| **duration** | **800ms** | 300ms | **80ms** | **100 / 150ms** | 200 / 300ms | 200ms |
+|                         | **elegant** Gucci   | **editorial** Atlantic      | **technical** GitHub | **efficient** Vercel | **friendly** Duolingo | **mass** Ulta       |
+| ----------------------- | ------------------- | --------------------------- | -------------------- | -------------------- | --------------------- | ------------------- |
+| elements sampled        | 5317                | 419                         | 1723                 | 943                  | 765                   | 3684                |
+| base font size          | 16                  | 16                          | **14**               | 16                   | **17**                | 16                  |
+| sizes carrying the page | 4                   | **12**                      | 5                    | 8                    | 4                     | 4                   |
+| line-height             | normal / 1.33 / 1.5 | **1.15 / 1.25 / 1**         | 1.5                  | 1.5 / 1.43           | 1.18                  | 1.5 / 1.14          |
+| **tracking**            | **−0.03 / −0.04**   | 0, +0.038 on labels         | **0**                | **0**                | 0                     | **+0.016 / +0.025** |
+| weights in use          | 400, 500            | 400, 300                    | 400, 500, 600        | 400 (+450)           | **500, 700**          | **300**, 700        |
+| type families           | 1                   | **4** (serif + mono + sans) | 2 + mono             | 2 + mono             | 1                     | 1                   |
+| **radius workhorse**    | **2**               | 4                           | 6                    | 6                    | **12**                | 8                   |
+| radius distinct         | 5                   | 2                           | 8                    | 8                    | 2                     | 6                   |
+| **border widths**       | 1, 3                | 1, 2                        | **1 only** (224×)    | **1 only**           | **2, 4 — never 1**    | 1                   |
+| shadow instances        | **1**               | **1**                       | **31**               | 13                   | 1                     | 3                   |
+| **duration**            | **800ms**           | 300ms                       | **80ms**             | **100 / 150ms**      | 200 / 300ms           | 200ms               |
 
 > **SUPERSEDED IN PART — read the variance test below first.** The matrix above and the
 > ranked list that follows were derived from six sites, one per intent. Extending to
@@ -61,20 +61,20 @@ Extended to fourteen (elegant: Gucci, Rolex · editorial: Atlantic, Guardian · 
 GitHub, Cloudflare, Supabase · efficient: Vercel, Linear, Stripe · friendly: Duolingo,
 Airbnb, Etsy · mass: Ulta), then between-group variance divided by within-group.
 
-| measure | between/within | verdict |
-|---|---|---|
-| **border rate** | **4.22** | **separates** |
-| duration | 1.05 | marginal |
-| shadow rate | 0.84 | does not separate |
-| radius workhorse | 0.50 | does not separate |
+| measure          | between/within | verdict           |
+| ---------------- | -------------- | ----------------- |
+| **border rate**  | **4.22**       | **separates**     |
+| duration         | 1.05           | marginal          |
+| shadow rate      | 0.84           | does not separate |
+| radius workhorse | 0.50           | does not separate |
 
 ### What survives
 
 **Border rate — the discriminator.** Percentage of elements carrying any border:
 
 | technical | efficient | editorial | mass | elegant | friendly |
-|---|---|---|---|---|---|
-| **20.5%** | 8.7% | 6.6% | 4.6% | 4.0% | 3.1% |
+| --------- | --------- | --------- | ---- | ------- | -------- |
+| **20.5%** | 8.7%      | 6.6%      | 4.6% | 4.0%    | 3.1%     |
 
 Between-group variance is four times within-group. Technical runs 2–6× everyone else, and
 does it with **one width** — 1px at GitHub, Cloudflare and Supabase; 0.5px at Linear.
@@ -90,7 +90,7 @@ was Gucci against Duolingo: two extremes drawn from six sites. Friendly alone sp
 Airbnb 4, Etsy 8, Duolingo 12. Within-group swamps between-group.
 
 **The shadow "conflict" was my arithmetic, not the data.** I compared raw instance counts
-across pages of wildly different element counts. As *rates*, the order reproduces the
+across pages of wildly different element counts. As _rates_, the order reproduces the
 earlier study's mid-hump exactly — efficient 1.78%, friendly 1.65%, technical 0.80%,
 elegant 0.36%, editorial 0.22%, mass 0.08%. Bulging at the middle, flat at both extremes,
 as that study said. To state both halves without contradiction: **the order is convergent
@@ -146,12 +146,12 @@ is preset-shaped.
 - **Six sites, one page each.** The prior 30-site sweep is a separate corpus; this is a
   deliberate small sample on the pages that matter, not a replacement for it.
 - **Intent labels come from earlier work**, so "the elegant site is elegant" is
-  definitional. The *values* are independent; the *assignment* is not.
+  definitional. The _values_ are independent; the _assignment_ is not.
 - **Working surface versus marketing surface is not controlled** across all six. GitHub and
   Duolingo are product surfaces; Gucci, Vercel and Atlantic are closer to marketing. The
   persuade/prove split means this could move numbers, and the shadow conflict above is the
   most likely place it already has.
-- **One page cannot show a scale.** These are the values a page *spends*, which is not the
-  same as the values a system *offers*. Duolingo showing 2 radii does not mean its system
+- **One page cannot show a scale.** These are the values a page _spends_, which is not the
+  same as the values a system _offers_. Duolingo showing 2 radii does not mean its system
   has 2.
 - No translation. These are observations, not proposed token values.

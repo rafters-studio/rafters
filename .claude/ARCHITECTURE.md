@@ -9,6 +9,7 @@ This document captures architectural decisions for AI agent context.
 **AI agents don't have taste. They need data.**
 
 Rafters converts subjective design decisions into queryable intelligence across three registries:
+
 1. **Token Registry** - What values exist (OKLCH, progressions, perceptual weights)
 2. **Component Registry** - What patterns exist (cognitive load, semantic meaning)
 3. **Designer Decisions** - Why choices were made (embedded in tokens, not separate)
@@ -28,6 +29,7 @@ Project   Browser   AI Agents   Discovery
 ## API (apps/api)
 
 ### Stack
+
 - **Hono** + `@hono/zod-openapi` for OpenAPI-first routes
 - **Scalar** for API reference UI at `/reference`
 - **stoker** for helpers (jsonContent, error schemas, http status codes)
@@ -37,20 +39,25 @@ Project   Browser   AI Agents   Discovery
 - **Queues** for async AI generation
 
 ### Cross-Worker Communication
+
 Use **Service Bindings** for worker-to-worker calls (e.g., uncertainty API):
+
 ```jsonc
 // wrangler.jsonc
 { "services": [{ "binding": "UNCERTAINTY_API", "service": "api-realhandy" }] }
 ```
+
 No HTTP auth needed - bindings are account-scoped.
 
 ### Color Endpoint Design
+
 - **Cache hit** → Return full ColorValue immediately
 - **Cache miss + default** → Return math-only data, `intelligence: null`
 - **Cache miss + `?sync=true`** → Block and wait for AI generation (for curl)
 - **Queue path** → Async AI generation, poll or webhook later
 
 ### Routes Structure
+
 ```
 src/
 ├── routes/
@@ -73,7 +80,9 @@ src/
 ## Token Format
 
 ### Rafters Native JSON (Source of Truth)
+
 Tokens contain full intelligence + embedded decisions:
+
 ```typescript
 {
   "primary": {
@@ -100,7 +109,9 @@ Tokens contain full intelligence + embedded decisions:
 ```
 
 ### Exports (Lossy)
+
 DTCG/CSS/Tailwind exports strip intelligence for tool interop:
+
 ```bash
 rafters export --format dtcg      # W3C Design Tokens
 rafters export --format css       # CSS custom properties
@@ -135,6 +146,7 @@ npx rafters mcp               # Start MCP server for AI agents
 ## Primitives (packages/ui)
 
 Vanilla TypeScript, framework-agnostic, SSR-safe:
+
 - **slot** - asChild prop merging
 - **modal** - Focus trap + dismissible layer
 - **keyboard** - Type-safe key handling
@@ -148,6 +160,7 @@ React/Vue/Svelte wrappers are thin adapters (100-300 LOC).
 ## Token Generators - TODO
 
 Previous generators deleted. Need redesign to:
+
 - Generate from seed color via `generateColorValue()`
 - Derive palette roles from harmonies + semanticSuggestions
 - Apply dependency rules (calc, state, scale, contrast, invert)
@@ -155,12 +168,12 @@ Previous generators deleted. Need redesign to:
 
 ## Key Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Service bindings over shared D1 | Clean separation, independent scaling |
-| Vectorize with real embeddings | Trig functions were meaningless for similarity |
-| D1 for exact lookups | Color picker = exact OKLCH, not semantic search |
-| Decisions embedded in tokens | One graph, no merge complexity |
-| DTCG as lossy export | Rafters format has 10x more data than DTCG supports |
-| CLI queries registry | Registry is truth, local is cache |
-| `?sync=true` for blocking AI | Curl users want to wait, production clients don't |
+| Decision                        | Rationale                                           |
+| ------------------------------- | --------------------------------------------------- |
+| Service bindings over shared D1 | Clean separation, independent scaling               |
+| Vectorize with real embeddings  | Trig functions were meaningless for similarity      |
+| D1 for exact lookups            | Color picker = exact OKLCH, not semantic search     |
+| Decisions embedded in tokens    | One graph, no merge complexity                      |
+| DTCG as lossy export            | Rafters format has 10x more data than DTCG supports |
+| CLI queries registry            | Registry is truth, local is cache                   |
+| `?sync=true` for blocking AI    | Curl users want to wait, production clients don't   |

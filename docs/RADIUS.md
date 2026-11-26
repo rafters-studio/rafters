@@ -12,14 +12,14 @@ The registry also holds per-corner tokens (`radius-tl`, `radius-lg-br` and the r
 
 Radius uses the same mathematical progression as spacing. `radius-base` is the anchor. The scale multiplies from there.
 
-| Token | Role |
-|-------|------|
-| `radius-none` | Sharp. Tables, inline elements, intentionally angular. |
-| `radius-sm` | Subtle. Checkboxes, keyboard indicators, small controls. |
-| `radius-md` | Default. Buttons, inputs, toggles. The workhorse. |
-| `radius-lg` | Prominent. Cards, dialogs, sheets. |
-| `radius-xl` | Emphasized. Hero cards, featured panels. |
-| `radius-full` | Circular. Avatars, badges, pills. |
+| Token         | Role                                                     |
+| ------------- | -------------------------------------------------------- |
+| `radius-none` | Sharp. Tables, inline elements, intentionally angular.   |
+| `radius-sm`   | Subtle. Checkboxes, keyboard indicators, small controls. |
+| `radius-md`   | Default. Buttons, inputs, toggles. The workhorse.        |
+| `radius-lg`   | Prominent. Cards, dialogs, sheets.                       |
+| `radius-xl`   | Emphasized. Hero cards, featured panels.                 |
+| `radius-full` | Circular. Avatars, badges, pills.                        |
 
 Change `radius-base` from 6px to 2px and the entire scale compresses. Every component sharpens. The progression ratio maintains the relationship between sm, md, and lg -- they don't collapse to the same value, they all shift proportionally.
 

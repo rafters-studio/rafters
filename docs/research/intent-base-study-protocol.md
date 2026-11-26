@@ -26,7 +26,7 @@ artifacts are evidence for the shape; they are not the subject.
 
 This matters because the shape is the thing that has predictive value. A measured base
 unit from 1957 tells you what one studio did. The observation that rigid systems
-produce a backlash against *permission* rather than against *geometry*, and that the
+produce a backlash against _permission_ rather than against _geometry_, and that the
 geometry returns intact afterward, tells you what to build.
 
 ## What we need to answer
@@ -41,7 +41,7 @@ geometry returns intact afterward, tells you what to build.
 3. **What recurs, and what does not?** This is the survival filter and it is the point.
    A register that returns after being rejected has something behind it. One that
    appears once was fashion. The grid returned; Memphis did not.
-4. **What is each recurring register *for*?** Stated as emotional and functional
+4. **What is each recurring register _for_?** Stated as emotional and functional
    content, not adjectives. Swiss neutrality was explicitly the removal of the
    designer, sought as objectivity. That is a stance about authority, and it is why the
    backlash was moral rather than aesthetic.
@@ -70,7 +70,7 @@ absolute. "Looser than Swiss" is recoverable and useful; "18px" is neither.
 **Find where competing readings diverge, before committing to one.** This is what
 settled the musical question — consonance and lineage agreed everywhere except the
 value 36, and that case decided it. For a trend claim the equivalent is: identify a
-transition the reading did *not* come from, and check whether it behaves as predicted.
+transition the reading did _not_ come from, and check whether it behaves as predicted.
 A shape fitted to the whole century and then confirmed on the whole century has not
 been tested.
 
@@ -97,7 +97,7 @@ Do not re-derive these. Each was tested to destruction in the #2031 thread; see
 2. **Run the refutation on the reading you like**, not only the one you doubt.
 3. **Do not narrate a cycle into existence.** Four turns over a century is a small
    number of events; any curve fits four points. The claim that survives must be about
-   *mechanism* — why rigidity produces backlash — not about periodicity.
+   _mechanism_ — why rigidity produces backlash — not about periodicity.
 4. **Defer to the perceptual read and verify it, do not overwrite it with a prettier
    model.** Recorded from the motion study: the operator's shape-read beat my
    curve-fitting every time it mattered.
@@ -111,7 +111,7 @@ Do not re-derive these. Each was tested to destruction in the #2031 thread; see
   not a basis for choosing a base.
 - The turns are driven by production technology rather than sentiment — photo-typesetting,
   desktop publishing, the browser, the design-system era. If the cycle is tooling, then
-  the next turn is predicted by what tooling changes, and rafters *is* a tooling change,
+  the next turn is predicted by what tooling changes, and rafters _is_ a tooling change,
   which is a different and more actionable story.
 
 ## Division of labour

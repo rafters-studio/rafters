@@ -1,6 +1,6 @@
 {
   "name": "rafters",
-  "version": "0.7.0",
+  "version": "0.8.0-rc.0",
   "description": "Design Intelligence CLI. Scaffold tokens, import existing shadcn/Tailwind v4 sources, add components, and serve an MCP server so AI agents read decisions instead of guessing.",
   "homepage": "https://rafters.studio",
   "license": "MIT",
@@ -9,61 +9,21 @@
     "url": "git+https://github.com/rafters-studio/rafters.git",
     "directory": "packages/cli"
   },
-  "bin": {
-    "rafters": "./dist/index.js"
-  },
   "files": [
     "dist",
     "LICENSE"
   ],
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./registry/types": {
-      "types": "./dist/registry/types.d.ts",
-      "import": "./dist/registry/types.js"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack && tsx scripts/sync-version.ts && tsx scripts/generate-agent-contract.ts",
-    "dev": "vp pack --watch",
-    "test": "pnpm run test:bdd && pnpm run test:unit",
-    "test:bdd": "bddgen && playwright test",
-    "test:unit": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist .turbo"
-  },
-  "dependencies": {
-    "@antfu/ni": "^28.1.0",
-    "@inquirer/prompts": "^8.2.0",
-    "@modelcontextprotocol/sdk": "^1.25.1",
-    "commander": "^13.0.0",
-    "css-tree": "^3.2.1",
-    "execa": "^9.6.1",
-    "ora": "^9.0.0",
-    "vite": "catalog:"
-  },
-  "devDependencies": {
-    "@astrojs/compiler-rs": "0.4.0",
-    "@playwright/test": "catalog:",
-    "@rafters/color-utils": "workspace:*",
-    "@rafters/composites": "workspace:*",
-    "@rafters/design-tokens": "workspace:*",
-    "@rafters/math-utils": "workspace:*",
-    "@rafters/shared": "workspace:*",
-    "@tailwindcss/cli": "^4.1.18",
-    "@types/css-tree": "^2.3.11",
-    "@types/node": "catalog:",
-    "playwright-bdd": "catalog:",
-    "tsx": "^4.21.0",
-    "typescript": "catalog:",
-    "vite-plus": "catalog:",
-    "vitest": "catalog:",
-    "zocker": "catalog:"
+    "build": "vp pack"
   }
 }

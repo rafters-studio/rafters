@@ -25,7 +25,7 @@ Three rules shape it, and none of them is arithmetic.
 
 **Position 0 is the floor.** Nothing exists below it. A step below the base is a value smaller than the unit everything is built from, and it cannot mean anything. Hairlines and focus rings are not small spacing -- they belong to their own namespaces, which carry their own floors.
 
-**Values round, and it is the multiplier that rounds.** A raster has no fractional pixel. Rounding the *pixel* and dividing back out by the base manufactures quarters -- 17px on a 4px base is multiplier 4.25 -- and a token named `spacing-4.25` breaks anything that reads a name as a number. Rounding the multiplier keeps every name an integer and every value a clean multiple of the base.
+**Values round, and it is the multiplier that rounds.** A raster has no fractional pixel. Rounding the _pixel_ and dividing back out by the base manufactures quarters -- 17px on a 4px base is multiplier 4.25 -- and a token named `spacing-4.25` breaks anything that reads a name as a number. Rounding the multiplier keeps every name an integer and every value a clean multiple of the base.
 
 **Colliding positions are dropped.** A tight ratio rounds several early positions onto the same value. The scale offers each value once, so it yields fewer rungs than positions. That loss is real and shows up in the token count rather than being papered over with duplicates.
 
@@ -37,19 +37,19 @@ The rungs are what the scale offers, and nothing enforces them. Tailwind's `--sp
 
 A linear ladder -- 4, 8, 12, 16, 20 -- looks principled. It is the scale almost every system ships, and it is wrong for what a scale is for.
 
-Measure the step in the only unit that matters, which is how much bigger the next step *looks*:
+Measure the step in the only unit that matters, which is how much bigger the next step _looks_:
 
-| linear step | change |
-|---|---|
-| 4 -> 6px | 50% |
-| 8 -> 10px | 25% |
-| 32 -> 36px | 12.5% |
-| 44 -> 48px | 9.1% |
-| 240 -> 256px | 6.7% |
+| linear step  | change |
+| ------------ | ------ |
+| 4 -> 6px     | 50%    |
+| 8 -> 10px    | 25%    |
+| 32 -> 36px   | 12.5%  |
+| 44 -> 48px   | 9.1%   |
+| 240 -> 256px | 6.7%   |
 
 Non-uniform. A fifty-percent chasm at the bottom with nothing in between; six-percent distinctions at the top, where choosing between two adjacent positions is choosing nothing. A designer working that scale is handed decisions that do not exist and denied ones that do.
 
-The progression is uniform -- the same perceptual step everywhere. It is also *shorter*: 21 positions where the linear ladder needed 34. That density was never generosity. It was compensation for a step size that is wrong at both ends.
+The progression is uniform -- the same perceptual step everywhere. It is also _shorter_: 21 positions where the linear ladder needed 34. That density was never generosity. It was compensation for a step size that is wrong at both ends.
 
 ## Where The Scale Starts And Stops
 
@@ -74,7 +74,7 @@ spacing-11 = calc(var(--rafters-spacing-base) * 11)
 
 Override the base in a theme and every token updates through CSS custom property resolution. No rebuild. No regeneration. The math is live in the browser.
 
-The ratio is a build-time input rather than a runtime variable, so changing it regenerates. That split is correct: the base scales what exists, the ratio changes *which* positions exist, and a set of tokens cannot appear or disappear through the cascade.
+The ratio is a build-time input rather than a runtime variable, so changing it regenerates. That split is correct: the base scales what exists, the ratio changes _which_ positions exist, and a set of tokens cannot appear or disappear through the cascade.
 
 Studio writes values into the `--rafters-*` layer that every theme token points at. That indirection is why applying a starting point will need no regeneration -- it will be a batch of custom-property writes, not a build. Presets are not built yet.
 

@@ -4,6 +4,7 @@
 
 ### Removed
 
+- chore(cli): **The package is emptied for the re-init on `next` (#2980).** `next` starts again from the monorepo scaffold: `rafters` is a shell at 0.8.0-rc.0 with an empty `src/index.ts`, no dependencies and no `bin`. Its code comes back piece by piece, each through its own issue.
 - chore(ui): **The op primitives are gone (#2942).** `block-ops`, `block-op-types`, `block-op-text`, `block-op-format`, `block-op-structural`, `block-op-content` and `op-history` duplicated `block-operations` and a behavior's memory cell, and nothing used them. The registry no longer serves them. A project that installed them keeps its copies until `rafters remove`; edit blocks with `block-operations`.
 - refactor(ui): **`command-palette` and Command fuzzy-match through `typeahead`'s `fuzzyScore` (#2944).** The delivered `command-palette` primitive no longer exports `fuzzyMatch` or `FuzzyMatchResult`, and now depends on `typeahead`; the delivered Command behavior imports `fuzzyScore` from `typeahead` instead of `command-palette`. The same commands match as before; the palette orders them by `fuzzyScore`. Code that imported `fuzzyMatch` should call `fuzzyScore(query, text)` from `typeahead`, where a score above 0 is a match. Projects pick it up with `rafters add --update-all`.
 
@@ -871,7 +872,7 @@ Run `rafters init --rebuild` first. It adds the surface fills (#2830) a project 
 
 ### Patch Changes
 
-- fix(tailwind): spacing scale variables in @theme block now reference var(--spacing-base) instead of var(--rafters-spacing-base). The @theme block defines --spacing-base but the token values referenced --rafters-spacing-base (the :root namespace), causing all gap-*, p-*, m-* utilities to resolve to empty values. Tailwind generated the CSS rules but they computed to zero because the variable chain was broken.
+- fix(tailwind): spacing scale variables in @theme block now reference var(--spacing-base) instead of var(--rafters-spacing-base). The @theme block defines --spacing-base but the token values referenced --rafters-spacing-base (the :root namespace), causing all gap-_, p-_, m-* utilities to resolve to empty values. Tailwind generated the CSS rules but they computed to zero because the variable chain was broken.
 
 ## 0.0.40
 
